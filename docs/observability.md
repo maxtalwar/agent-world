@@ -67,9 +67,10 @@ The observatory at `http://127.0.0.1:8765` is a full-screen illustrated map with
 - illustrated overhead map: drawn terrain, structures, agent figures, gravestones, claims, and item piles
 - forest tree density tracks remaining wood, so depletion is visible on the map
 - tile hover tooltips and a click-to-open tile inspector window (resources, structure status, remaining build inputs, stored goods, occupants)
-- dock windows: Civilization (per-tick trends chart of population/structures/trades/speech plus structure counts), Agents (roster with reserves/inventory; clicking a card highlights the agent on the map and filters the chronicle), Chronicle (filterable event feed), and Legend
+- dock windows: Run (transport controls — Start/Pause/Stop plus the tick scrubber with back/forward/Live for replaying history), Civilization (per-tick trends chart of population/structures/trades/speech plus structure counts), Agents (roster with reserves/inventory; clicking a card highlights the agent on the map and filters the chronicle), Chronicle (filterable event feed), and Legend
+- the Run window floats over the map with no backdrop, so the map stays visible while you scrub between ticks
 - slim top strip with run vitals (tick, living, builds, co-op builds, trades, LLM errors, invalid actions)
-- run launcher and stop control in a slide-out drawer with all world-config knobs
+- a "Configure Run" slide-out drawer with all world-config knobs (used for pre-run setup; also has a Start button)
 
 It is a watchable overhead view of the simulated world, but the purpose is observability: every visual is backed by state or event data.
 

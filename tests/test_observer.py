@@ -7,11 +7,100 @@ import time
 import unittest
 
 from agent_world.models import AgentDecision, WorldConfig
-from agent_world.observer import HTML, RunController, _parse_run_config, load_observer_state, summarize
+from agent_world.observer import HTML, RunController, SnapshotHistory, _parse_run_config, load_observer_state, summarize
 from agent_world.world import WorldEngine
 
 
 class ObserverTests(unittest.TestCase):
+    def test_run_controller_pause_and_resume(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            controller = RunController(snapshot_path=tmp_path / "s.json", events_path=tmp_path / "e.jsonl")
+            status, payload = controller.start({"brain": "survival", "ticks": 1000, "agents": 1, "log_agent_io": False})
+            self.assertEqual(status, 202)
+            deadline = time.time() + 5
+            while controller.status()["current_tick"] < 2 and time.time() < deadline:
+                time.sleep(0.01)
+
+            status, payload = controller.pause()
+            self.assertEqual(status, 200)
+            self.assertTrue(payload["run"]["paused"])
+            time.sleep(0.3)
+            tick_a = controller.status()["current_tick"]
+            time.sleep(0.3)
+            tick_b = controller.status()["current_tick"]
+            self.assertLessEqual(tick_b - tick_a, 1)  # at most one in-flight tick finishes
+
+            status, payload = controller.resume()
+            self.assertEqual(status, 200)
+            self.assertFalse(payload["run"]["paused"])
+            deadline = time.time() + 5
+            while controller.status()["current_tick"] <= tick_b and time.time() < deadline:
+                time.sleep(0.01)
+            self.assertGreater(controller.status()["current_tick"], tick_b)
+            controller.stop()
+            deadline = time.time() + 5
+            while controller.status()["state"] == "running" and time.time() < deadline:
+                time.sleep(0.02)
+            self.assertEqual(controller.status()["state"], "stopped")
+
+    def test_pause_requires_running_simulation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            controller = RunController(snapshot_path=tmp_path / "s.json", events_path=tmp_path / "e.jsonl")
+            status, payload = controller.pause()
+            self.assertEqual(status, 409)
+            self.assertFalse(payload["ok"])
+
+    def test_snapshot_history_records_and_serves_past_ticks(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            history = SnapshotHistory(Path(tmp) / "s.json")
+            history.record({"tick": 0, "agents": {"agent-1": {"alive": True}}})
+            history.record({"tick": 1, "agents": {}})
+            history.record({"tick": 1, "agents": {"ignored": "duplicate tick"}})
+            self.assertEqual(history.tick_range(), {"min_tick": 0, "max_tick": 1, "count": 2})
+            self.assertIn("agent-1", history.get(0)["agents"])
+            self.assertEqual(history.get(1)["agents"], {})
+            # A restarted run (tick goes backwards) clears the archive.
+            history.record({"tick": 0, "agents": {"fresh": True}})
+            self.assertEqual(history.tick_range()["count"], 1)
+            self.assertIn("fresh", history.get(0)["agents"])
+
+    def test_load_observer_state_serves_historical_tick(self) -> None:
+        engine = WorldEngine.create(WorldConfig(), agent_names=["A1"])
+        history = SnapshotHistory(Path("unused"))
+        history.record(json.loads(json.dumps(engine.snapshot())))
+        engine.tick({"agent-1": AgentDecision(actions=[{"type": "wait"}])})
+        engine.tick({"agent-1": AgentDecision(actions=[{"type": "wait"}])})
+        history.record(json.loads(json.dumps(engine.snapshot())))
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            snapshot_path = tmp_path / "snapshot.json"
+            events_path = tmp_path / "events.jsonl"
+            snapshot_path.write_text(json.dumps(engine.snapshot()), encoding="utf-8")
+            events_path.write_text(engine.export_events_jsonl() + "\n", encoding="utf-8")
+
+            past = load_observer_state(snapshot_path, events_path, at_tick=0, history=history)
+            self.assertEqual(past["snapshot"]["tick"], 0)
+            self.assertEqual(past["history"]["viewing_tick"], 0)
+            self.assertEqual(past["history"]["live_tick"], 2)
+            self.assertTrue(all(event["tick"] <= 0 for event in past["recent_events"]))
+
+            live = load_observer_state(snapshot_path, events_path, history=history)
+            self.assertEqual(live["snapshot"]["tick"], 2)
+            self.assertIsNone(live["history"]["viewing_tick"])
+
+    def test_html_has_pause_and_timeline_controls(self) -> None:
+        self.assertIn('id="pause-run"', HTML)
+        self.assertIn('id="timeline-slider"', HTML)
+        self.assertIn('id="tick-back"', HTML)
+        self.assertIn('id="tick-forward"', HTML)
+        self.assertIn('id="tick-live"', HTML)
+        self.assertIn('"/api/run/resume" : "/api/run/pause"', HTML)
+        self.assertIn("function renderTimeline(history, run)", HTML)
+        self.assertIn("function setViewTick(value)", HTML)
+        self.assertIn('`/api/state?tick=${viewTick}`', HTML)
+
     def test_snapshot_contains_tiles_and_positions(self) -> None:
         engine = WorldEngine.create(WorldConfig(), agent_names=["A1"])
         snapshot = engine.snapshot()

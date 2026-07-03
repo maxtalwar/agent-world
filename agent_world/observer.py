@@ -11,7 +11,7 @@ from pathlib import Path
 import threading
 import time
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.env import load_dotenv
@@ -66,6 +66,7 @@ class RunStatus:
     started_at: float | None = None
     finished_at: float | None = None
     stop_requested: bool = False
+    paused: bool = False
     error: str = ""
     config: dict[str, Any] = field(default_factory=dict)
     metrics: dict[str, Any] = field(default_factory=dict)
@@ -83,6 +84,7 @@ class RunController:
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._stop_event: threading.Event | None = None
+        self._pause_event = threading.Event()
         self._status = RunStatus()
 
     def status(self) -> dict[str, Any]:
@@ -100,6 +102,12 @@ class RunController:
             if self._thread is not None and self._thread.is_alive():
                 return 409, {"ok": False, "error": "A simulation is already running.", "run": self._status.to_dict()}
             self._stop_event = threading.Event()
+            self._pause_event.clear()
+            if config.brain == "llm":
+                usage_path = self.events_path.with_name(self.events_path.stem + "-usage.jsonl")
+                usage_path.parent.mkdir(parents=True, exist_ok=True)
+                usage_path.write_text("", encoding="utf-8")
+                os.environ["AGENT_WORLD_USAGE_LOG"] = str(usage_path)
             self._status = RunStatus(
                 state="running",
                 current_tick=0,
@@ -129,8 +137,24 @@ class RunController:
             if self._thread is None or not self._thread.is_alive() or self._stop_event is None:
                 return 200, {"ok": True, "run": self._status.to_dict()}
             self._stop_event.set()
+            self._pause_event.clear()
             self._status.stop_requested = True
+            self._status.paused = False
             return 202, {"ok": True, "run": self._status.to_dict()}
+
+    def pause(self) -> tuple[int, dict[str, Any]]:
+        with self._lock:
+            if self._thread is None or not self._thread.is_alive():
+                return 409, {"ok": False, "error": "No simulation is running.", "run": self._status.to_dict()}
+            self._pause_event.set()
+            self._status.paused = True
+            return 200, {"ok": True, "run": self._status.to_dict()}
+
+    def resume(self) -> tuple[int, dict[str, Any]]:
+        with self._lock:
+            self._pause_event.clear()
+            self._status.paused = False
+            return 200, {"ok": True, "run": self._status.to_dict()}
 
     def _run(self, config: RunConfig, stop_event: threading.Event) -> None:
         engine: WorldEngine | None = None
@@ -156,6 +180,8 @@ class RunController:
 
             stopped_reason: str | None = None
             for _ in range(config.ticks):
+                while self._pause_event.is_set() and not stop_event.is_set():
+                    time.sleep(0.2)
                 if stop_event.is_set():
                     break
                 events = runner.step()
@@ -341,6 +367,63 @@ def _atomic_write_text(path: Path, text: str) -> None:
     tmp_path.replace(path)
 
 
+class SnapshotHistory:
+    """Per-tick snapshot archive so the UI can scrub back through a run.
+
+    A watcher thread samples the snapshot file and stores one copy per tick. Works for
+    observatory-launched and CLI-launched runs alike, since both write the same file.
+    Restarting a run (tick moves backwards) clears the archive.
+    """
+
+    def __init__(self, snapshot_path: Path, max_ticks: int = 2000):
+        self.snapshot_path = snapshot_path
+        self.max_ticks = max_ticks
+        self._lock = threading.Lock()
+        self._snapshots: dict[int, dict[str, Any]] = {}
+        self._last_mtime: float = 0.0
+
+    def record(self, snapshot: dict[str, Any]) -> None:
+        tick = snapshot.get("tick")
+        if not isinstance(tick, int):
+            return
+        with self._lock:
+            latest = max(self._snapshots) if self._snapshots else -1
+            if tick < latest:
+                self._snapshots.clear()
+            if tick not in self._snapshots and len(self._snapshots) < self.max_ticks:
+                self._snapshots[tick] = snapshot
+
+    def get(self, tick: int) -> dict[str, Any] | None:
+        with self._lock:
+            return self._snapshots.get(tick)
+
+    def tick_range(self) -> dict[str, int | None]:
+        with self._lock:
+            if not self._snapshots:
+                return {"min_tick": None, "max_tick": None, "count": 0}
+            return {"min_tick": min(self._snapshots), "max_tick": max(self._snapshots), "count": len(self._snapshots)}
+
+    def poll_file(self) -> None:
+        try:
+            mtime = self.snapshot_path.stat().st_mtime
+        except OSError:
+            return
+        if mtime == self._last_mtime:
+            return
+        self._last_mtime = mtime
+        snapshot = _read_json(self.snapshot_path)
+        if snapshot:
+            self.record(snapshot)
+
+    def start_watcher(self, interval_seconds: float = 0.5) -> None:
+        def _watch() -> None:
+            while True:
+                self.poll_file()
+                time.sleep(interval_seconds)
+
+        threading.Thread(target=_watch, name="agent-world-snapshot-history", daemon=True).start()
+
+
 def serve_observer(
     snapshot_path: Path,
     events_path: Path,
@@ -348,7 +431,10 @@ def serve_observer(
     port: int = 8765,
 ) -> None:
     controller = RunController(snapshot_path=snapshot_path, events_path=events_path)
-    handler = _handler(snapshot_path=snapshot_path, events_path=events_path, controller=controller)
+    history = SnapshotHistory(snapshot_path)
+    history.poll_file()
+    history.start_watcher()
+    handler = _handler(snapshot_path=snapshot_path, events_path=events_path, controller=controller, history=history)
     server = ThreadingHTTPServer((host, port), handler)
     print(f"Agent World observatory: http://{host}:{port}")
     print(f"Watching snapshot: {snapshot_path}")
@@ -356,14 +442,29 @@ def serve_observer(
     server.serve_forever()
 
 
-def _handler(snapshot_path: Path, events_path: Path, controller: RunController) -> type[BaseHTTPRequestHandler]:
+def _handler(
+    snapshot_path: Path,
+    events_path: Path,
+    controller: RunController,
+    history: SnapshotHistory | None = None,
+) -> type[BaseHTTPRequestHandler]:
     class ObserverHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
-            path = urlparse(self.path).path
+            parsed = urlparse(self.path)
+            path = parsed.path
             if path == "/":
                 self._send_text(HTML, "text/html; charset=utf-8")
             elif path == "/api/state":
-                self._send_json(load_observer_state(snapshot_path, events_path, run_status=controller.status()))
+                at_tick = _parse_tick_param(parse_qs(parsed.query))
+                self._send_json(
+                    load_observer_state(
+                        snapshot_path,
+                        events_path,
+                        run_status=controller.status(),
+                        at_tick=at_tick,
+                        history=history,
+                    )
+                )
             else:
                 self.send_error(404)
 
@@ -379,6 +480,12 @@ def _handler(snapshot_path: Path, events_path: Path, controller: RunController) 
                 self._send_json(response, status=status)
             elif path == "/api/run/stop":
                 status, response = controller.stop()
+                self._send_json(response, status=status)
+            elif path == "/api/run/pause":
+                status, response = controller.pause()
+                self._send_json(response, status=status)
+            elif path == "/api/run/resume":
+                status, response = controller.resume()
                 self._send_json(response, status=status)
             else:
                 self.send_error(404)
@@ -419,20 +526,42 @@ def _handler(snapshot_path: Path, events_path: Path, controller: RunController) 
     return ObserverHandler
 
 
+def _parse_tick_param(query: dict[str, list[str]]) -> int | None:
+    values = query.get("tick") or []
+    if not values:
+        return None
+    try:
+        return int(values[0])
+    except (TypeError, ValueError):
+        return None
+
+
 def load_observer_state(
     snapshot_path: Path,
     events_path: Path,
     recent_limit: int = 120,
     run_status: dict[str, Any] | None = None,
+    at_tick: int | None = None,
+    history: SnapshotHistory | None = None,
 ) -> dict[str, Any]:
     snapshot = _read_json(snapshot_path)
     events = _read_events(events_path)
+    live_tick = snapshot.get("tick", 0)
+    viewing_tick = None
+    if at_tick is not None and history is not None:
+        historical = history.get(at_tick)
+        if historical is not None:
+            snapshot = historical
+            events = [event for event in events if event.get("tick", 0) <= at_tick]
+            viewing_tick = at_tick
     visible_events = [event for event in events if event.get("type") not in AGENT_IO_EVENT_TYPES]
     return {
         "snapshot": snapshot,
         "recent_events": visible_events[-recent_limit:],
         "summary": summarize(snapshot, visible_events),
         "run": run_status or RunStatus().to_dict(),
+        "history": (history.tick_range() if history else {"min_tick": None, "max_tick": None, "count": 0})
+        | {"live_tick": live_tick, "viewing_tick": viewing_tick},
         "files": {
             "snapshot": str(snapshot_path),
             "events": str(events_path),
@@ -1205,12 +1334,34 @@ HTML = r"""<!doctype html>
       color: var(--gold);
       padding: 0 4px;
     }
-    .drawer-footer { flex: none; padding: 13px 18px 16px; border-top: 1px solid var(--line); display: grid; gap: 10px; }
+    .drawer-footer { flex: none; padding: 13px 18px 16px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+    .drawer-footer .btn { width: 100%; }
+    .drawer-foot-note { margin: 0; font-size: 11px; color: var(--faint); line-height: 1.4; text-align: center; }
+    .drawer-foot-note strong { color: var(--muted); }
+    .run-stack { display: grid; gap: 12px; }
     .run-meta { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 11.5px; color: var(--muted); }
     .run-meta strong { color: var(--ink); font-size: 12.5px; }
     .footer-actions { display: flex; gap: 8px; }
     .footer-actions .btn { flex: 1; }
     .progress { height: 6px; border-radius: 999px; background: #e8e2d0; overflow: hidden; }
+    .timeline { display: grid; gap: 4px; }
+    .timeline-row { display: flex; align-items: center; gap: 6px; }
+    .timeline-row input[type="range"] {
+      flex: 1;
+      min-width: 0;
+      height: 5px;
+      appearance: none;
+      -webkit-appearance: none;
+      border-radius: 999px;
+      background: #e8e2d0;
+      accent-color: var(--accent, #c15f3c);
+      cursor: pointer;
+    }
+    .timeline-row input[type="range"]:disabled { cursor: not-allowed; opacity: .5; }
+    .btn.tiny { flex: none; height: 26px; padding: 0 8px; font-size: 11px; }
+    .btn.tiny.live.viewing-history { background: var(--accent, #c15f3c); color: #fff; border-color: transparent; }
+    .timeline-label { font-size: 11px; color: #8a857a; font-variant-numeric: tabular-nums; }
+    .timeline-label.history { color: var(--accent, #c15f3c); font-weight: 640; }
     .progress i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #8db877, var(--green)); transition: width .3s ease; }
 
     @media (max-width: 760px) {
@@ -1263,6 +1414,10 @@ HTML = r"""<!doctype html>
     <span class="map-note-chip" id="map-note"></span>
 
     <nav class="dock" aria-label="Panels">
+      <button class="dock-btn" id="dock-run" type="button" data-window="win-run">
+        <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><polygon points="4,3.5 4,16.5 15,10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><line x1="17" y1="3.5" x2="17" y2="16.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Run
+      </button>
       <button class="dock-btn" id="dock-civ" type="button" data-window="win-civ">
         <svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><polyline points="2,15 7,9 11,12 18,3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="2" y1="18" x2="18" y2="18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.5"/></svg>
         Civilization
@@ -1327,6 +1482,34 @@ HTML = r"""<!doctype html>
       </div>
       <div class="win-body">
         <div class="map-legend" id="map-legend"></div>
+      </div>
+    </section>
+
+    <section class="float-win" id="win-run" hidden aria-label="Run control">
+      <div class="panel-head">
+        <h2>Run</h2>
+        <span class="panel-note" id="run-state-detail"></span>
+        <button class="mini-close win-close" type="button" data-window="win-run" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="win-body">
+        <div class="run-stack">
+          <div class="run-meta"><strong id="run-state-label">Idle</strong></div>
+          <div class="progress"><i id="progress-bar"></i></div>
+          <div class="timeline" id="timeline" aria-label="Tick timeline">
+            <div class="timeline-row">
+              <button class="btn tiny" id="tick-back" type="button" title="Back one tick" disabled>&#9664;</button>
+              <input type="range" id="timeline-slider" min="0" max="0" value="0" step="1" disabled>
+              <button class="btn tiny" id="tick-forward" type="button" title="Forward one tick" disabled>&#9654;</button>
+              <button class="btn tiny live" id="tick-live" type="button" disabled>Live</button>
+            </div>
+            <div class="timeline-label" id="timeline-label">no history yet</div>
+          </div>
+          <div class="footer-actions">
+            <button class="btn primary" id="start-run" type="submit" form="panel-launch">Start</button>
+            <button class="btn" id="pause-run" type="button" disabled>Pause</button>
+            <button class="btn danger" id="stop-run" type="button" disabled>Stop</button>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1457,12 +1640,8 @@ HTML = r"""<!doctype html>
       </div>
     </div>
     <div class="drawer-footer">
-      <div class="run-meta"><strong id="run-state-label">Idle</strong><span id="run-state-detail"></span></div>
-      <div class="progress"><i id="progress-bar"></i></div>
-      <div class="footer-actions">
-        <button class="btn primary" id="start-run" type="submit" form="panel-launch">Start</button>
-        <button class="btn danger" id="stop-run" type="button" disabled>Stop</button>
-      </div>
+      <button class="btn primary" id="drawer-start" type="submit" form="panel-launch">Start run</button>
+      <p class="drawer-foot-note">Playback &amp; Start/Pause/Stop also live in the <strong>Run</strong> panel on the map.</p>
     </div>
   </aside>
 
@@ -1503,6 +1682,8 @@ HTML = r"""<!doctype html>
     let selectedTile = null;
     let selectedAgentId = null;
     let lastMapKey = "";
+    let viewTick = null;  // null = live; a number = viewing that historical tick
+    let historyRange = { min_tick: null, max_tick: null, count: 0, live_tick: 0 };
 
     /* ---------- Deterministic per-tile variation ---------- */
     function hash(x, y, salt = 0) {
@@ -2018,7 +2199,8 @@ HTML = r"""<!doctype html>
     /* ---------- Run status & ticker ---------- */
     async function refresh() {
       try {
-        const response = await fetch("/api/state", { cache: "no-store" });
+        const url = viewTick === null ? "/api/state" : `/api/state?tick=${viewTick}`;
+        const response = await fetch(url, { cache: "no-store" });
         const state = await response.json();
         render(state);
       } catch (error) {
@@ -2032,6 +2214,7 @@ HTML = r"""<!doctype html>
       latestAgents = snapshot.agents || {};
       latestEvents = state.recent_events || [];
       renderRun(state.run || {}, state.summary || {});
+      renderTimeline(state.history || {}, state.run || {});
       renderTicker(state.summary || {});
       renderCiv(state.summary || {});
       renderMap(snapshot);
@@ -2039,6 +2222,50 @@ HTML = r"""<!doctype html>
       renderEventFilters(latestEvents, latestAgents);
       renderEvents(latestEvents);
       renderInspector();
+    }
+
+    function renderTimeline(history, run) {
+      historyRange = history || {};
+      const slider = document.getElementById("timeline-slider");
+      const label = document.getElementById("timeline-label");
+      const liveBtn = document.getElementById("tick-live");
+      const backBtn = document.getElementById("tick-back");
+      const fwdBtn = document.getElementById("tick-forward");
+      const hasHistory = (history.count || 0) > 1;
+      slider.disabled = !hasHistory;
+      liveBtn.disabled = !hasHistory;
+      backBtn.disabled = !hasHistory;
+      fwdBtn.disabled = !hasHistory || viewTick === null;
+      if (!hasHistory) {
+        label.textContent = "no history yet";
+        label.className = "timeline-label";
+        liveBtn.classList.remove("viewing-history");
+        return;
+      }
+      slider.min = history.min_tick ?? 0;
+      slider.max = history.max_tick ?? 0;
+      const shown = viewTick === null ? (history.max_tick ?? 0) : viewTick;
+      if (document.activeElement !== slider) slider.value = shown;
+      if (viewTick === null) {
+        label.textContent = `live · tick ${history.live_tick ?? 0}`;
+        label.className = "timeline-label";
+        liveBtn.classList.remove("viewing-history");
+      } else {
+        label.textContent = `viewing tick ${viewTick} of ${history.live_tick ?? "?"} — press Live to return`;
+        label.className = "timeline-label history";
+        liveBtn.classList.add("viewing-history");
+      }
+    }
+
+    function setViewTick(value) {
+      const min = historyRange.min_tick ?? 0;
+      const max = historyRange.max_tick ?? 0;
+      if (value === null || value >= max) {
+        viewTick = null;
+      } else {
+        viewTick = Math.max(min, Math.min(max, value));
+      }
+      refresh();
     }
 
     function renderRun(run, summary = {}) {
@@ -2052,10 +2279,10 @@ HTML = r"""<!doctype html>
       document.getElementById("tick-readout").textContent = displayTick;
       const pill = document.getElementById("status-pill");
       pill.className = `status-pill ${state}`;
-      document.getElementById("status-text").textContent = stateLabel(state, run.stop_requested);
+      document.getElementById("status-text").textContent = stateLabel(state, run.stop_requested, run.paused);
       document.getElementById("runline-bar").style.width = running ? `${percent}%` : "0%";
 
-      document.getElementById("run-state-label").textContent = stateLabel(state, run.stop_requested);
+      document.getElementById("run-state-label").textContent = stateLabel(state, run.stop_requested, run.paused);
       const detail = running || state === "completed" || state === "stopped"
         ? `${current}/${target} ticks · ${run.agents || 0} agents · ${run.brain || "survival"}`
         : state === "failed"
@@ -2065,13 +2292,18 @@ HTML = r"""<!doctype html>
       document.getElementById("progress-bar").style.width = `${percent}%`;
 
       document.getElementById("start-run").disabled = running;
+      document.getElementById("drawer-start").disabled = running;
       document.getElementById("stop-run").disabled = !running;
+      const pauseBtn = document.getElementById("pause-run");
+      pauseBtn.disabled = !running;
+      pauseBtn.textContent = run.paused ? "Resume" : "Pause";
       document.querySelectorAll(".lock").forEach(el => { el.disabled = running; });
       syncModelControl(running);
     }
 
-    function stateLabel(state, stopRequested) {
+    function stateLabel(state, stopRequested, paused) {
       if (state === "running" && stopRequested) return "Stopping";
+      if (state === "running" && paused) return "Paused";
       return String(state || "idle").replace(/^\w/, char => char.toUpperCase());
     }
 
@@ -2296,6 +2528,8 @@ HTML = r"""<!doctype html>
         return;
       }
       renderRun(result.run || {});
+      closeDrawer();
+      openWindow("win-run");
       await refresh();
     }
 
@@ -2369,6 +2603,14 @@ HTML = r"""<!doctype html>
       syncDock();
     }
 
+    function openWindow(id) {
+      document.querySelectorAll(".float-win").forEach(win => {
+        if (win.id === "inspector") return;
+        win.hidden = win.id !== id;
+      });
+      syncDock();
+    }
+
     function syncDock() {
       document.querySelectorAll(".dock-btn[data-window]").forEach(button => {
         const win = document.getElementById(button.dataset.window);
@@ -2383,6 +2625,7 @@ HTML = r"""<!doctype html>
     }
 
     function openDrawer() {
+      toggleWindow(null);
       document.getElementById("drawer").classList.add("open");
       document.getElementById("drawer-backdrop").classList.add("open");
     }
@@ -2446,6 +2689,22 @@ HTML = r"""<!doctype html>
         document.getElementById("run-state-detail").textContent = String(error);
       });
     });
+    document.getElementById("pause-run").addEventListener("click", async () => {
+      const resuming = document.getElementById("pause-run").textContent === "Resume";
+      await postJSON(resuming ? "/api/run/resume" : "/api/run/pause", {});
+      await refresh();
+    });
+    document.getElementById("timeline-slider").addEventListener("input", event => {
+      setViewTick(Number(event.target.value));
+    });
+    document.getElementById("tick-back").addEventListener("click", () => {
+      const current = viewTick === null ? (historyRange.max_tick ?? 0) : viewTick;
+      setViewTick(current - 1);
+    });
+    document.getElementById("tick-forward").addEventListener("click", () => {
+      if (viewTick !== null) setViewTick(viewTick + 1);
+    });
+    document.getElementById("tick-live").addEventListener("click", () => setViewTick(null));
     document.getElementById("run-brain").addEventListener("change", () => syncModelControl(false));
     document.querySelectorAll(".dtab").forEach(button => {
       button.addEventListener("click", () => switchDrawerTab(button.dataset.panel));

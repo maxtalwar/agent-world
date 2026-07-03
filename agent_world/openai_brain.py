@@ -6,6 +6,7 @@ the simulation has no required runtime dependencies beyond Python.
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 import json
 import os
 from pathlib import Path
@@ -154,6 +155,15 @@ class OpenAIBrain:
         }
         with self._rate_lock:
             self.__class__._usage_records.append(record)
+        # Persist incrementally so an interrupted run (crash, kill, laptop sleep) keeps
+        # its cost data; the in-memory list is only summarized at normal run end.
+        usage_log = os.environ.get("AGENT_WORLD_USAGE_LOG")
+        if usage_log:
+            try:
+                with open(usage_log, "a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(record, sort_keys=True) + "\n")
+            except OSError:
+                pass
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
         quota_message = self._quota_message()
@@ -249,6 +259,20 @@ class OpenAIBrain:
             self.__class__._next_allowed_at = time.monotonic() + self.min_request_interval_seconds
 
     def _post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        # urllib's timeout only bounds each socket read; providers that trickle keep-alive
+        # bytes during slow generations reset it forever. Run the request in a worker and
+        # enforce a hard wall-clock deadline so a stuck request cannot freeze the run.
+        with ThreadPoolExecutor(max_workers=1, thread_name_prefix="openai-brain-request") as executor:
+            future = executor.submit(self._post_json_blocking, path, payload)
+            try:
+                return future.result(timeout=self.timeout_seconds + 30)
+            except FuturesTimeoutError as exc:
+                future.cancel()
+                raise OSError(
+                    f"Request exceeded hard deadline of {self.timeout_seconds + 30}s (provider kept the connection alive without finishing)."
+                ) from exc
+
+    def _post_json_blocking(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
         body = json.dumps(payload).encode("utf-8")
         headers = {
             "Authorization": f"Bearer {self.api_key}",

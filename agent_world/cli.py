@@ -97,6 +97,11 @@ def main(argv: list[str] | None = None) -> None:
 
 def _run(args: argparse.Namespace) -> None:
     load_dotenv()
+    if args.brain == "llm" and args.out:
+        usage_path = args.out.with_name(args.out.stem + "-usage.jsonl")
+        usage_path.parent.mkdir(parents=True, exist_ok=True)
+        usage_path.write_text("", encoding="utf-8")
+        os.environ["AGENT_WORLD_USAGE_LOG"] = str(usage_path)
     config = WorldConfig(width=args.width, height=args.height, seed=args.seed)
     names = [f"Agent {index + 1}" for index in range(args.agents)]
     engine = WorldEngine.create(config=config, agent_names=names)
