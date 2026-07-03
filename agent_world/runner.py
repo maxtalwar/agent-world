@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 from agent_world.agents import AgentBrain
@@ -22,38 +23,75 @@ class SimulationRunner:
         engine: WorldEngine,
         brains: dict[str, AgentBrain],
         log_agent_io: bool = True,
+        concurrent_decisions: bool = False,
+        max_workers: int | None = None,
     ):
         self.engine = engine
         self.brains = brains
         self.log_agent_io = log_agent_io
+        self.concurrent_decisions = concurrent_decisions
+        self.max_workers = max_workers
 
     def step(self) -> list[Any]:
-        decisions: dict[str, AgentDecision] = {}
-        for agent_id in sorted(self.engine.state.agents):
-            agent = self.engine.state.agents[agent_id]
-            if not agent.alive:
-                continue
-            brain = self.brains.get(agent_id)
-            if brain is None:
-                continue
-            observation = build_observation(self.engine.state, agent_id)
-            prompt = build_agent_prompt(observation)
-            if self.log_agent_io:
-                self.engine.log_event(
-                    "agent_observation",
-                    actor_id=agent_id,
-                    position=agent.position,
-                    data={"observation": observation},
-                    scope="private",
-                    recipients={agent_id},
-                )
-                self.engine.log_event(
-                    "agent_prompt",
-                    actor_id=agent_id,
-                    position=agent.position,
-                    data={"prompt": prompt},
-                    scope="private",
-                    recipients={agent_id},
-                )
-            decisions[agent_id] = parse_agent_response(brain.decide(observation))
+        agent_ids = [
+            agent_id
+            for agent_id in sorted(self.engine.state.agents)
+            if self.engine.state.agents[agent_id].alive and agent_id in self.brains
+        ]
+        observations = {agent_id: build_observation(self.engine.state, agent_id) for agent_id in agent_ids}
+        for agent_id, observation in observations.items():
+            self._log_agent_input(agent_id, observation)
+        decisions = self._collect_decisions(agent_ids, observations)
         return self.engine.tick(decisions)
+
+    def _collect_decisions(
+        self,
+        agent_ids: list[str],
+        observations: dict[str, dict[str, Any]],
+    ) -> dict[str, AgentDecision]:
+        if not self.concurrent_decisions or len(agent_ids) <= 1:
+            return {
+                agent_id: parse_agent_response(self.brains[agent_id].decide(observations[agent_id]))
+                for agent_id in agent_ids
+            }
+        decisions: dict[str, AgentDecision] = {}
+        worker_count = self.max_workers or len(agent_ids)
+        with ThreadPoolExecutor(max_workers=worker_count) as executor:
+            futures = {
+                executor.submit(self.brains[agent_id].decide, observations[agent_id]): agent_id
+                for agent_id in agent_ids
+            }
+            for future in as_completed(futures):
+                agent_id = futures[future]
+                try:
+                    decisions[agent_id] = parse_agent_response(future.result())
+                except Exception as exc:  # Defensive shell around third-party brains.
+                    decisions[agent_id] = AgentDecision(
+                        intent=f"Agent brain failed: {exc}",
+                        actions=[{"type": "wait"}],
+                        messages=[],
+                        memory_updates=[],
+                    )
+        return decisions
+
+    def _log_agent_input(self, agent_id: str, observation: dict[str, Any]) -> None:
+        if not self.log_agent_io:
+            return
+        agent = self.engine.state.agents[agent_id]
+        prompt = build_agent_prompt(observation)
+        self.engine.log_event(
+            "agent_observation",
+            actor_id=agent_id,
+            position=agent.position,
+            data={"observation": observation},
+            scope="private",
+            recipients={agent_id},
+        )
+        self.engine.log_event(
+            "agent_prompt",
+            actor_id=agent_id,
+            position=agent.position,
+            data={"prompt": prompt},
+            scope="private",
+            recipients={agent_id},
+        )

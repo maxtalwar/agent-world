@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Protocol
 
-from agent_world.models import AgentDecision
+from agent_world.models import AgentDecision, FOOD_RESERVE_MAX, RESERVE_MAX, WATER_RESERVE_MAX
 
 
 class AgentBrain(Protocol):
@@ -22,21 +22,22 @@ class SurvivalBrain:
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
         self_state = observation["self"]
-        needs = self_state["needs"]
+        reserves = self_state.get("reserves", self_state.get("needs", {}))
         inventory = self_state["inventory"]
         position = self_state["position"]
 
         actions: list[dict[str, Any]] = []
         memory_updates: list[str] = []
 
-        if needs["water"] < 55 and inventory.get("water", 0) > 0:
+        fallback_reserve = RESERVE_MAX
+        if reserves.get("water", WATER_RESERVE_MAX) < WATER_RESERVE_MAX * 0.55 and inventory.get("water", 0) > 0:
             actions.append({"type": "consume", "item": "water"})
-        if needs["food"] < 60 and inventory.get("food", 0) > 0:
+        if reserves.get("food", FOOD_RESERVE_MAX) < FOOD_RESERVE_MAX * 0.5 and inventory.get("food", 0) > 0:
             actions.append({"type": "consume", "item": "food"})
 
         current_tile = _tile_at(observation, position["x"], position["y"])
         if len(actions) < 3 and current_tile:
-            if inventory.get("water", 0) < 2 and current_tile["resources"].get("water", 0) > 0:
+            if inventory.get("water", 0) < 2 and _adjacent_water_available(observation):
                 actions.append({"type": "gather", "resource": "water"})
             elif inventory.get("food", 0) < 3 and current_tile["resources"].get("food", 0) > 0:
                 actions.append({"type": "gather", "resource": "food"})
@@ -58,7 +59,7 @@ class SurvivalBrain:
             )
 
         return AgentDecision(
-            intent="Maintain basic needs using locally visible resources.",
+            intent="Maintain basic reserves using locally visible resources.",
             actions=actions[:3],
             messages=[],
             memory_updates=memory_updates[:1],
@@ -83,6 +84,8 @@ def _move_toward_resource(observation: dict[str, Any], needed_resources: list[st
     for tile in observation["local_map"]:
         if tile["x"] == current["x"] and tile["y"] == current["y"]:
             continue
+        if tile.get("passable") is False:
+            continue
         resource_score = sum(tile["resources"].get(resource, 0) for resource in needed_resources)
         if resource_score <= 0:
             continue
@@ -100,3 +103,12 @@ def _move_toward_resource(observation: dict[str, Any], needed_resources: list[st
     if dy != 0:
         return {"type": "move", "direction": "south" if dy > 0 else "north"}
     return None
+
+
+def _adjacent_water_available(observation: dict[str, Any]) -> bool:
+    current = observation["self"]["position"]
+    for tile in observation["local_map"]:
+        distance = abs(tile["x"] - current["x"]) + abs(tile["y"] - current["y"])
+        if distance <= 1 and tile["terrain"] == "water" and tile["resources"].get("water", 0) > 0:
+            return True
+    return False

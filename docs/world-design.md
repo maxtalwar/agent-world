@@ -1,0 +1,90 @@
+# World Design
+
+Agent World is currently a fixed 16x16, tick-based world. The map is handcrafted rather than randomly generated so runs are easier to compare.
+
+## Canonical Map
+
+Legend:
+
+```text
+. = plains
+F = forest
+M = mountain
+W = water
+```
+
+Map:
+
+```text
+WWFFFFFFFMMMMMMM
+WWFFFFFFMMMMMMMMM
+WFFFFFFFMMMMMMMMM
+WFFFFFF..MMMMMMM.
+WFFFFF....MMMMM..
+WFFFF.....WMMM...
+WFFF.....WWWMM...
+WFF......WWW.....
+WF.......WW......
+W........W.......
+W................
+W.............FFF
+WW..........FFFFF
+WWW.......FFFFFFF
+WWWW.....FFFFFFFF
+WWWWW...FFFFFFFFF
+```
+
+The geography is meant to create natural economic gradients:
+
+- western coast and central water features for adjacent water gathering and fishing
+- northwestern and southeastern forests for wood
+- eastern/northeastern mountain range for stone and ore
+- central/southern plains for settlement and farms
+
+Agents spawn near the center at `(8,8)`.
+
+## Resources
+
+- `water`: carried/consumed to restore thirst. Water tiles are not occupiable; agents gather water from adjacent land.
+- `food`: carried/consumed to restore hunger and some energy. Carried food spoils periodically, while stored food is protected.
+- `fiber`: early building/crafting input.
+- `wood`: building/crafting/repair input from forests.
+- `stone`: building/crafting input from mountains.
+- `ore`: high-value raw material, reserved for later production chains.
+- `tool`: craftable/equippable item, reserved for deeper tool effects.
+
+Wild food/fiber are intentionally modest so persistent infrastructure can become valuable.
+
+## Structures
+
+Structures are neutral affordances. Agents are not told to build them; they see recipes and broad descriptions, but exact productivity details are left to discovery.
+
+- `farm_plot`: persistent improved land on plains/forest that can support more reliable food production than wild foraging.
+- `storage`: large inventory container with owner/access controls. Structures and claimed tiles can be personally or group owned, and stored food is protected from spoilage.
+- `shelter`: simple rest structure. Improves waiting and prevents passive energy decay.
+- `house`: better rest structure with moderate storage. Intended to support settlement clustering.
+- `workshop`: material cache and crafting site. Reduces crafting energy cost and is the base for future production chains.
+- `well`: local water infrastructure for settlements away from open water.
+
+## Current Tuning
+
+- Carry capacity is tight enough for storage to matter: `10`.
+- Food and water reserves start at `10` and cap at `15`; energy starts at `20` and caps at `25`.
+- Agents start with limited supplies: `food 1`, `water 2`.
+- Water tiles are impassable until a future bridge/boat mechanic exists.
+- Carried food spoils every few ticks; food inside storage, houses, or workshops is protected.
+- Farming requires a farm plot; wild food comes from gathering, harvesting, or fishing rather than standing still.
+- Trade can be direct to a visible agent or posted locally for any visible counterparty; offered goods are escrowed until accepted, rejected, or expired.
+- Groups can own claims/structures and keep persistent agreements as a small institutional ledger.
+- Wild food regrowth is intentionally low so construction pressure appears earlier.
+- Build-readiness diagnostics are computed for researchers, but not included in agent observations.
+
+## Next Likely Mechanics
+
+- multi-tick construction and crop growth stages
+- tool quality affecting extraction
+- roads/paths lowering movement cost
+- boats/bridges for crossing water
+- metal production chain from ore
+- public boards for posted offers and contracts
+- richer group governance and enforcement
