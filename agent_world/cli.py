@@ -18,6 +18,7 @@ from agent_world.models import WorldConfig
 from agent_world.openai_brain import OpenAIBrain
 from agent_world.observer import serve_observer
 from agent_world.replay import format_event, read_events
+from agent_world.run_report import format_comparison, load_run_files, write_report
 from agent_world.runner import SimulationRunner
 from agent_world.world import WorldEngine
 
@@ -80,6 +81,12 @@ def main(argv: list[str] | None = None) -> None:
     ablate_parser.add_argument("--reasoning-effort", choices=["minimal", "low", "medium", "high"], default=None)
     ablate_parser.add_argument("--out", type=Path, default=None, help="Optional JSON output path for the rows.")
 
+    report_parser = subparsers.add_parser(
+        "report",
+        help="Export structured -report.json/-report.md summaries for run logs; compares runs when given several.",
+    )
+    report_parser.add_argument("paths", type=Path, nargs="+", help="Run event logs (.jsonl) with matching -snapshot.json files.")
+
     args = parser.parse_args(argv)
     if args.command == "run":
         _run(args)
@@ -93,6 +100,8 @@ def main(argv: list[str] | None = None) -> None:
         _view(args)
     elif args.command == "ablate":
         _ablate(args)
+    elif args.command == "report":
+        _report(args)
 
 
 def _run(args: argparse.Namespace) -> None:
@@ -145,6 +154,17 @@ def _run(args: argparse.Namespace) -> None:
         print(f"Wrote snapshot to {args.snapshot}")
     if args.brain == "llm":
         _report_llm_usage(args, engine.state.tick)
+    if args.out:
+        usage_records = OpenAIBrain.usage_records() if args.brain == "llm" else []
+        stem = args.out.with_name(args.out.stem)
+        write_report(
+            [json.loads(line) for line in engine.export_events_jsonl().splitlines() if line.strip()],
+            engine.snapshot(),
+            usage_records,
+            stem,
+            target_ticks=args.ticks,
+        )
+        print(f"Wrote run report to {stem}-report.json and {stem}-report.md")
 
 
 def _report_llm_usage(args: argparse.Namespace, ticks_completed: int) -> None:
@@ -176,6 +196,18 @@ def _report_llm_usage(args: argparse.Namespace, ticks_completed: int) -> None:
     print(json.dumps(summary, indent=2, sort_keys=True))
     if usage_path:
         print(f"Wrote per-call usage records to {usage_path}")
+
+
+def _report(args: argparse.Namespace) -> None:
+    reports = []
+    for path in args.paths:
+        stem = path.with_name(path.stem)
+        events, snapshot, usage_records = load_run_files(stem)
+        reports.append(write_report(events, snapshot, usage_records, stem))
+        print(f"Wrote {stem}-report.json and {stem}-report.md")
+    if len(reports) > 1:
+        print()
+        print(format_comparison(reports))
 
 
 def _replay(args: argparse.Namespace) -> None:

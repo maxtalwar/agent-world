@@ -223,6 +223,11 @@ class OpenAIBrain:
             "response_format": {"type": "json_object"},
             "usage": {"include": True},
         }
+        provider_order = [name.strip() for name in os.environ.get("OPENAI_PROVIDER_ORDER", "").split(",") if name.strip()]
+        if provider_order and "openrouter.ai" in self.base_url:
+            # Pin routing to reliable providers: OpenRouter otherwise load-balances across
+            # dozens of hosts, and one degraded host means hung requests and cold caches.
+            payload["provider"] = {"order": provider_order, "allow_fallbacks": True}
         if self.reasoning_effort:
             # OpenRouter normalizes this across providers; reasoning-capable models (GLM-5.2)
             # use it, and providers that ignore reasoning simply drop it.

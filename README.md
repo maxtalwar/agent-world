@@ -27,6 +27,7 @@ The default CLI run uses deterministic mock brains so the infrastructure can be 
 - `agent_world/runner.py`: observe -> decide -> validate simulation orchestration.
 - `agent_world/observer.py`: local web observatory for live/replay visualization.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
+- `agent_world/run_report.py`: per-run structured data export (`-report.json`/`-report.md`) and cross-run comparison.
 - `tests/`: regression coverage for world rules, maps, observer, and OpenAI adapter helpers.
 - `docs/`: design notes and future handoff context.
 
@@ -71,6 +72,16 @@ python3 -m agent_world.cli run --brain llm --model z-ai/glm-5.2 --reasoning-effo
 To connect a different provider or local agent policy, implement the `AgentBrain` protocol in `agent_world/agents.py`: receive an observation dictionary, return the same JSON shape described in the prompt, and let `WorldEngine` validate everything.
 
 Runs log private observations, prompts, responses, validation errors, actions, state transitions, trades, messages, claims, groups, and deaths. Use `--no-agent-io-log` when you want smaller event logs.
+
+## Run Reports
+
+Every `run` with `--out` automatically exports `<name>-report.json` (machine-readable: config, survival, action mix, structure timeline, groups, gift network, trades, milestone first-ticks, reliability, LLM cost, full say transcript) and `<name>-report.md` (human summary) next to the event log. All reports share one schema, so runs are directly comparable across experiments. Regenerate reports for old logs — or compare several runs side by side — with:
+
+```bash
+python3 -m agent_world.cli report runs/a.jsonl runs/b.jsonl
+```
+
+Passing multiple logs prints a metric-by-metric comparison table after writing the reports.
 
 The LLM request is split to minimize input tokens (~85% of API cost): the static rulebook (actions, costs, recipes, terrain, mechanics) is rendered once as terse text in the system message — byte-identical across every agent and tick, so provider-side prompt caching can reuse it — while the per-tick user message carries only the slim dynamic state (tiles omit empty/derivable fields, events omit engine internals). No information is removed, only redundancy: everything an agent could act on is still present each call. Build-readiness diagnostics are intentionally kept out of agent observations so agents are not nudged with "you can now build X" hints.
 

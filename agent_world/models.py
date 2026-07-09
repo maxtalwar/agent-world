@@ -35,7 +35,7 @@ class WorldConfig:
     height: int = 16
     seed: int = 1
     visible_radius: int = 2
-    action_points_per_tick: int = 3
+    action_points_per_tick: int = 4
     max_memory: int = 50
     recent_event_limit: int = 20
     default_carry_capacity: int = 10

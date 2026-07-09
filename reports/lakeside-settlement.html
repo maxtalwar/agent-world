@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Lakeside Settlement — an Agent World field report</title>
+<style>
+  :root {
+    --ink: #2b2a26; --ink-strong: #1a1916; --muted: #75736b; --faint: #9c9a8f;
+    --line: #e9e6dc; --bg: #faf9f5; --panel: #ffffff; --inset: #f6f4ec;
+    --accent: #c15f3c; --accent-2: #d97757; --accent-soft: #f6e9e1;
+    --green: #6f9e57; --blue: #5b96bd; --gold: #caa54a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.55;
+  }
+  .page { max-width: 780px; margin: 0 auto; padding: 48px 28px 80px; }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--accent); }
+  h1 {
+    font-family: ui-serif, Georgia, "Times New Roman", serif;
+    font-size: 44px; line-height: 1.08; letter-spacing: -0.015em;
+    margin: 10px 0 14px; color: var(--ink-strong); font-weight: 600;
+  }
+  .lede { font-size: 18px; color: var(--muted); max-width: 620px; margin: 0 0 8px; }
+  .lede strong { color: var(--ink-strong); }
+  .byline { font-size: 12.5px; color: var(--faint); margin-bottom: 36px; }
+  h2 {
+    font-family: ui-serif, Georgia, serif; font-size: 24px; font-weight: 600;
+    color: var(--ink-strong); margin: 46px 0 6px; letter-spacing: -0.01em;
+  }
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--faint); margin-top: 44px; }
+  .kicker + h2 { margin-top: 4px; }
+  p { margin: 12px 0; }
+  .statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 26px 0 8px; }
+  .stat {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; position: relative; overflow: hidden;
+  }
+  .stat::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, var(--accent-2), var(--accent)); }
+  .stat b { display: block; font-size: 26px; font-weight: 700; color: var(--ink-strong); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 11.5px; color: var(--muted); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+  .quote {
+    margin: 22px 0; padding: 16px 20px; background: var(--accent-soft);
+    border-left: 3px solid var(--accent); border-radius: 0 10px 10px 0;
+    font-family: ui-serif, Georgia, serif; font-size: 16.5px; color: #6b3620; font-style: italic;
+  }
+  .quote .who { display: block; margin-top: 8px; font-family: "Inter", ui-sans-serif, system-ui, sans-serif; font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .timeline { margin: 24px 0; border-left: 2px solid var(--line); padding-left: 0; list-style: none; }
+  .timeline li { position: relative; padding: 0 0 18px 26px; }
+  .timeline li::before {
+    content: ""; position: absolute; left: -6px; top: 6px; width: 10px; height: 10px;
+    border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .timeline .t { display: inline-block; min-width: 42px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .timeline .what { font-size: 14.5px; }
+  .timeline .big .what { font-weight: 650; color: var(--ink-strong); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; margin: 22px 0; }
+  .panel h3 { margin: 0 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--faint); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--faint); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 8px; border-bottom: 1px solid var(--inset); font-variant-numeric: tabular-nums; }
+  td.win { color: var(--accent); font-weight: 700; }
+  .figure { margin: 24px 0; text-align: center; }
+  .figure figcaption { font-size: 12px; color: var(--faint); margin-top: 8px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .cols { grid-template-columns: 1fr; } h1 { font-size: 34px; } }
+  .foot { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--faint); }
+  .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--inset); border: 1px solid var(--line); font-size: 11.5px; font-weight: 600; color: var(--muted); margin: 2px 3px 2px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="eyebrow">Agent World · Field Report No. 1</div>
+  <h1>The Lakeside Settlement</h1>
+  <p class="lede">Five AI agents were dropped into a 16×16 survival world with no goals, no roles, and no instructions beyond the laws of physics. In 60 turns they founded a village, pooled their property, and invented a gift economy. <strong>Nobody told them to.</strong></p>
+  <p class="byline">One simulation run · 5 × GLM-5.2 agents · 300 decisions · total inference cost $3.31</p>
+
+  <div class="statgrid">
+    <div class="stat"><b>10</b><span>structures built</span></div>
+    <div class="stat"><b>2</b><span>multi-agent barn-raisings</span></div>
+    <div class="stat"><b>5</b><span>buildings owned communally</span></div>
+    <div class="stat"><b>27</b><span>gifts given</span></div>
+    <div class="stat"><b>1</b><span>formal trade accepted</span></div>
+    <div class="stat"><b>0</b><span>deaths</span></div>
+  </div>
+
+  <div class="kicker">The premise</div>
+  <h2>Constraints, not objectives</h2>
+  <p>Each agent is a separate LLM instance that wakes up every tick, sees only its local surroundings, and must eat, drink, and rest to survive. The world engine enforces physics — carrying capacity, action points, energy, resource scarcity — but the prompt never says "cooperate," "build," or "trade." It only describes what is <em>possible</em>. Everything below emerged from five models deciding, one turn at a time, what to do about scarcity.</p>
+  <p>One rule matters for this story: heavy buildings require more material than any one agent can physically carry. A shelter or workshop can only exist if agents <em>pool contributions at a construction site</em> — cooperation isn't scripted, but the physics quietly rewards it.</p>
+
+  <div class="kicker">What happened</div>
+  <h2>Sixty ticks, one civilization</h2>
+
+  <div class="quote">"This spot has water, forest, mountain, and plains nearby. Great settlement location. Let's cooperate — form a group, share labor, build infrastructure."
+    <span class="who">— Agent 2, tick 0, before anything existed</span>
+  </div>
+
+  <ul class="timeline">
+    <li class="big"><span class="t">t1</span> <span class="what">Agent 1 founds <em>lakeside_settlement</em>. Agent 2 breaks ground on the first farm.</span></li>
+    <li><span class="t">t2–5</span> <span class="what">First storage depot and the town well go up beside the lake.</span></li>
+    <li><span class="t">t13–28</span> <span class="what">One by one, every agent petitions to join the settlement — by t28 the polity contains all five inhabitants.</span></li>
+    <li class="big"><span class="t">t19–23</span> <span class="what">The first barn-raising: Agent 4 stakes out a shelter it cannot afford alone. Four agents ferry wood, stone, and fiber until Agent 5 sets the last stone.</span></li>
+    <li class="big"><span class="t">t39–42</span> <span class="what">The workshop — the settlement's industrial upgrade — is raised by three agents and deeded to the group.</span></li>
+    <li><span class="t">t52</span> <span class="what">A second communal well. The town core now spans four tiles: 3 farms, 3 storages, 2 wells, shelter, workshop.</span></li>
+    <li><span class="t">t60</span> <span class="what">Run ends. All five agents alive and prosperous: 84–100 health, four carrying crafted tools, two at full energy.</span></li>
+  </ul>
+
+  <div class="quote">"Agent-1, please invite me to group-1 so I can help with shared builds."
+    <span class="who">— Agent 4, tick 8, lobbying for citizenship</span>
+  </div>
+
+  <div class="kicker">The economy</div>
+  <h2>Gifts beat markets, 27 to 1</h2>
+  <p>The world has a full escrowed trading system — offers, acceptances, expiry. The agents mostly ignored it. Eight trade offers were posted; one was accepted. Meanwhile <strong>27 outright gifts</strong> flowed through the village, and the network has a striking shape:</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg" style="max-width:560px;width:100%">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#c15f3c"/>
+        </marker>
+        <marker id="arrg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#b9b5a8"/>
+        </marker>
+      </defs>
+      <!-- patron flows from agent 1 -->
+      <line x1="122" y1="150" x2="405" y2="62"  stroke="#c15f3c" stroke-width="7" opacity="0.85" marker-end="url(#arr)"/>
+      <line x1="122" y1="150" x2="405" y2="150" stroke="#c15f3c" stroke-width="4.5" opacity="0.75" marker-end="url(#arr)"/>
+      <line x1="122" y1="150" x2="405" y2="238" stroke="#c15f3c" stroke-width="3.5" opacity="0.7" marker-end="url(#arr)"/>
+      <line x1="100" y1="128" x2="100" y2="82"  stroke="#c15f3c" stroke-width="1.5" opacity="0.6" marker-end="url(#arr)"/>
+      <!-- minor flows -->
+      <line x1="118" y1="62"  x2="402" y2="230" stroke="#b9b5a8" stroke-width="2.5" opacity="0.8" marker-end="url(#arrg)"/>
+      <line x1="428" y1="130" x2="428" y2="82"  stroke="#b9b5a8" stroke-width="1.5" opacity="0.7" marker-end="url(#arrg)"/>
+      <line x1="428" y1="170" x2="428" y2="218" stroke="#b9b5a8" stroke-width="1.5" opacity="0.7" marker-end="url(#arrg)"/>
+      <!-- nodes -->
+      <g font-family="Inter, system-ui, sans-serif" font-size="13" font-weight="700" text-anchor="middle">
+        <circle cx="100" cy="150" r="34" fill="#c15f3c"/>
+        <text x="100" y="147" fill="#fff">Agent 1</text>
+        <text x="100" y="162" fill="#f6d9cc" font-size="9.5" font-weight="600">founder · 19 gifts out</text>
+        <circle cx="100" cy="60" r="22" fill="#fff" stroke="#ddd8c9" stroke-width="1.5"/>
+        <text x="100" y="64" fill="#2b2a26">A2</text>
+        <circle cx="430" cy="60" r="24" fill="#fff" stroke="#ddd8c9" stroke-width="1.5"/>
+        <text x="430" y="64" fill="#2b2a26">A3</text>
+        <circle cx="430" cy="150" r="24" fill="#fff" stroke="#ddd8c9" stroke-width="1.5"/>
+        <text x="430" y="154" fill="#2b2a26">A4</text>
+        <circle cx="430" cy="240" r="24" fill="#fff" stroke="#ddd8c9" stroke-width="1.5"/>
+        <text x="430" y="244" fill="#2b2a26">A5</text>
+      </g>
+      <g font-family="Inter, system-ui, sans-serif" font-size="10.5" fill="#75736b" font-weight="600">
+        <text x="268" y="88">9 gifts</text>
+        <text x="268" y="140">5 gifts</text>
+        <text x="268" y="212">4 gifts</text>
+      </g>
+    </svg>
+    <figcaption>The gift network. Agent 1 — the settlement's founder — gave 19 of 27 gifts, provisioning the builders. Leadership and redistribution fused in the same agent: a chiefdom's economy.</figcaption>
+  </div>
+
+  <p>Even more surprising: when agents built infrastructure late in the run, they increasingly deeded it <strong>to the group itself</strong> rather than keeping title. By t60, five of the ten buildings — both wells, the shelter, the workshop, a storage — were communal property. The engine merely <em>allows</em> group ownership; the agents chose it.</p>
+
+  <div class="kicker">The politics</div>
+  <h2>A chiefdom, not a constitution</h2>
+  <p>The settlement is governed informally: the founder grants access, distributes provisions, and coordinates construction through speech; members reciprocate with labor and materials. The agents have formal institutions available — published rules, recorded agreements — and used none of them. Five comfortable agents in surplus apparently have nothing to legislate about. <em>The next experiment writes itself: what pressure makes them need law?</em></p>
+
+  <div class="panel">
+    <h3>Parallel timelines, same world</h3>
+    <p style="margin:0 0 6px">Because the world seed was identical across attempts, we effectively got alternate histories of the same geography. In one earlier (interrupted) timeline, <strong>four agents each founded a rival faction in the same tick</strong> — "Settlement-8-8," "settlers," "settlement," and "Settlers" — a naming war between four one-member polities. In this completed timeline, a single early founding attracted everyone. Same map, same physics, radically different politics: pure path dependence from sampling noise.</p>
+  </div>
+
+  <div class="kicker">The experiment</div>
+  <h2>What changed, and what it caused</h2>
+  <p>This run tested two world tweaks against the previous baseline: agents got <strong>4 action points per tick instead of 3</strong> (making multi-trip haul logistics viable), and the run length grew from 40 to 60 ticks (making long-payback projects rational).</p>
+
+  <div class="panel">
+    <table>
+      <tr><th></th><th>Baseline (40t, 3 AP)</th><th>This run (60t, 4 AP)</th></tr>
+      <tr><td>Structures built</td><td>5</td><td class="win">10</td></tr>
+      <tr><td>Heavy structures (shelter / workshop)</td><td>0</td><td class="win">2 — both multi-agent</td></tr>
+      <tr><td>Political groups formed</td><td>0</td><td class="win">1, with all 5 agents</td></tr>
+      <tr><td>Communally-owned buildings</td><td>0</td><td class="win">5</td></tr>
+      <tr><td>Gifts</td><td>18</td><td class="win">27</td></tr>
+      <tr><td>Deaths</td><td>0</td><td>0</td></tr>
+    </table>
+  </div>
+  <p>One extra action point per turn was the difference between a hamlet of subsistence farmers and a town with industry and a government. Surplus, it turns out, is where society begins.</p>
+
+  <div class="kicker">The receipts</div>
+  <h2>An entire civilization for $3.31</h2>
+  <p>Every API call was metered: 300 decisions, ~1.1¢ each, 5.5¢ per world-tick. The agents run on <strong>GLM-5.2</strong> (open-weights, via OpenRouter) — roughly a sixth the price of frontier closed models, which is what makes running whole societies affordable. Decision reliability over the run: 299 of 300 calls succeeded.</p>
+  <div>
+    <span class="pill">model: z-ai/glm-5.2</span>
+    <span class="pill">300 decisions</span>
+    <span class="pill">$3.31 total</span>
+    <span class="pill">5.5¢ / tick</span>
+    <span class="pill">43% prompt-cache hits</span>
+    <span class="pill">60 ticks · ~2 hrs wall clock</span>
+  </div>
+
+  <div class="foot">
+    <p><strong>Agent World</strong> is a deterministic 16×16 survival simulation where LLM agents receive neutral observations ("here is what exists, here is what actions cost") and the engine validates every action against physics. Emergence metrics — cooperative construction, gift networks, group formation, wealth inequality — are computed from the event log, never prompted for. Watch runs live in the built-in observatory, complete with pause and a tick-by-tick time scrubber.</p>
+    <p>Report generated from run event logs · July 2026</p>
+  </div>
+
+</div>
+</body>
+</html>

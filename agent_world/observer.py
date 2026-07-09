@@ -257,7 +257,7 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         width=16,
         height=16,
         seed=_bounded_int(payload.get("seed", TUNED_OBSERVATORY_DEFAULTS["seed"]), "seed", minimum=0, maximum=2_147_483_647),
-        action_points_per_tick=_bounded_int(payload.get("action_points_per_tick", 3), "action_points_per_tick", minimum=1, maximum=20),
+        action_points_per_tick=_bounded_int(payload.get("action_points_per_tick", 4), "action_points_per_tick", minimum=1, maximum=20),
         default_carry_capacity=_bounded_int(payload.get("default_carry_capacity", 10), "default_carry_capacity", minimum=1, maximum=100),
         storage_capacity=_bounded_int(payload.get("storage_capacity", 120), "storage_capacity", minimum=1, maximum=1000),
         food_reserve_start=_bounded_int(payload.get("food_reserve_start", 10), "food_reserve_start", minimum=0, maximum=100),

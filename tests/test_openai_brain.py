@@ -159,6 +159,19 @@ class OpenAIBrainTests(unittest.TestCase):
         self.assertEqual(records[0]["reasoning_tokens"], 350)
         self.assertAlmostEqual(records[0]["cost"], 0.0042)
 
+    def test_chat_payload_pins_openrouter_providers_when_configured(self) -> None:
+        os.environ["OPENAI_PROVIDER_ORDER"] = "Z.AI, Alibaba"
+        try:
+            brain = CapturingChatBrain(
+                api_key="test-key",
+                base_url="https://openrouter.ai/api/v1",
+                min_request_interval_seconds=0,
+            )
+            brain.decide({"tick": 0, "valid_actions": []})
+            self.assertEqual(brain.last_payload["provider"], {"order": ["Z.AI", "Alibaba"], "allow_fallbacks": True})
+        finally:
+            del os.environ["OPENAI_PROVIDER_ORDER"]
+
     def test_extract_chat_text_reads_message_content(self) -> None:
         text = extract_chat_text({"choices": [{"message": {"content": '{"intent":"x"}'}}]})
         self.assertIn('"intent"', text)
