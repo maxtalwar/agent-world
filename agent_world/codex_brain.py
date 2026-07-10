@@ -18,13 +18,14 @@ import select
 import shutil
 import subprocess
 import tempfile
-import threading
 import time
 from typing import Any
 
+from agent_world.brain_runtime import BrainRuntime
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
 from agent_world.openai_brain import SYSTEM_INSTRUCTIONS
+from agent_world.rules import ACTION_SCHEMA
 
 
 CODEX_HARNESS_INSTRUCTIONS = (
@@ -52,7 +53,7 @@ CODEX_AGENT_DECISION_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["type", "arguments_json"],
                 "properties": {
-                    "type": {"type": "string"},
+                    "type": {"type": "string", "enum": [action["type"] for action in ACTION_SCHEMA]},
                     "arguments_json": {
                         "type": "string",
                         "description": "A JSON object containing flat action fields other than type; use {} when empty.",
@@ -67,7 +68,7 @@ CODEX_AGENT_DECISION_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
                 "required": ["mode", "text", "to"],
                 "properties": {
-                    "mode": {"type": "string"},
+                    "mode": {"type": "string", "enum": ["say", "whisper", "broadcast"]},
                     "text": {"type": "string", "maxLength": 240},
                     "to": {"type": "string", "description": "Target agent id, or an empty string when untargeted."},
                 },
@@ -85,34 +86,21 @@ CODEX_AGENT_DECISION_SCHEMA: dict[str, Any] = {
 class CodexBrain:
     """Agent brain that spends saved ChatGPT/Codex plan capacity, not API credits."""
 
-    _state_lock = threading.Lock()
-    _quota_unavailable_message: str | None = None
-    _usage_records: list[dict[str, Any]] = []
-
     def __init__(
         self,
         model: str | None = None,
         reasoning_effort: str | None = None,
         timeout_seconds: int | None = None,
         executable: str | None = None,
+        runtime: BrainRuntime | None = None,
     ):
+        self.runtime = runtime or BrainRuntime()
         self.model = model or os.environ.get("CODEX_MODEL", "gpt-5.6-luna")
         self.reasoning_effort = reasoning_effort or os.environ.get("CODEX_REASONING_EFFORT", "low")
         self.timeout_seconds = timeout_seconds or int(os.environ.get("CODEX_TIMEOUT_SECONDS", "300"))
         self.executable = executable or os.environ.get("CODEX_EXECUTABLE") or _resolve_codex_executable()
         if not self.executable:
             raise ValueError("Codex CLI is required for CodexBrain, but 'codex' was not found on PATH.")
-
-    @classmethod
-    def reset_runtime_state(cls) -> None:
-        with cls._state_lock:
-            cls._quota_unavailable_message = None
-            cls._usage_records = []
-
-    @classmethod
-    def usage_records(cls) -> list[dict[str, Any]]:
-        with cls._state_lock:
-            return list(cls._usage_records)
 
     def capture_plan_usage(self) -> dict[str, Any]:
         """Read the account's current Codex plan limits without spending a model turn.
@@ -155,6 +143,9 @@ class CodexBrain:
         request_meta = {
             "agent_id": observation.get("self", {}).get("id"),
             "tick": observation.get("tick"),
+            "agent_static_context_chars": len(static_context),
+            "agent_dynamic_observation_chars": len(dynamic_json),
+            "request_payload_bytes": len(prompt.encode("utf-8")),
             "static_prompt_sha256": hashlib.sha256(
                 f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
             ).hexdigest(),
@@ -242,23 +233,13 @@ class CodexBrain:
             "time": time.time(),
             **request_meta,
         }
-        with self._state_lock:
-            self.__class__._usage_records.append(record)
-        usage_log = os.environ.get("AGENT_WORLD_USAGE_LOG")
-        if usage_log:
-            try:
-                with open(usage_log, "a", encoding="utf-8") as handle:
-                    handle.write(json.dumps(record, sort_keys=True) + "\n")
-            except OSError:
-                pass
+        self.runtime.record_usage(record)
 
     def _quota_message(self) -> str | None:
-        with self._state_lock:
-            return self.__class__._quota_unavailable_message
+        return self.runtime.quota_message()
 
     def _mark_quota_unavailable(self, message: str) -> None:
-        with self._state_lock:
-            self.__class__._quota_unavailable_message = message
+        self.runtime.mark_quota_unavailable(message)
 
 
 def build_codex_prompt(static_context: str, dynamic_json: str) -> str:
@@ -352,9 +333,10 @@ def normalize_codex_response(text: str) -> str:
         action_type = raw_action.get("type")
         arguments_json = raw_action.get("arguments_json")
         if isinstance(arguments_json, str):
-            arguments = json.loads(arguments_json)
+            arguments = _parse_action_arguments(arguments_json)
             if not isinstance(arguments, dict):
                 raise ValueError("Codex action arguments_json must decode to an object")
+            arguments.pop("type", None)
             actions.append({"type": action_type, **arguments})
         else:
             # Accept direct flat actions in mocked/legacy responses.
@@ -374,6 +356,23 @@ def normalize_codex_response(text: str) -> str:
         "memory_updates": value.get("memory_updates", []),
     }
     return json.dumps(normalized, separators=(",", ":"), sort_keys=True)
+
+
+def _parse_action_arguments(text: str) -> dict[str, Any]:
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError:
+        stripped = text.lstrip()
+        if stripped.startswith("```"):
+            first_newline = stripped.find("\n")
+            stripped = stripped[first_newline + 1 :] if first_newline >= 0 else stripped[3:]
+        try:
+            value, _ = json.JSONDecoder().raw_decode(stripped)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Codex action arguments_json is invalid: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValueError("Codex action arguments_json must decode to an object")
+    return value
 
 
 def _failure_decision(message: str) -> AgentDecision:

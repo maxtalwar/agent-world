@@ -1146,6 +1146,11 @@ class WorldEngineTests(unittest.TestCase):
         event_types = [event.type for event in engine.state.events]
         self.assertIn("agent_observation", event_types)
         self.assertIn("agent_prompt", event_types)
+        self.assertEqual(event_types.count("agent_prompt_context"), 1)
+        observation_event = next(event for event in engine.state.events if event.type == "agent_observation")
+        prompt_event = next(event for event in engine.state.events if event.type == "agent_prompt")
+        self.assertEqual(observation_event.data["format"], "compact_dynamic_v2")
+        self.assertNotIn("prompt", prompt_event.data)
 
     def test_old_fields_wrapper_actions_are_normalized(self) -> None:
         engine = self.make_engine(1)
@@ -1257,7 +1262,7 @@ class WorldEngineTests(unittest.TestCase):
         prompt_observation = json.loads(prompt.split("The current observation follows as JSON:\n", 1)[1])
 
         # Static rulebook is rendered as terse text, not JSON, and carries costs/recipes.
-        self.assertIn("ACTIONS (cost: action points, energy):", prompt)
+        self.assertIn("ACTIONS (cost ap/en; omitted en=0):", prompt)
         self.assertIn("RECIPES (inputs -> cost, terrain):", prompt)
         self.assertIn("cost:1ap,3en", prompt)  # gather
         self.assertIn("longer-term resilience", prompt)
@@ -1267,10 +1272,11 @@ class WorldEngineTests(unittest.TestCase):
         self.assertNotIn("action_format", prompt_observation)
         # Tiles omit empty/default fields but keep terrain and non-zero resources.
         for tile in prompt_observation["local_map"]:
-            self.assertIn("terrain", tile)
+            self.assertIn("t", tile)
+            self.assertIn("p", tile)
             self.assertNotIn("passable", tile)
             self.assertNotIn("move_cost", tile)
-            for value in tile.get("resources", {}).values():
+            for value in tile.get("r", {}).values():
                 self.assertGreater(value, 0)
         self.assertEqual(prompt_observation["memory"], [f"memory {index}" for index in range(14, 30)])
         self.assertLess(len(prompt), len(build_agent_prompt(obs)))

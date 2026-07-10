@@ -107,14 +107,15 @@ class FactorialExperimentTests(unittest.TestCase):
             self.assertTrue((output / "summary.json").exists())
             self.assertTrue((output / "summary.md").exists())
 
-    def test_llm_cells_reset_usage_and_restore_usage_log_environment(self) -> None:
+    def test_llm_cells_use_isolated_run_scoped_usage(self) -> None:
         class FakeOpenAIBrain:
-            records: list[dict[str, object]] = []
-            reset_calls = 0
+            instances = 0
 
-            def __init__(self, model=None, reasoning_effort=None):
+            def __init__(self, model=None, reasoning_effort=None, runtime=None):
+                self.__class__.instances += 1
                 self.model = model or "fake-model"
                 self.reasoning_effort = reasoning_effort or "low"
+                self.runtime = runtime
                 self.base_url = "https://fake.provider.test/v1"
                 self.api_style = "chat"
                 self.max_output_tokens = 100
@@ -122,17 +123,8 @@ class FactorialExperimentTests(unittest.TestCase):
                 self.max_retries = 0
                 self.min_request_interval_seconds = 0
 
-            @classmethod
-            def reset_runtime_state(cls):
-                cls.reset_calls += 1
-                cls.records = []
-
-            @classmethod
-            def usage_records(cls):
-                return list(cls.records)
-
             def decide(self, _observation):
-                self.__class__.records.append(
+                self.runtime.record_usage(
                     {
                         "model": self.model,
                         "prompt_tokens": 10,
@@ -148,7 +140,7 @@ class FactorialExperimentTests(unittest.TestCase):
         os.environ["AGENT_WORLD_USAGE_LOG"] = "/tmp/original-agent-world-usage.jsonl"
         try:
             with tempfile.TemporaryDirectory() as temp_dir, patch(
-                "agent_world.experiments.OpenAIBrain", FakeOpenAIBrain
+                "agent_world.brain_factory.OpenAIBrain", FakeOpenAIBrain
             ):
                 manifest = run_factorial_experiment(
                     out_dir=Path(temp_dir) / "experiment",
@@ -160,7 +152,7 @@ class FactorialExperimentTests(unittest.TestCase):
                     brain="llm",
                     model="fake-model",
                 )
-                self.assertEqual(FakeOpenAIBrain.reset_calls, 2)
+                self.assertEqual(FakeOpenAIBrain.instances, 2)
                 self.assertEqual(manifest["aggregate_summary"]["total_llm_cost_usd"], 0.02)
                 for run in manifest["runs"]:
                     usage_path = Path(json.loads(Path(run["manifest"]).read_text())["outputs"]["usage"])
@@ -236,25 +228,77 @@ class FactorialExperimentTests(unittest.TestCase):
             self.assertIn("run_completed", event_types)
             self.assertLess(event_types.index("run_started"), event_types.index("run_completed"))
 
-    def test_ordinary_llm_run_resets_global_usage_state(self) -> None:
+    def test_ordinary_cli_run_resumes_from_checkpoint(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            out = root / "resumable.jsonl"
+            snapshot = root / "resumable-snapshot.json"
+            first = argparse.Namespace(
+                ticks=1,
+                agents=1,
+                seed=5,
+                width=16,
+                height=16,
+                objective_mode="neutral",
+                economy_mode="baseline",
+                geography_mode="shared_oasis",
+                brain="survival",
+                model=None,
+                reasoning_effort=None,
+                out=out,
+                snapshot=snapshot,
+                checkpoint=None,
+                resume_checkpoint=None,
+                no_agent_io_log=True,
+                sequential_decisions=True,
+                max_workers=1,
+                progress=False,
+            )
+            with patch("builtins.print"):
+                _run(first)
+
+            checkpoint = root / "resumable-checkpoint.pkl"
+            resumed = argparse.Namespace(
+                ticks=2,
+                agents=99,
+                seed=999,
+                width=8,
+                height=8,
+                objective_mode="individual",
+                economy_mode="commerce",
+                geography_mode="dispersed",
+                brain=None,
+                model=None,
+                reasoning_effort=None,
+                out=None,
+                snapshot=None,
+                checkpoint=None,
+                resume_checkpoint=checkpoint,
+                no_agent_io_log=False,
+                sequential_decisions=False,
+                max_workers=None,
+                progress=False,
+            )
+            with patch("builtins.print"):
+                _run(resumed)
+
+            self.assertEqual(json.loads(snapshot.read_text())["tick"], 2)
+            event_types = [json.loads(line)["type"] for line in out.read_text().splitlines()]
+            self.assertEqual(event_types.count("run_started"), 1)
+            self.assertEqual(event_types.count("run_resumed"), 1)
+            self.assertEqual(event_types.count("run_completed"), 2)
+
+    def test_ordinary_llm_run_uses_run_scoped_usage_state(self) -> None:
         class FakeOpenAIBrain:
-            reset_calls = 0
-            records: list[dict[str, object]] = []
+            instances = 0
 
-            def __init__(self, model=None, reasoning_effort=None):
+            def __init__(self, model=None, reasoning_effort=None, runtime=None):
+                self.__class__.instances += 1
                 self.model = model or "fake"
-
-            @classmethod
-            def reset_runtime_state(cls):
-                cls.reset_calls += 1
-                cls.records = []
-
-            @classmethod
-            def usage_records(cls):
-                return list(cls.records)
+                self.runtime = runtime
 
             def decide(self, _observation):
-                self.__class__.records.append(
+                self.runtime.record_usage(
                     {
                         "prompt_tokens": 2,
                         "cached_tokens": 0,
@@ -283,9 +327,9 @@ class FactorialExperimentTests(unittest.TestCase):
                 max_workers=1,
                 progress=False,
             )
-            with patch("agent_world.cli.OpenAIBrain", FakeOpenAIBrain), patch("builtins.print"):
+            with patch("agent_world.brain_factory.OpenAIBrain", FakeOpenAIBrain), patch("builtins.print"):
                 _run(args)
-            self.assertEqual(FakeOpenAIBrain.reset_calls, 1)
+            self.assertEqual(FakeOpenAIBrain.instances, 1)
             usage = [
                 json.loads(line)
                 for line in (root / "ordinary-llm-usage.jsonl").read_text().splitlines()
@@ -295,25 +339,18 @@ class FactorialExperimentTests(unittest.TestCase):
 
     def test_ordinary_codex_run_uses_codex_usage_records(self) -> None:
         class FakeCodexBrain:
-            reset_calls = 0
-            records: list[dict[str, object]] = []
+            instances = 0
 
-            def __init__(self, model=None, reasoning_effort=None):
+            def __init__(self, model=None, reasoning_effort=None, runtime=None):
+                self.__class__.instances += 1
                 self.model = model or "gpt-5.6-luna"
-
-            @classmethod
-            def reset_runtime_state(cls):
-                cls.reset_calls += 1
-                cls.records = []
-
-            @classmethod
-            def usage_records(cls):
-                return list(cls.records)
+                self.runtime = runtime
 
             def decide(self, _observation):
-                self.__class__.records.append(
+                self.runtime.record_usage(
                     {
                         "provider": "codex_cli",
+                        "model": self.model,
                         "billing_mode": "chatgpt_plan",
                         "prompt_tokens": 2,
                         "cached_tokens": 0,
@@ -342,9 +379,9 @@ class FactorialExperimentTests(unittest.TestCase):
                 max_workers=1,
                 progress=False,
             )
-            with patch("agent_world.cli.CodexBrain", FakeCodexBrain), patch("builtins.print"):
+            with patch("agent_world.brain_factory.CodexBrain", FakeCodexBrain), patch("builtins.print"):
                 _run(args)
-            self.assertEqual(FakeCodexBrain.reset_calls, 1)
+            self.assertEqual(FakeCodexBrain.instances, 1)
             usage = [
                 json.loads(line)
                 for line in (root / "ordinary-codex-usage.jsonl").read_text().splitlines()

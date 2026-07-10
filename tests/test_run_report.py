@@ -106,13 +106,36 @@ class RunReportTests(unittest.TestCase):
     def test_usage_records_are_aggregated(self) -> None:
         events, snapshot = _run_short_sim()
         usage = [
-            {"cost": 0.01, "prompt_tokens": 1000, "cached_tokens": 500, "completion_tokens": 200, "reasoning_tokens": 100},
-            {"cost": 0.02, "prompt_tokens": 1000, "cached_tokens": 900, "completion_tokens": 300, "reasoning_tokens": 150},
+            {"cost": 0.01, "prompt_tokens": 1000, "cached_tokens": 500, "completion_tokens": 200, "reasoning_tokens": 100, "agent_dynamic_observation_chars": 2000},
+            {"cost": 0.02, "prompt_tokens": 1000, "cached_tokens": 900, "completion_tokens": 300, "reasoning_tokens": 150, "agent_dynamic_observation_chars": 3000},
         ]
         report = build_report(events, snapshot, usage)
         self.assertEqual(report["usage"]["calls"], 2)
         self.assertAlmostEqual(report["usage"]["total_cost_usd"], 0.03)
         self.assertEqual(report["usage"]["cache_hit_rate_pct"], 70.0)
+        self.assertEqual(report["usage"]["efficiency"]["mean_uncached_input_tokens_per_call"], 300.0)
+        self.assertEqual(report["usage"]["efficiency"]["mean_agent_dynamic_observation_chars"], 2500.0)
+
+    def test_codex_simulation_credits_are_run_scoped_and_exact(self) -> None:
+        events, snapshot = _run_short_sim()
+        usage = [
+            {
+                "provider": "codex_cli",
+                "model": "gpt-5.6-luna",
+                "prompt_tokens": 1_000_000,
+                "cached_tokens": 400_000,
+                "completion_tokens": 100_000,
+                "reasoning_tokens": 60_000,
+                "cost": 0,
+            }
+        ]
+        report = build_report(events, snapshot, usage)
+        credits = report["usage"]["simulation_credits"]
+
+        self.assertEqual(credits["credits"]["total"], 31.0)
+        self.assertEqual(credits["reasoning_output_tokens"], 60_000)
+        self.assertIn("simulation run only", credits["attribution"])
+        self.assertIn("Simulation plan credits: 31.0 exact run-scoped credits", render_markdown(report))
 
     def test_codex_plan_drawdown_is_in_report_and_markdown(self) -> None:
         events, snapshot = _run_short_sim()

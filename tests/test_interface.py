@@ -1,13 +1,39 @@
 from __future__ import annotations
 
+import json
 import unittest
 
-from agent_world.interface import build_observation, build_static_context
+from agent_world.interface import build_dynamic_observation, build_observation, build_static_context
 from agent_world.models import AgentDecision, Position, WorldConfig
 from agent_world.world import WorldEngine
 
 
 class EconomicInterfaceTests(unittest.TestCase):
+    def test_twenty_agent_organic_prompt_stays_within_infrastructure_budgets(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(economy_mode="organic", geography_mode="dispersed"),
+            agent_names=[f"A{index}" for index in range(20)],
+        )
+        dynamic_sizes = []
+        static_context = None
+        for agent_id in engine.state.agents:
+            observation = build_observation(engine.state, agent_id)
+            static_context = static_context or build_static_context(observation["world"])
+            dynamic_sizes.append(
+                len(
+                    json.dumps(
+                        build_dynamic_observation(observation),
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    )
+                )
+            )
+
+        assert static_context is not None
+        self.assertLessEqual(len(static_context), 6_500)
+        self.assertLessEqual(sum(dynamic_sizes) / len(dynamic_sizes), 2_200)
+        self.assertLessEqual(max(dynamic_sizes), 2_300)
+
     def test_organic_broadcast_uses_its_audible_radius_not_visual_radius(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(
@@ -25,6 +51,33 @@ class EconomicInterfaceTests(unittest.TestCase):
         engine.tick({speaker.id: AgentDecision(actions=[{"type": "broadcast", "text": "market at eight eight"}])})
         observation = build_observation(engine.state, listener.id)
         self.assertIn("market at eight eight", [event["message"] for event in observation["recent_events"]])
+
+    def test_distant_global_traffic_does_not_crowd_out_recent_local_event(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(economy_mode="organic", geography_mode="dispersed"),
+            agent_names=["A1"],
+        )
+        agent = engine.state.agents["agent-1"]
+        agent.position = Position(8, 8)
+        engine.log_event(
+            "say",
+            actor_id=agent.id,
+            position=agent.position,
+            message="locally relevant",
+            scope="public",
+        )
+        for index in range(engine.state.config.recent_event_limit * 6):
+            engine.log_event(
+                "say",
+                actor_id=None,
+                position=Position(0, 0),
+                message=f"distant {index}",
+                scope="public",
+            )
+
+        observation = build_observation(engine.state, agent.id)
+
+        self.assertIn("locally relevant", [event["message"] for event in observation["recent_events"]])
 
     def test_global_public_offer_is_visible_to_distant_agent(self) -> None:
         engine = WorldEngine.create(

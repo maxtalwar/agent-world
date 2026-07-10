@@ -1,0 +1,33 @@
+"""Small atomic artifact-writing helpers shared by run entry points."""
+
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+import tempfile
+from typing import Any
+
+
+def atomic_write_text(path: Path, text: str, *, fsync: bool = False) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            handle.write(text)
+            handle.flush()
+            if fsync:
+                os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def atomic_write_json(path: Path, value: Any, *, fsync: bool = False) -> None:
+    atomic_write_text(
+        path,
+        json.dumps(value, indent=2, sort_keys=True) + "\n",
+        fsync=fsync,
+    )

@@ -16,7 +16,7 @@ from agent_world.rules import (
 )
 
 
-AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_response"}
+AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
 
 
 def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
@@ -155,17 +155,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             nearby_agents[agent_id]
             for agent_id in sorted(nearby_agents, key=lambda item: (nearby_agents[item]["distance"], item))
         ],
-        "recent_events": [
-            event.to_dict()
-            for event in state.events[-state.config.recent_event_limit * 4 :]
-            if event.type not in AGENT_IO_EVENT_TYPES
-            and _event_visible_to(
-                event,
-                agent,
-                radius,
-                local_public=state.config.economy_mode == "organic",
-            )
-        ][-state.config.recent_event_limit :],
+        "recent_events": _recent_visible_events(state, agent, radius),
         "recent_action_feedback": _recent_action_feedback(state, agent),
         "memory": list(agent.memory[-state.config.max_memory :]),
         "open_trades": open_trades,
@@ -194,15 +184,12 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
 
 PROMPT_RULES = [
     "You are an autonomous agent inside a constrained simulated world.",
-    "You may choose any valid action available to you. The world engine will validate actions and reject impossible ones.",
-    "Do not assume you can mutate world state directly. Return only structured JSON.",
-    "Your response must have exactly these top-level keys: intent, actions, messages, memory_updates.",
-    "Action objects must be flat JSON objects. Put arguments directly beside type; never nest arguments under fields.",
-    'Valid action example: {"type":"move","direction":"east"}. Invalid: {"type":"move","fields":{"direction":"east"}}.',
-    "You may include multiple actions in the actions list; the world processes them in order until action points run out.",
-    "Plan against the action costs listed below and your current action points and energy.",
-    "Use messages for speech; messages are delivered before actions and use the communication cost listed for this treatment.",
-    "Food, water, and energy in self.reserves are reserves where higher is better and 0 is danger.",
+    "Choose only listed actions; the engine rejects impossible state changes.",
+    "Return JSON only with exactly: intent, actions, messages, memory_updates.",
+    'Actions are flat: {"type":"move","direction":"east"}; never nest arguments in fields/parameters.',
+    "Actions run in list order until action points run out; budget listed AP and energy.",
+    "Messages happen before actions and use the listed communication AP cost.",
+    "self.reserves are food/water/energy: higher is better, 0 is danger.",
     "Use recent_action_feedback to avoid repeating invalid actions.",
 ]
 
@@ -220,6 +207,50 @@ OBJECTIVE_INSTRUCTIONS = {
         "Your persistent objective is to maximize your own long-term survival, health, retained resources, and "
         "control of productive assets. Other agents' welfare matters only insofar as it affects your own long-term "
         "outcome; cooperation may still be useful."
+    ),
+}
+
+
+# Lossless terse rendering of MECHANICS_SUMMARY for the model-facing rulebook.
+# The full prose remains available in observations/debug tooling; this form
+# preserves the operative facts without paying to repeat explanatory wording on
+# every decision.
+COMPACT_MECHANICS: dict[str, tuple[str, ...]] = {
+    "ITEMS": (
+        "coin: zero carry weight, no survival effect; carry/store/drop/gift/trade",
+        "water: consume for thirst; gather local/adjacent open water or accessible well",
+        "food: consume for hunger+small energy; gather/harvest/fish/farm",
+        "fiber: local gather material",
+        "wood: local chop material for craft/build/repair",
+        "stone|ore: mine local mountain resources; ore is high-value raw material",
+        "tool: craft from wood+stone+fiber; equip",
+        "ingot: workshop-smelted ore; advanced_tool input",
+        "advanced_tool: workshop equipment; more output, less work energy",
+    ),
+    "ACTION NOTES": (
+        "gather: food/fiber current tile; water current/adjacent water/accessible well",
+        "harvest: food/fiber from improved land",
+        "consume: carried food/water restores reserves",
+        "farm: tend existing farm_plot",
+        "fish: fishable food in current/adjacent water",
+        "build: start structure here and deposit carried inputs; incomplete sites await contributions",
+        "contribute: add carried inputs to local unfinished structure; effects begin only when complete",
+        "store|retrieve: accessible local storage/house/workshop",
+        "offer_trade: direct visible target or public target any; offered goods held until resolution",
+        "offer_contract: secured advance, acceptance collateral, due-tick repayment",
+        "set_access_fee: owner makes productive structure public and charges per use",
+        "claim_dividend: contributor collects credited fee revenue",
+        "maintain_structure: deposit upkeep; can reactivate inactive structure",
+        "grant_access: let agent/group use claimed tile or owned structure",
+        "groups: members, rules, access, land, and shared structures",
+    ),
+    "STRUCTURES": (
+        "farm_plot: improved plains/forest for reliable food",
+        "storage: protected inventory; stored food does not spoil; access-controlled",
+        "shelter: better wait recovery and no passive energy decay here",
+        "house: better rest plus small storage",
+        "workshop: shared material cache, cheaper crafting, advanced production",
+        "well: local water access away from open water",
     ),
 }
 
@@ -251,27 +282,36 @@ def build_static_context(world: dict[str, Any]) -> str:
         "RESERVES (min 0, higher is better): "
         + ", ".join(f"{name} max {value}" for name, value in sorted(reserve_max.items()))
     )
+    lines.append(
+        "DYNAMIC KEYS: map p=[x,y],t=terrain,r=resources,c=claim,a=access; "
+        "nearby p=[x,y],hp=health,d=distance,carry/condition are visible summaries."
+    )
     lines.append("")
     lines.append("TERRAIN (move_cost/max_occupants):")
     for name, rule in sorted(TERRAIN_RULES.items()):
         passable = "" if rule.passable else ", impassable"
         lines.append(f"- {name}: {rule.move_cost}/{rule.max_occupants}{passable}")
     lines.append("")
-    lines.append("ACTIONS (cost: action points, energy):")
+    lines.append("ACTIONS (cost ap/en; omitted en=0):")
     disabled_actions = set(world.get("disabled_actions", []))
     for action in ACTION_SCHEMA:
         if action.get("type") in disabled_actions:
             continue
         cost = action.get("cost", {})
         params = action.get("parameters", {})
-        param_text = " {" + ", ".join(f"{key}: {value}" for key, value in params.items()) + "}" if params else ""
+        param_text = (
+            " {" + ",".join(f"{key}={_compact_parameter(value)}" for key, value in params.items()) + "}"
+            if params
+            else ""
+        )
         action_type = str(action["type"])
         action_points = cost.get("action_points", 0)
         if action_type in COMMUNICATION_ACTION_TYPES:
             action_points = world.get("communication_action_cost", action_points)
         elif action_type in GROUP_ADMIN_ACTION_TYPES:
             action_points = world.get("group_admin_action_cost", action_points)
-        cost_text = f"{action_points}ap,{cost.get('energy', 0)}en"
+        energy = cost.get("energy", 0)
+        cost_text = f"{action_points}ap" + (f",{energy}en" if energy else "")
         effect = cost.get("effect")
         effect_text = f" ({effect})" if effect else ""
         lines.append(f"- {action['type']}{param_text} cost:{cost_text}{effect_text}")
@@ -293,29 +333,43 @@ def build_static_context(world: dict[str, Any]) -> str:
             [
                 "",
                 "PHYSICAL EXCHANGE:",
-                "- An offer deposits its give-items at the offer's escrow_position.",
-                "- Both parties must physically meet on that tile to accept and exchange goods.",
-                "- Public offers and completed prices are only known locally; information must travel through agents.",
-                "- If an offer expires or is rejected while its owner is away, its goods remain there as an owned pile.",
-                "- Work in your high-aptitude specialty produces much more and costs less energy; low-aptitude work costs 2 extra energy and improves slowly.",
-                "- Ingot, advanced-tool, and coin production require crafting skill 4 as well as a workshop.",
+                "- Offer give-items are deposited at escrow_position; both parties must meet there to settle.",
+                "- Public offers/prices are local knowledge; agents must move information.",
+                "- Expired/rejected goods remain as an owned pile if the owner is away.",
+                "- High-aptitude specialty work yields more for less energy; low aptitude costs +2 energy and learns slowly.",
+                "- ingot, advanced_tool, mint_coin require crafting skill 4 and a workshop.",
             ]
         )
     lines.append("")
-    lines.append("MECHANICS:")
-    for section_name, section in MECHANICS_SUMMARY.items():
-        if isinstance(section, dict):
-            for key, text in section.items():
-                if world.get("trade_settlement") == "physical_meeting_at_escrow_position":
-                    if key == "offer_contract":
-                        continue
-                    if key == "offer_trade":
-                        text = (
-                            "Deposits offered goods at the current tile. Direct recipients must initially be visible; "
-                            "public offers are visible only nearby. Both parties must meet at the escrow tile to settle."
-                        )
-                lines.append(f"- {key}: {text}")
+    for section_name, notes in COMPACT_MECHANICS.items():
+        lines.append(f"{section_name}:")
+        for text in notes:
+            if world.get("trade_settlement") == "physical_meeting_at_escrow_position" and text.startswith(
+                "offer_contract:"
+            ):
+                continue
+            if world.get("trade_settlement") == "physical_meeting_at_escrow_position" and text.startswith(
+                "offer_trade:"
+            ):
+                text = "offer_trade: deposit goods here; recipient initially visible or public local; meet here to settle"
+            lines.append(f"- {text}")
     return "\n".join(lines)
+
+
+def _compact_parameter(value: Any) -> str:
+    if isinstance(value, list):
+        return "|".join(str(item) for item in value)
+    text = str(value)
+    replacements = {
+        " optional": "?",
+        "string": "str",
+        "item counts per lot": "{item:n}/lot",
+        "item counts": "{item:n}",
+        "agent_id list": "[agent_id]",
+    }
+    for source, replacement in replacements.items():
+        text = text.replace(source, replacement)
+    return text
 
 
 def build_dynamic_observation(observation: dict[str, Any]) -> dict[str, Any]:
@@ -326,29 +380,91 @@ def build_dynamic_observation(observation: dict[str, Any]) -> dict[str, Any]:
     (event scope/recipients/data) are omitted.
     """
 
-    dynamic = {key: value for key, value in observation.items() if key not in ("valid_actions", "action_format", "world")}
+    dynamic = {
+        key: value
+        for key, value in observation.items()
+        if key not in ("valid_actions", "action_format", "world", "visible_agents")
+    }
     dynamic["tick"] = observation.get("tick", 0)
     dynamic["local_map"] = [_slim_tile(tile) for tile in observation.get("local_map", [])]
-    dynamic["recent_events"] = [_slim_event(event) for event in observation.get("recent_events", [])[-12:]]
+    dynamic["self"] = _slim_self(observation.get("self", {}))
+    dynamic["nearby_agents"] = [
+        _slim_nearby_agent(agent) for agent in observation.get("nearby_agents", [])
+    ]
+    feedback = list(observation.get("recent_action_feedback", []))
+    own_id = observation.get("self", {}).get("id")
+    dynamic["recent_events"] = [
+        _slim_event(event)
+        for event in observation.get("recent_events", [])[-12:]
+        if not (event.get("type") == "invalid_action" and event.get("actor_id") == own_id and feedback)
+    ]
+    dynamic["recent_action_feedback"] = [_slim_feedback(item) for item in feedback]
     dynamic["memory"] = list(observation.get("memory", []))[-16:]
     return {key: value for key, value in dynamic.items() if value not in ([], {}, None)}
 
 
 def _slim_tile(tile: dict[str, Any]) -> dict[str, Any]:
     slim: dict[str, Any] = {
-        "x": tile["x"],
-        "y": tile["y"],
-        "terrain": tile["terrain"],
+        "p": [tile["x"], tile["y"]],
+        "t": tile["terrain"],
     }
     resources = {item: qty for item, qty in tile.get("resources", {}).items() if qty}
     if resources:
-        slim["resources"] = resources
+        slim["r"] = resources
     if tile.get("claimed_by"):
-        slim["claimed_by"] = tile["claimed_by"]
-        slim["access_granted"] = bool(tile.get("access_granted"))
-    for key in ("item_piles", "structures", "agents"):
+        slim["c"] = tile["claimed_by"]
+        slim["a"] = bool(tile.get("access_granted"))
+    # Nearby agents already have one canonical summary with position below;
+    # repeating their full public summary inside the tile is pure duplication.
+    for key in ("item_piles", "structures"):
         if tile.get(key):
             slim[key] = tile[key]
+    return slim
+
+
+def _slim_self(agent: dict[str, Any]) -> dict[str, Any]:
+    omit_when_default = {
+        "alive": True,
+        "reputation": 0,
+    }
+    slim: dict[str, Any] = {}
+    for key, value in agent.items():
+        if key == "name":
+            continue
+        if key in omit_when_default and value == omit_when_default[key]:
+            continue
+        if value in ([], {}, None):
+            continue
+        slim[key] = value
+    return slim
+
+
+def _slim_nearby_agent(agent: dict[str, Any]) -> dict[str, Any]:
+    slim: dict[str, Any] = {
+        "id": agent.get("id"),
+        "p": [agent.get("position", {}).get("x"), agent.get("position", {}).get("y")],
+        "hp": agent.get("health"),
+        "d": agent.get("distance"),
+    }
+    if agent.get("reputation"):
+        slim["rep"] = agent["reputation"]
+    if agent.get("groups"):
+        slim["groups"] = agent["groups"]
+    if agent.get("visible_carry"):
+        slim["carry"] = agent["visible_carry"]
+    if agent.get("visible_condition"):
+        slim["condition"] = agent["visible_condition"]
+    return slim
+
+
+def _slim_feedback(item: dict[str, Any]) -> dict[str, Any]:
+    slim = {
+        "tick": item.get("tick"),
+        "error": item.get("reason"),
+        "action": item.get("attempted_action"),
+    }
+    if item.get("format_note"):
+        slim["note"] = item["format_note"]
     return slim
 
 
@@ -473,6 +589,27 @@ def _event_visible_to(event: Event, agent: Agent, radius: int, *, local_public: 
     if event.scope == "private":
         return False
     return event.position is not None and agent.position.distance_to(event.position) <= radius
+
+
+def _recent_visible_events(state: WorldState, agent: Agent, radius: int) -> list[dict[str, Any]]:
+    """Return the newest visible events without global traffic crowding them out."""
+
+    visible: list[dict[str, Any]] = []
+    limit = state.config.recent_event_limit
+    for event in reversed(state.events):
+        if event.type in AGENT_IO_EVENT_TYPES:
+            continue
+        if not _event_visible_to(
+            event,
+            agent,
+            radius,
+            local_public=state.config.economy_mode == "organic",
+        ):
+            continue
+        visible.append(event.to_dict())
+        if len(visible) >= limit:
+            break
+    return list(reversed(visible))
 
 
 def _can_inspect_structure(agent: Agent, structure: Any) -> bool:

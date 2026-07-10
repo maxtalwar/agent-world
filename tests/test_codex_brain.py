@@ -40,9 +40,6 @@ def _successful_stdout(intent: str = "wait") -> str:
 
 
 class CodexBrainTests(unittest.TestCase):
-    def setUp(self) -> None:
-        CodexBrain.reset_runtime_state()
-
     def test_parse_codex_jsonl_extracts_final_message_and_usage(self) -> None:
         message, usage = parse_codex_jsonl(_successful_stdout("observe"))
         self.assertIn('"intent": "observe"', message)
@@ -75,7 +72,7 @@ class CodexBrainTests(unittest.TestCase):
         self.assertIn("gpt-5.6-luna", command)
         self.assertEqual(run.call_args.kwargs["env"].get("CODEX_API_KEY"), None)
         self.assertEqual(run.call_args.kwargs["env"].get("OPENAI_API_KEY"), None)
-        records = CodexBrain.usage_records()
+        records = brain.runtime.usage_records()
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["billing_mode"], "chatgpt_plan")
         self.assertEqual(records[0]["prompt_tokens"], 1200)
@@ -115,6 +112,25 @@ class CodexBrainTests(unittest.TestCase):
         normalized = json.loads(normalize_codex_response(wrapped))
         self.assertEqual(normalized["actions"], [{"type": "move", "direction": "east"}])
         self.assertEqual(normalized["messages"], [{"mode": "say", "text": "Going east"}])
+
+    def test_inner_action_json_salvages_trailing_model_text(self) -> None:
+        wrapped = json.dumps(
+            {
+                "intent": "move",
+                "actions": [
+                    {
+                        "type": "move",
+                        "arguments_json": '{"direction":"east"} trailing explanation',
+                    }
+                ],
+                "messages": [],
+                "memory_updates": [],
+            }
+        )
+
+        normalized = json.loads(normalize_codex_response(wrapped))
+
+        self.assertEqual(normalized["actions"], [{"type": "move", "direction": "east"}])
 
     def test_capture_plan_usage_reads_account_rate_limit_snapshot(self) -> None:
         result = {

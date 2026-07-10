@@ -21,7 +21,7 @@ Start runs from the browser at `http://127.0.0.1:8765`. The Run panel accepts:
 - max workers: same-tick brain call concurrency; keep this at `1` for LLM runs unless rate limits allow more
 - agent IO log: whether to keep private observations and prompts in the JSONL audit log
 
-The observatory writes each launched run to the watched `runs/live.jsonl` and `runs/live-snapshot.json` files and refreshes the map, agent panels, metrics, and event feed as the run progresses.
+The observatory writes each launched run to the watched `runs/live.jsonl` and `runs/live-snapshot.json` files and refreshes the map, agent panels, metrics, and event feed as the run progresses. At terminal state it emits the same `runs/live-report.json` and `runs/live-report.md` artifacts as a CLI run.
 
 Run a simulation from the terminal:
 
@@ -47,7 +47,15 @@ Events include:
 - survival damage/death
 - group and agreement events
 
-Private prompt/observation logs are stored for audit but are not fed back into future agent observations.
+Private prompt/observation logs are stored for audit but are not fed back into future agent observations. To avoid duplicating megabytes of text, the log writes each distinct static prompt context once (`agent_prompt_context`), compact dynamic state per decision (`agent_observation`), and hashes linking the two (`agent_prompt`).
+
+The event ledger is append-only during a run. Snapshots and crash checkpoints are atomically replaced once per tick, so persistence work scales with new events instead of repeatedly rewriting the complete run history. A terminal run with `--out runs/example.jsonl` automatically writes `runs/example-checkpoint.pkl`. Resume a trusted local checkpoint with a total target tick:
+
+```bash
+python3 -m agent_world.cli run --resume-checkpoint runs/example-checkpoint.pkl --ticks 60
+```
+
+Checkpoints preserve the complete engine and random-number-generator state. They are Python pickle files; never resume a checkpoint from an untrusted source.
 
 ## Metrics To Watch
 
@@ -83,16 +91,13 @@ LLM runs default to one OpenAI request at a time:
 
 ```dotenv
 OPENAI_MAX_PARALLEL_AGENTS=1
-OPENAI_MIN_REQUEST_INTERVAL_SECONDS=0.75
+OPENAI_MIN_REQUEST_INTERVAL_SECONDS=0.5
 OPENAI_MAX_RETRIES=4
 CODEX_MAX_PARALLEL_AGENTS=1
 ```
 
 Increase concurrency only if the account rate limits can handle it.
 
-For Codex-plan runs, Agent World queries Codex's local app-server limit
-snapshot before the run and after every tick. Beside the ordinary per-call
-`*-usage.jsonl`, it writes `*-plan-usage.json` with raw checkpoints and a
-summary of the observed primary (normally 5-hour), secondary (normally weekly),
-and credit-balance changes. The snapshots are account-level rather than
-run-exclusive: work in another Codex window during the run can affect them.
+For Codex-plan runs, the ordinary per-call `*-usage.jsonl` is the source of truth for run-exclusive consumption. Reports price its uncached input, cached input, and output against the versioned Luna/Terra/Sol Codex rate card and label the result `simulation_credits`. This excludes Codex work performed by the supervising task or another window.
+
+Agent World also queries Codex's local account-limit snapshot at run start and terminal state. It writes `*-plan-usage.json` with those raw checkpoints and a summary of primary, secondary, and credit-balance changes. This is a coarse account-level diagnostic, not run-exclusive accounting: other Codex work during the run can affect it. A 60-tick run now normally takes two snapshots instead of 61. Set `CODEX_PLAN_SNAPSHOT_INTERVAL_TICKS` to a positive interval if you deliberately want extra mid-run diagnostics.

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import tempfile
+import time
 import unittest
+from unittest.mock import patch
 
 from agent_world.env import load_dotenv
 from agent_world.interface import build_static_context
@@ -52,12 +54,25 @@ class CapturingChatBrain(OpenAIBrain):
 
 
 class OpenAIBrainTests(unittest.TestCase):
-    def setUp(self) -> None:
-        OpenAIBrain.reset_runtime_state()
-
     def test_extract_output_text_from_output_text(self) -> None:
         response = {"output_text": '{"intent":"wait","actions":[],"messages":[],"memory_updates":[]}'}
         self.assertIn('"intent"', extract_output_text(response))
+
+    def test_hard_deadline_does_not_wait_for_stuck_worker_shutdown(self) -> None:
+        brain = OpenAIBrain(
+            api_key="test",
+            timeout_seconds=0.01,
+            hard_deadline_grace_seconds=0.01,
+            min_request_interval_seconds=0,
+        )
+
+        with patch.object(brain, "_post_json_blocking", side_effect=lambda *_: time.sleep(0.25)):
+            started = time.monotonic()
+            with self.assertRaisesRegex(OSError, "hard deadline"):
+                brain._post_json("/responses", {})
+            elapsed = time.monotonic() - started
+
+        self.assertLess(elapsed, 0.15)
 
     def test_extract_output_text_from_nested_response_content(self) -> None:
         response = {
@@ -153,7 +168,7 @@ class OpenAIBrainTests(unittest.TestCase):
         brain.decide({"tick": 0, "valid_actions": []})
 
         self.assertEqual(brain.last_payload["usage"], {"include": True})
-        records = OpenAIBrain.usage_records()
+        records = brain.runtime.usage_records()
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["prompt_tokens"], 3000)
         self.assertEqual(records[0]["cached_tokens"], 1800)

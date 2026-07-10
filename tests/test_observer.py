@@ -43,6 +43,8 @@ class ObserverTests(unittest.TestCase):
             while controller.status()["state"] == "running" and time.time() < deadline:
                 time.sleep(0.02)
             self.assertEqual(controller.status()["state"], "stopped")
+            self.assertTrue((tmp_path / "e-report.json").exists())
+            self.assertTrue((tmp_path / "e-report.md").exists())
 
     def test_pause_requires_running_simulation(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

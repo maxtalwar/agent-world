@@ -15,8 +15,9 @@ from typing import Any
 
 from agent_world.metrics import is_decision_failure_message, is_quota_failure_message
 from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
+from agent_world.usage import summarize_codex_simulation_credits
 
-AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_response"}
+AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
 SUBSISTENCE_ITEMS = frozenset({"food", "water"})
 MILESTONE_EVENT_TYPES = (
     "build_started",
@@ -91,6 +92,20 @@ def build_report(
         for event in events
         if is_decision_failure_message(event.get("type"), event.get("message"))
     ]
+    decision_attempts = sum(event.get("type") == "agent_response" for event in events)
+    decision_failure_rate = (
+        round(100 * len(llm_failures) / decision_attempts, 2) if decision_attempts else 0.0
+    )
+    usage_coverage = (
+        round(100 * len(usage_records) / decision_attempts, 2)
+        if decision_attempts and usage_records
+        else None
+    )
+    quality_flags: list[str] = []
+    if llm_failures:
+        quality_flags.append("decision_failures_present")
+    if usage_coverage is not None and usage_coverage < 100:
+        quality_flags.append("missing_usage_records")
 
     firsts: dict[str, int] = {}
     for event in sim_events:
@@ -111,15 +126,43 @@ def build_report(
     total_cost = sum(record.get("cost") or 0 for record in usage_records)
     prompt_tokens = sum(record.get("prompt_tokens") or 0 for record in usage_records)
     cached_tokens = sum(record.get("cached_tokens") or 0 for record in usage_records)
+    completion_tokens = sum(record.get("completion_tokens") or 0 for record in usage_records)
     usage = {
         "calls": len(usage_records),
         "total_cost_usd": round(total_cost, 4),
         "prompt_tokens": prompt_tokens,
-        "completion_tokens": sum(record.get("completion_tokens") or 0 for record in usage_records),
+        "completion_tokens": completion_tokens,
         "reasoning_tokens": sum(record.get("reasoning_tokens") or 0 for record in usage_records),
         "cache_hit_rate_pct": round(100 * cached_tokens / prompt_tokens, 1) if prompt_tokens else 0.0,
+        "efficiency": {
+            "mean_prompt_tokens_per_call": round(prompt_tokens / len(usage_records), 1)
+            if usage_records
+            else 0.0,
+            "mean_uncached_input_tokens_per_call": round(
+                sum(
+                    max(0, (record.get("prompt_tokens") or 0) - (record.get("cached_tokens") or 0))
+                    for record in usage_records
+                )
+                / len(usage_records),
+                1,
+            )
+            if usage_records
+            else 0.0,
+            "mean_output_tokens_per_call": round(completion_tokens / len(usage_records), 1)
+            if usage_records
+            else 0.0,
+            "mean_agent_static_context_chars": _mean_record_field(
+                usage_records, "agent_static_context_chars"
+            ),
+            "mean_agent_dynamic_observation_chars": _mean_record_field(
+                usage_records, "agent_dynamic_observation_chars"
+            ),
+            "mean_request_payload_bytes": _mean_record_field(usage_records, "request_payload_bytes"),
+        },
+        "simulation_credits": summarize_codex_simulation_credits(usage_records),
         "plan_limits": plan_usage,
     }
+    population = _summarize_population(events, snapshot, usage_records)
 
     wealth_values = [agent["wealth"] for agent in agents.values()]
     return {
@@ -127,6 +170,7 @@ def build_report(
         "source": source,
         "run": run_summary,
         "config": snapshot.get("config", {}),
+        "population": population,
         "survival": {
             "living": sum(1 for agent in agents.values() if agent["alive"]),
             "dead": len(deaths),
@@ -180,6 +224,11 @@ def build_report(
         },
         "milestone_first_ticks": firsts,
         "reliability": {
+            "quality_status": "degraded" if quality_flags else "clean",
+            "quality_flags": quality_flags,
+            "decision_attempts": decision_attempts,
+            "decision_failure_rate_pct": decision_failure_rate,
+            "usage_record_coverage_pct": usage_coverage,
             "llm_failure_events": len(llm_failures),
             "llm_quota_failure_events": sum(
                 is_quota_failure_message(event.get("type"), event.get("message")) for event in llm_failures
@@ -194,6 +243,75 @@ def build_report(
         "usage": usage,
         "wealth_gini": _gini(wealth_values),
         "transcript": says,
+    }
+
+
+def _summarize_population(
+    events: list[dict[str, Any]],
+    snapshot: dict[str, Any],
+    usage_records: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    started = next(
+        (event for event in reversed(events) if event.get("type") in {"run_started", "run_resumed"}),
+        None,
+    )
+    metadata = ((started or {}).get("data") or {}).get("population")
+    if not isinstance(metadata, dict):
+        return None
+    raw_groups = metadata.get("groups")
+    assignments = metadata.get("assignments")
+    if not isinstance(raw_groups, list) or not isinstance(assignments, dict):
+        return None
+
+    agents = snapshot.get("agents") or {}
+    cohorts: dict[str, dict[str, Any]] = {}
+    for raw in raw_groups:
+        if not isinstance(raw, dict):
+            continue
+        group_id = str(raw.get("id") or "unknown")
+        member_ids = sorted(
+            agent_id for agent_id, assigned_group in assignments.items() if assigned_group == group_id
+        )
+        member_set = set(member_ids)
+        cohort_events = [event for event in events if event.get("actor_id") in member_set]
+        cohort_usage = [record for record in usage_records if record.get("agent_id") in member_set]
+        prompt_tokens = sum(record.get("prompt_tokens") or 0 for record in cohort_usage)
+        completion_tokens = sum(record.get("completion_tokens") or 0 for record in cohort_usage)
+        action_counts = Counter(
+            event.get("type")
+            for event in cohort_events
+            if event.get("type") not in AGENT_IO_EVENT_TYPES
+        )
+        cohorts[group_id] = {
+            "brain": raw.get("type"),
+            "model": raw.get("model"),
+            "reasoning_effort": raw.get("reasoning_effort"),
+            "provider": raw.get("provider"),
+            "billing_mode": raw.get("billing_mode"),
+            "agents": member_ids,
+            "initial_agents": len(member_ids),
+            "living": sum(bool((agents.get(agent_id) or {}).get("alive")) for agent_id in member_ids),
+            "dead": sum(not bool((agents.get(agent_id) or {}).get("alive")) for agent_id in member_ids),
+            "actions": dict(action_counts.most_common()),
+            "communication": action_counts.get("say", 0),
+            "gifts_sent": action_counts.get("gift", 0),
+            "trades_offered": action_counts.get("offer_trade", 0),
+            "trades_accepted": action_counts.get("accept_trade", 0),
+            "invalid_actions": action_counts.get("invalid_action", 0),
+            "usage": {
+                "calls": len(cohort_usage),
+                "total_cost_usd": round(sum(record.get("cost") or 0 for record in cohort_usage), 4),
+                "prompt_tokens": prompt_tokens,
+                "cached_tokens": sum(record.get("cached_tokens") or 0 for record in cohort_usage),
+                "completion_tokens": completion_tokens,
+                "simulation_credits": summarize_codex_simulation_credits(cohort_usage),
+            },
+        }
+    return {
+        "type": metadata.get("type"),
+        "total_agents": metadata.get("total_agents"),
+        "assignments": dict(sorted((str(key), str(value)) for key, value in assignments.items())),
+        "cohorts": cohorts,
     }
 
 
@@ -882,6 +1000,11 @@ def _positive_int(value: Any) -> int | None:
     return parsed if parsed > 0 else None
 
 
+def _mean_record_field(records: list[dict[str, Any]], field: str) -> float | None:
+    values = [record[field] for record in records if isinstance(record.get(field), (int, float))]
+    return round(sum(values) / len(values), 1) if values else None
+
+
 def _nonnegative_int(value: Any, default: int = 0) -> int:
     try:
         parsed = int(value)
@@ -920,6 +1043,35 @@ def _render_plan_usage_lines(plan_usage: Any) -> list[str]:
     return lines or ["- Codex plan limits: snapshot contained no buckets"]
 
 
+def _render_simulation_credit_lines(simulation_credits: Any) -> list[str]:
+    if not isinstance(simulation_credits, dict):
+        return []
+    credits = simulation_credits.get("credits") or {}
+    if not simulation_credits.get("available"):
+        unknown = ", ".join(simulation_credits.get("unknown_models") or [])
+        return [f"- Simulation plan credits: unavailable for model(s): {unknown}"]
+    return [
+        f"- Simulation plan credits: {credits.get('total', 0)} exact run-scoped credits"
+        f" (input {credits.get('uncached_input', 0)} + cached {credits.get('cached_input', 0)}"
+        f" + output {credits.get('output', 0)})"
+    ]
+
+
+def _render_efficiency_lines(efficiency: Any) -> list[str]:
+    if not isinstance(efficiency, dict):
+        return []
+    line = (
+        f"- Per call: {efficiency.get('mean_prompt_tokens_per_call', 0)} input tokens "
+        f"({efficiency.get('mean_uncached_input_tokens_per_call', 0)} uncached), "
+        f"{efficiency.get('mean_output_tokens_per_call', 0)} output tokens"
+    )
+    static_chars = efficiency.get("mean_agent_static_context_chars")
+    dynamic_chars = efficiency.get("mean_agent_dynamic_observation_chars")
+    if static_chars is not None or dynamic_chars is not None:
+        line += f"; agent context chars static/dynamic {static_chars or 0}/{dynamic_chars or 0}"
+    return [line]
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     run = report["run"]
     survival = report["survival"]
@@ -931,6 +1083,16 @@ def render_markdown(report: dict[str, Any]) -> str:
     subsistence_gifts = gift_categories.get("subsistence", {}).get("quantity", "?")
     material_gifts = gift_categories.get("materials", {}).get("quantity", "?")
     construction = economy.get("construction", {})
+    population = report.get("population") or {}
+    cohort_lines = []
+    for cohort_id, cohort in (population.get("cohorts") or {}).items():
+        cohort_lines.append(
+            f"- {cohort_id}: {cohort.get('model') or cohort.get('brain')} — "
+            f"{cohort.get('living')}/{cohort.get('initial_agents')} living, "
+            f"{cohort.get('usage', {}).get('calls', 0)} calls, "
+            f"{cohort.get('gifts_sent', 0)} gifts, "
+            f"{cohort.get('trades_offered', 0)} offers/{cohort.get('trades_accepted', 0)} accepts"
+        )
     lines = [
         f"# Run report: {report.get('source') or 'unnamed'}",
         "",
@@ -941,7 +1103,10 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- LLM: {usage['calls']} calls, ${usage['total_cost_usd']}, {usage['cache_hit_rate_pct']}% cache hit"
         if usage["calls"]
         else "- Brain: scripted (no LLM usage)",
+        *(_render_efficiency_lines(usage.get("efficiency")) if usage["calls"] else []),
+        *_render_simulation_credit_lines(usage.get("simulation_credits")),
         *_render_plan_usage_lines(usage.get("plan_limits")),
+        *(["", "## Model cohorts", *cohort_lines] if len(cohort_lines) > 1 else []),
         "",
         "## Society",
         f"- Groups: {len(report['groups'])}"
@@ -997,6 +1162,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Invalid actions: {report['actions']['invalid_total']}"
         f" ({report['reliability']['invalid_action_rate_pct']}% of events)",
         f"- LLM failure events: {report['reliability']['llm_failure_events']}",
+        f"- Decision quality: {report['reliability']['quality_status']}"
+        f" | failure rate {report['reliability']['decision_failure_rate_pct']}%"
+        f" | flags {report['reliability']['quality_flags']}",
         "",
     ]
     return "\n".join(lines)

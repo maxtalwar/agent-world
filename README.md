@@ -16,6 +16,7 @@ python3 -m agent_world.cli ablate --agents 4 --ticks 30 --seed 11
 python3 -m agent_world.cli experiment --agents 5 --ticks 20 --seeds 11 --environment all --objective all --progress
 python3 -m agent_world.cli experiment --brain llm --model openai/gpt-5.6-luna --environment organic --objective neutral --ticks 40 --agents 5 --seeds 29 --progress
 python3 -m agent_world.cli run --brain codex --model gpt-5.6-luna --reasoning-effort low --ticks 3 --agents 2 --progress
+python3 -m agent_world.cli run --brain claude --model claude-sonnet-5 --reasoning-effort low --ticks 3 --agents 2 --progress
 ```
 
 The default CLI run uses deterministic mock brains so the infrastructure can be tested without an LLM key.
@@ -47,6 +48,7 @@ directory.
 - `agent_world/interface.py`: per-agent observation and neutral prompt construction.
 - `agent_world/openai_brain.py`: OpenAI-backed `AgentBrain` with retry/throttle handling.
 - `agent_world/codex_brain.py`: ChatGPT-plan-backed `AgentBrain` using isolated `codex exec` decisions.
+- `agent_world/claude_brain.py`: Claude-plan-backed `AgentBrain` using isolated headless `claude -p` decisions.
 - `agent_world/runner.py`: observe -> decide -> validate simulation orchestration.
 - `agent_world/observer.py`: local web observatory for live/replay visualization.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
@@ -126,6 +128,74 @@ Codex harness adds its own runtime instructions. Runs default to one concurrent
 Codex decision; raise `CODEX_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
 after benchmarking account limits and host load.
 
+### Claude plan agents
+
+`ClaudeBrain` runs Anthropic models through the locally installed Claude Code
+CLI and its saved claude.ai login, so decisions draw on the Pro/Max plan's usage
+limits instead of the metered Anthropic API. The adapter strips
+`ANTHROPIC_API_KEY` (and Bedrock/Vertex/Foundry toggles) from the child
+environment so the subscription login is always used, and records each call
+with `provider=claude_cli`, `billing_mode=claude_plan`, token usage, prompt
+hashes, and zero marginal API cost. Sign in to Claude Code (`claude` then
+`/login`, or check `claude auth`) before starting a run:
+
+```bash
+python3 -m agent_world.cli run \
+  --brain claude --model claude-sonnet-5 --reasoning-effort low \
+  --ticks 10 --agents 3 --progress \
+  --out runs/claude-sonnet.jsonl --snapshot runs/claude-sonnet-snapshot.json
+```
+
+Each living agent gets an independent, tool-less, session-less `claude -p`
+invocation per tick with the run's rulebook as a stable system prompt (so the
+provider prompt cache is reused) and a `--json-schema` constrained decision. The
+adapter runs in an empty temporary directory with user/project settings, MCP
+servers, and skills disabled so nothing outside the observation leaks into the
+decision. Models: `claude-haiku-4-5` (cheapest against plan limits),
+`claude-sonnet-5` (default), `claude-opus-4-8`. Unlike Codex, the Claude CLI
+has no headless plan-limit endpoint, so no `*-plan-usage.json` is produced;
+per-call token usage is still recorded. When plan limits are hit the run stops
+early with `Claude quota unavailable` so the log is not mistaken for agent
+behavior. Extended thinking is disabled by default (it costs thousands of plan
+tokens and ~a minute per decision); set `CLAUDE_MAX_THINKING_TOKENS` to a
+positive budget to re-enable it. Other environment knobs: `CLAUDE_MODEL`,
+`CLAUDE_REASONING_EFFORT`, `CLAUDE_TIMEOUT_SECONDS`, `CLAUDE_EXECUTABLE`,
+`CLAUDE_MAX_PARALLEL_AGENTS`.
+
+### Mixed-model populations
+
+A run can assign deterministic cohorts to different providers and models. Repeat
+`--population COUNT@MODEL`; familiar Claude and GPT-5.6 model names infer the
+`claude` and `codex` brains automatically:
+
+```bash
+python3 -m agent_world.cli run \
+  --population 10@claude-sonnet-5 \
+  --population 10@gpt-5.6-luna \
+  --ticks 50 --seed 41 --economy-mode organic \
+  --max-workers 8 --progress \
+  --out runs/sonnet-luna.jsonl \
+  --snapshot runs/sonnet-luna-snapshot.json
+```
+
+Use `COUNT@BRAIN:MODEL` when inference is ambiguous or for a newly released
+model, for example `10@claude:claude-fable-model-id`. An optional effort suffix
+is accepted as `COUNT@BRAIN:MODEL:EFFORT`. Cohorts are assigned in command-line
+order (`agent-1` onward), saved with the checkpoint, and restored unchanged on
+resume. Do not repeat the population flags when resuming:
+
+```bash
+python3 -m agent_world.cli run \
+  --resume-checkpoint runs/sonnet-luna-checkpoint.pkl \
+  --ticks 75 --progress
+```
+
+The run report includes each cohort's model, membership, survival, action mix,
+gifts, trades, token use, API cost, and Codex plan credits. A shared usage JSONL
+retains provider/model/agent identity per call. Quota and throttling state are
+isolated by provider, while any provider quota failure stops the complete run so
+the remaining ticks are not mistaken for comparable mixed-model behavior.
+
 Runs log private observations, prompts, responses, validation errors, actions, state transitions, trades, messages, claims, groups, and deaths. Use `--no-agent-io-log` when you want smaller event logs.
 
 ## Run Reports
@@ -137,6 +207,19 @@ python3 -m agent_world.cli report runs/a.jsonl runs/b.jsonl
 ```
 
 Passing multiple logs prints a metric-by-metric comparison table after writing the reports.
+
+### Efficient, run-scoped telemetry
+
+Codex reports now calculate `simulation_credits` from the token usage of the simulation's own decisions. Uncached input, cached input, and output are priced separately with a versioned Luna/Terra/Sol rate table; reasoning tokens are reported but not double-charged because they are already included in output. This is separate from `*-plan-usage.json`, whose sparse account snapshots can include work done by the supervising Codex task or another window. Account snapshots default to run start and terminal state only; set `CODEX_PLAN_SNAPSHOT_INTERVAL_TICKS` to a positive interval if you want additional diagnostics during a long run.
+
+Run persistence is incremental: new events are appended once, while the current snapshot and full crash checkpoint are atomically replaced each tick. `--out runs/example.jsonl` creates `runs/example-checkpoint.pkl`; resume that trusted local file and preserve the exact engine/RNG state with:
+
+```bash
+python3 -m agent_world.cli run \
+  --resume-checkpoint runs/example-checkpoint.pkl --ticks 60 --progress
+```
+
+The audit log stores each distinct static prompt context once and links compact per-decision observations to it by hash. This keeps the run auditable without repeating the full rulebook and prompt for every agent on every tick. Checkpoints use Python pickle and must not be loaded from untrusted sources.
 
 The LLM request is split to minimize input tokens (~85% of API cost): the static rulebook (actions, costs, recipes, terrain, mechanics) is rendered once as terse text in the system message — byte-identical across every agent and tick, so provider-side prompt caching can reuse it — while the per-tick user message carries only the slim dynamic state (tiles omit empty/derivable fields, events omit engine internals). No information is removed, only redundancy: everything an agent could act on is still present each call. Build-readiness diagnostics are intentionally kept out of agent observations so agents are not nudged with "you can now build X" hints.
 
@@ -253,6 +336,7 @@ Use `agent_world.cli ablate` to sweep one variable at a time (carry capacity, en
 For richer context, see:
 
 - [docs/world-design.md](docs/world-design.md)
+- [docs/architecture.md](docs/architecture.md)
 - [docs/agent-interface.md](docs/agent-interface.md)
 - [docs/observability.md](docs/observability.md)
 - [docs/research-notes.md](docs/research-notes.md)
