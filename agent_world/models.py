@@ -68,6 +68,27 @@ class WorldConfig:
     farm_food_added: int = 5
     farm_food_capacity: int = 24
     farm_passive_food_growth: int = 2
+    geography_mode: str = "shared_oasis"
+    economy_mode: str = "baseline"
+    objective_mode: str = "neutral"
+    # None selects the treatment default: free in baseline, one AP in commerce.
+    communication_action_cost: int | None = None
+    group_admin_action_cost: int | None = None
+    skill_yield_interval: int = 3
+    skill_energy_interval: int = 4
+    skill_bonus_cap: int = 2
+
+    def __post_init__(self) -> None:
+        if self.geography_mode not in {"shared_oasis", "dispersed"}:
+            raise ValueError("geography_mode must be shared_oasis or dispersed")
+        if self.economy_mode not in {"baseline", "commerce"}:
+            raise ValueError("economy_mode must be baseline or commerce")
+        if self.objective_mode not in {"neutral", "collective", "individual"}:
+            raise ValueError("objective_mode must be neutral, collective, or individual")
+        for name in ("communication_action_cost", "group_admin_action_cost"):
+            value = getattr(self, name)
+            if value is not None and value < 0:
+                raise ValueError(f"{name} cannot be negative")
 
     def reserve_max_for(self, name: str) -> int:
         return {
@@ -88,6 +109,16 @@ class WorldConfig:
             ("water", "water"): self.water_water_regen,
             ("water", "food"): self.water_food_regen,
         }.get((terrain, resource), 0.0)
+
+    def communication_cost(self) -> int:
+        if self.communication_action_cost is not None:
+            return self.communication_action_cost
+        return 1 if self.economy_mode == "commerce" else 0
+
+    def group_admin_cost(self) -> int:
+        if self.group_admin_action_cost is not None:
+            return self.group_admin_action_cost
+        return 1 if self.economy_mode == "commerce" else 0
 
 
 @dataclass
@@ -118,6 +149,11 @@ class Agent:
     relationships: dict[str, int] = field(default_factory=dict)
     memory: list[str] = field(default_factory=list)
     equipped: set[str] = field(default_factory=set)
+    equipment_durability: dict[str, int] = field(default_factory=dict)
+    skill_progress: dict[str, float] = field(default_factory=dict)
+    aptitudes: dict[str, float] = field(default_factory=dict)
+    need_multipliers: dict[str, float] = field(default_factory=dict)
+    specialty: str | None = None
     groups: set[str] = field(default_factory=set)
     alive: bool = True
     carry_capacity: int = 10
@@ -221,6 +257,19 @@ class Structure:
     status: str = "complete"
     remaining_inputs: Counter[str] = field(default_factory=Counter)
     contributors: set[str] = field(default_factory=set)
+    contribution_units: Counter[str] = field(default_factory=Counter)
+    public_access: bool = False
+    access_fee: Counter[str] = field(default_factory=Counter)
+    treasury: Counter[str] = field(default_factory=Counter)
+    upkeep_reserve: Counter[str] = field(default_factory=Counter)
+    dividend_credits: dict[str, Counter[str]] = field(default_factory=dict)
+    uses_per_tick: int = 0
+    uses_remaining: int = 0
+    active: bool = True
+    upkeep: Counter[str] = field(default_factory=Counter)
+    upkeep_interval: int = 0
+    last_upkeep_tick: int = 0
+    total_uses: int = 0
 
     @property
     def is_complete(self) -> bool:
@@ -240,12 +289,36 @@ class Structure:
             "stored_weight": self.inventory_weight(),
             "status": self.status,
             "contributors": sorted(self.contributors),
+            "contributor_shares": self.contributor_shares(),
+            "public_access": self.public_access,
+            "access_fee": dict(self.access_fee),
+            "uses_remaining": self.uses_remaining,
+            "uses_per_tick": self.uses_per_tick,
+            "active": self.active,
+            "upkeep": dict(self.upkeep),
+            "upkeep_interval": self.upkeep_interval,
+            "treasury": dict(self.treasury),
+            "upkeep_reserve": dict(self.upkeep_reserve),
+            "dividend_credits": {
+                agent_id: dict(credits)
+                for agent_id, credits in sorted(self.dividend_credits.items())
+            },
         }
         if not self.is_complete:
             data["remaining_inputs"] = {item: qty for item, qty in self.remaining_inputs.items() if qty > 0}
         if include_inventory:
             data["inventory"] = dict(self.inventory)
         return data
+
+    def contributor_shares(self) -> dict[str, float]:
+        total = sum(max(0, units) for units in self.contribution_units.values())
+        if total <= 0:
+            return {}
+        return {
+            agent_id: round(max(0, units) / total, 4)
+            for agent_id, units in sorted(self.contribution_units.items())
+            if units > 0
+        }
 
 
 @dataclass
@@ -282,6 +355,10 @@ class TradeOffer:
     status: str = "open"
     accepted_by: str | None = None
     escrow_released: bool = False
+    market_scope: str = "local"
+    lots_total: int = 1
+    lots_remaining: int = 1
+    accepted_count: int = 0
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -295,6 +372,43 @@ class TradeOffer:
             "receive": dict(self.receive),
             "created_tick": self.created_tick,
             "expires_tick": self.expires_tick,
+            "status": self.status,
+            "market_scope": self.market_scope,
+            "standing": self.lots_total > 1,
+            "lots_total": self.lots_total,
+            "lots_remaining": self.lots_remaining,
+            "accepted_count": self.accepted_count,
+        }
+
+
+@dataclass
+class CreditContract:
+    id: str
+    lender_id: str
+    borrower_id: str
+    advance: Counter[str]
+    repayment: Counter[str]
+    collateral: Counter[str]
+    created_tick: int
+    due_in: int
+    offer_expires_tick: int
+    due_tick: int | None = None
+    status: str = "offered"
+    advance_released: bool = False
+    collateral_released: bool = False
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "lender_id": self.lender_id,
+            "borrower_id": self.borrower_id,
+            "advance": dict(self.advance),
+            "repayment": dict(self.repayment),
+            "collateral": dict(self.collateral),
+            "created_tick": self.created_tick,
+            "due_in": self.due_in,
+            "offer_expires_tick": self.offer_expires_tick,
+            "due_tick": self.due_tick,
             "status": self.status,
         }
 
@@ -386,11 +500,14 @@ class WorldState:
     item_piles: dict[str, ItemPile] = field(default_factory=dict)
     structures: dict[str, Structure] = field(default_factory=dict)
     trades: dict[str, TradeOffer] = field(default_factory=dict)
+    contracts: dict[str, CreditContract] = field(default_factory=dict)
+    market_history: list[dict[str, Any]] = field(default_factory=list)
     groups: dict[str, Group] = field(default_factory=dict)
     events: list[Event] = field(default_factory=list)
     next_item_id: int = 1
     next_structure_id: int = 1
     next_trade_id: int = 1
+    next_contract_id: int = 1
     next_group_id: int = 1
     build_ready_ever: set[str] = field(default_factory=set)
     capacity_samples: list[dict[str, int]] = field(default_factory=list)

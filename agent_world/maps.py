@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Mapping
 
-from agent_world.models import Tile, WorldConfig
+from agent_world.models import Position, Tile, WorldConfig
 from agent_world.rules import TERRAIN_RULES
 
 
@@ -42,6 +42,98 @@ STANDARD_MAP_16 = [
     "WWWW.....FFFFFFF",
     "WWWWW...FFFFFFFF",
 ]
+
+
+SPECIALIST_PROFILES: tuple[dict[str, object], ...] = (
+    {
+        "specialty": "farmer",
+        "terrain": "plains",
+        "anchor": Position(6, 10),
+        "skill": "farming",
+        "endowment": {"fiber": 2},
+        "need_multipliers": {"water": 1.5},
+    },
+    {
+        "specialty": "forester",
+        "terrain": "forest",
+        "anchor": Position(2, 2),
+        "skill": "woodcraft",
+        "endowment": {"wood": 2},
+        "need_multipliers": {"energy": 1.5},
+    },
+    {
+        "specialty": "miner",
+        "terrain": "mountain",
+        "anchor": Position(12, 2),
+        "skill": "mining",
+        "endowment": {"ore": 1},
+        "need_multipliers": {"food": 2.0},
+    },
+    {
+        "specialty": "fisher",
+        "terrain": "coast",
+        "anchor": Position(1, 10),
+        "skill": "fishing",
+        "endowment": {"food": 2},
+        "need_multipliers": {"energy": 1.5},
+    },
+    {
+        "specialty": "artisan",
+        "terrain": "plains",
+        "anchor": Position(11, 11),
+        "skill": "crafting",
+        "endowment": {"fiber": 2},
+        "need_multipliers": {"water": 1.5},
+    },
+)
+
+
+def specialist_profile(offset: int) -> dict[str, object]:
+    """Return a copy of the deterministic dispersed-treatment role profile."""
+
+    profile = SPECIALIST_PROFILES[offset % len(SPECIALIST_PROFILES)]
+    return {
+        **profile,
+        "endowment": dict(profile.get("endowment", {})),
+        "need_multipliers": dict(profile.get("need_multipliers", {})),
+    }
+
+
+def find_specialist_spawn(
+    tiles: list[list[Tile]],
+    config: WorldConfig,
+    offset: int,
+    occupied: set[Position] | None = None,
+) -> Position:
+    """Choose a role-appropriate, geographically dispersed passable start."""
+
+    occupied = occupied or set()
+    profile = specialist_profile(offset)
+    anchor = profile["anchor"]
+    wanted = str(profile["terrain"])
+    candidates: list[Position] = []
+    for y, row in enumerate(tiles):
+        for x, tile in enumerate(row):
+            position = Position(x, y)
+            if position in occupied or not TERRAIN_RULES[tile.terrain].passable:
+                continue
+            if wanted == "coast":
+                if not _is_coastal(tiles, position, config):
+                    continue
+            elif tile.terrain != wanted:
+                continue
+            candidates.append(position)
+    if not candidates:
+        raise RuntimeError(f"No dispersed spawn is available for {profile['specialty']}")
+    return min(candidates, key=lambda position: (position.distance_to(anchor), position.y, position.x))
+
+
+def _is_coastal(tiles: list[list[Tile]], position: Position, config: WorldConfig) -> bool:
+    for dx, dy in ((0, 0), (1, 0), (-1, 0), (0, 1), (0, -1)):
+        x, y = position.x + dx, position.y + dy
+        if 0 <= x < config.width and 0 <= y < config.height and tiles[y][x].terrain == "water":
+            return True
+    return False
 
 
 def build_standard_tiles(config: WorldConfig) -> list[list[Tile]]:
@@ -83,7 +175,10 @@ def _apply_wild_resource_density(tiles: list[list[Tile]], config: WorldConfig) -
     center_y = config.height // 2
     for y, row in enumerate(tiles):
         for x, tile in enumerate(row):
-            if _distance(x, y, center_x, center_y) <= config.starter_resource_radius:
+            if (
+                config.geography_mode == "shared_oasis"
+                and _distance(x, y, center_x, center_y) <= config.starter_resource_radius
+            ):
                 continue
             _maybe_remove_resource(tile, "food", config.wild_food_density, x, y, config.seed, salt=17)
             _maybe_remove_resource(tile, "fiber", config.wild_fiber_density, x, y, config.seed, salt=29)

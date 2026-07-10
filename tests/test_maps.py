@@ -42,6 +42,31 @@ class StandardMapTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             WorldEngine.create(WorldConfig(width=8, height=8), agent_names=[])
 
+    def test_dispersed_geography_spawns_heterogeneous_specialists(self) -> None:
+        config = WorldConfig(seed=4, geography_mode="dispersed")
+        engine = WorldEngine.create(config, agent_names=["Farmer", "Forester", "Miner", "Fisher", "Artisan"])
+        agents = list(engine.state.agents.values())
+
+        self.assertEqual(
+            [agent.specialty for agent in agents],
+            ["farmer", "forester", "miner", "fisher", "artisan"],
+        )
+        self.assertEqual(len({agent.position for agent in agents}), 5)
+        self.assertGreater(agents[0].position.distance_to(agents[2].position), config.visible_radius)
+        self.assertEqual(engine.state.tile_at(agents[1].position).terrain, "forest")
+        self.assertEqual(engine.state.tile_at(agents[2].position).terrain, "mountain")
+        self.assertGreater(agents[0].aptitudes["farming"], agents[0].aptitudes["mining"])
+        self.assertEqual(agents[2].inventory["ore"], 1)
+        self.assertGreater(agents[2].need_multipliers["food"], 1.0)
+
+    def test_world_config_validates_treatment_names(self) -> None:
+        with self.assertRaises(ValueError):
+            WorldConfig(geography_mode="everywhere")
+        with self.assertRaises(ValueError):
+            WorldConfig(economy_mode="magic")
+        with self.assertRaises(ValueError):
+            WorldConfig(objective_mode="undefined")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -17,7 +17,9 @@ RESOURCE_VALUES: dict[str, int] = {
     "wood": 3,
     "stone": 4,
     "ore": 8,
+    "ingot": 15,
     "tool": 12,
+    "advanced_tool": 35,
 }
 
 RESOURCE_WEIGHTS: dict[str, int] = {
@@ -27,7 +29,9 @@ RESOURCE_WEIGHTS: dict[str, int] = {
     "wood": 2,
     "stone": 3,
     "ore": 4,
+    "ingot": 3,
     "tool": 2,
+    "advanced_tool": 2,
 }
 
 CONSUMABLE_EFFECTS: dict[str, dict[str, int]] = {
@@ -44,6 +48,21 @@ FARM_PLOT_FARM_FOOD_ADDED = 5
 FARM_PLOT_FOOD_CAPACITY = 24
 FARM_PLOT_PASSIVE_FOOD_GROWTH = 2
 WORKSHOP_CRAFTING_ENERGY_DISCOUNT = 2
+TOOL_PRODUCTIVITY_BONUS = {"tool": 1, "advanced_tool": 2}
+TOOL_ENERGY_DISCOUNT = {"tool": 1, "advanced_tool": 2}
+TOOL_MAX_DURABILITY = {"tool": 6, "advanced_tool": 16}
+
+# Productive structures are metered and require upkeep in the commerce treatment.
+# The baseline treatment deliberately leaves these limits inactive so old runs are
+# comparable with the original world.
+STRUCTURE_OPERATIONS: dict[str, dict[str, object]] = {
+    "farm_plot": {"uses_per_tick": 4, "upkeep": {"fiber": 1}, "upkeep_interval": 8},
+    "well": {"uses_per_tick": 8, "upkeep": {"wood": 1}, "upkeep_interval": 10},
+    "workshop": {"uses_per_tick": 4, "upkeep": {"wood": 1}, "upkeep_interval": 8},
+    "storage": {"uses_per_tick": 0, "upkeep": {"fiber": 1}, "upkeep_interval": 12},
+    "shelter": {"uses_per_tick": 0, "upkeep": {"fiber": 1}, "upkeep_interval": 12},
+    "house": {"uses_per_tick": 0, "upkeep": {"wood": 1}, "upkeep_interval": 12},
+}
 
 MECHANICS_SUMMARY: dict[str, object] = {
     "resources": {
@@ -54,6 +73,8 @@ MECHANICS_SUMMARY: dict[str, object] = {
         "stone": "Crafting/building material. Produced with mine on tiles where stone is present.",
         "ore": "High-value raw material. Produced with mine on tiles where ore is present.",
         "tool": "Crafted from wood, stone, and fiber. Can be equipped.",
+        "ingot": "Smelted from ore in a workshop; required for advanced tools.",
+        "advanced_tool": "Workshop-made durable equipment that increases output and reduces work energy.",
     },
     "action_notes": {
         "gather": "Produces food or fiber from the current tile. Water can be gathered from adjacent open water or accessible wells without standing on water.",
@@ -67,7 +88,11 @@ MECHANICS_SUMMARY: dict[str, object] = {
         "contribute": "Adds carried materials to an under-construction structure on the current tile. Any agent standing on the tile may contribute. The structure finishes and its effects turn on only once every required material has been supplied.",
         "store": "Moves carried goods into accessible storage, house, or workshop space on the current tile.",
         "retrieve": "Moves goods from accessible storage, house, or workshop space into inventory.",
-        "offer_trade": "Creates a direct trade offer to a visible agent, or a local public offer if target is any. Offered goods are held until accepted, rejected, or expired.",
+        "offer_trade": "Creates a direct trade offer to a visible agent, or a public standing offer if target is any. Commerce-mode public offers are globally visible. Offered goods are held until accepted, rejected, or expired.",
+        "offer_contract": "Offers secured credit: an advance is escrowed now, collateral is posted on acceptance, and repayment is enforced at the due tick.",
+        "set_access_fee": "An owner can make a productive structure public and charge goods per productive use.",
+        "claim_dividend": "Collects fee revenue credited to a structure contributor.",
+        "maintain_structure": "Deposits upkeep materials and can reactivate an inactive productive structure.",
         "grant_access": "Allows another agent or a group to use a claimed tile or owned structure.",
         "groups": "Groups can hold members, rules, access grants, claimed land, and owned structures for shared infrastructure.",
     },
@@ -131,6 +156,7 @@ class Recipe:
     energy: int
     required_terrain: tuple[str, ...] = ()
     required_tool: str | None = None
+    required_structure: str | None = None
 
 
 RECIPES: dict[str, Recipe] = {
@@ -139,6 +165,20 @@ RECIPES: dict[str, Recipe] = {
         outputs={"tool": 1},
         action_points=2,
         energy=5,
+    ),
+    "ingot": Recipe(
+        inputs={"ore": 2, "wood": 1},
+        outputs={"ingot": 1},
+        action_points=2,
+        energy=6,
+        required_structure="workshop",
+    ),
+    "advanced_tool": Recipe(
+        inputs={"ingot": 2, "wood": 1, "fiber": 1},
+        outputs={"advanced_tool": 1},
+        action_points=3,
+        energy=8,
+        required_structure="workshop",
     ),
     "farm_plot": Recipe(
         inputs={"fiber": 1},
@@ -189,6 +229,23 @@ FREE_ACTION_TYPES = {
     "say",
     "whisper",
     "broadcast",
+    "grant_access",
+    "revoke_access",
+    "create_group",
+    "invite_member",
+    "join_group",
+    "leave_group",
+    "publish_rule",
+    "record_agreement",
+    "accept_trade",
+    "reject_trade",
+    "accept_contract",
+    "repay_contract",
+    "claim_dividend",
+    "set_access_fee",
+}
+COMMUNICATION_ACTION_TYPES = {"say", "whisper", "broadcast"}
+GROUP_ADMIN_ACTION_TYPES = {
     "grant_access",
     "revoke_access",
     "create_group",
@@ -312,7 +369,7 @@ ACTION_SCHEMA: list[dict[str, object]] = [
         "parameters": {"item": "food|water", "quantity": "int optional"},
         "example": {"type": "consume", "item": "water", "quantity": 1},
     },
-    {"type": "equip", "parameters": {"item": "tool"}, "example": {"type": "equip", "item": "tool"}},
+    {"type": "equip", "parameters": {"item": "tool|advanced_tool"}, "example": {"type": "equip", "item": "tool"}},
     {
         "type": "store",
         "parameters": {"structure_id": "string", "item": "string", "quantity": "int optional"},
@@ -340,8 +397,23 @@ ACTION_SCHEMA: list[dict[str, object]] = [
     },
     {
         "type": "offer_trade",
-        "parameters": {"to": "agent_id|'any' optional", "give": "item counts", "receive": "item counts", "expires_in": "int optional"},
+        "parameters": {"to": "agent_id|'any' optional", "give": "item counts per lot", "receive": "item counts per lot", "lots": "int optional", "expires_in": "int optional", "scope": "local|global optional"},
         "example": {"type": "offer_trade", "to": "any", "give": {"food": 1}, "receive": {"water": 1}},
+    },
+    {
+        "type": "offer_contract",
+        "parameters": {"to": "agent_id", "advance": "item counts", "repayment": "item counts", "collateral": "item counts optional", "due_in": "int optional", "expires_in": "int optional"},
+        "example": {"type": "offer_contract", "to": "agent-2", "advance": {"food": 2}, "repayment": {"ore": 1}, "collateral": {"tool": 1}, "due_in": 5},
+    },
+    {
+        "type": "accept_contract",
+        "parameters": {"contract_id": "string"},
+        "example": {"type": "accept_contract", "contract_id": "contract-1"},
+    },
+    {
+        "type": "repay_contract",
+        "parameters": {"contract_id": "string"},
+        "example": {"type": "repay_contract", "contract_id": "contract-1"},
     },
     {
         "type": "accept_trade",
@@ -377,6 +449,21 @@ ACTION_SCHEMA: list[dict[str, object]] = [
         "type": "contribute",
         "parameters": {"structure_id": "string optional", "structure": "structure type optional", "items": "item counts"},
         "example": {"type": "contribute", "structure": "house", "items": {"wood": 2}},
+    },
+    {
+        "type": "set_access_fee",
+        "parameters": {"structure_id": "string", "public": "bool optional", "fee": "item counts"},
+        "example": {"type": "set_access_fee", "structure_id": "structure-1", "public": True, "fee": {"food": 1}},
+    },
+    {
+        "type": "claim_dividend",
+        "parameters": {"structure_id": "string", "item": "string", "quantity": "int optional"},
+        "example": {"type": "claim_dividend", "structure_id": "structure-1", "item": "food"},
+    },
+    {
+        "type": "maintain_structure",
+        "parameters": {"structure_id": "string", "items": "item counts"},
+        "example": {"type": "maintain_structure", "structure_id": "structure-1", "items": {"wood": 1}},
     },
     {
         "type": "grant_access",
@@ -431,13 +518,19 @@ _ACTION_COSTS: dict[str, dict[str, object]] = {
     "whisper": {"action_points": 0, "energy": 0},
     "broadcast": {"action_points": 0, "energy": 0},
     "offer_trade": {"action_points": 1, "energy": 0},
-    "accept_trade": {"action_points": 1, "energy": 0},
-    "reject_trade": {"action_points": 1, "energy": 0},
+    "accept_trade": {"action_points": 0, "energy": 0},
+    "reject_trade": {"action_points": 0, "energy": 0},
+    "offer_contract": {"action_points": 1, "energy": 0},
+    "accept_contract": {"action_points": 0, "energy": 0},
+    "repay_contract": {"action_points": 0, "energy": 0},
     "gift": {"action_points": 1, "energy": 0},
     "claim_tile": {"action_points": 1, "energy": 0},
     "contest_claim": {"action_points": 1, "energy": 0},
     "build": {"action_points": "recipe action_points", "energy": "recipe energy"},
     "contribute": {"action_points": 1, "energy": 0},
+    "set_access_fee": {"action_points": 0, "energy": 0},
+    "claim_dividend": {"action_points": 0, "energy": 0},
+    "maintain_structure": {"action_points": 1, "energy": 0},
     "grant_access": {"action_points": 0, "energy": 0},
     "revoke_access": {"action_points": 0, "energy": 0},
     "create_group": {"action_points": 0, "energy": 0},
