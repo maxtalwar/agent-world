@@ -35,10 +35,13 @@ Agents know their own:
 - skills
 - equipped items
 - groups, relationships, and reputation
+- treatment-specific specialty, aptitudes, asymmetric needs, and equipped-tool durability
 
 Agents see only local map tiles within visibility radius. They do not see the full map, hidden private memories, or private prompts/observations from other agents.
 
-The `world` object includes terrain passability and recipes with required terrain/tools. It does not include exact terrain yield, regeneration, structure productivity, spoilage cadence, or current build recommendations.
+The `world` object includes treatment modes, coordination costs, terrain passability, recipes, and required terrain/tools/structures. It does not include exact terrain yield, regeneration probabilities, spoilage cadence, or current build recommendations.
+
+Agents also receive visible standing offers, completed market-price history, and contracts to which they are a party. Public structures expose access fees, capacity, upkeep state, treasury, and contributor shares.
 
 ## Explicitly Not Included
 
@@ -81,7 +84,7 @@ Invalid:
 
 ## OpenAI Adapter
 
-`agent_world/openai_brain.py` calls the OpenAI Responses API. It uses:
+`agent_world/openai_brain.py` calls either OpenAI's Responses API or an OpenAI-compatible Chat Completions API such as OpenRouter. It uses:
 
 - compact JSON prompt formatting to remove whitespace only
 - structured JSON output schema

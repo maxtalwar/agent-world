@@ -5,6 +5,7 @@ import tempfile
 import unittest
 
 from agent_world.env import load_dotenv
+from agent_world.interface import build_static_context
 from agent_world.openai_brain import OpenAIBrain, OpenAIQuotaError, extract_chat_text, extract_output_text
 
 
@@ -158,6 +159,20 @@ class OpenAIBrainTests(unittest.TestCase):
         self.assertEqual(records[0]["cached_tokens"], 1800)
         self.assertEqual(records[0]["reasoning_tokens"], 350)
         self.assertAlmostEqual(records[0]["cost"], 0.0042)
+        self.assertEqual(records[0]["api_style"], "chat")
+        self.assertEqual(records[0]["tick"], 0)
+        self.assertEqual(len(records[0]["static_prompt_sha256"]), 64)
+        self.assertEqual(len(records[0]["request_sha256"]), 64)
+
+    def test_objective_treatments_are_explicit_and_distinct(self) -> None:
+        neutral = build_static_context({"objective_mode": "neutral"})
+        collective = build_static_context({"objective_mode": "collective"})
+        individual = build_static_context({"objective_mode": "individual"})
+
+        self.assertIn("No external score is specified", neutral)
+        self.assertIn("all living agents", collective)
+        self.assertIn("retained resources", individual)
+        self.assertEqual(len({neutral, collective, individual}), 3)
 
     def test_chat_payload_pins_openrouter_providers_when_configured(self) -> None:
         os.environ["OPENAI_PROVIDER_ORDER"] = "Z.AI, Alibaba"

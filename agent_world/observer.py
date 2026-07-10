@@ -104,6 +104,7 @@ class RunController:
             self._stop_event = threading.Event()
             self._pause_event.clear()
             if config.brain == "llm":
+                OpenAIBrain.reset_runtime_state()
                 usage_path = self.events_path.with_name(self.events_path.stem + "-usage.jsonl")
                 usage_path.parent.mkdir(parents=True, exist_ok=True)
                 usage_path.write_text("", encoding="utf-8")
@@ -288,6 +289,15 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         farm_food_added=_bounded_int(payload.get("farm_food_added", 5), "farm_food_added", minimum=0, maximum=50),
         farm_food_capacity=_bounded_int(payload.get("farm_food_capacity", 24), "farm_food_capacity", minimum=0, maximum=100),
         farm_passive_food_growth=_bounded_int(payload.get("farm_passive_food_growth", 2), "farm_passive_food_growth", minimum=0, maximum=20),
+        geography_mode=_bounded_choice(
+            payload.get("geography_mode", "shared_oasis"), "geography_mode", {"shared_oasis", "dispersed"}
+        ),
+        economy_mode=_bounded_choice(
+            payload.get("economy_mode", "baseline"), "economy_mode", {"baseline", "commerce"}
+        ),
+        objective_mode=_bounded_choice(
+            payload.get("objective_mode", "neutral"), "objective_mode", {"neutral", "collective", "individual"}
+        ),
     )
     _validate_reserve_pair("food", world_config.food_reserve_start, world_config.food_reserve_max)
     _validate_reserve_pair("water", world_config.water_reserve_start, world_config.water_reserve_max)
@@ -324,6 +334,13 @@ def _bounded_float(value: Any, name: str, minimum: float, maximum: float) -> flo
     return parsed
 
 
+def _bounded_choice(value: Any, name: str, allowed: set[str]) -> str:
+    parsed = str(value).strip().lower()
+    if parsed not in allowed:
+        raise ValueError(f"{name} must be one of: {', '.join(sorted(allowed))}.")
+    return parsed
+
+
 def _validate_reserve_pair(name: str, start: int, maximum: int) -> None:
     if start > maximum:
         raise ValueError(f"{name}_reserve_start must be less than or equal to {name}_reserve_max.")
@@ -350,6 +367,9 @@ def _status_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
     return {
         "agents": metrics.get("agents", {}),
         "trade": metrics.get("trade", {}),
+        "economic_flows": metrics.get("economic_flows", {}),
+        "specialization": metrics.get("specialization", {}),
+        "productive_assets": metrics.get("productive_assets", {}),
         "infrastructure": metrics.get("infrastructure", {}),
         "invalid_actions": metrics.get("invalid_actions", {}),
         "llm": metrics.get("llm", {}),
@@ -1583,9 +1603,14 @@ HTML = r"""<!doctype html>
         </label>
       </form>
       <div class="dform dpanel" id="panel-config" hidden>
+        <div class="section-title">Experiment Treatment</div>
+        <label class="field"><label for="cfg-objective-mode">Objective</label><select id="cfg-objective-mode" class="lock"><option value="neutral" selected>neutral emergence</option><option value="collective">collective welfare</option><option value="individual">individual utility</option></select></label>
+        <label class="field"><label for="cfg-economy-mode">Economy</label><select id="cfg-economy-mode" class="lock"><option value="baseline" selected>baseline</option><option value="commerce">commerce</option></select></label>
+        <label class="field"><label for="cfg-geography-mode">Geography</label><select id="cfg-geography-mode" class="lock"><option value="shared_oasis" selected>shared oasis</option><option value="dispersed">dispersed specialists</option></select></label>
+
         <div class="section-title">Agents</div>
         <label class="field"><label for="cfg-carry-capacity">Inventory limit</label><input id="cfg-carry-capacity" class="lock" type="number" min="1" max="100" value="10"></label>
-        <label class="field"><label for="cfg-action-points">Action points</label><input id="cfg-action-points" class="lock" type="number" min="1" max="20" value="3"></label>
+        <label class="field"><label for="cfg-action-points">Action points</label><input id="cfg-action-points" class="lock" type="number" min="1" max="20" value="4"></label>
         <label class="field"><label for="cfg-storage-capacity">Storage capacity</label><input id="cfg-storage-capacity" class="lock" type="number" min="1" max="1000" value="120"></label>
 
         <div class="section-title section">Starting Reserves</div>
@@ -1656,7 +1681,8 @@ HTML = r"""<!doctype html>
     };
     const RESOURCE_COLORS = {
       water: "#5b96bd", food: "#c99a3f", wood: "#8a6540",
-      stone: "#8d8d8d", ore: "#c98f4e", fiber: "#7fa05a", tool: "#6f4f8f",
+      stone: "#8d8d8d", ore: "#c98f4e", ingot: "#8f7863", fiber: "#7fa05a",
+      tool: "#6f4f8f", advanced_tool: "#48345f",
     };
     const AGENT_COLORS = [
       "#c15f3c", "#3f6d8a", "#6f4f8f", "#8a6516", "#3c6b60",
@@ -1670,7 +1696,9 @@ HTML = r"""<!doctype html>
       "wait", "move", "inspect", "gather", "chop", "mine", "harvest", "fish", "farm",
       "craft", "repair", "pick_up", "drop", "claim_item", "consume", "equip", "store",
       "retrieve", "say", "whisper", "broadcast", "offer_trade", "accept_trade",
-      "reject_trade", "gift", "claim_tile", "contest_claim", "build", "contribute", "grant_access",
+      "reject_trade", "offer_contract", "accept_contract", "repay_contract", "gift",
+      "claim_tile", "contest_claim", "build", "contribute", "set_access_fee",
+      "claim_dividend", "maintain_structure", "grant_access",
       "revoke_access", "create_group", "invite_member", "join_group", "leave_group",
       "publish_rule", "record_agreement",
     ];
@@ -2112,10 +2140,21 @@ HTML = r"""<!doctype html>
         const builders = (s.contributors || []).length > 1
           ? `<div class="mini">built by ${s.contributors.length} agents together</div>`
           : "";
+        const fee = s.public_access
+          ? `<div class="mini">public access · fee ${Object.entries(s.access_fee || {}).map(([k, v]) => `${escapeHtml(k)} ×${v}`).join(", ") || "free"}</div>`
+          : "";
+        const shares = Object.entries(s.contributor_shares || {}).length
+          ? `<div class="mini">shares ${Object.entries(s.contributor_shares).map(([k, v]) => `${escapeHtml(k)} ${(Number(v) * 100).toFixed(0)}%`).join(", ")}</div>`
+          : "";
+        const treasury = Object.entries(s.treasury || {}).filter(([, v]) => v > 0)
+          .map(([k, v]) => `${escapeHtml(k)} ${v}`).join(", ");
+        const operations = s.upkeep_interval
+          ? `<div class="mini">${s.active === false ? "inactive" : "active"} · capacity ${s.uses_remaining ?? "—"}/${s.uses_per_tick ?? "—"} · upkeep every ${s.upkeep_interval}t${treasury ? ` · treasury ${treasury}` : ""}</div>`
+          : "";
         return `<div class="ins-block">
           <div class="ins-block-head"><span class="ins-icon">${structureIcon(s.type, 26)}</span><b>${escapeHtml(structureName(s.type))}</b>${status}</div>
           <div class="mini">owner ${escapeHtml(s.owner_id || "—")} · durability ${s.durability ?? "—"}</div>
-          ${remaining}${inv ? `<div class="mini">stores ${inv}</div>` : ""}${builders}
+          ${remaining}${inv ? `<div class="mini">stores ${inv}</div>` : ""}${builders}${fee}${shares}${operations}
         </div>`;
       }).join("");
       const agentRows = agentsAt(x, y).map(a => {
@@ -2339,13 +2378,18 @@ HTML = r"""<!doctype html>
         const inv = Object.entries(agent.inventory || {}).filter(([, v]) => v)
           .map(([k, v]) => `<span class="inv-chip"><i style="background:${RESOURCE_COLORS[k] || "#999"}"></i>${escapeHtml(k)} ${v}</span>`)
           .join("") || '<span class="inv-chip empty">empty-handed</span>';
+        const role = agent.specialty ? `<span class="badge ok">${escapeHtml(agent.specialty)}</span>` : "";
+        const equipment = Object.entries(agent.equipment_durability || {})
+          .map(([item, durability]) => `${escapeHtml(item)} ${durability}`)
+          .join(", ");
         return `<article class="card ${agent.alive ? "" : "dead"} ${selectedAgentId === agent.id ? "selected" : ""}" data-agent-id="${escapeHtml(agent.id)}">
           <div class="card-row">
             <span class="card-dot" style="background:${agentColor(agent.id)}"></span>
             <span class="card-name">${escapeHtml(agent.name)}</span>
-            <span class="card-pos">${agent.position.x}, ${agent.position.y}</span>
+            ${role}<span class="card-pos">${agent.position.x}, ${agent.position.y}</span>
           </div>
           <div class="card-inv">${inv}<span class="carry">${agent.carry_weight}/${agent.carry_capacity}</span></div>
+          ${equipment ? `<div class="mini">equipped durability: ${equipment}</div>` : ""}
           <div class="meters">
             ${meter("health", agent.health, 100)}
             ${meter("food", reserves.food, config.food_reserve_max || 20)}
@@ -2460,9 +2504,9 @@ HTML = r"""<!doctype html>
     function eventClass(type) {
       if (type === "invalid_action") return "invalid";
       if (type === "move") return "move";
-      if (["gather", "chop", "mine", "harvest", "fish", "farm", "craft", "build", "build_started", "contribute"].includes(type)) return "resource";
+      if (["gather", "chop", "mine", "harvest", "fish", "farm", "craft", "build", "build_started", "contribute", "maintain_structure", "claim_dividend"].includes(type)) return "resource";
       if (["say", "whisper", "broadcast", "create_group", "invite_member", "join_group", "publish_rule"].includes(type)) return "social";
-      if (["offer_trade", "accept_trade", "reject_trade", "expire_trade"].includes(type)) return "trade";
+      if (["offer_trade", "accept_trade", "reject_trade", "expire_trade", "offer_contract", "accept_contract", "repay_contract", "contract_fulfilled", "contract_default", "set_access_fee"].includes(type)) return "trade";
       if (["consume", "wait", "survival_damage", "death"].includes(type)) return "body";
       if (["world_created", "agent_spawned", "run_started", "run_completed", "run_stopped", "run_failed"].includes(type)) return "system";
       return "";
@@ -2488,6 +2532,9 @@ HTML = r"""<!doctype html>
         reasoning_effort: document.getElementById("run-reasoning").value,
         log_agent_io: document.getElementById("run-io").checked,
         max_workers: numberValue("run-workers"),
+        objective_mode: document.getElementById("cfg-objective-mode").value,
+        economy_mode: document.getElementById("cfg-economy-mode").value,
+        geography_mode: document.getElementById("cfg-geography-mode").value,
         action_points_per_tick: numberValue("cfg-action-points"),
         default_carry_capacity: numberValue("cfg-carry-capacity"),
         storage_capacity: numberValue("cfg-storage-capacity"),

@@ -78,7 +78,10 @@ class SimulationRunner:
         if not self.log_agent_io:
             return
         agent = self.engine.state.agents[agent_id]
-        prompt = build_agent_prompt(observation)
+        # Log the compact rulebook + dynamic-state representation used by the
+        # API adapter.  Older runs logged the expanded debug prompt instead,
+        # which was semantically similar but not the payload being evaluated.
+        prompt = build_agent_prompt(observation, compact=True)
         self.engine.log_event(
             "agent_observation",
             actor_id=agent_id,
@@ -91,7 +94,7 @@ class SimulationRunner:
             "agent_prompt",
             actor_id=agent_id,
             position=agent.position,
-            data={"prompt": prompt},
+            data={"prompt": prompt, "format": "compact_static_plus_dynamic_v1"},
             scope="private",
             recipients={agent_id},
         )

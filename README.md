@@ -13,9 +13,29 @@ python3 -m agent_world.cli run --ticks 25 --agents 5 --seed 7 --progress --out r
 python3 -m agent_world.cli replay runs/example.jsonl --last 30
 python3 -m agent_world.cli prompt --seed 7 --agents 2 --agent agent-1
 python3 -m agent_world.cli ablate --agents 4 --ticks 30 --seed 11
+python3 -m agent_world.cli experiment --agents 5 --ticks 20 --seeds 11 --environment all --objective all --progress
 ```
 
 The default CLI run uses deterministic mock brains so the infrastructure can be tested without an LLM key.
+
+The `experiment` command runs the environment × objective factorial design. It
+defaults to the free scripted survival brain and all four cells. Select one cell
+explicitly for a paid LLM run, for example:
+
+```bash
+python3 -m agent_world.cli experiment \
+  --brain llm --environment commerce --objective individual \
+  --seeds 21 --ticks 60 --agents 5 --progress \
+  --out-dir runs/experiments/commerce-individual-glm
+```
+
+Each run directory contains raw events, a final snapshot, usage records, a run
+report, and a manifest with the Git SHA, dirty-worktree flag, source/rule and
+initial prompt hashes, model/provider/reasoning settings, condition, seed, and
+tick completion. The experiment root contains `experiment-manifest.json`,
+`summary.json`, and `summary.md` with per-condition aggregates and paired
+factorial contrasts. Use `--overwrite` only when intentionally reusing an output
+directory.
 
 ## Project Map
 
@@ -28,6 +48,7 @@ The default CLI run uses deterministic mock brains so the infrastructure can be 
 - `agent_world/observer.py`: local web observatory for live/replay visualization.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
 - `agent_world/run_report.py`: per-run structured data export (`-report.json`/`-report.md`) and cross-run comparison.
+- `agent_world/experiments.py`: reproducible multi-seed environment × objective experiments with provenance manifests and paired contrasts.
 - `tests/`: regression coverage for world rules, maps, observer, and OpenAI adapter helpers.
 - `docs/`: design notes and future handoff context.
 
@@ -75,7 +96,7 @@ Runs log private observations, prompts, responses, validation errors, actions, s
 
 ## Run Reports
 
-Every `run` with `--out` automatically exports `<name>-report.json` (machine-readable: config, survival, action mix, structure timeline, groups, gift network, trades, milestone first-ticks, reliability, LLM cost, full say transcript) and `<name>-report.md` (human summary) next to the event log. All reports share one schema, so runs are directly comparable across experiments. Regenerate reports for old logs — or compare several runs side by side — with:
+Every `run` with `--out` automatically exports `<name>-report.json` (machine-readable: config, survival, action mix, structure timeline, groups, valued gift flows, trades, productive assets, milestone first-ticks, reliability, LLM cost, full say transcript) and `<name>-report.md` (human summary) next to the event log. All reports share one schema, so runs are directly comparable across experiments. Regenerate reports for old logs — or compare several runs side by side — with:
 
 ```bash
 python3 -m agent_world.cli report runs/a.jsonl runs/b.jsonl
@@ -129,10 +150,12 @@ Invalid or unaffordable actions fail explicitly and are logged; they do not muta
 
 - Standard 16x16 handcrafted world with a coast, river/lake system, forests, plains, and an eastern mountain range.
 - Water tiles are not occupiable; agents gather water or fish from adjacent land.
-- Discrete ticks with fixed agent resolution order.
+- Discrete ticks with a deterministic rotating resolution order, avoiding permanent first-mover priority.
 - Local observations filtered by visibility radius and event scope.
 - Inventories, item piles, structures, tile claims, groups, trade offers, and persistent memories.
 - Trade offers can target a specific visible agent or be posted locally for any visible counterparty; offered goods are escrowed until the offer resolves.
+- Optional commerce treatments add global standing offers, completed-price history, secured credit, access fees, contributor dividends, and productive-asset upkeep/capacity.
+- Optional dispersed geography gives agents separated resource regions, different specialties, aptitudes, endowments, and needs so comparative advantage is mechanically meaningful.
 - Groups can receive access grants, directly own claimed tiles/structures, and keep persistent agreement ledgers, making shared infrastructure mechanically useful.
 - Survival pressure through food, water, energy, health, carrying capacity, action points, and carried-food spoilage.
 - Replayable JSONL event logs and summary metrics for economy/social analysis.
@@ -147,6 +170,8 @@ Current inventory resources:
 - `stone`: building/crafting input, produced by mining.
 - `ore`: high-value raw material, present for later production chains.
 - `tool`: craftable/equippable item, present for later tool/skill mechanics.
+- `ingot`: workshop-smelted intermediate made from ore and wood.
+- `advanced_tool`: durable workshop-made capital good with a larger productivity and energy advantage.
 
 ## Structures
 
@@ -170,7 +195,9 @@ W = water
 
 ## Current Research State
 
-The first GLM-5.2 run (5 agents, 18 ticks) produced solo infrastructure investment (a well, two farm plots, storage), the first accepted trade, access grants, functional coordination speech, and spontaneous division-of-labor language ("I farm, you bring water") — with zero deaths. Two gaps drove the current tuning: agents verbally promised structure access without executing `grant_access` (owners now receive an `access_denied` event when someone is turned away at their structure, and visible structures show `access_granted` per observer), and a survival treadmill left no surplus for heavy cooperative builds (reserve ceilings raised: food/water 15→20, energy 25→30 with start 25, so agents can bank a good trip into project time). Decay rates are unchanged — pressure still binds, but a full tank now buys more ticks. Cooperative construction (`contribute` on under-construction sites) has not yet been exercised by real agents; watch `construction.cooperative_sites`.
+The completed 60-tick Lakeside GLM-5.2 run produced ten structures, two heavy cooperative builds, one five-member polity, six group-owned structures, 27 gifts, eight trade offers, and one accepted barter trade with no deaths. Detailed inspection showed that 23 gift actions were food/water aid, while only four moved productive materials. This motivated explicit objective/geography/economy treatments instead of interpreting a single small-group run as evidence for one economic ideology.
+
+The commerce treatment now supplies the previously missing conditions for exchange and entrepreneurship: real skill/tool productivity, a deeper capital chain, separated specialists, priced productive access, contributor returns, standing markets with price history, secured credit, upkeep, finite service capacity, and nonzero coordination costs. Use `agent_world.cli experiment` to run matched multi-seed cells; ordinary runs retain the neutral historical baseline.
 
 The most important diagnostics to watch are:
 
@@ -191,6 +218,7 @@ For richer context, see:
 - [docs/agent-interface.md](docs/agent-interface.md)
 - [docs/observability.md](docs/observability.md)
 - [docs/research-notes.md](docs/research-notes.md)
+- [docs/economy-experiments.md](docs/economy-experiments.md)
 
 ## Design Principle
 

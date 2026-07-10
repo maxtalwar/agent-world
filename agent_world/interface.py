@@ -6,7 +6,14 @@ import json
 from typing import Any
 
 from agent_world.models import Agent, AgentDecision, Event, Position, WorldState
-from agent_world.rules import ACTION_SCHEMA, MECHANICS_SUMMARY, RECIPES, TERRAIN_RULES
+from agent_world.rules import (
+    ACTION_SCHEMA,
+    COMMUNICATION_ACTION_TYPES,
+    GROUP_ADMIN_ACTION_TYPES,
+    MECHANICS_SUMMARY,
+    RECIPES,
+    TERRAIN_RULES,
+)
 
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_response"}
@@ -60,6 +67,11 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         for trade in state.trades.values()
         if trade.status == "open" and _trade_visible_to_agent(state, agent, trade, radius)
     ]
+    visible_contracts = [
+        contract.summary()
+        for contract in getattr(state, "contracts", {}).values()
+        if agent.id in {contract.lender_id, contract.borrower_id}
+    ]
     return {
         "tick": state.tick,
         "world": {
@@ -67,6 +79,11 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "height": state.config.height,
             "visible_radius": radius,
             "action_points_per_tick": state.config.action_points_per_tick,
+            "objective_mode": getattr(state.config, "objective_mode", "neutral"),
+            "economy_mode": getattr(state.config, "economy_mode", "baseline"),
+            "geography_mode": getattr(state.config, "geography_mode", "shared_oasis"),
+            "communication_action_cost": getattr(state.config, "communication_cost", lambda: 0)(),
+            "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
             "reserve_scale": {
                 "minimum": 0,
                 "maximum": {
@@ -93,6 +110,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
                     "energy": recipe.energy,
                     "required_terrain": list(recipe.required_terrain),
                     "required_tool": recipe.required_tool,
+                    "required_structure": getattr(recipe, "required_structure", None),
                 }
                 for name, recipe in RECIPES.items()
             },
@@ -109,6 +127,10 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "carry_capacity": agent.carry_capacity,
             "skills": dict(agent.skills),
             "equipped": sorted(agent.equipped),
+            "equipment_durability": dict(getattr(agent, "equipment_durability", {})),
+            "aptitudes": dict(getattr(agent, "aptitudes", {})),
+            "need_multipliers": dict(getattr(agent, "need_multipliers", {})),
+            "specialty": getattr(agent, "specialty", None),
             "groups": sorted(agent.groups),
             "relationships": dict(agent.relationships),
             "reputation": agent.reputation,
@@ -127,6 +149,8 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         "recent_action_feedback": _recent_action_feedback(state, agent),
         "memory": list(agent.memory[-state.config.max_memory :]),
         "open_trades": open_trades,
+        "market_history": list(getattr(state, "market_history", []))[-12:],
+        "known_contracts": visible_contracts,
         "known_groups": {
             gid: group.summary()
             for gid, group in state.groups.items()
@@ -136,7 +160,10 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "shape": "flat_object",
             "rule": "Each action must be a flat JSON object with a top-level type key. Put arguments directly beside type.",
             "actions": "Submit actions as an ordered list. Multiple actions may be included in one response; plan against action costs because the world spends action points in order until no action points remain.",
-            "messages": "Submit speech in messages. Speech is delivered before actions and does not spend action points.",
+            "messages": (
+                "Submit speech in messages. Speech is delivered before actions and each message uses "
+                f"{getattr(state.config, 'communication_cost', lambda: 0)()} action points in this treatment."
+            ),
             "do_not_use_keys": ["fields", "parameters", "example"],
             "valid_example": {"type": "move", "direction": "east"},
             "invalid_example": {"type": "move", "fields": {"direction": "east"}},
@@ -154,11 +181,32 @@ PROMPT_RULES = [
     'Valid action example: {"type":"move","direction":"east"}. Invalid: {"type":"move","fields":{"direction":"east"}}.',
     "You may include multiple actions in the actions list; the world processes them in order until action points run out.",
     "Plan against the action costs listed below and your current action points and energy.",
-    "Use messages for speech; messages are delivered without spending action points.",
+    "Use messages for speech; messages are delivered before actions and use the communication cost listed for this treatment.",
     "Food, water, and energy in self.reserves are reserves where higher is better and 0 is danger.",
-    "Balance immediate survival with longer-term resilience. If a problem keeps recurring, consider actions that could reduce future pressure.",
     "Use recent_action_feedback to avoid repeating invalid actions.",
 ]
+
+
+OBJECTIVE_INSTRUCTIONS = {
+    "neutral": (
+        "No external score is specified. Preserve your continued agency by balancing immediate survival with "
+        "longer-term resilience, and decide for yourself how other agents matter."
+    ),
+    "collective": (
+        "Your persistent objective is to maximize the long-term survival, health, and resilient productive "
+        "capacity of all living agents. Your own welfare counts equally with theirs."
+    ),
+    "individual": (
+        "Your persistent objective is to maximize your own long-term survival, health, retained resources, and "
+        "control of productive assets. Other agents' welfare matters only insofar as it affects your own long-term "
+        "outcome; cooperation may still be useful."
+    ),
+}
+
+
+def objective_instruction(world: dict[str, Any]) -> str:
+    mode = str(world.get("objective_mode", "neutral"))
+    return OBJECTIVE_INSTRUCTIONS.get(mode, OBJECTIVE_INSTRUCTIONS["neutral"])
 
 
 def build_static_context(world: dict[str, Any]) -> str:
@@ -173,6 +221,7 @@ def build_static_context(world: dict[str, Any]) -> str:
     reserve_max = world.get("reserve_scale", {}).get("maximum", {})
     lines: list[str] = []
     lines.extend(PROMPT_RULES)
+    lines.append(objective_instruction(world))
     lines.append("")
     lines.append(
         f"WORLD: {world.get('width', '?')}x{world.get('height', '?')} grid, visible radius {world.get('visible_radius', '?')}, "
@@ -193,7 +242,13 @@ def build_static_context(world: dict[str, Any]) -> str:
         cost = action.get("cost", {})
         params = action.get("parameters", {})
         param_text = " {" + ", ".join(f"{key}: {value}" for key, value in params.items()) + "}" if params else ""
-        cost_text = f"{cost.get('action_points', 0)}ap,{cost.get('energy', 0)}en"
+        action_type = str(action["type"])
+        action_points = cost.get("action_points", 0)
+        if action_type in COMMUNICATION_ACTION_TYPES:
+            action_points = world.get("communication_action_cost", action_points)
+        elif action_type in GROUP_ADMIN_ACTION_TYPES:
+            action_points = world.get("group_admin_action_cost", action_points)
+        cost_text = f"{action_points}ap,{cost.get('energy', 0)}en"
         effect = cost.get("effect")
         effect_text = f" ({effect})" if effect else ""
         lines.append(f"- {action['type']}{param_text} cost:{cost_text}{effect_text}")
@@ -202,7 +257,8 @@ def build_static_context(world: dict[str, Any]) -> str:
     for name, recipe in sorted(RECIPES.items()):
         inputs = "+".join(f"{qty} {item}" for item, qty in sorted(recipe.inputs.items()))
         terrain = f", terrain: {'|'.join(recipe.required_terrain)}" if recipe.required_terrain else ""
-        lines.append(f"- {name}: {inputs} -> {recipe.action_points}ap,{recipe.energy}en{terrain}")
+        structure = f", at: {recipe.required_structure}" if getattr(recipe, "required_structure", None) else ""
+        lines.append(f"- {name}: {inputs} -> {recipe.action_points}ap,{recipe.energy}en{terrain}{structure}")
     lines.append("")
     lines.append("MECHANICS:")
     for section_name, section in MECHANICS_SUMMARY.items():
@@ -275,6 +331,7 @@ def build_agent_prompt(observation: dict[str, Any], compact: bool = False) -> st
     return "\n".join(
         [
             *PROMPT_RULES,
+            objective_instruction(observation.get("world", {})),
             "The observation follows as JSON:",
             json.dumps(observation, indent=2, sort_keys=True),
         ]
@@ -361,7 +418,11 @@ def _event_visible_to(event: Event, agent: Agent, radius: int) -> bool:
 
 
 def _can_inspect_structure(agent: Agent, structure: Any) -> bool:
-    return _controls_owner(agent, structure.owner_id) or _has_access_grant(agent, structure.access)
+    return (
+        _controls_owner(agent, structure.owner_id)
+        or _has_access_grant(agent, structure.access)
+        or bool(getattr(structure, "public_access", False))
+    )
 
 
 def _trade_visible_to_agent(state: WorldState, agent: Agent, trade: Any, radius: int) -> bool:
@@ -369,6 +430,8 @@ def _trade_visible_to_agent(state: WorldState, agent: Agent, trade: Any, radius:
         return True
     if trade.to_agent != "any":
         return False
+    if getattr(trade, "market_scope", "local") == "global":
+        return True
     offerer = state.agents.get(trade.from_agent)
     return offerer is not None and offerer.alive and agent.position.distance_to(offerer.position) <= radius
 
@@ -401,5 +464,3 @@ def _recent_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, A
         if len(feedback) >= 5:
             break
     return list(reversed(feedback))
-
-

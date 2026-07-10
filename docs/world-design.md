@@ -69,7 +69,7 @@ Structures are neutral affordances. Agents are not told to build them; they see 
 ## Current Tuning
 
 - Carry capacity is tight enough for storage to matter: `10`.
-- Food and water reserves start at `10` and cap at `15`; energy starts at `20` and caps at `25`.
+- Food and water reserves start at `10` and cap at `20`; energy starts at `25` and caps at `30`.
 - Agents start with limited supplies: `food 1`, `water 2`.
 - Water tiles are impassable until a future bridge/boat mechanic exists.
 - Carried food spoils every few ticks; food inside storage, houses, or workshops is protected.
@@ -79,12 +79,14 @@ Structures are neutral affordances. Agents are not told to build them; they see 
 - Wild food regrowth is intentionally low so construction pressure appears earlier.
 - Build-readiness diagnostics are computed for researchers, but not included in agent observations.
 
+The historical defaults use `shared_oasis`, `baseline`, and `neutral` treatment modes. The optional commerce experiment uses dispersed specialist spawns, productivity-bearing skills and durable tools, global standing offers with price history, productive-asset capacity/upkeep, paid public access, contributor dividends, and secured credit. See [economy-experiments.md](economy-experiments.md).
+
 ## Next Likely Mechanics
 
 - multi-tick construction and crop growth stages
-- tool quality affecting extraction
+- additional tool quality and capital-good tiers
 - roads/paths lowering movement cost
 - boats/bridges for crossing water
-- metal production chain from ore
-- public boards for posted offers and contracts
+- longer production chains beyond ore, ingots, and advanced tools
+- richer order-book matching beyond standing barter lots
 - richer group governance and enforcement

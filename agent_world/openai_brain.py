@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 import json
+import hashlib
 import os
 from pathlib import Path
 import re
@@ -70,7 +71,7 @@ AGENT_DECISION_SCHEMA: dict[str, Any] = {
 
 SYSTEM_INSTRUCTIONS = (
     "You are choosing one tick of behavior for a simulated world agent. "
-    "Balance immediate survival with longer-term resilience. "
+    "Pursue the objective stated in the world rulebook while respecting the simulated constraints. "
     "Use only valid actions from the observation. Return JSON only. "
     "Keep the JSON concise. Use short strings. "
     "Do not describe plans outside the JSON. Do not assume hidden abilities."
@@ -138,7 +139,7 @@ class OpenAIBrain:
         with cls._rate_lock:
             return list(cls._usage_records)
 
-    def _record_usage(self, response: dict[str, Any]) -> None:
+    def _record_usage(self, response: dict[str, Any], request_meta: dict[str, Any] | None = None) -> None:
         usage = response.get("usage")
         if not isinstance(usage, dict):
             return
@@ -146,6 +147,11 @@ class OpenAIBrain:
         completion_details = usage.get("completion_tokens_details") or {}
         record = {
             "model": self.model,
+            "response_model": response.get("model"),
+            "provider": response.get("provider"),
+            "api_style": self.api_style,
+            "base_url": self.base_url,
+            "reasoning_effort": self.reasoning_effort,
             "prompt_tokens": usage.get("prompt_tokens", 0),
             "cached_tokens": prompt_details.get("cached_tokens", 0),
             "completion_tokens": usage.get("completion_tokens", 0),
@@ -153,6 +159,7 @@ class OpenAIBrain:
             "cost": usage.get("cost", 0),
             "time": time.time(),
         }
+        record.update(request_meta or {})
         with self._rate_lock:
             self.__class__._usage_records.append(record)
         # Persist incrementally so an interrupted run (crash, kill, laptop sleep) keeps
@@ -179,9 +186,18 @@ class OpenAIBrain:
             endpoint, payload, extractor = "/chat/completions", self._chat_payload(static_context, dynamic_json), extract_chat_text
         else:
             endpoint, payload, extractor = "/responses", self._responses_payload(static_context, dynamic_json), extract_output_text
+        request_bytes = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        request_meta = {
+            "agent_id": observation.get("self", {}).get("id"),
+            "tick": observation.get("tick"),
+            "static_prompt_sha256": hashlib.sha256(
+                f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
+            ).hexdigest(),
+            "request_sha256": hashlib.sha256(request_bytes).hexdigest(),
+        }
         try:
             response = self._post_json_with_retries(endpoint, payload)
-            self._record_usage(response)
+            self._record_usage(response, request_meta)
             return parse_agent_response(extractor(response))
         except OpenAIQuotaError as exc:
             self._mark_quota_unavailable(str(exc))

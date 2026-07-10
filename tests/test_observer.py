@@ -160,6 +160,9 @@ class ObserverTests(unittest.TestCase):
         self.assertIn('id="tab-config"', HTML)
         self.assertIn('id="panel-config"', HTML)
         self.assertIn('id="cfg-carry-capacity"', HTML)
+        self.assertIn('id="cfg-objective-mode"', HTML)
+        self.assertIn('id="cfg-economy-mode"', HTML)
+        self.assertIn('id="cfg-geography-mode"', HTML)
         self.assertIn('id="cfg-action-points"', HTML)
         self.assertIn('id="cfg-storage-capacity"', HTML)
         self.assertIn('id="cfg-food-start"', HTML)
@@ -179,6 +182,7 @@ class ObserverTests(unittest.TestCase):
         self.assertIn('id="run-ticks" class="lock" type="number" min="1" max="1000" value="20"', HTML)
         self.assertIn('id="run-seed" class="lock" type="number" min="0" value="11"', HTML)
         self.assertIn('action_points_per_tick: numberValue("cfg-action-points")', HTML)
+        self.assertIn('objective_mode: document.getElementById("cfg-objective-mode").value', HTML)
         self.assertIn('default_carry_capacity: numberValue("cfg-carry-capacity")', HTML)
         self.assertIn('storage_capacity: numberValue("cfg-storage-capacity")', HTML)
         self.assertIn('carried_food_spoil_interval: numberValue("cfg-food-spoil-interval")', HTML)
@@ -189,6 +193,19 @@ class ObserverTests(unittest.TestCase):
         self.assertIn('const TERRAIN_STORAGE_KEY = "agentWorldObservatory.terrainRegrowth"', HTML)
         self.assertIn("loadTerrainConfig();", HTML)
         self.assertIn("saveTerrainConfig", HTML)
+
+    def test_run_config_accepts_economic_treatments(self) -> None:
+        config = _parse_run_config(
+            {
+                "brain": "survival",
+                "objective_mode": "individual",
+                "economy_mode": "commerce",
+                "geography_mode": "dispersed",
+            }
+        )
+        self.assertEqual(config.world_config.objective_mode, "individual")
+        self.assertEqual(config.world_config.economy_mode, "commerce")
+        self.assertEqual(config.world_config.geography_mode, "dispersed")
 
     def test_map_renders_illustrated_structures_and_agent_figures(self) -> None:
         self.assertIn(':root {\n      color-scheme: light;', HTML)

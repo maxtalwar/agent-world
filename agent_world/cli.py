@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import Any
 from agent_world.ablation import format_table, run_ablation
 from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.env import load_dotenv
+from agent_world.experiments import run_factorial_experiment
 from agent_world.interface import build_agent_prompt, build_observation
 from agent_world.maps import render_tiles
 from agent_world.metrics import compute_metrics, is_quota_failure_message
@@ -33,6 +35,9 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--seed", type=int, default=1)
     run_parser.add_argument("--width", type=int, default=16)
     run_parser.add_argument("--height", type=int, default=16)
+    run_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default="neutral")
+    run_parser.add_argument("--economy-mode", choices=["baseline", "commerce"], default="baseline")
+    run_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default="shared_oasis")
     run_parser.add_argument("--brain", choices=["survival", "llm"], default="survival")
     run_parser.add_argument("--model", default=None, help="OpenAI model for --brain llm. Defaults to OPENAI_MODEL.")
     run_parser.add_argument(
@@ -58,6 +63,9 @@ def main(argv: list[str] | None = None) -> None:
     prompt_parser.add_argument("--agent", default="agent-1")
     prompt_parser.add_argument("--width", type=int, default=16)
     prompt_parser.add_argument("--height", type=int, default=16)
+    prompt_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default="neutral")
+    prompt_parser.add_argument("--economy-mode", choices=["baseline", "commerce"], default="baseline")
+    prompt_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default="shared_oasis")
 
     map_parser = subparsers.add_parser("map", help="Print the standard world map.")
     map_parser.add_argument("--width", type=int, default=16)
@@ -87,6 +95,44 @@ def main(argv: list[str] | None = None) -> None:
     )
     report_parser.add_argument("paths", type=Path, nargs="+", help="Run event logs (.jsonl) with matching -snapshot.json files.")
 
+    experiment_parser = subparsers.add_parser(
+        "experiment",
+        help="Run a reproducible multi-seed environment x objective factorial experiment.",
+    )
+    experiment_parser.add_argument("--agents", type=int, default=5)
+    experiment_parser.add_argument("--ticks", type=int, default=60)
+    experiment_parser.add_argument("--seeds", type=int, nargs="+", default=[11])
+    experiment_parser.add_argument(
+        "--brain",
+        choices=["survival", "llm"],
+        default="survival",
+        help="Defaults to the free local scripted brain. LLM calls occur only when explicitly selected.",
+    )
+    experiment_parser.add_argument("--model", default=None)
+    experiment_parser.add_argument(
+        "--reasoning-effort",
+        choices=["minimal", "low", "medium", "high"],
+        default=None,
+    )
+    experiment_parser.add_argument(
+        "--environment",
+        choices=["all", "baseline", "commerce"],
+        default="all",
+        help="baseline=shared oasis/baseline economy; commerce=dispersed geography/commerce mechanics.",
+    )
+    experiment_parser.add_argument(
+        "--objective",
+        choices=["all", "collective", "individual"],
+        default="all",
+    )
+    experiment_parser.add_argument("--width", type=int, default=16)
+    experiment_parser.add_argument("--height", type=int, default=16)
+    experiment_parser.add_argument("--out-dir", type=Path, default=None)
+    experiment_parser.add_argument("--no-agent-io-log", action="store_true")
+    experiment_parser.add_argument("--max-workers", type=int, default=None)
+    experiment_parser.add_argument("--overwrite", action="store_true")
+    experiment_parser.add_argument("--progress", action="store_true")
+
     args = parser.parse_args(argv)
     if args.command == "run":
         _run(args)
@@ -102,16 +148,27 @@ def main(argv: list[str] | None = None) -> None:
         _ablate(args)
     elif args.command == "report":
         _report(args)
+    elif args.command == "experiment":
+        _experiment(args)
 
 
 def _run(args: argparse.Namespace) -> None:
     load_dotenv()
+    if args.brain == "llm":
+        OpenAIBrain.reset_runtime_state()
     if args.brain == "llm" and args.out:
         usage_path = args.out.with_name(args.out.stem + "-usage.jsonl")
         usage_path.parent.mkdir(parents=True, exist_ok=True)
         usage_path.write_text("", encoding="utf-8")
         os.environ["AGENT_WORLD_USAGE_LOG"] = str(usage_path)
-    config = WorldConfig(width=args.width, height=args.height, seed=args.seed)
+    config = WorldConfig(
+        width=args.width,
+        height=args.height,
+        seed=args.seed,
+        objective_mode=getattr(args, "objective_mode", "neutral"),
+        economy_mode=getattr(args, "economy_mode", "baseline"),
+        geography_mode=getattr(args, "geography_mode", "shared_oasis"),
+    )
     names = [f"Agent {index + 1}" for index in range(args.agents)]
     engine = WorldEngine.create(config=config, agent_names=names)
     brains = _make_brains(engine, args)
@@ -121,6 +178,22 @@ def _run(args: argparse.Namespace) -> None:
         log_agent_io=not args.no_agent_io_log,
         concurrent_decisions=not args.sequential_decisions and _max_workers(args) != 1,
         max_workers=_max_workers(args),
+    )
+    engine.log_event(
+        "run_started",
+        message=f"Started {args.brain} run with {args.agents} agents.",
+        data={
+            "brain": args.brain,
+            "agents": args.agents,
+            "seed": args.seed,
+            "target_ticks": args.ticks,
+            "model": args.model,
+            "reasoning_effort": args.reasoning_effort,
+            "objective_mode": getattr(args, "objective_mode", "neutral"),
+            "economy_mode": getattr(args, "economy_mode", "baseline"),
+            "geography_mode": getattr(args, "geography_mode", "shared_oasis"),
+        },
+        scope="public",
     )
     stopped_reason: str | None = None
     for _ in range(args.ticks):
@@ -143,6 +216,20 @@ def _run(args: argparse.Namespace) -> None:
             _atomic_write_text(args.snapshot, json.dumps(engine.snapshot(), indent=2, sort_keys=True))
         if stopped_reason:
             break
+
+    if stopped_reason is None:
+        engine.log_event(
+            "run_completed",
+            message=f"Completed {args.ticks} target ticks.",
+            data={"target_ticks": args.ticks},
+            scope="public",
+        )
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write_text(args.out, engine.export_events_jsonl() + "\n")
+    if args.snapshot:
+        args.snapshot.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write_text(args.snapshot, json.dumps(engine.snapshot(), indent=2, sort_keys=True))
 
     metrics = compute_metrics(engine.state)
     print(json.dumps(metrics, indent=2, sort_keys=True))
@@ -210,6 +297,45 @@ def _report(args: argparse.Namespace) -> None:
         print(format_comparison(reports))
 
 
+def _experiment(args: argparse.Namespace) -> None:
+    load_dotenv()
+    environments = ["baseline", "commerce"] if args.environment == "all" else [args.environment]
+    objectives = ["collective", "individual"] if args.objective == "all" else [args.objective]
+    out_dir = args.out_dir or _default_experiment_dir()
+
+    def progress(row: dict[str, Any]) -> None:
+        if args.progress:
+            print(
+                f"{row['run_id']}: completed tick {row['tick']}/{row['target_ticks']}",
+                flush=True,
+            )
+
+    manifest = run_factorial_experiment(
+        out_dir=out_dir,
+        seeds=args.seeds,
+        ticks=args.ticks,
+        agents=args.agents,
+        brain=args.brain,
+        model=args.model,
+        reasoning_effort=args.reasoning_effort,
+        environments=environments,
+        objectives=objectives,
+        width=args.width,
+        height=args.height,
+        log_agent_io=not args.no_agent_io_log,
+        max_workers=args.max_workers,
+        overwrite=args.overwrite,
+        progress_callback=progress,
+    )
+    aggregate = manifest["aggregate_summary"]
+    print(
+        f"Experiment {manifest['status']}: {aggregate['valid_run_count']}/{aggregate['run_count']} "
+        f"runs valid for analysis; LLM cost ${aggregate['total_llm_cost_usd']:.6f}."
+    )
+    print(f"Wrote experiment manifest to {manifest['outputs']['manifest']}")
+    print(f"Wrote aggregate summary to {manifest['outputs']['summary_json']}")
+
+
 def _replay(args: argparse.Namespace) -> None:
     events = read_events(args.path)
     for event in events[-args.last :]:
@@ -217,7 +343,14 @@ def _replay(args: argparse.Namespace) -> None:
 
 
 def _prompt(args: argparse.Namespace) -> None:
-    config = WorldConfig(width=args.width, height=args.height, seed=args.seed)
+    config = WorldConfig(
+        width=args.width,
+        height=args.height,
+        seed=args.seed,
+        objective_mode=args.objective_mode,
+        economy_mode=args.economy_mode,
+        geography_mode=args.geography_mode,
+    )
     names = [f"Agent {index + 1}" for index in range(args.agents)]
     engine = WorldEngine.create(config=config, agent_names=names)
     observation: dict[str, Any] = build_observation(engine.state, args.agent)
@@ -279,6 +412,11 @@ def _atomic_write_text(path: Path, text: str) -> None:
     tmp_path = path.with_name(f".{path.name}.tmp")
     tmp_path.write_text(text, encoding="utf-8")
     tmp_path.replace(path)
+
+
+def _default_experiment_dir() -> Path:
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return Path("runs") / "experiments" / stamp
 
 
 def _contains_quota_failure(events: list[Any]) -> bool:

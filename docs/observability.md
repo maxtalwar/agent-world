@@ -16,6 +16,7 @@ Start runs from the browser at `http://127.0.0.1:8765`. The Run panel accepts:
 - agents: number of spawned agents
 - ticks: target ticks to run
 - seed: deterministic world/run seed
+- objective/economy/geography treatment modes
 - model: model used for `llm` runs, defaulting to `z-ai/glm-5.2` via OpenRouter
 - max workers: same-tick brain call concurrency; keep this at `1` for LLM runs unless rate limits allow more
 - agent IO log: whether to keep private observations and prompts in the JSONL audit log
@@ -53,6 +54,8 @@ Private prompt/observation logs are stored for audit but are not fed back into f
 - `agents.living` and death count
 - `wealth` and `wealth_gini`
 - `trade.accepted`, `trade.open`, `trade.volume`
+- `economic_flows` for valued gifts, offer conversion, price history, and contract activity
+- `specialization` and `productive_assets`, including asset-adjusted wealth
 - `infrastructure.structures_by_type`
 - `infrastructure.build_readiness.ready_counts`
 - `infrastructure.builds`, `farm_actions`, `store_actions`, `retrieve_actions`
