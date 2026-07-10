@@ -8,6 +8,24 @@ from agent_world.world import WorldEngine
 
 
 class EconomicInterfaceTests(unittest.TestCase):
+    def test_organic_broadcast_uses_its_audible_radius_not_visual_radius(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(
+                economy_mode="organic",
+                survival_food_decay=0,
+                survival_water_decay=0,
+                survival_energy_decay=0,
+            ),
+            agent_names=["A1", "A2"],
+        )
+        speaker = engine.state.agents["agent-1"]
+        listener = engine.state.agents["agent-2"]
+        speaker.position = Position(8, 8)
+        listener.position = Position(8, 11)
+        engine.tick({speaker.id: AgentDecision(actions=[{"type": "broadcast", "text": "market at eight eight"}])})
+        observation = build_observation(engine.state, listener.id)
+        self.assertIn("market at eight eight", [event["message"] for event in observation["recent_events"]])
+
     def test_global_public_offer_is_visible_to_distant_agent(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(

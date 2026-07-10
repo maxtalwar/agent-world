@@ -461,7 +461,13 @@ def _event_visible_to(event: Event, agent: Agent, radius: int, *, local_public: 
     if event.scope == "public":
         if not local_public or event.position is None:
             return True
-        return agent.position.distance_to(event.position) <= radius
+        audible_radius = radius
+        if event.type == "broadcast":
+            try:
+                audible_radius = max(radius, int(event.data.get("radius", radius)))
+            except (TypeError, ValueError):
+                audible_radius = radius
+        return agent.position.distance_to(event.position) <= audible_radius
     if event.actor_id == agent.id or agent.id in event.recipients:
         return True
     if event.scope == "private":
