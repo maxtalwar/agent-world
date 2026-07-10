@@ -8,9 +8,20 @@ Agent World keeps its original neutral world as the default and exposes named tr
 |---|---|---|
 | `objective_mode` | `neutral`, `collective`, `individual` | Separates the original ambiguous objective from explicit group-welfare and private-utility treatments. |
 | `geography_mode` | `shared_oasis`, `dispersed` | Compares a tightly clustered settlement with geographically separated specialists. |
-| `economy_mode` | `baseline`, `commerce` | Enables market-wide offers, productive-asset capacity and upkeep, access fees, contributor dividends, and secured credit. |
+| `economy_mode` | `baseline`, `commerce`, `organic` | `commerce` enables market-wide exchange tools; `organic` keeps exchange and information local while strengthening specialization and economies of scale. |
 
 The `commerce` experiment condition pairs `dispersed` geography with `commerce` mechanics. The ordinary world remains `neutral` + `shared_oasis` + `baseline` for backwards comparison.
+
+The `organic` condition pairs dispersed specialists with physical local exchange. It is intentionally excluded from the default 2x2 sweep and can be selected explicitly with `--environment organic --objective neutral`.
+
+## Organic Mechanics
+
+- Specialists start with much higher skill and aptitude in one occupation. Off-specialty work remains possible but produces less, costs two additional energy, and improves slowly.
+- Farms, wells, storage, houses, shelters, and workshops have substantially higher fixed costs. Their capacity and upkeep intervals scale up too, making one shared asset cheaper than five duplicates without requiring sharing.
+- Each agent begins with four physical `coin` items. Coins have no survival effect, weigh nothing at the current integer scale, can be lost/stored/transferred, and can be minted from ingots in a workshop. The prompt does not assign them a price or require their use.
+- Offering a trade removes the offered goods from inventory and deposits them at the offer tile. Both parties must meet on that exact tile to settle.
+- Public offers and completed prices are visible only locally. If an offer expires while its owner is away, the goods remain as an owned pile at the offer tile.
+- Local speech and group administration are free. Global order books and engine-enforced credit are disabled; agents can still create groups, record agreements, grant access, and exchange physical goods.
 
 ## Commerce Mechanics
 
@@ -62,6 +73,18 @@ python3 -m agent_world.cli experiment \
   --environment commerce \
   --objective individual \
   --out-dir runs/experiments/commerce-individual-seed23 \
+  --progress
+```
+
+Run the neutral organic treatment with GPT-5.6 Luna:
+
+```bash
+python3 -m agent_world.cli experiment \
+  --brain llm \
+  --model openai/gpt-5.6-luna \
+  --agents 5 --ticks 40 --seeds 29 \
+  --environment organic --objective neutral \
+  --out-dir runs/experiments/gpt56-luna-organic-neutral-seed29 \
   --progress
 ```
 

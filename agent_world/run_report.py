@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_world.metrics import is_decision_failure_message, is_quota_failure_message
-from agent_world.rules import RECIPES, RESOURCE_VALUES
+from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_response"}
 SUBSISTENCE_ITEMS = frozenset({"food", "water"})
@@ -565,6 +565,7 @@ def _summarize_construction_economy(
         structures = {}
     groups = snapshot.get("groups") or {}
     agents = snapshot.get("agents") or {}
+    economy_mode = str((snapshot.get("config") or {}).get("economy_mode", "baseline"))
 
     assets_by_owner_raw: dict[str, dict[str, Any]] = {}
     total_replacement_value = 0
@@ -588,7 +589,7 @@ def _summarize_construction_economy(
             },
         )
         structure_type = str(structure.get("type") or "unknown")
-        replacement_value = _structure_replacement_value(structure_type)
+        replacement_value = _structure_replacement_value(structure_type, economy_mode)
         inventory_value = _book_value(_positive_item_counts(structure.get("inventory")))
         is_complete = structure.get("status") == "complete"
         record["structure_ids"].append(str(structure_id))
@@ -833,8 +834,8 @@ def _owner_kind(owner_id: str, agents: Any, groups: Any) -> str:
     return "other"
 
 
-def _structure_replacement_value(structure_type: str) -> int:
-    recipe = RECIPES.get(structure_type)
+def _structure_replacement_value(structure_type: str, economy_mode: str = "baseline") -> int:
+    recipe = recipes_for_mode(economy_mode).get(structure_type)
     if recipe is None:
         return 0
     return _book_value(getattr(recipe, "inputs", {}))

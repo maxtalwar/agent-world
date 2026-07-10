@@ -41,7 +41,7 @@ Agents see only local map tiles within visibility radius. They do not see the fu
 
 The `world` object includes treatment modes, coordination costs, terrain passability, recipes, and required terrain/tools/structures. It does not include exact terrain yield, regeneration probabilities, spoilage cadence, or current build recommendations.
 
-Agents also receive visible standing offers, completed market-price history, and contracts to which they are a party. Public structures expose access fees, capacity, upkeep state, treasury, and contributor shares.
+Agents also receive visible standing offers, completed market-price history, and contracts to which they are a party. In organic mode, public offers and price history are local, trade summaries include a physical `escrow_position`, and engine-enforced contract actions are absent. Public structures expose access fees, capacity, upkeep state, treasury, and contributor shares.
 
 ## Explicitly Not Included
 

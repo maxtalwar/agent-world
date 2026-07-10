@@ -59,12 +59,4 @@ Emergence requires pressure gradients:
 
 ## Currency Direction
 
-Do not hard-code an official currency yet. Prefer currency-capable commodities and institutions:
-
-- durable/scarce ingots
-- posted offers
-- IOUs/promissory notes
-- escrowed trades
-- group/shared ledgers
-
-If a state later emerges, agents can create official currency through rules/policy.
+The organic treatment now includes a deliberately minimal physical currency affordance: every agent inherits four `coin` items and workshops can mint eight from one ingot. Coins have no mandated value, survival use, abstract balance, automatic payment, or global ledger. Agents may ignore them. This tests whether a stronger model voluntarily treats a portable durable item as a medium of exchange while preserving room for commodity money, credit, or institutional currencies to emerge later.

@@ -35,6 +35,15 @@ class FactorialExperimentTests(unittest.TestCase):
             "economy_mode": "commerce",
             "objective_mode": "individual",
         })
+        organic = selected_conditions(["organic"], ["neutral"])
+        self.assertEqual(
+            organic[0]["config_overrides"],
+            {
+                "geography_mode": "dispersed",
+                "economy_mode": "organic",
+                "objective_mode": "neutral",
+            },
+        )
 
     def test_world_config_treatments_are_applied_through_dataclass_fields(self) -> None:
         config, applied, unsupported = _configured_world(

@@ -36,7 +36,7 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--width", type=int, default=16)
     run_parser.add_argument("--height", type=int, default=16)
     run_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default="neutral")
-    run_parser.add_argument("--economy-mode", choices=["baseline", "commerce"], default="baseline")
+    run_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default="baseline")
     run_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default="shared_oasis")
     run_parser.add_argument("--brain", choices=["survival", "llm"], default="survival")
     run_parser.add_argument("--model", default=None, help="OpenAI model for --brain llm. Defaults to OPENAI_MODEL.")
@@ -64,7 +64,7 @@ def main(argv: list[str] | None = None) -> None:
     prompt_parser.add_argument("--width", type=int, default=16)
     prompt_parser.add_argument("--height", type=int, default=16)
     prompt_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default="neutral")
-    prompt_parser.add_argument("--economy-mode", choices=["baseline", "commerce"], default="baseline")
+    prompt_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default="baseline")
     prompt_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default="shared_oasis")
 
     map_parser = subparsers.add_parser("map", help="Print the standard world map.")
@@ -116,13 +116,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     experiment_parser.add_argument(
         "--environment",
-        choices=["all", "baseline", "commerce"],
+        choices=["all", "baseline", "commerce", "organic"],
         default="all",
-        help="baseline=shared oasis/baseline economy; commerce=dispersed geography/commerce mechanics.",
+        help="baseline=shared oasis; commerce=global market treatment; organic=dispersed specialists with physical local exchange.",
     )
     experiment_parser.add_argument(
         "--objective",
-        choices=["all", "collective", "individual"],
+        choices=["all", "neutral", "collective", "individual"],
         default="all",
     )
     experiment_parser.add_argument("--width", type=int, default=16)

@@ -7,7 +7,7 @@ import unittest
 from agent_world.interface import build_agent_prompt, build_observation
 from agent_world.metrics import compute_metrics
 from agent_world.models import AgentDecision, Position, WorldConfig
-from agent_world.rules import ACTION_SCHEMA, RECIPES, RESOURCE_WEIGHTS
+from agent_world.rules import ACTION_SCHEMA, RECIPES, RESOURCE_WEIGHTS, recipes_for_mode
 from agent_world.runner import SimulationRunner
 from agent_world.world import WorldEngine
 
@@ -193,6 +193,121 @@ class WorldEngineTests(unittest.TestCase):
         self.assertEqual(a2.inventory["food"], 1)
         self.assertEqual(engine.state.trades[trade_id].status, "accepted")
         self.assertTrue(engine.state.trades[trade_id].escrow_released)
+
+    def test_organic_trade_requires_a_physical_meeting_at_the_escrow_tile(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(
+                seed=3,
+                economy_mode="organic",
+                survival_food_decay=0,
+                survival_water_decay=0,
+                survival_energy_decay=0,
+            ),
+            agent_names=["A1", "A2"],
+        )
+        a1 = engine.state.agents["agent-1"]
+        a2 = engine.state.agents["agent-2"]
+        meeting = Position(8, 8)
+        a1.position = meeting
+        a2.position = Position(8, 9)
+        a1.inventory = Counter({"food": 2})
+        a2.inventory = Counter({"wood": 1})
+
+        engine.tick(
+            {
+                "agent-1": AgentDecision(
+                    actions=[
+                        {
+                            "type": "offer_trade",
+                            "to": "agent-2",
+                            "give": {"food": 1},
+                            "receive": {"wood": 1},
+                        }
+                    ]
+                )
+            }
+        )
+        trade = engine.state.trades["trade-1"]
+        self.assertEqual(trade.escrow_position, meeting)
+        engine.tick({"agent-2": AgentDecision(actions=[{"type": "accept_trade", "trade_id": trade.id}])})
+        self.assertEqual(trade.status, "open")
+        self.assertTrue(any("physical goods" in event.message for event in engine.state.events if event.type == "invalid_action"))
+
+        a2.position = meeting
+        engine.tick({"agent-2": AgentDecision(actions=[{"type": "accept_trade", "trade_id": trade.id}])})
+        self.assertEqual(trade.status, "accepted")
+        self.assertEqual(a1.inventory["wood"], 1)
+        self.assertEqual(a2.inventory["food"], 1)
+        self.assertEqual(engine.state.market_history[-1]["position"], {"x": 8, "y": 8})
+
+    def test_organic_expired_escrow_remains_as_a_physical_owned_pile(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(
+                seed=3,
+                economy_mode="organic",
+                survival_food_decay=0,
+                survival_water_decay=0,
+                survival_energy_decay=0,
+            ),
+            agent_names=["A1"],
+        )
+        agent = engine.state.agents["agent-1"]
+        origin = agent.position
+        agent.inventory = Counter({"food": 1})
+        engine.tick(
+            {
+                "agent-1": AgentDecision(
+                    actions=[
+                        {
+                            "type": "offer_trade",
+                            "to": "any",
+                            "give": {"food": 1},
+                            "receive": {"coin": 1},
+                            "expires_in": 1,
+                        }
+                    ]
+                )
+            }
+        )
+        agent.position = Position(origin.x - 1, origin.y)
+        engine.tick({"agent-1": AgentDecision(actions=[{"type": "wait"}])})
+        pile = next(iter(engine.state.item_piles.values()))
+        self.assertEqual((pile.item, pile.quantity, pile.owner_id, pile.position), ("food", 1, agent.id, origin))
+
+    def test_organic_specialization_and_infrastructure_have_large_scale_economies(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(
+                seed=3,
+                geography_mode="dispersed",
+                economy_mode="organic",
+                survival_food_decay=0,
+                survival_water_decay=0,
+                survival_energy_decay=0,
+            ),
+            agent_names=["Farmer", "Forester"],
+        )
+        farmer = engine.state.agents["agent-1"]
+        forester = engine.state.agents["agent-2"]
+        self.assertEqual(farmer.inventory["coin"], 4)
+        self.assertEqual(farmer.aptitudes["farming"], 2.0)
+        self.assertEqual(farmer.aptitudes["woodcraft"], 0.25)
+        self.assertEqual(recipes_for_mode("organic")["well"].inputs, {"wood": 6, "stone": 2, "fiber": 2})
+
+        farmer.position = forester.position
+        tile = engine.state.tile_at(forester.position)
+        tile.resources["wood"] = 20
+        farmer.inventory = Counter()
+        forester.inventory = Counter()
+        farmer.needs.energy = forester.needs.energy = 20
+        engine.tick(
+            {
+                farmer.id: AgentDecision(actions=[{"type": "chop"}]),
+                forester.id: AgentDecision(actions=[{"type": "chop"}]),
+            }
+        )
+        self.assertEqual(farmer.inventory["wood"], 1)
+        self.assertEqual(forester.inventory["wood"], 3)
+        self.assertLess(farmer.needs.energy, forester.needs.energy)
 
     def test_public_trade_offer_can_be_accepted_by_visible_agent(self) -> None:
         engine = self.make_engine(2)

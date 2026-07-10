@@ -3,7 +3,7 @@ from __future__ import annotations
 import unittest
 
 from agent_world.interface import build_observation
-from agent_world.models import AgentDecision, WorldConfig
+from agent_world.models import AgentDecision, Position, WorldConfig
 from agent_world.world import WorldEngine
 
 
@@ -51,6 +51,49 @@ class EconomicInterfaceTests(unittest.TestCase):
         self.assertEqual(observation["world"]["group_admin_action_cost"], 1)
         self.assertEqual(observation["world"]["objective_mode"], "individual")
         self.assertIsNotNone(observation["self"]["specialty"])
+
+    def test_organic_market_information_is_local_and_prompt_requires_physical_exchange(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(
+                economy_mode="organic",
+                geography_mode="dispersed",
+                objective_mode="neutral",
+                survival_food_decay=0,
+                survival_water_decay=0,
+                survival_energy_decay=0,
+            ),
+            agent_names=["Farmer", "Forester", "Miner"],
+        )
+        farmer = engine.state.agents["agent-1"]
+        forester = engine.state.agents["agent-2"]
+        miner = engine.state.agents["agent-3"]
+        farmer.position = Position(6, 10)
+        forester.position = Position(6, 11)
+        miner.position = Position(12, 2)
+        farmer.inventory["food"] += 1
+        engine.tick(
+            {
+                farmer.id: AgentDecision(
+                    actions=[
+                        {
+                            "type": "offer_trade",
+                            "to": "any",
+                            "scope": "global",
+                            "give": {"food": 1},
+                            "receive": {"coin": 1},
+                        }
+                    ]
+                )
+            }
+        )
+
+        near = build_observation(engine.state, forester.id)
+        far = build_observation(engine.state, miner.id)
+        self.assertEqual([trade["id"] for trade in near["open_trades"]], ["trade-1"])
+        self.assertEqual(far["open_trades"], [])
+        self.assertEqual(near["world"]["trade_settlement"], "physical_meeting_at_escrow_position")
+        self.assertEqual(near["world"]["recipes"]["well"]["inputs"], {"wood": 6, "stone": 2, "fiber": 2})
+        self.assertNotIn("offer_contract", [action["type"] for action in near["valid_actions"]])
 
 
 if __name__ == "__main__":

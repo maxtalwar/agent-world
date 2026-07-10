@@ -11,8 +11,8 @@ from agent_world.rules import (
     COMMUNICATION_ACTION_TYPES,
     GROUP_ADMIN_ACTION_TYPES,
     MECHANICS_SUMMARY,
-    RECIPES,
     TERRAIN_RULES,
+    recipes_for_mode,
 )
 
 
@@ -72,6 +72,13 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         for contract in getattr(state, "contracts", {}).values()
         if agent.id in {contract.lender_id, contract.borrower_id}
     ]
+    effective_recipes = recipes_for_mode(state.config.economy_mode)
+    disabled_actions = (
+        {"offer_contract", "accept_contract", "repay_contract"}
+        if state.config.economy_mode == "organic"
+        else set()
+    )
+    valid_actions = [action for action in ACTION_SCHEMA if action.get("type") not in disabled_actions]
     return {
         "tick": state.tick,
         "world": {
@@ -84,6 +91,13 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "geography_mode": getattr(state.config, "geography_mode", "shared_oasis"),
             "communication_action_cost": getattr(state.config, "communication_cost", lambda: 0)(),
             "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
+            "trade_settlement": (
+                "physical_meeting_at_escrow_position"
+                if state.config.economy_mode == "organic"
+                else "engine_settlement"
+            ),
+            "market_information": "local" if state.config.economy_mode == "organic" else "treatment_default",
+            "disabled_actions": sorted(disabled_actions),
             "reserve_scale": {
                 "minimum": 0,
                 "maximum": {
@@ -112,7 +126,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
                     "required_tool": recipe.required_tool,
                     "required_structure": getattr(recipe, "required_structure", None),
                 }
-                for name, recipe in RECIPES.items()
+                for name, recipe in effective_recipes.items()
             },
         },
         "self": {
@@ -144,12 +158,18 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         "recent_events": [
             event.to_dict()
             for event in state.events[-state.config.recent_event_limit * 4 :]
-            if event.type not in AGENT_IO_EVENT_TYPES and _event_visible_to(event, agent, radius)
+            if event.type not in AGENT_IO_EVENT_TYPES
+            and _event_visible_to(
+                event,
+                agent,
+                radius,
+                local_public=state.config.economy_mode == "organic",
+            )
         ][-state.config.recent_event_limit :],
         "recent_action_feedback": _recent_action_feedback(state, agent),
         "memory": list(agent.memory[-state.config.max_memory :]),
         "open_trades": open_trades,
-        "market_history": list(getattr(state, "market_history", []))[-12:],
+        "market_history": _visible_market_history(state, agent, radius)[-12:],
         "known_contracts": visible_contracts,
         "known_groups": {
             gid: group.summary()
@@ -168,7 +188,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "valid_example": {"type": "move", "direction": "east"},
             "invalid_example": {"type": "move", "fields": {"direction": "east"}},
         },
-        "valid_actions": ACTION_SCHEMA,
+        "valid_actions": valid_actions,
     }
 
 
@@ -238,7 +258,10 @@ def build_static_context(world: dict[str, Any]) -> str:
         lines.append(f"- {name}: {rule.move_cost}/{rule.max_occupants}{passable}")
     lines.append("")
     lines.append("ACTIONS (cost: action points, energy):")
+    disabled_actions = set(world.get("disabled_actions", []))
     for action in ACTION_SCHEMA:
+        if action.get("type") in disabled_actions:
+            continue
         cost = action.get("cost", {})
         params = action.get("parameters", {})
         param_text = " {" + ", ".join(f"{key}: {value}" for key, value in params.items()) + "}" if params else ""
@@ -254,16 +277,43 @@ def build_static_context(world: dict[str, Any]) -> str:
         lines.append(f"- {action['type']}{param_text} cost:{cost_text}{effect_text}")
     lines.append("")
     lines.append("RECIPES (inputs -> cost, terrain):")
-    for name, recipe in sorted(RECIPES.items()):
-        inputs = "+".join(f"{qty} {item}" for item, qty in sorted(recipe.inputs.items()))
-        terrain = f", terrain: {'|'.join(recipe.required_terrain)}" if recipe.required_terrain else ""
-        structure = f", at: {recipe.required_structure}" if getattr(recipe, "required_structure", None) else ""
-        lines.append(f"- {name}: {inputs} -> {recipe.action_points}ap,{recipe.energy}en{terrain}{structure}")
+    for name, recipe in sorted(world.get("recipes", {}).items()):
+        inputs = "+".join(f"{qty} {item}" for item, qty in sorted(recipe.get("inputs", {}).items()))
+        outputs = recipe.get("outputs", {})
+        output_text = " -> " + "+".join(f"{qty} {item}" for item, qty in sorted(outputs.items())) if outputs else ""
+        terrain_values = recipe.get("required_terrain", [])
+        terrain = f", terrain: {'|'.join(terrain_values)}" if terrain_values else ""
+        structure_name = recipe.get("required_structure")
+        structure = f", at: {structure_name}" if structure_name else ""
+        lines.append(
+            f"- {name}: {inputs}{output_text} -> {recipe.get('action_points')}ap,{recipe.get('energy')}en{terrain}{structure}"
+        )
+    if world.get("trade_settlement") == "physical_meeting_at_escrow_position":
+        lines.extend(
+            [
+                "",
+                "PHYSICAL EXCHANGE:",
+                "- An offer deposits its give-items at the offer's escrow_position.",
+                "- Both parties must physically meet on that tile to accept and exchange goods.",
+                "- Public offers and completed prices are only known locally; information must travel through agents.",
+                "- If an offer expires or is rejected while its owner is away, its goods remain there as an owned pile.",
+                "- Work in your high-aptitude specialty produces much more and costs less energy; low-aptitude work costs 2 extra energy and improves slowly.",
+                "- Ingot, advanced-tool, and coin production require crafting skill 4 as well as a workshop.",
+            ]
+        )
     lines.append("")
     lines.append("MECHANICS:")
     for section_name, section in MECHANICS_SUMMARY.items():
         if isinstance(section, dict):
             for key, text in section.items():
+                if world.get("trade_settlement") == "physical_meeting_at_escrow_position":
+                    if key == "offer_contract":
+                        continue
+                    if key == "offer_trade":
+                        text = (
+                            "Deposits offered goods at the current tile. Direct recipients must initially be visible; "
+                            "public offers are visible only nearby. Both parties must meet at the escrow tile to settle."
+                        )
                 lines.append(f"- {key}: {text}")
     return "\n".join(lines)
 
@@ -407,9 +457,11 @@ def _visible_positions(center: Position, radius: int, width: int, height: int) -
     return positions
 
 
-def _event_visible_to(event: Event, agent: Agent, radius: int) -> bool:
+def _event_visible_to(event: Event, agent: Agent, radius: int, *, local_public: bool = False) -> bool:
     if event.scope == "public":
-        return True
+        if not local_public or event.position is None:
+            return True
+        return agent.position.distance_to(event.position) <= radius
     if event.actor_id == agent.id or agent.id in event.recipients:
         return True
     if event.scope == "private":
@@ -433,7 +485,29 @@ def _trade_visible_to_agent(state: WorldState, agent: Agent, trade: Any, radius:
     if getattr(trade, "market_scope", "local") == "global":
         return True
     offerer = state.agents.get(trade.from_agent)
-    return offerer is not None and offerer.alive and agent.position.distance_to(offerer.position) <= radius
+    location = getattr(trade, "escrow_position", None) or (offerer.position if offerer is not None else None)
+    return location is not None and agent.position.distance_to(location) <= radius
+
+
+def _visible_market_history(state: WorldState, agent: Agent, radius: int) -> list[dict[str, Any]]:
+    history = list(getattr(state, "market_history", []))
+    if state.config.economy_mode != "organic":
+        return history
+    visible: list[dict[str, Any]] = []
+    for transaction in history:
+        if agent.id in {transaction.get("seller_id"), transaction.get("buyer_id")}:
+            visible.append(transaction)
+            continue
+        position = transaction.get("position")
+        if not isinstance(position, dict):
+            continue
+        try:
+            trade_position = Position(int(position["x"]), int(position["y"]))
+        except (KeyError, TypeError, ValueError):
+            continue
+        if agent.position.distance_to(trade_position) <= radius:
+            visible.append(transaction)
+    return visible
 
 
 def _has_access_grant(agent: Agent, access: set[str]) -> bool:

@@ -6,11 +6,12 @@ affordances; the engine is still the only authority that can mutate state.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Mapping
 
 
 RESOURCE_VALUES: dict[str, int] = {
+    "coin": 1,
     "water": 1,
     "food": 2,
     "fiber": 2,
@@ -23,6 +24,9 @@ RESOURCE_VALUES: dict[str, int] = {
 }
 
 RESOURCE_WEIGHTS: dict[str, int] = {
+    # Coins are discrete physical inventory, but light enough that the current
+    # integer carry system treats them as negligible relative to bulk goods.
+    "coin": 0,
     "water": 2,
     "food": 1,
     "fiber": 1,
@@ -64,8 +68,21 @@ STRUCTURE_OPERATIONS: dict[str, dict[str, object]] = {
     "house": {"uses_per_tick": 0, "upkeep": {"wood": 1}, "upkeep_interval": 12},
 }
 
+# The organic treatment makes productive infrastructure expensive to duplicate
+# but large enough to serve several agents.  This creates economies of scale
+# without requiring owners to share it or telling anyone to charge a price.
+ORGANIC_STRUCTURE_OPERATIONS: dict[str, dict[str, object]] = {
+    "farm_plot": {"uses_per_tick": 8, "upkeep": {"fiber": 1}, "upkeep_interval": 10},
+    "well": {"uses_per_tick": 12, "upkeep": {"wood": 1}, "upkeep_interval": 12},
+    "workshop": {"uses_per_tick": 8, "upkeep": {"wood": 1}, "upkeep_interval": 10},
+    "storage": {"uses_per_tick": 0, "upkeep": {"fiber": 1}, "upkeep_interval": 15},
+    "shelter": {"uses_per_tick": 0, "upkeep": {"fiber": 1}, "upkeep_interval": 15},
+    "house": {"uses_per_tick": 0, "upkeep": {"wood": 1}, "upkeep_interval": 15},
+}
+
 MECHANICS_SUMMARY: dict[str, object] = {
     "resources": {
+        "coin": "A durable, lightweight minted token with no survival effect. It can be carried, stored, dropped, gifted, or exchanged like any other item.",
         "water": "Consumed to restore thirst need. Gathered from adjacent open water, accessible wells, or from the current tile if water is present.",
         "food": "Consumed to restore hunger and a small amount of energy. Gathered, harvested, fished, or produced on improved land.",
         "fiber": "Crafting/building material. Gathered from tiles where fiber is present.",
@@ -180,6 +197,13 @@ RECIPES: dict[str, Recipe] = {
         energy=8,
         required_structure="workshop",
     ),
+    "mint_coin": Recipe(
+        inputs={"ingot": 1},
+        outputs={"coin": 8},
+        action_points=2,
+        energy=4,
+        required_structure="workshop",
+    ),
     "farm_plot": Recipe(
         inputs={"fiber": 1},
         outputs={},
@@ -222,6 +246,41 @@ RECIPES: dict[str, Recipe] = {
     ),
 }
 
+# These are fixed-cost production assets in the organic treatment.  Each is
+# deliberately heavier than a typical starter inventory so duplication takes
+# several trips or several contributors, while its operating capacity above is
+# sufficient for shared use.
+ORGANIC_RECIPE_OVERRIDES: dict[str, dict[str, object]] = {
+    "farm_plot": {"inputs": {"wood": 2, "fiber": 2}, "action_points": 2, "energy": 6},
+    "storage": {"inputs": {"wood": 4, "fiber": 2}, "action_points": 3, "energy": 8},
+    "shelter": {"inputs": {"wood": 8, "stone": 2, "fiber": 3}, "action_points": 3, "energy": 12},
+    "house": {"inputs": {"wood": 14, "stone": 4, "fiber": 4}, "action_points": 3, "energy": 16},
+    "workshop": {"inputs": {"wood": 8, "stone": 4, "fiber": 3}, "action_points": 3, "energy": 12},
+    "well": {"inputs": {"wood": 6, "stone": 2, "fiber": 2}, "action_points": 3, "energy": 10},
+}
+
+
+def economy_features_enabled(economy_mode: str) -> bool:
+    return economy_mode in {"commerce", "organic"}
+
+
+def recipes_for_mode(economy_mode: str) -> dict[str, Recipe]:
+    if economy_mode != "organic":
+        return RECIPES
+    effective: dict[str, Recipe] = {}
+    for name, recipe in RECIPES.items():
+        override = ORGANIC_RECIPE_OVERRIDES.get(name)
+        effective[name] = recipe if override is None else replace(recipe, **override)
+    return effective
+
+
+def structure_operations_for_mode(economy_mode: str) -> dict[str, dict[str, object]]:
+    if economy_mode == "organic":
+        return ORGANIC_STRUCTURE_OPERATIONS
+    if economy_mode == "commerce":
+        return STRUCTURE_OPERATIONS
+    return {}
+
 STRUCTURE_TYPES = {"farm_plot", "storage", "shelter", "house", "workshop", "well"}
 STORAGE_STRUCTURE_TYPES = {"storage", "house", "workshop"}
 REST_STRUCTURE_TYPES = {"shelter", "house"}
@@ -263,6 +322,17 @@ STRUCTURE_CAPACITIES = {
     "workshop": 80,
     "well": 0,
 }
+ORGANIC_STRUCTURE_CAPACITIES = {
+    **STRUCTURE_CAPACITIES,
+    "storage": 240,
+    "house": 120,
+    "workshop": 160,
+}
+
+
+def structure_capacity_for_mode(structure_type: str, economy_mode: str) -> int:
+    capacities = ORGANIC_STRUCTURE_CAPACITIES if economy_mode == "organic" else STRUCTURE_CAPACITIES
+    return capacities[structure_type]
 WORK_ACTIONS: dict[str, dict[str, object]] = {
     "gather": {
         "resources": {"food", "water", "fiber"},

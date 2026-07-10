@@ -14,6 +14,7 @@ python3 -m agent_world.cli replay runs/example.jsonl --last 30
 python3 -m agent_world.cli prompt --seed 7 --agents 2 --agent agent-1
 python3 -m agent_world.cli ablate --agents 4 --ticks 30 --seed 11
 python3 -m agent_world.cli experiment --agents 5 --ticks 20 --seeds 11 --environment all --objective all --progress
+python3 -m agent_world.cli experiment --brain llm --model openai/gpt-5.6-luna --environment organic --objective neutral --ticks 40 --agents 5 --seeds 29 --progress
 ```
 
 The default CLI run uses deterministic mock brains so the infrastructure can be tested without an LLM key.
@@ -155,6 +156,7 @@ Invalid or unaffordable actions fail explicitly and are logged; they do not muta
 - Inventories, item piles, structures, tile claims, groups, trade offers, and persistent memories.
 - Trade offers can target a specific visible agent or be posted locally for any visible counterparty; offered goods are escrowed until the offer resolves.
 - Optional commerce treatments add global standing offers, completed-price history, secured credit, access fees, contributor dividends, and productive-asset upkeep/capacity.
+- The optional organic treatment keeps exchange physical and knowledge local: offers deposit goods at a tile, both parties must meet there, and expired escrow remains as an owned pile. It adds stronger comparative advantage, high-fixed-cost/high-capacity infrastructure, and carried coins without telling agents to use any of them.
 - Optional dispersed geography gives agents separated resource regions, different specialties, aptitudes, endowments, and needs so comparative advantage is mechanically meaningful.
 - Groups can receive access grants, directly own claimed tiles/structures, and keep persistent agreement ledgers, making shared infrastructure mechanically useful.
 - Survival pressure through food, water, energy, health, carrying capacity, action points, and carried-food spoilage.
@@ -163,6 +165,7 @@ Invalid or unaffordable actions fail explicitly and are logged; they do not muta
 
 Current inventory resources:
 
+- `coin`: durable, negligible-weight physical token. Organic agents begin with a small stock; workshops can mint eight coins from one ingot.
 - `water`: consumed to restore thirst, gathered from adjacent water.
 - `food`: consumed to restore hunger and a little energy. Carried food spoils periodically; stored food is protected.
 - `fiber`: building/crafting input, especially early farms/storage/tools.
@@ -198,6 +201,8 @@ W = water
 The completed 60-tick Lakeside GLM-5.2 run produced ten structures, two heavy cooperative builds, one five-member polity, six group-owned structures, 27 gifts, eight trade offers, and one accepted barter trade with no deaths. Detailed inspection showed that 23 gift actions were food/water aid, while only four moved productive materials. This motivated explicit objective/geography/economy treatments instead of interpreting a single small-group run as evidence for one economic ideology.
 
 The commerce treatment now supplies the previously missing conditions for exchange and entrepreneurship: real skill/tool productivity, a deeper capital chain, separated specialists, priced productive access, contributor returns, standing markets with price history, secured credit, upkeep, finite service capacity, and nonzero coordination costs. Use `agent_world.cli experiment` to run matched multi-seed cells; ordinary runs retain the neutral historical baseline.
+
+The organic treatment asks a different question: can stronger models discover society without a global order book or engine-assisted delivery? It uses a neutral objective, local information, physical escrow/settlement, much stronger skill differences, expensive but high-capacity infrastructure, free local speech, and physical coins. The engine supplies constraints and objects; agents still have to travel, bargain, transport goods, share assets, and decide whether coins mean anything.
 
 The most important diagnostics to watch are:
 

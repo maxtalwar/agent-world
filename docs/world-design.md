@@ -45,6 +45,7 @@ Agents spawn near the center at `(8,8)`.
 
 ## Resources
 
+- `coin`: durable physical token with negligible carry weight and no survival use. Organic agents inherit four; one ingot can be minted into eight at a workshop.
 - `water`: carried/consumed to restore thirst. Water tiles are not occupiable; agents gather water from adjacent land.
 - `food`: carried/consumed to restore hunger and some energy. Carried food spoils periodically, while stored food is protected.
 - `fiber`: early building/crafting input.
@@ -80,6 +81,8 @@ Structures are neutral affordances. Agents are not told to build them; they see 
 - Build-readiness diagnostics are computed for researchers, but not included in agent observations.
 
 The historical defaults use `shared_oasis`, `baseline`, and `neutral` treatment modes. The optional commerce experiment uses dispersed specialist spawns, productivity-bearing skills and durable tools, global standing offers with price history, productive-asset capacity/upkeep, paid public access, contributor dividends, and secured credit. See [economy-experiments.md](economy-experiments.md).
+
+The organic experiment instead uses dispersed specialists, stronger skill differences, expensive/high-capacity infrastructure, physical offer escrow, co-located settlement, local market knowledge, and physical coins. It deliberately omits global discovery and enforced credit so transport, marketplaces, and trust remain agent problems.
 
 ## Next Likely Mechanics
 

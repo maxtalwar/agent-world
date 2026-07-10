@@ -6,7 +6,7 @@ from collections import Counter
 from typing import Any
 
 from agent_world.models import WorldState
-from agent_world.rules import RECIPES, RESOURCE_VALUES, STRUCTURE_TYPES
+from agent_world.rules import RESOURCE_VALUES, STRUCTURE_TYPES, recipes_for_mode
 
 
 def compute_metrics(state: WorldState) -> dict[str, Any]:
@@ -331,10 +331,11 @@ def _specialization_metrics(state: WorldState) -> dict[str, Any]:
 
 
 def _productive_asset_metrics(state: WorldState, inventory_wealth: dict[str, int]) -> dict[str, Any]:
+    recipes = recipes_for_mode(state.config.economy_mode)
     owner_values: Counter[str] = Counter()
     structure_values: dict[str, int] = {}
     for structure in state.structures.values():
-        recipe = RECIPES.get(structure.type)
+        recipe = recipes.get(structure.type)
         replacement_value = _item_value(dict(recipe.inputs)) if recipe is not None else 0
         stored_value = _item_value(structure.inventory)
         value = replacement_value + stored_value
@@ -367,12 +368,13 @@ def _build_readiness(state: WorldState) -> dict[str, Any]:
     "instant build" signal; staged progress shows up in the construction metrics instead.
     """
     ready_counts: Counter[str] = Counter()
+    recipes = recipes_for_mode(state.config.economy_mode)
     for agent in state.agents.values():
         if not agent.alive:
             continue
         tile = state.tile_at(agent.position)
         for structure_type in STRUCTURE_TYPES:
-            recipe = RECIPES[structure_type]
+            recipe = recipes[structure_type]
             missing = {
                 item: qty - agent.inventory.get(item, 0)
                 for item, qty in recipe.inputs.items()

@@ -45,9 +45,14 @@ ENVIRONMENT_TREATMENTS: dict[str, dict[str, str]] = {
         "geography_mode": "dispersed",
         "economy_mode": "commerce",
     },
+    "organic": {
+        "geography_mode": "dispersed",
+        "economy_mode": "organic",
+    },
 }
 
 OBJECTIVE_TREATMENTS: dict[str, dict[str, str]] = {
+    "neutral": {"objective_mode": "neutral"},
     "collective": {"objective_mode": "collective"},
     "individual": {"objective_mode": "individual"},
 }

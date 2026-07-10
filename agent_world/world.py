@@ -29,23 +29,24 @@ from agent_world.rules import (
     CONSUMABLE_EFFECTS,
     DIRECTIONS,
     COMMUNICATION_ACTION_TYPES,
-    RECIPES,
     RESOURCE_VALUES,
     RESOURCE_WEIGHTS,
     REST_STRUCTURE_ENERGY_BONUS,
     REST_STRUCTURE_TYPES,
     STORAGE_STRUCTURE_TYPES,
-    STRUCTURE_CAPACITIES,
     STRUCTURE_TYPES,
     TERRAIN_RULES,
     FREE_ACTION_TYPES,
     GROUP_ADMIN_ACTION_TYPES,
-    STRUCTURE_OPERATIONS,
     TOOL_ENERGY_DISCOUNT,
     TOOL_MAX_DURABILITY,
     TOOL_PRODUCTIVITY_BONUS,
     WORK_ACTIONS,
     WORKSHOP_CRAFTING_ENERGY_DISCOUNT,
+    economy_features_enabled,
+    recipes_for_mode,
+    structure_operations_for_mode,
+    structure_capacity_for_mode,
 )
 
 
@@ -102,6 +103,11 @@ class WorldEngine:
             },
         )
         agent.inventory.update({"food": 1, "water": 2})
+        if self.state.config.economy_mode == "organic":
+            # A small inherited stock makes a physical unit of account possible
+            # immediately. Coins remain ordinary inventory; agents may ignore,
+            # store, gift, lose, or exchange them.
+            agent.inventory["coin"] += 4
         if self.state.config.geography_mode == "dispersed":
             self._apply_specialist_profile(agent, spawn_index)
         self.state.agents[agent.id] = agent
@@ -119,9 +125,14 @@ class WorldEngine:
         profile = specialist_profile(offset)
         specialty_skill = str(profile["skill"])
         agent.specialty = str(profile["specialty"])
-        agent.skills[specialty_skill] = 4
-        agent.aptitudes = {skill: 0.8 for skill in agent.skills}
-        agent.aptitudes[specialty_skill] = 1.75
+        organic = self.state.config.economy_mode == "organic"
+        agent.skills[specialty_skill] = 6 if organic else 4
+        agent.aptitudes = {skill: 0.25 if organic else 0.8 for skill in agent.skills}
+        if organic:
+            # Everyone retains ordinary subsistence foraging ability; the hard
+            # comparative advantages apply to scalable production occupations.
+            agent.aptitudes["foraging"] = 0.75
+        agent.aptitudes[specialty_skill] = 2.0 if organic else 1.75
         agent.need_multipliers = {
             str(name): float(multiplier)
             for name, multiplier in dict(profile.get("need_multipliers", {})).items()
@@ -397,7 +408,13 @@ class WorldEngine:
         skill_yield_bonus, skill_energy_discount = self._skill_modifiers(agent, skill_name)
         tool_yield_bonus = TOOL_PRODUCTIVITY_BONUS.get(tool_name or "", 0)
         tool_energy_discount = TOOL_ENERGY_DISCOUNT.get(tool_name or "", 0)
-        energy = max(1, int(rule["energy"]) - skill_energy_discount - tool_energy_discount)
+        energy = max(
+            1,
+            int(rule["energy"])
+            + self._specialization_energy_surcharge(agent, skill_name)
+            - skill_energy_discount
+            - tool_energy_discount,
+        )
         if action_points < cost:
             self._invalid(agent, action, f"{action_type} requires {cost} action points.")
             return 0
@@ -457,7 +474,7 @@ class WorldEngine:
                 self._invalid(agent, action, "Harvesting requires an accessible farm plot on this tile.")
                 return action_points - cost
         if (
-            self.state.config.economy_mode == "commerce"
+            economy_features_enabled(self.state.config.economy_mode)
             and source_position == agent.position
             and tile.claimed_by
             and not self._controls_owner(agent, tile.claimed_by)
@@ -537,7 +554,13 @@ class WorldEngine:
         tool_name = self._equipped_work_tool(agent)
         skill_yield_bonus, skill_energy_discount = self._skill_modifiers(agent, "farming")
         tool_yield_bonus = TOOL_PRODUCTIVITY_BONUS.get(tool_name or "", 0)
-        energy = max(1, 5 - skill_energy_discount - TOOL_ENERGY_DISCOUNT.get(tool_name or "", 0))
+        energy = max(
+            1,
+            5
+            + self._specialization_energy_surcharge(agent, "farming")
+            - skill_energy_discount
+            - TOOL_ENERGY_DISCOUNT.get(tool_name or "", 0),
+        )
         if action_points < cost:
             self._invalid(agent, action, "farm requires 2 action points.")
             return 0
@@ -585,7 +608,7 @@ class WorldEngine:
 
     def _action_craft(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         recipe_name = str(action.get("recipe", ""))
-        recipe = RECIPES.get(recipe_name)
+        recipe = recipes_for_mode(self.state.config.economy_mode).get(recipe_name)
         if recipe is None:
             self._invalid(agent, action, f"Unknown recipe: {recipe_name}")
             return action_points - 1
@@ -603,10 +626,18 @@ class WorldEngine:
         ):
             self._invalid(agent, action, f"Crafting {recipe_name} requires equipped {recipe.required_tool}.")
             return action_points - recipe.action_points
+        if (
+            self.state.config.economy_mode == "organic"
+            and recipe_name in {"ingot", "advanced_tool", "mint_coin"}
+            and agent.skills.get("crafting", 1) < 4
+        ):
+            self._invalid(agent, action, f"Crafting {recipe_name} requires crafting skill 4.")
+            return action_points - recipe.action_points
         _, skill_energy_discount = self._skill_modifiers(agent, "crafting")
         energy_cost = max(
             1,
             recipe.energy
+            + self._specialization_energy_surcharge(agent, "crafting")
             - (WORKSHOP_CRAFTING_ENERGY_DISCOUNT if workshop else 0)
             - skill_energy_discount,
         )
@@ -789,7 +820,7 @@ class WorldEngine:
         if not structure.is_complete:
             self._invalid(agent, action, "Structure is still under construction.")
             return action_points - 1
-        if self.state.config.economy_mode == "commerce" and not structure.active:
+        if economy_features_enabled(self.state.config.economy_mode) and not structure.active:
             self._invalid(agent, action, "Structure is inactive until upkeep is supplied.")
             return action_points - 1
         if not self._can_access_structure(agent, structure):
@@ -827,7 +858,7 @@ class WorldEngine:
         if not structure.is_complete:
             self._invalid(agent, action, "Structure is still under construction.")
             return action_points - 1
-        if self.state.config.economy_mode == "commerce" and not structure.active:
+        if economy_features_enabled(self.state.config.economy_mode) and not structure.active:
             self._invalid(agent, action, "Structure is inactive until upkeep is supplied.")
             return action_points - 1
         if not self._can_access_structure(agent, structure):
@@ -927,7 +958,7 @@ class WorldEngine:
         lots = self._bounded_quantity(
             action.get("lots"),
             default=1,
-            maximum=20 if self.state.config.economy_mode == "commerce" else 1,
+            maximum=20 if economy_features_enabled(self.state.config.economy_mode) else 1,
         )
         lots = max(1, lots)
         escrow = Counter({item: quantity * lots for item, quantity in give.items()})
@@ -954,6 +985,7 @@ class WorldEngine:
             market_scope=market_scope,
             lots_total=lots,
             lots_remaining=lots,
+            escrow_position=agent.position if self.state.config.economy_mode == "organic" else None,
         )
         self.state.trades[trade_id] = offer
         self.log_event(
@@ -982,7 +1014,16 @@ class WorldEngine:
         if offerer is None or not offerer.alive:
             self._invalid(agent, action, "Trade offerer is unavailable.")
             return action_points
-        if trade.market_scope != "global" and agent.position.distance_to(offerer.position) > self.state.config.visible_radius:
+        if self.state.config.economy_mode == "organic":
+            meeting_place = trade.escrow_position or offerer.position
+            if agent.position != meeting_place or offerer.position != meeting_place:
+                self._invalid(
+                    agent,
+                    action,
+                    f"Both parties must meet at ({meeting_place.x}, {meeting_place.y}) to exchange the physical goods.",
+                )
+                return action_points
+        elif trade.market_scope != "global" and agent.position.distance_to(offerer.position) > self.state.config.visible_radius:
             self._invalid(agent, action, "Trade offerer is now outside visibility radius.")
             return action_points
         if trade.escrow_released:
@@ -1020,6 +1061,7 @@ class WorldEngine:
             "value": self._trade_value(trade),
             "market_scope": trade.market_scope,
             "lot_number": trade.accepted_count,
+            "position": asdict(agent.position),
         }
         self.state.market_history.append(transaction)
         self.log_event(
@@ -1037,7 +1079,7 @@ class WorldEngine:
         if trade is None or trade.status != "open":
             self._invalid(agent, action, "Trade is not open.")
             return action_points
-        if trade.to_agent == "any" and trade.from_agent == agent.id:
+        if trade.from_agent == agent.id:
             pass
         elif trade.to_agent != agent.id:
             self._invalid(agent, action, "Only the trade recipient can reject this offer.")
@@ -1056,7 +1098,11 @@ class WorldEngine:
 
     def _action_offer_contract(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         if self.state.config.economy_mode != "commerce":
-            self._invalid(agent, action, "Credit contracts are enabled by the commerce treatment.")
+            self._invalid(
+                agent,
+                action,
+                "Engine-enforced credit is disabled in this treatment; agents may still record agreements and transfer goods physically.",
+            )
             return action_points - 1
         borrower = self.state.agents.get(str(action.get("to", "")))
         if borrower is None or not borrower.alive or borrower.id == agent.id:
@@ -1224,7 +1270,7 @@ class WorldEngine:
 
     def _action_build(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         structure_type = str(action.get("structure", ""))
-        recipe = RECIPES.get(structure_type)
+        recipe = recipes_for_mode(self.state.config.economy_mode).get(structure_type)
         owner_id = self._owner_for_action(agent, action)
         if owner_id is None:
             self._invalid(agent, action, "Agent is not a member of that group.")
@@ -1259,14 +1305,14 @@ class WorldEngine:
             return action_points - recipe.action_points
         structure_id = f"structure-{self.state.next_structure_id}"
         self.state.next_structure_id += 1
-        operations = STRUCTURE_OPERATIONS.get(structure_type, {}) if self.state.config.economy_mode == "commerce" else {}
+        operations = structure_operations_for_mode(self.state.config.economy_mode).get(structure_type, {})
         uses_per_tick = int(operations.get("uses_per_tick", 0))
         structure = Structure(
             id=structure_id,
             type=structure_type,
             position=agent.position,
             owner_id=owner_id,
-            capacity=STRUCTURE_CAPACITIES[structure_type],
+            capacity=structure_capacity_for_mode(structure_type, self.state.config.economy_mode),
             status="under_construction",
             remaining_inputs=Counter(recipe.inputs),
             uses_per_tick=uses_per_tick,
@@ -1331,8 +1377,8 @@ class WorldEngine:
         return action_points - 1
 
     def _action_set_access_fee(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
-        if self.state.config.economy_mode != "commerce":
-            self._invalid(agent, action, "Access fees are enabled by the commerce treatment.")
+        if not economy_features_enabled(self.state.config.economy_mode):
+            self._invalid(agent, action, "Access fees are enabled by an economic treatment.")
             return action_points
         structure = self._get_structure(str(action.get("structure_id", "")))
         if structure is None or structure.position != agent.position or not structure.is_complete:
@@ -1386,8 +1432,8 @@ class WorldEngine:
         return action_points
 
     def _action_maintain_structure(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
-        if self.state.config.economy_mode != "commerce":
-            self._invalid(agent, action, "Structure upkeep is enabled by the commerce treatment.")
+        if not economy_features_enabled(self.state.config.economy_mode):
+            self._invalid(agent, action, "Structure upkeep is enabled by an economic treatment.")
             return action_points - 1
         structure = self._get_structure(str(action.get("structure_id", "")))
         if structure is None or structure.position != agent.position or not structure.is_complete:
@@ -1746,7 +1792,7 @@ class WorldEngine:
                     self.state.structures[sid].type == "farm_plot"
                     and self.state.structures[sid].is_complete
                     and (
-                        self.state.config.economy_mode != "commerce"
+                        not economy_features_enabled(self.state.config.economy_mode)
                         or self.state.structures[sid].active
                     )
                     for sid in tile.structure_ids
@@ -1771,13 +1817,13 @@ class WorldEngine:
                 )
 
     def _reset_structure_capacity(self) -> None:
-        if self.state.config.economy_mode != "commerce":
+        if not economy_features_enabled(self.state.config.economy_mode):
             return
         for structure in self.state.structures.values():
             structure.uses_remaining = structure.uses_per_tick
 
     def _apply_structure_upkeep(self) -> None:
-        if self.state.config.economy_mode != "commerce":
+        if not economy_features_enabled(self.state.config.economy_mode):
             return
         for structure in self.state.structures.values():
             if not structure.is_complete or structure.upkeep_interval <= 0:
@@ -1898,11 +1944,26 @@ class WorldEngine:
     def _return_trade_escrow(self, trade: TradeOffer) -> None:
         if trade.escrow_released:
             return
+        items = Counter({item: quantity * trade.lots_remaining for item, quantity in trade.give.items()})
         offerer = self.state.agents.get(trade.from_agent)
-        if offerer is not None:
-            offerer.inventory.update(
-                {item: quantity * trade.lots_remaining for item, quantity in trade.give.items()}
-            )
+        if self.state.config.economy_mode == "organic" and trade.escrow_position is not None:
+            # Organic offers are physical stalls/caches. Unfilled inventory is
+            # returned to hand only if the owner is still at the stall;
+            # otherwise it remains as an owned pile to collect later.
+            for item, quantity in items.items():
+                if quantity <= 0:
+                    continue
+                if (
+                    offerer is not None
+                    and offerer.alive
+                    and offerer.position == trade.escrow_position
+                    and offerer.can_carry(item, quantity)
+                ):
+                    offerer.inventory[item] += quantity
+                else:
+                    self._create_item_pile(item, quantity, trade.escrow_position, owner_id=trade.from_agent)
+        elif offerer is not None:
+            offerer.inventory.update(items)
         trade.lots_remaining = 0
         trade.escrow_released = True
 
@@ -1958,7 +2019,7 @@ class WorldEngine:
             for sid in tile.structure_ids
             if self.state.structures[sid].is_complete
             and (
-                self.state.config.economy_mode != "commerce"
+                not economy_features_enabled(self.state.config.economy_mode)
                 or (
                     self.state.structures[sid].active
                     and self._can_access_structure(agent, self.state.structures[sid])
@@ -2012,7 +2073,7 @@ class WorldEngine:
         return (
             self._controls_owner(agent, structure.owner_id)
             or self._has_access_grant(agent, structure.access)
-            or (self.state.config.economy_mode == "commerce" and structure.public_access)
+            or (economy_features_enabled(self.state.config.economy_mode) and structure.public_access)
         )
 
     def _use_productive_structure(
@@ -2021,7 +2082,7 @@ class WorldEngine:
         structure: Structure,
         action: dict[str, Any],
     ) -> bool:
-        if self.state.config.economy_mode != "commerce":
+        if not economy_features_enabled(self.state.config.economy_mode):
             return True
         if not structure.active:
             self._invalid(agent, action, f"{structure.id} is inactive until upkeep is supplied.")
@@ -2165,10 +2226,19 @@ class WorldEngine:
         yield_interval = max(1, self.state.config.skill_yield_interval)
         energy_interval = max(1, self.state.config.skill_energy_interval)
         cap = max(0, self.state.config.skill_bonus_cap)
-        return (
-            min(cap, max(0, level - 1) // yield_interval),
-            min(cap, max(0, level - 1) // energy_interval),
-        )
+        yield_bonus = max(0, level - 1) // yield_interval
+        energy_discount = max(0, level - 1) // energy_interval
+        if self.state.config.economy_mode == "organic" and agent.aptitudes.get(skill, 1.0) >= 1.5:
+            # A mature specialist produces about three units where a novice
+            # produces one, without making off-specialty work impossible.
+            yield_bonus += 1
+            energy_discount += 1
+        return (min(cap, yield_bonus), min(cap, energy_discount))
+
+    def _specialization_energy_surcharge(self, agent: Agent, skill: str) -> int:
+        if self.state.config.economy_mode != "organic":
+            return 0
+        return 2 if agent.aptitudes.get(skill, 1.0) < 0.5 else 0
 
     def _equipped_work_tool(self, agent: Agent) -> str | None:
         for item in ("advanced_tool", "tool"):
@@ -2338,7 +2408,7 @@ class WorldEngine:
             buildable: list[str] = []
             blockers: dict[str, Any] = {}
             for structure_type in sorted(STRUCTURE_TYPES):
-                recipe = RECIPES[structure_type]
+                recipe = recipes_for_mode(self.state.config.economy_mode)[structure_type]
                 missing = self._missing(agent.inventory, recipe.inputs)
                 terrain_ok = not recipe.required_terrain or tile.terrain in recipe.required_terrain
                 energy_ok = agent.needs.energy >= recipe.energy

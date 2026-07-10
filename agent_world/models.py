@@ -71,7 +71,9 @@ class WorldConfig:
     geography_mode: str = "shared_oasis"
     economy_mode: str = "baseline"
     objective_mode: str = "neutral"
-    # None selects the treatment default: free in baseline, one AP in commerce.
+    # None selects the treatment default: one AP in commerce, free in baseline
+    # and organic. Organic speech remains local, so this avoids suppressing
+    # society formation merely because the action budget is coarse.
     communication_action_cost: int | None = None
     group_admin_action_cost: int | None = None
     skill_yield_interval: int = 3
@@ -81,8 +83,8 @@ class WorldConfig:
     def __post_init__(self) -> None:
         if self.geography_mode not in {"shared_oasis", "dispersed"}:
             raise ValueError("geography_mode must be shared_oasis or dispersed")
-        if self.economy_mode not in {"baseline", "commerce"}:
-            raise ValueError("economy_mode must be baseline or commerce")
+        if self.economy_mode not in {"baseline", "commerce", "organic"}:
+            raise ValueError("economy_mode must be baseline, commerce, or organic")
         if self.objective_mode not in {"neutral", "collective", "individual"}:
             raise ValueError("objective_mode must be neutral, collective, or individual")
         for name in ("communication_action_cost", "group_admin_action_cost"):
@@ -359,6 +361,9 @@ class TradeOffer:
     lots_total: int = 1
     lots_remaining: int = 1
     accepted_count: int = 0
+    # Organic-market escrow is deposited at a physical place. Both parties
+    # must meet there to exchange, and rejected/expired goods remain there.
+    escrow_position: Position | None = None
 
     def summary(self) -> dict[str, Any]:
         return {
@@ -378,6 +383,9 @@ class TradeOffer:
             "lots_total": self.lots_total,
             "lots_remaining": self.lots_remaining,
             "accepted_count": self.accepted_count,
+            "escrow_position": None
+            if self.escrow_position is None
+            else {"x": self.escrow_position.x, "y": self.escrow_position.y},
         }
 
 

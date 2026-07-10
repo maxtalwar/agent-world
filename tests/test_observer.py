@@ -129,7 +129,7 @@ class ObserverTests(unittest.TestCase):
     def test_model_selector_is_dropdown_with_recommended_models(self) -> None:
         self.assertIn('<select id="run-model" class="lock">', HTML)
         self.assertNotIn('<input id="run-model" type="text"', HTML)
-        for model in ["z-ai/glm-5.2", "z-ai/glm-5.1", "z-ai/glm-4.7", "z-ai/glm-4.5-air"]:
+        for model in ["z-ai/glm-5.2", "openai/gpt-5.6-luna", "z-ai/glm-5.1", "z-ai/glm-4.7", "z-ai/glm-4.5-air"]:
             self.assertIn(f'value="{model}"', HTML)
         self.assertIn('<option value="z-ai/glm-5.2" selected>', HTML)
         self.assertIn('<select id="run-reasoning" class="lock">', HTML)

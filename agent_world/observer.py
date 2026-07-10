@@ -293,7 +293,7 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
             payload.get("geography_mode", "shared_oasis"), "geography_mode", {"shared_oasis", "dispersed"}
         ),
         economy_mode=_bounded_choice(
-            payload.get("economy_mode", "baseline"), "economy_mode", {"baseline", "commerce"}
+            payload.get("economy_mode", "baseline"), "economy_mode", {"baseline", "commerce", "organic"}
         ),
         objective_mode=_bounded_choice(
             payload.get("objective_mode", "neutral"), "objective_mode", {"neutral", "collective", "individual"}
@@ -1579,6 +1579,7 @@ HTML = r"""<!doctype html>
           <label for="run-model">Model</label>
           <select id="run-model" class="lock">
             <option value="z-ai/glm-5.2" selected>GLM-5.2</option>
+            <option value="openai/gpt-5.6-luna">GPT-5.6 Luna</option>
             <option value="z-ai/glm-5.1">GLM-5.1</option>
             <option value="z-ai/glm-4.7">GLM-4.7</option>
             <option value="z-ai/glm-4.5-air">GLM-4.5 Air</option>
@@ -1605,7 +1606,7 @@ HTML = r"""<!doctype html>
       <div class="dform dpanel" id="panel-config" hidden>
         <div class="section-title">Experiment Treatment</div>
         <label class="field"><label for="cfg-objective-mode">Objective</label><select id="cfg-objective-mode" class="lock"><option value="neutral" selected>neutral emergence</option><option value="collective">collective welfare</option><option value="individual">individual utility</option></select></label>
-        <label class="field"><label for="cfg-economy-mode">Economy</label><select id="cfg-economy-mode" class="lock"><option value="baseline" selected>baseline</option><option value="commerce">commerce</option></select></label>
+        <label class="field"><label for="cfg-economy-mode">Economy</label><select id="cfg-economy-mode" class="lock"><option value="baseline" selected>baseline</option><option value="commerce">commerce</option><option value="organic">organic physical exchange</option></select></label>
         <label class="field"><label for="cfg-geography-mode">Geography</label><select id="cfg-geography-mode" class="lock"><option value="shared_oasis" selected>shared oasis</option><option value="dispersed">dispersed specialists</option></select></label>
 
         <div class="section-title">Agents</div>
