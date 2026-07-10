@@ -12,12 +12,12 @@ python3 -m agent_world.cli view --events runs/live.jsonl --snapshot runs/live-sn
 
 Start runs from the browser at `http://127.0.0.1:8765`. The Run panel accepts:
 
-- brain: `survival` for deterministic infrastructure tests or `llm` for API-backed agents
+- brain: `survival` for deterministic infrastructure tests, `llm` for API-backed agents, or `codex` for ChatGPT-plan-backed Luna/Terra agents
 - agents: number of spawned agents
 - ticks: target ticks to run
 - seed: deterministic world/run seed
 - objective/economy/geography treatment modes
-- model: model used for `llm` runs, defaulting to `z-ai/glm-5.2` via OpenRouter
+- model: model used for provider-backed runs; `llm` defaults to `z-ai/glm-5.2`, while `codex` defaults to `gpt-5.6-luna`
 - max workers: same-tick brain call concurrency; keep this at `1` for LLM runs unless rate limits allow more
 - agent IO log: whether to keep private observations and prompts in the JSONL audit log
 
@@ -85,6 +85,14 @@ LLM runs default to one OpenAI request at a time:
 OPENAI_MAX_PARALLEL_AGENTS=1
 OPENAI_MIN_REQUEST_INTERVAL_SECONDS=0.75
 OPENAI_MAX_RETRIES=4
+CODEX_MAX_PARALLEL_AGENTS=1
 ```
 
 Increase concurrency only if the account rate limits can handle it.
+
+For Codex-plan runs, Agent World queries Codex's local app-server limit
+snapshot before the run and after every tick. Beside the ordinary per-call
+`*-usage.jsonl`, it writes `*-plan-usage.json` with raw checkpoints and a
+summary of the observed primary (normally 5-hour), secondary (normally weekly),
+and credit-balance changes. The snapshots are account-level rather than
+run-exclusive: work in another Codex window during the run can affect them.

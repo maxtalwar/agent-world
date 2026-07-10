@@ -41,6 +41,7 @@ def build_report(
     usage_records: list[dict[str, Any]] | None = None,
     source: str | None = None,
     target_ticks: int | None = None,
+    plan_usage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     usage_records = usage_records or []
     sim_events = [event for event in events if event["type"] not in AGENT_IO_EVENT_TYPES]
@@ -117,6 +118,7 @@ def build_report(
         "completion_tokens": sum(record.get("completion_tokens") or 0 for record in usage_records),
         "reasoning_tokens": sum(record.get("reasoning_tokens") or 0 for record in usage_records),
         "cache_hit_rate_pct": round(100 * cached_tokens / prompt_tokens, 1) if prompt_tokens else 0.0,
+        "plan_limits": plan_usage,
     }
 
     wealth_values = [agent["wealth"] for agent in agents.values()]
@@ -888,6 +890,36 @@ def _nonnegative_int(value: Any, default: int = 0) -> int:
     return parsed if parsed >= 0 else default
 
 
+def _render_plan_usage_lines(plan_usage: Any) -> list[str]:
+    if not isinstance(plan_usage, dict):
+        return []
+    if not plan_usage.get("available"):
+        return ["- Codex plan limits: unavailable"]
+    lines: list[str] = []
+    for limit_id, bucket in (plan_usage.get("buckets") or {}).items():
+        if not isinstance(bucket, dict):
+            continue
+        pieces: list[str] = []
+        for label, window_name in (("primary", "primary"), ("secondary", "secondary")):
+            window = bucket.get(window_name)
+            if not isinstance(window, dict):
+                continue
+            before = window.get("before_used_percent")
+            after = window.get("after_used_percent")
+            delta = window.get("used_percent_delta")
+            delta_text = f", delta {delta:+g}pp" if isinstance(delta, (int, float)) else ", window reset/changed"
+            pieces.append(f"{label} {before}% to {after}%{delta_text}")
+        credits = bucket.get("credits")
+        if isinstance(credits, dict) and credits.get("before_balance") is not None:
+            pieces.append(
+                f"credits {credits.get('before_balance')} to {credits.get('after_balance')}"
+                f" (delta {credits.get('balance_delta')})"
+            )
+        name = bucket.get("limit_name") or limit_id
+        lines.append(f"- Codex plan [{name}]: " + " | ".join(pieces))
+    return lines or ["- Codex plan limits: snapshot contained no buckets"]
+
+
 def render_markdown(report: dict[str, Any]) -> str:
     run = report["run"]
     survival = report["survival"]
@@ -909,6 +941,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- LLM: {usage['calls']} calls, ${usage['total_cost_usd']}, {usage['cache_hit_rate_pct']}% cache hit"
         if usage["calls"]
         else "- Brain: scripted (no LLM usage)",
+        *_render_plan_usage_lines(usage.get("plan_limits")),
         "",
         "## Society",
         f"- Groups: {len(report['groups'])}"
@@ -975,8 +1008,16 @@ def write_report(
     usage_records: list[dict[str, Any]] | None,
     out_stem: Path,
     target_ticks: int | None = None,
+    plan_usage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    report = build_report(events, snapshot, usage_records, source=out_stem.name, target_ticks=target_ticks)
+    report = build_report(
+        events,
+        snapshot,
+        usage_records,
+        source=out_stem.name,
+        target_ticks=target_ticks,
+        plan_usage=plan_usage,
+    )
     json_path = out_stem.with_name(out_stem.name + "-report.json")
     md_path = out_stem.with_name(out_stem.name + "-report.md")
     json_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -11,6 +11,7 @@ from typing import Any
 
 from agent_world.ablation import format_table, run_ablation
 from agent_world.agents import AgentBrain, SurvivalBrain
+from agent_world.codex_brain import CodexBrain, summarize_plan_usage
 from agent_world.env import load_dotenv
 from agent_world.experiments import run_factorial_experiment
 from agent_world.interface import build_agent_prompt, build_observation
@@ -38,19 +39,19 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default="neutral")
     run_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default="baseline")
     run_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default="shared_oasis")
-    run_parser.add_argument("--brain", choices=["survival", "llm"], default="survival")
-    run_parser.add_argument("--model", default=None, help="OpenAI model for --brain llm. Defaults to OPENAI_MODEL.")
+    run_parser.add_argument("--brain", choices=["survival", "llm", "codex"], default="survival")
+    run_parser.add_argument("--model", default=None, help="Model for --brain llm/codex. Uses the selected brain's environment default.")
     run_parser.add_argument(
         "--reasoning-effort",
-        choices=["minimal", "low", "medium", "high"],
+        choices=["minimal", "low", "medium", "high", "xhigh", "max"],
         default=None,
-        help="Reasoning effort for --brain llm. Defaults to OPENAI_REASONING_EFFORT.",
+        help="Reasoning effort for --brain llm/codex. Uses the selected brain's environment default.",
     )
     run_parser.add_argument("--out", type=Path, default=None)
     run_parser.add_argument("--snapshot", type=Path, default=None)
     run_parser.add_argument("--no-agent-io-log", action="store_true", help="Do not log private observations/prompts.")
     run_parser.add_argument("--sequential-decisions", action="store_true", help="Disable same-tick concurrent brain calls.")
-    run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. For LLM runs, defaults to OPENAI_MAX_PARALLEL_AGENTS or 1.")
+    run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. Provider-backed brains default to one worker.")
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
 
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
@@ -84,9 +85,9 @@ def main(argv: list[str] | None = None) -> None:
     ablate_parser.add_argument("--agents", type=int, default=4)
     ablate_parser.add_argument("--ticks", type=int, default=30, help="Baseline tick count (horizon variants scale this).")
     ablate_parser.add_argument("--seed", type=int, default=11)
-    ablate_parser.add_argument("--brain", choices=["survival", "llm"], default="survival")
+    ablate_parser.add_argument("--brain", choices=["survival", "llm", "codex"], default="survival")
     ablate_parser.add_argument("--model", default=None)
-    ablate_parser.add_argument("--reasoning-effort", choices=["minimal", "low", "medium", "high"], default=None)
+    ablate_parser.add_argument("--reasoning-effort", choices=["minimal", "low", "medium", "high", "xhigh", "max"], default=None)
     ablate_parser.add_argument("--out", type=Path, default=None, help="Optional JSON output path for the rows.")
 
     report_parser = subparsers.add_parser(
@@ -104,14 +105,14 @@ def main(argv: list[str] | None = None) -> None:
     experiment_parser.add_argument("--seeds", type=int, nargs="+", default=[11])
     experiment_parser.add_argument(
         "--brain",
-        choices=["survival", "llm"],
+        choices=["survival", "llm", "codex"],
         default="survival",
         help="Defaults to the free local scripted brain. LLM calls occur only when explicitly selected.",
     )
     experiment_parser.add_argument("--model", default=None)
     experiment_parser.add_argument(
         "--reasoning-effort",
-        choices=["minimal", "low", "medium", "high"],
+        choices=["minimal", "low", "medium", "high", "xhigh", "max"],
         default=None,
     )
     experiment_parser.add_argument(
@@ -154,9 +155,10 @@ def main(argv: list[str] | None = None) -> None:
 
 def _run(args: argparse.Namespace) -> None:
     load_dotenv()
-    if args.brain == "llm":
-        OpenAIBrain.reset_runtime_state()
-    if args.brain == "llm" and args.out:
+    runtime_class = _model_brain_class(args.brain)
+    if runtime_class is not None:
+        runtime_class.reset_runtime_state()
+    if runtime_class is not None and args.out:
         usage_path = args.out.with_name(args.out.stem + "-usage.jsonl")
         usage_path.parent.mkdir(parents=True, exist_ok=True)
         usage_path.write_text("", encoding="utf-8")
@@ -172,6 +174,12 @@ def _run(args: argparse.Namespace) -> None:
     names = [f"Agent {index + 1}" for index in range(args.agents)]
     engine = WorldEngine.create(config=config, agent_names=names)
     brains = _make_brains(engine, args)
+    first_brain = next(iter(brains.values()), None)
+    plan_usage_checkpoints: list[dict[str, Any]] = []
+    capture_plan_usage = getattr(first_brain, "capture_plan_usage", None)
+    if callable(capture_plan_usage):
+        plan_usage_checkpoints.append(capture_plan_usage())
+        _write_codex_plan_usage(args, plan_usage_checkpoints)
     runner = SimulationRunner(
         engine,
         brains,
@@ -187,8 +195,10 @@ def _run(args: argparse.Namespace) -> None:
             "agents": args.agents,
             "seed": args.seed,
             "target_ticks": args.ticks,
-            "model": args.model,
-            "reasoning_effort": args.reasoning_effort,
+            "model": getattr(first_brain, "model", args.model),
+            "reasoning_effort": getattr(first_brain, "reasoning_effort", args.reasoning_effort),
+            "provider": "codex_cli" if args.brain == "codex" else None,
+            "billing_mode": "chatgpt_plan" if args.brain == "codex" else None,
             "objective_mode": getattr(args, "objective_mode", "neutral"),
             "economy_mode": getattr(args, "economy_mode", "baseline"),
             "geography_mode": getattr(args, "geography_mode", "shared_oasis"),
@@ -198,8 +208,11 @@ def _run(args: argparse.Namespace) -> None:
     stopped_reason: str | None = None
     for _ in range(args.ticks):
         events = runner.step()
+        if plan_usage_checkpoints:
+            plan_usage_checkpoints.append(capture_plan_usage())
+            _write_codex_plan_usage(args, plan_usage_checkpoints)
         if _contains_quota_failure(events):
-            stopped_reason = "OpenAI quota is unavailable; stopped early so the run is not mistaken for agent behavior."
+            stopped_reason = "Model quota is unavailable; stopped early so the run is not mistaken for agent behavior."
             engine.log_event(
                 "run_stopped",
                 message=stopped_reason,
@@ -239,10 +252,13 @@ def _run(args: argparse.Namespace) -> None:
         print(f"Wrote event log to {args.out}")
     if args.snapshot:
         print(f"Wrote snapshot to {args.snapshot}")
-    if args.brain == "llm":
-        _report_llm_usage(args, engine.state.tick)
+    if runtime_class is not None:
+        _report_llm_usage(args, engine.state.tick, runtime_class.usage_records())
+    if plan_usage_checkpoints:
+        print("Codex plan usage summary:")
+        print(json.dumps(summarize_plan_usage(plan_usage_checkpoints), indent=2, sort_keys=True))
     if args.out:
-        usage_records = OpenAIBrain.usage_records() if args.brain == "llm" else []
+        usage_records = runtime_class.usage_records() if runtime_class is not None else []
         stem = args.out.with_name(args.out.stem)
         write_report(
             [json.loads(line) for line in engine.export_events_jsonl().splitlines() if line.strip()],
@@ -250,12 +266,24 @@ def _run(args: argparse.Namespace) -> None:
             usage_records,
             stem,
             target_ticks=args.ticks,
+            plan_usage=summarize_plan_usage(plan_usage_checkpoints) if plan_usage_checkpoints else None,
         )
         print(f"Wrote run report to {stem}-report.json and {stem}-report.md")
 
 
-def _report_llm_usage(args: argparse.Namespace, ticks_completed: int) -> None:
-    records = OpenAIBrain.usage_records()
+def _write_codex_plan_usage(args: argparse.Namespace, checkpoints: list[dict[str, Any]]) -> None:
+    if not args.out:
+        return
+    path = args.out.with_name(args.out.stem + "-plan-usage.json")
+    payload = {
+        "schema_version": 1,
+        "checkpoints": checkpoints,
+        "summary": summarize_plan_usage(checkpoints),
+    }
+    _atomic_write_text(path, json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
+def _report_llm_usage(args: argparse.Namespace, ticks_completed: int, records: list[dict[str, Any]]) -> None:
     if not records:
         return
     usage_path = None
@@ -374,6 +402,8 @@ def _ablate(args: argparse.Namespace) -> None:
     def brain_factory(_agent_id: str) -> AgentBrain:
         if args.brain == "llm":
             return OpenAIBrain(model=args.model, reasoning_effort=args.reasoning_effort)
+        if args.brain == "codex":
+            return CodexBrain(model=args.model, reasoning_effort=args.reasoning_effort)
         return SurvivalBrain()
 
     results = run_ablation(
@@ -383,7 +413,7 @@ def _ablate(args: argparse.Namespace) -> None:
         brain_factory=brain_factory,
     )
     print(f"Ablation sweep (brain={args.brain}, agents={args.agents}, seed={args.seed}, baseline ticks={args.ticks})")
-    print("builds/buildable are only meaningful with --brain llm; lifespan/spare capacity are model-independent.\n")
+    print("builds/buildable are only meaningful with an LLM brain; lifespan/spare capacity are model-independent.\n")
     print(format_table(results))
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -397,6 +427,11 @@ def _make_brains(engine: WorldEngine, args: argparse.Namespace) -> dict[str, Age
             agent_id: OpenAIBrain(model=args.model, reasoning_effort=args.reasoning_effort)
             for agent_id in engine.state.agents
         }
+    if args.brain == "codex":
+        return {
+            agent_id: CodexBrain(model=args.model, reasoning_effort=args.reasoning_effort)
+            for agent_id in engine.state.agents
+        }
     return {agent_id: SurvivalBrain() for agent_id in engine.state.agents}
 
 
@@ -405,6 +440,16 @@ def _max_workers(args: argparse.Namespace) -> int | None:
         return args.max_workers
     if args.brain == "llm":
         return int(os.environ.get("OPENAI_MAX_PARALLEL_AGENTS", "1"))
+    if args.brain == "codex":
+        return int(os.environ.get("CODEX_MAX_PARALLEL_AGENTS", "1"))
+    return None
+
+
+def _model_brain_class(brain: str) -> type[OpenAIBrain] | type[CodexBrain] | None:
+    if brain == "llm":
+        return OpenAIBrain
+    if brain == "codex":
+        return CodexBrain
     return None
 
 

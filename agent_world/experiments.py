@@ -1,7 +1,8 @@
 """Reproducible factorial experiments for Agent World.
 
 The experiment runner deliberately defaults to the local ``SurvivalBrain``. An
-LLM is only contacted when the caller explicitly selects ``brain="llm"``.
+LLM is only contacted when the caller explicitly selects ``brain="llm"`` or
+``brain="codex"``.
 Every cell gets its own directory, usage log, provenance manifest, report, and
 raw outputs so interrupted or mixed-provider batches remain auditable.
 """
@@ -22,6 +23,7 @@ from typing import Any, Callable, Iterable, Iterator
 from urllib.parse import urlsplit
 
 from agent_world.agents import AgentBrain, SurvivalBrain
+from agent_world.codex_brain import CodexBrain, build_codex_prompt, summarize_plan_usage
 from agent_world.interface import build_dynamic_observation, build_observation, build_static_context
 from agent_world.metrics import compute_metrics, is_quota_failure_message
 from agent_world.models import WorldConfig
@@ -149,8 +151,8 @@ def run_factorial_experiment(
         raise ValueError("ticks must be at least 1.")
     if agents < 1:
         raise ValueError("agents must be at least 1.")
-    if brain not in {"survival", "llm"}:
-        raise ValueError("brain must be 'survival' or 'llm'.")
+    if brain not in {"survival", "llm", "codex"}:
+        raise ValueError("brain must be 'survival', 'llm', or 'codex'.")
     if max_workers is not None and max_workers < 1:
         raise ValueError("max_workers must be at least 1.")
 
@@ -287,6 +289,7 @@ def _run_single(
     events_path = stem.with_suffix(".jsonl")
     snapshot_path = stem.with_name("run-snapshot.json")
     usage_path = stem.with_name("run-usage.jsonl")
+    plan_usage_path = stem.with_name("run-plan-usage.json")
     report_json_path = stem.with_name("run-report.json")
     report_md_path = stem.with_name("run-report.md")
     manifest_path = run_dir / "manifest.json"
@@ -320,7 +323,8 @@ def _run_single(
             "directory": str(run_dir),
             "events": str(events_path),
             "snapshot": str(snapshot_path),
-            "usage": str(usage_path) if brain == "llm" else None,
+            "usage": str(usage_path) if brain in {"llm", "codex"} else None,
+            "plan_usage": str(plan_usage_path) if brain == "codex" else None,
             "report_json": str(report_json_path),
             "report_markdown": str(report_md_path),
             "manifest": str(manifest_path),
@@ -329,16 +333,19 @@ def _run_single(
         "valid_for_analysis": False,
         "stop_reason": None,
         "error": None,
+        "codex_plan_usage": None,
     }
     _atomic_write_json(manifest_path, run_manifest)
 
     engine: WorldEngine | None = None
     report: dict[str, Any] | None = None
     usage_records: list[dict[str, Any]] = []
-    with _isolated_usage_log(usage_path if brain == "llm" else None):
+    plan_usage_checkpoints: list[dict[str, Any]] = []
+    runtime_class = _model_brain_class(brain)
+    with _isolated_usage_log(usage_path if runtime_class is not None else None):
         try:
-            if brain == "llm":
-                OpenAIBrain.reset_runtime_state()
+            if runtime_class is not None:
+                runtime_class.reset_runtime_state()
             names = [f"Agent {index + 1}" for index in range(agents)]
             engine = WorldEngine.create(config=config, agent_names=names)
             engine.log_event(
@@ -356,13 +363,18 @@ def _run_single(
             # Hash the actual first request context after the lifecycle event has
             # been added; this is the same observation the runner will build for
             # agent-1 immediately below.
-            prompt_hashes = _initial_prompt_hashes(engine)
+            prompt_hashes = _initial_prompt_hashes(engine, brain)
             run_manifest["hashes"].update(prompt_hashes)
             brains = _make_brains(engine, brain, model, reasoning_effort)
-            if brain == "llm" and brains:
+            if runtime_class is not None and brains:
                 first_brain = next(iter(brains.values()))
-                if isinstance(first_brain, OpenAIBrain):
+                if isinstance(first_brain, (OpenAIBrain, CodexBrain)):
                     run_manifest["brain"] = _brain_runtime_settings(first_brain, max_workers)
+                capture_plan_usage = getattr(first_brain, "capture_plan_usage", None)
+                if callable(capture_plan_usage):
+                    plan_usage_checkpoints.append(capture_plan_usage())
+                    run_manifest["codex_plan_usage"] = summarize_plan_usage(plan_usage_checkpoints)
+                    _write_plan_usage(plan_usage_path, plan_usage_checkpoints)
 
             runner = SimulationRunner(
                 engine,
@@ -377,6 +389,10 @@ def _run_single(
             stop_reason: str | None = None
             for _ in range(ticks):
                 events = runner.step()
+                if plan_usage_checkpoints:
+                    plan_usage_checkpoints.append(capture_plan_usage())
+                    run_manifest["codex_plan_usage"] = summarize_plan_usage(plan_usage_checkpoints)
+                    _write_plan_usage(plan_usage_path, plan_usage_checkpoints)
                 if any(
                     is_quota_failure_message(getattr(event, "type", None), getattr(event, "message", None))
                     for event in events
@@ -413,14 +429,21 @@ def _run_single(
                     scope="public",
                 )
             _flush_run_outputs(engine, events_path, snapshot_path)
-            usage_records = OpenAIBrain.usage_records() if brain == "llm" else []
-            if brain == "llm":
+            usage_records = runtime_class.usage_records() if runtime_class is not None else []
+            if runtime_class is not None:
                 _atomic_write_text(
                     usage_path,
                     "".join(json.dumps(row, sort_keys=True) + "\n" for row in usage_records),
                 )
             event_dicts = [event.to_dict() for event in engine.state.events]
-            report = write_report(event_dicts, engine.snapshot(), usage_records, stem, target_ticks=ticks)
+            report = write_report(
+                event_dicts,
+                engine.snapshot(),
+                usage_records,
+                stem,
+                target_ticks=ticks,
+                plan_usage=run_manifest.get("codex_plan_usage"),
+            )
             metrics = compute_metrics(engine.state)
             summary = _run_summary(metrics, report, agents)
             run_manifest["summary"] = summary
@@ -586,21 +609,29 @@ def _make_brains(
             agent_id: OpenAIBrain(model=model, reasoning_effort=reasoning_effort)
             for agent_id in engine.state.agents
         }
+    if brain == "codex":
+        return {
+            agent_id: CodexBrain(model=model, reasoning_effort=reasoning_effort)
+            for agent_id in engine.state.agents
+        }
     return {agent_id: SurvivalBrain() for agent_id in engine.state.agents}
 
 
-def _initial_prompt_hashes(engine: WorldEngine) -> dict[str, str]:
+def _initial_prompt_hashes(engine: WorldEngine, brain: str) -> dict[str, str]:
     first_agent_id = sorted(engine.state.agents)[0]
     observation = build_observation(engine.state, first_agent_id)
     static_context = build_static_context(observation.get("world", {}))
     dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
     system_prompt = f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}"
     user_prompt = f"The current observation follows as JSON:\n{dynamic_json}"
-    return {
+    hashes = {
         "initial_api_system_prompt_sha256": _sha256_text(system_prompt),
         "initial_api_user_prompt_sha256": _sha256_text(user_prompt),
         "initial_static_context_sha256": _sha256_text(static_context),
     }
+    if brain == "codex":
+        hashes["initial_codex_prompt_sha256"] = _sha256_text(build_codex_prompt(static_context, dynamic_json))
+    return hashes
 
 
 def _source_hashes() -> dict[str, str]:
@@ -613,6 +644,7 @@ def _source_hashes() -> dict[str, str]:
         "world_source_sha256": _sha256_file(module_dir / "world.py"),
         "interface_source_sha256": _sha256_file(module_dir / "interface.py"),
         "openai_brain_source_sha256": _sha256_file(module_dir / "openai_brain.py"),
+        "codex_brain_source_sha256": _sha256_file(module_dir / "codex_brain.py"),
         "runner_source_sha256": _sha256_file(module_dir / "runner.py"),
     }
 
@@ -655,6 +687,16 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
             "api_style": None,
             "base_url": None,
         }
+    if brain == "codex":
+        return {
+            "provider": "codex_cli",
+            "model": model or os.environ.get("CODEX_MODEL", "gpt-5.6-luna"),
+            "reasoning_effort": reasoning_effort or os.environ.get("CODEX_REASONING_EFFORT", "low"),
+            "api_style": "codex_exec",
+            "base_url": None,
+            "billing_mode": "chatgpt_plan",
+            "timeout_seconds": int(os.environ.get("CODEX_TIMEOUT_SECONDS", "300")),
+        }
     base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     return {
         "provider": _provider_name(base_url),
@@ -671,7 +713,20 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
     }
 
 
-def _brain_runtime_settings(brain: OpenAIBrain, max_workers: int) -> dict[str, Any]:
+def _brain_runtime_settings(brain: OpenAIBrain | CodexBrain, max_workers: int) -> dict[str, Any]:
+    if isinstance(brain, CodexBrain):
+        return {
+            "type": "codex",
+            "provider": "codex_cli",
+            "model": brain.model,
+            "reasoning_effort": brain.reasoning_effort,
+            "api_style": "codex_exec",
+            "base_url": None,
+            "billing_mode": "chatgpt_plan",
+            "executable": brain.executable,
+            "timeout_seconds": brain.timeout_seconds,
+            "max_workers": max_workers,
+        }
     return {
         "type": "llm",
         "provider": _provider_name(brain.base_url),
@@ -879,12 +934,33 @@ def _flush_run_outputs(engine: WorldEngine, events_path: Path, snapshot_path: Pa
     _atomic_write_json(snapshot_path, engine.snapshot())
 
 
+def _write_plan_usage(path: Path, checkpoints: list[dict[str, Any]]) -> None:
+    _atomic_write_json(
+        path,
+        {
+            "schema_version": 1,
+            "checkpoints": checkpoints,
+            "summary": summarize_plan_usage(checkpoints),
+        },
+    )
+
+
 def _effective_max_workers(brain: str, max_workers: int | None) -> int:
     if max_workers is not None:
         return max_workers
     if brain == "llm":
         return max(1, int(os.environ.get("OPENAI_MAX_PARALLEL_AGENTS", "1")))
+    if brain == "codex":
+        return max(1, int(os.environ.get("CODEX_MAX_PARALLEL_AGENTS", "1")))
     return 1
+
+
+def _model_brain_class(brain: str) -> type[OpenAIBrain] | type[CodexBrain] | None:
+    if brain == "llm":
+        return OpenAIBrain
+    if brain == "codex":
+        return CodexBrain
+    return None
 
 
 @contextmanager

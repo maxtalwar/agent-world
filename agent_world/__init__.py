@@ -1,6 +1,7 @@
 """Agent World simulation package."""
 
 from agent_world.agents import AgentBrain, NullBrain, SurvivalBrain
+from agent_world.codex_brain import CodexBrain
 from agent_world.interface import build_agent_prompt, build_observation, parse_agent_response
 from agent_world.metrics import compute_metrics
 from agent_world.models import Agent, AgentDecision, Position, WorldConfig
@@ -12,6 +13,7 @@ __all__ = [
     "Agent",
     "AgentBrain",
     "AgentDecision",
+    "CodexBrain",
     "NullBrain",
     "OpenAIBrain",
     "Position",

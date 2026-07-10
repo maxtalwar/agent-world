@@ -293,6 +293,66 @@ class FactorialExperimentTests(unittest.TestCase):
             ]
             self.assertEqual(len(usage), 1)
 
+    def test_ordinary_codex_run_uses_codex_usage_records(self) -> None:
+        class FakeCodexBrain:
+            reset_calls = 0
+            records: list[dict[str, object]] = []
+
+            def __init__(self, model=None, reasoning_effort=None):
+                self.model = model or "gpt-5.6-luna"
+
+            @classmethod
+            def reset_runtime_state(cls):
+                cls.reset_calls += 1
+                cls.records = []
+
+            @classmethod
+            def usage_records(cls):
+                return list(cls.records)
+
+            def decide(self, _observation):
+                self.__class__.records.append(
+                    {
+                        "provider": "codex_cli",
+                        "billing_mode": "chatgpt_plan",
+                        "prompt_tokens": 2,
+                        "cached_tokens": 0,
+                        "completion_tokens": 1,
+                        "reasoning_tokens": 0,
+                        "cost": 0,
+                    }
+                )
+                return AgentDecision(intent="wait", actions=[{"type": "wait"}], messages=[], memory_updates=[])
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            args = argparse.Namespace(
+                ticks=1,
+                agents=1,
+                seed=5,
+                width=16,
+                height=16,
+                brain="codex",
+                model="gpt-5.6-luna",
+                reasoning_effort="low",
+                out=root / "ordinary-codex.jsonl",
+                snapshot=root / "ordinary-codex-snapshot.json",
+                no_agent_io_log=True,
+                sequential_decisions=True,
+                max_workers=1,
+                progress=False,
+            )
+            with patch("agent_world.cli.CodexBrain", FakeCodexBrain), patch("builtins.print"):
+                _run(args)
+            self.assertEqual(FakeCodexBrain.reset_calls, 1)
+            usage = [
+                json.loads(line)
+                for line in (root / "ordinary-codex-usage.jsonl").read_text().splitlines()
+                if line
+            ]
+            self.assertEqual(len(usage), 1)
+            self.assertEqual(usage[0]["billing_mode"], "chatgpt_plan")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -15,6 +15,7 @@ python3 -m agent_world.cli prompt --seed 7 --agents 2 --agent agent-1
 python3 -m agent_world.cli ablate --agents 4 --ticks 30 --seed 11
 python3 -m agent_world.cli experiment --agents 5 --ticks 20 --seeds 11 --environment all --objective all --progress
 python3 -m agent_world.cli experiment --brain llm --model openai/gpt-5.6-luna --environment organic --objective neutral --ticks 40 --agents 5 --seeds 29 --progress
+python3 -m agent_world.cli run --brain codex --model gpt-5.6-luna --reasoning-effort low --ticks 3 --agents 2 --progress
 ```
 
 The default CLI run uses deterministic mock brains so the infrastructure can be tested without an LLM key.
@@ -45,6 +46,7 @@ directory.
 - `agent_world/maps.py`: canonical handcrafted 16x16 world map.
 - `agent_world/interface.py`: per-agent observation and neutral prompt construction.
 - `agent_world/openai_brain.py`: OpenAI-backed `AgentBrain` with retry/throttle handling.
+- `agent_world/codex_brain.py`: ChatGPT-plan-backed `AgentBrain` using isolated `codex exec` decisions.
 - `agent_world/runner.py`: observe -> decide -> validate simulation orchestration.
 - `agent_world/observer.py`: local web observatory for live/replay visualization.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
@@ -92,6 +94,37 @@ python3 -m agent_world.cli run --brain llm --model z-ai/glm-5.2 --reasoning-effo
 ```
 
 To connect a different provider or local agent policy, implement the `AgentBrain` protocol in `agent_world/agents.py`: receive an observation dictionary, return the same JSON shape described in the prompt, and let `WorldEngine` validate everything.
+
+### Codex plan agents
+
+`CodexBrain` runs Luna or Terra through the locally installed Codex CLI and its
+saved ChatGPT login. It does not use `OPENAI_API_KEY` or `CODEX_API_KEY`, and it
+records each call with `provider=codex_cli`, `billing_mode=chatgpt_plan`, token
+usage, prompt hashes, and zero marginal API cost. Codex runs also sample the
+account's plan limits before the first decision and after every tick. The
+`*-plan-usage.json` artifact preserves the raw 5-hour/weekly utilization and
+credit-balance checkpoints; reports show the observed before/after drawdown.
+These are account-level readings, so concurrent Codex work may contribute to a
+run's observed delta. Install and sign in to Codex,
+then verify the login before starting a run:
+
+```bash
+codex login status
+python3 -m agent_world.cli run \
+  --brain codex --model gpt-5.6-luna --reasoning-effort low \
+  --ticks 10 --agents 3 --progress \
+  --out runs/codex-luna.jsonl --snapshot runs/codex-luna-snapshot.json
+```
+
+Use `gpt-5.6-terra` for a stronger Codex-plan condition. Each living agent gets
+an independent, ephemeral, read-only Codex invocation per tick. The adapter
+disables shell tools, apps, and subagent delegation, runs outside the repository,
+and constrains the final response to an equivalent strict decision contract that
+the adapter normalizes back to Agent World's flat action shape.
+Codex-plan results should be labeled separately from raw API results because the
+Codex harness adds its own runtime instructions. Runs default to one concurrent
+Codex decision; raise `CODEX_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
+after benchmarking account limits and host load.
 
 Runs log private observations, prompts, responses, validation errors, actions, state transitions, trades, messages, claims, groups, and deaths. Use `--no-agent-io-log` when you want smaller event logs.
 

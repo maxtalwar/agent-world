@@ -176,6 +176,8 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
         (
             "OpenAI decision failed:",
             "OpenAI quota unavailable:",
+            "Codex decision failed:",
+            "Codex quota unavailable:",
             "Invalid JSON response:",
             "Agent brain failed:",
         )
@@ -185,7 +187,7 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
 def is_quota_failure_message(event_type: str | None, message: str | None) -> bool:
     if event_type != "agent_response" or not message:
         return False
-    return message.startswith("OpenAI quota unavailable:") or "insufficient_quota" in message
+    return message.startswith(("OpenAI quota unavailable:", "Codex quota unavailable:")) or "insufficient_quota" in message
 
 
 def _median(values: list[int]) -> float:

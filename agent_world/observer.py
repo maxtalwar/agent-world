@@ -14,6 +14,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from agent_world.agents import AgentBrain, SurvivalBrain
+from agent_world.codex_brain import CodexBrain
 from agent_world.env import load_dotenv
 from agent_world.metrics import compute_metrics, is_decision_failure_message, is_quota_failure_message
 from agent_world.models import WorldConfig
@@ -103,8 +104,9 @@ class RunController:
                 return 409, {"ok": False, "error": "A simulation is already running.", "run": self._status.to_dict()}
             self._stop_event = threading.Event()
             self._pause_event.clear()
-            if config.brain == "llm":
-                OpenAIBrain.reset_runtime_state()
+            runtime_class = _model_brain_class(config.brain)
+            if runtime_class is not None:
+                runtime_class.reset_runtime_state()
                 usage_path = self.events_path.with_name(self.events_path.stem + "-usage.jsonl")
                 usage_path.parent.mkdir(parents=True, exist_ok=True)
                 usage_path.write_text("", encoding="utf-8")
@@ -187,7 +189,7 @@ class RunController:
                     break
                 events = runner.step()
                 if _contains_quota_failure(events):
-                    stopped_reason = "OpenAI quota is unavailable; stopped early so the run is not mistaken for agent behavior."
+                    stopped_reason = "Model quota is unavailable; stopped early so the run is not mistaken for agent behavior."
                     engine.log_event(
                         "run_stopped",
                         message=stopped_reason,
@@ -247,12 +249,16 @@ class RunController:
 
 def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
     brain = str(payload.get("brain", TUNED_OBSERVATORY_DEFAULTS["brain"])).strip().lower()
-    if brain not in {"survival", "llm"}:
-        raise ValueError("brain must be survival or llm.")
-    model = str(payload.get("model") or os.environ.get("OPENAI_MODEL") or TUNED_OBSERVATORY_DEFAULTS["model"]).strip()
+    if brain not in {"survival", "llm", "codex"}:
+        raise ValueError("brain must be survival, llm, or codex.")
+    if brain == "codex":
+        model = str(payload.get("model") or os.environ.get("CODEX_MODEL") or "gpt-5.6-luna").strip()
+        default_effort = os.environ.get("CODEX_REASONING_EFFORT", "low")
+    else:
+        model = str(payload.get("model") or os.environ.get("OPENAI_MODEL") or TUNED_OBSERVATORY_DEFAULTS["model"]).strip()
+        default_effort = os.environ.get("OPENAI_REASONING_EFFORT", TUNED_OBSERVATORY_DEFAULTS["reasoning_effort"])
     reasoning_effort = _parse_reasoning_effort(
-        payload.get("reasoning_effort")
-        or os.environ.get("OPENAI_REASONING_EFFORT", TUNED_OBSERVATORY_DEFAULTS["reasoning_effort"])
+        payload.get("reasoning_effort") or default_effort
     )
     world_config = WorldConfig(
         width=16,
@@ -306,8 +312,8 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         ticks=_bounded_int(payload.get("ticks", TUNED_OBSERVATORY_DEFAULTS["ticks"]), "ticks", minimum=1, maximum=1000),
         agents=_bounded_int(payload.get("agents", TUNED_OBSERVATORY_DEFAULTS["agents"]), "agents", minimum=1, maximum=20),
         brain=brain,
-        model=model if brain == "llm" else None,
-        reasoning_effort=reasoning_effort if brain == "llm" else None,
+        model=model if brain in {"llm", "codex"} else None,
+        reasoning_effort=reasoning_effort if brain in {"llm", "codex"} else None,
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
         max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=20),
         world_config=world_config,
@@ -348,7 +354,7 @@ def _validate_reserve_pair(name: str, start: int, maximum: int) -> None:
 
 def _parse_reasoning_effort(value: Any) -> str:
     effort = str(value or "medium").strip().lower()
-    allowed = {"minimal", "low", "medium", "high"}
+    allowed = {"minimal", "low", "medium", "high", "xhigh", "max"}
     if effort not in allowed:
         raise ValueError(f"reasoning_effort must be one of: {', '.join(sorted(allowed))}.")
     return effort
@@ -360,7 +366,20 @@ def _make_brains(engine: WorldEngine, config: RunConfig) -> dict[str, AgentBrain
             agent_id: OpenAIBrain(model=config.model, reasoning_effort=config.reasoning_effort)
             for agent_id in engine.state.agents
         }
+    if config.brain == "codex":
+        return {
+            agent_id: CodexBrain(model=config.model, reasoning_effort=config.reasoning_effort)
+            for agent_id in engine.state.agents
+        }
     return {agent_id: SurvivalBrain() for agent_id in engine.state.agents}
+
+
+def _model_brain_class(brain: str) -> type[OpenAIBrain] | type[CodexBrain] | None:
+    if brain == "llm":
+        return OpenAIBrain
+    if brain == "codex":
+        return CodexBrain
+    return None
 
 
 def _status_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
@@ -1561,6 +1580,7 @@ HTML = r"""<!doctype html>
           <select id="run-brain" class="lock">
             <option value="survival">survival</option>
             <option value="llm" selected>llm</option>
+            <option value="codex">codex plan</option>
           </select>
         </label>
         <label class="field">
@@ -1579,7 +1599,9 @@ HTML = r"""<!doctype html>
           <label for="run-model">Model</label>
           <select id="run-model" class="lock">
             <option value="z-ai/glm-5.2" selected>GLM-5.2</option>
-            <option value="openai/gpt-5.6-luna">GPT-5.6 Luna</option>
+            <option value="openai/gpt-5.6-luna">GPT-5.6 Luna (OpenRouter)</option>
+            <option value="gpt-5.6-luna">GPT-5.6 Luna (Codex plan)</option>
+            <option value="gpt-5.6-terra">GPT-5.6 Terra (Codex plan)</option>
             <option value="z-ai/glm-5.1">GLM-5.1</option>
             <option value="z-ai/glm-4.7">GLM-4.7</option>
             <option value="z-ai/glm-4.5-air">GLM-4.5 Air</option>
@@ -1592,6 +1614,8 @@ HTML = r"""<!doctype html>
             <option value="low">low</option>
             <option value="medium" selected>medium</option>
             <option value="high">high</option>
+            <option value="xhigh">xhigh</option>
+            <option value="max">max</option>
           </select>
         </label>
         <label class="field">
@@ -2599,8 +2623,17 @@ HTML = r"""<!doctype html>
 
     function syncModelControl(forceDisabled = false) {
       const brain = document.getElementById("run-brain").value;
-      document.getElementById("run-model").disabled = forceDisabled || brain !== "llm";
-      document.getElementById("run-reasoning").disabled = forceDisabled || brain !== "llm";
+      const model = document.getElementById("run-model");
+      const reasoning = document.getElementById("run-reasoning");
+      if (!forceDisabled && brain === "codex" && !model.value.startsWith("gpt-5.6-")) {
+        model.value = "gpt-5.6-luna";
+        reasoning.value = "low";
+      } else if (!forceDisabled && brain === "llm" && ["gpt-5.6-luna", "gpt-5.6-terra"].includes(model.value)) {
+        model.value = "z-ai/glm-5.2";
+        reasoning.value = "medium";
+      }
+      model.disabled = forceDisabled || brain === "survival";
+      reasoning.disabled = forceDisabled || brain === "survival";
     }
 
     function numberValue(id) {

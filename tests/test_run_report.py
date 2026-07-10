@@ -114,6 +114,38 @@ class RunReportTests(unittest.TestCase):
         self.assertAlmostEqual(report["usage"]["total_cost_usd"], 0.03)
         self.assertEqual(report["usage"]["cache_hit_rate_pct"], 70.0)
 
+    def test_codex_plan_drawdown_is_in_report_and_markdown(self) -> None:
+        events, snapshot = _run_short_sim()
+        plan_usage = {
+            "available": True,
+            "buckets": {
+                "codex": {
+                    "limit_name": None,
+                    "primary": {
+                        "before_used_percent": 10,
+                        "after_used_percent": 13,
+                        "used_percent_delta": 3,
+                    },
+                    "secondary": {
+                        "before_used_percent": 20,
+                        "after_used_percent": 20,
+                        "used_percent_delta": 0,
+                    },
+                    "credits": {
+                        "before_balance": "100.0",
+                        "after_balance": "99.5",
+                        "balance_delta": "-0.5",
+                    },
+                }
+            },
+        }
+        report = build_report(events, snapshot, plan_usage=plan_usage)
+
+        self.assertEqual(report["usage"]["plan_limits"], plan_usage)
+        markdown = render_markdown(report)
+        self.assertIn("Codex plan [codex]", markdown)
+        self.assertIn("delta +3pp", markdown)
+
     def test_llm_failures_use_agent_response_semantics(self) -> None:
         events, snapshot = _run_short_sim()
         events.extend(

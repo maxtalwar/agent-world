@@ -93,3 +93,12 @@ Invalid:
 - sequential LLM calls by default to avoid token-per-minute bursts
 
 Prompt compaction does not remove observation fields.
+
+## Codex CLI Adapter
+
+`agent_world/codex_brain.py` invokes `codex exec` once per living agent per tick.
+Calls are ephemeral, read-only, schema-constrained, and isolated from the project
+and from other simulated agents. API-key environment variables are removed from
+the child process so saved ChatGPT authentication supplies the Codex-plan usage.
+The simulation remains responsible for memory; the Codex process receives the
+same compact static rulebook and current dynamic observation used by API brains.
