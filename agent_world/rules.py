@@ -82,7 +82,7 @@ ORGANIC_STRUCTURE_OPERATIONS: dict[str, dict[str, object]] = {
 
 MECHANICS_SUMMARY: dict[str, object] = {
     "resources": {
-        "coin": "A durable, lightweight minted token with no survival effect. It can be carried, stored, dropped, gifted, or exchanged like any other item.",
+        "coin": "A durable minted token with no survival effect and zero carry weight: any number of coins consumes none of your carry capacity. It can be carried, stored, dropped, gifted, or exchanged like any other item.",
         "water": "Consumed to restore thirst need. Gathered from adjacent open water, accessible wells, or from the current tile if water is present.",
         "food": "Consumed to restore hunger and a small amount of energy. Gathered, harvested, fished, or produced on improved land.",
         "fiber": "Crafting/building material. Gathered from tiles where fiber is present.",
