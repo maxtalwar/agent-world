@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import os
 import tempfile
+import time
 import unittest
+from unittest.mock import patch
 
 from agent_world.env import load_dotenv
+from agent_world.interface import build_static_context
 from agent_world.openai_brain import OpenAIBrain, OpenAIQuotaError, extract_chat_text, extract_output_text
 
 
@@ -51,12 +54,25 @@ class CapturingChatBrain(OpenAIBrain):
 
 
 class OpenAIBrainTests(unittest.TestCase):
-    def setUp(self) -> None:
-        OpenAIBrain.reset_runtime_state()
-
     def test_extract_output_text_from_output_text(self) -> None:
         response = {"output_text": '{"intent":"wait","actions":[],"messages":[],"memory_updates":[]}'}
         self.assertIn('"intent"', extract_output_text(response))
+
+    def test_hard_deadline_does_not_wait_for_stuck_worker_shutdown(self) -> None:
+        brain = OpenAIBrain(
+            api_key="test",
+            timeout_seconds=0.01,
+            hard_deadline_grace_seconds=0.01,
+            min_request_interval_seconds=0,
+        )
+
+        with patch.object(brain, "_post_json_blocking", side_effect=lambda *_: time.sleep(0.25)):
+            started = time.monotonic()
+            with self.assertRaisesRegex(OSError, "hard deadline"):
+                brain._post_json("/responses", {})
+            elapsed = time.monotonic() - started
+
+        self.assertLess(elapsed, 0.15)
 
     def test_extract_output_text_from_nested_response_content(self) -> None:
         response = {
@@ -152,12 +168,26 @@ class OpenAIBrainTests(unittest.TestCase):
         brain.decide({"tick": 0, "valid_actions": []})
 
         self.assertEqual(brain.last_payload["usage"], {"include": True})
-        records = OpenAIBrain.usage_records()
+        records = brain.runtime.usage_records()
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["prompt_tokens"], 3000)
         self.assertEqual(records[0]["cached_tokens"], 1800)
         self.assertEqual(records[0]["reasoning_tokens"], 350)
         self.assertAlmostEqual(records[0]["cost"], 0.0042)
+        self.assertEqual(records[0]["api_style"], "chat")
+        self.assertEqual(records[0]["tick"], 0)
+        self.assertEqual(len(records[0]["static_prompt_sha256"]), 64)
+        self.assertEqual(len(records[0]["request_sha256"]), 64)
+
+    def test_objective_treatments_are_explicit_and_distinct(self) -> None:
+        neutral = build_static_context({"objective_mode": "neutral"})
+        collective = build_static_context({"objective_mode": "collective"})
+        individual = build_static_context({"objective_mode": "individual"})
+
+        self.assertIn("No external score is specified", neutral)
+        self.assertIn("all living agents", collective)
+        self.assertIn("retained resources", individual)
+        self.assertEqual(len({neutral, collective, individual}), 3)
 
     def test_chat_payload_pins_openrouter_providers_when_configured(self) -> None:
         os.environ["OPENAI_PROVIDER_ORDER"] = "Z.AI, Alibaba"

@@ -35,10 +35,13 @@ Agents know their own:
 - skills
 - equipped items
 - groups, relationships, and reputation
+- treatment-specific specialty, aptitudes, asymmetric needs, and equipped-tool durability
 
 Agents see only local map tiles within visibility radius. They do not see the full map, hidden private memories, or private prompts/observations from other agents.
 
-The `world` object includes terrain passability and recipes with required terrain/tools. It does not include exact terrain yield, regeneration, structure productivity, spoilage cadence, or current build recommendations.
+The `world` object includes treatment modes, coordination costs, terrain passability, recipes, and required terrain/tools/structures. It does not include exact terrain yield, regeneration probabilities, spoilage cadence, or current build recommendations.
+
+Agents also receive visible standing offers, completed market-price history, and contracts to which they are a party. In organic mode, public offers and price history are local, trade summaries include a physical `escrow_position`, and engine-enforced contract actions are absent. Public structures expose access fees, capacity, upkeep state, treasury, and contributor shares.
 
 ## Explicitly Not Included
 
@@ -81,7 +84,7 @@ Invalid:
 
 ## OpenAI Adapter
 
-`agent_world/openai_brain.py` calls the OpenAI Responses API. It uses:
+`agent_world/openai_brain.py` calls either OpenAI's Responses API or an OpenAI-compatible Chat Completions API such as OpenRouter. It uses:
 
 - compact JSON prompt formatting to remove whitespace only
 - structured JSON output schema
@@ -90,3 +93,12 @@ Invalid:
 - sequential LLM calls by default to avoid token-per-minute bursts
 
 Prompt compaction does not remove observation fields.
+
+## Codex CLI Adapter
+
+`agent_world/codex_brain.py` invokes `codex exec` once per living agent per tick.
+Calls are ephemeral, read-only, schema-constrained, and isolated from the project
+and from other simulated agents. API-key environment variables are removed from
+the child process so saved ChatGPT authentication supplies the Codex-plan usage.
+The simulation remains responsible for memory; the Codex process receives the
+same compact static rulebook and current dynamic observation used by API brains.

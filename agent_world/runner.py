@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import hashlib
+import json
 from typing import Any
 
 from agent_world.agents import AgentBrain
-from agent_world.interface import build_agent_prompt, build_observation, parse_agent_response
+from agent_world.interface import (
+    build_dynamic_observation,
+    build_observation,
+    build_static_context,
+    parse_agent_response,
+)
 from agent_world.models import AgentDecision
 from agent_world.world import WorldEngine
 
@@ -31,6 +38,11 @@ class SimulationRunner:
         self.log_agent_io = log_agent_io
         self.concurrent_decisions = concurrent_decisions
         self.max_workers = max_workers
+        self._logged_static_contexts: set[str] = {
+            str(event.data.get("static_context_sha256"))
+            for event in self.engine.state.events
+            if event.type == "agent_prompt_context" and event.data.get("static_context_sha256")
+        }
 
     def step(self) -> list[Any]:
         agent_ids = [
@@ -78,12 +90,28 @@ class SimulationRunner:
         if not self.log_agent_io:
             return
         agent = self.engine.state.agents[agent_id]
-        prompt = build_agent_prompt(observation)
+        static_context = build_static_context(observation.get("world", {}))
+        static_hash = hashlib.sha256(static_context.encode("utf-8")).hexdigest()
+        if static_hash not in self._logged_static_contexts:
+            self.engine.log_event(
+                "agent_prompt_context",
+                actor_id=None,
+                data={
+                    "static_context": static_context,
+                    "static_context_sha256": static_hash,
+                    "format": "static_context_v2",
+                },
+                scope="private",
+                recipients=set(self.engine.state.agents),
+            )
+            self._logged_static_contexts.add(static_hash)
+        dynamic = build_dynamic_observation(observation)
+        dynamic_json = json.dumps(dynamic, separators=(",", ":"), sort_keys=True)
         self.engine.log_event(
             "agent_observation",
             actor_id=agent_id,
             position=agent.position,
-            data={"observation": observation},
+            data={"observation": dynamic, "format": "compact_dynamic_v2"},
             scope="private",
             recipients={agent_id},
         )
@@ -91,7 +119,11 @@ class SimulationRunner:
             "agent_prompt",
             actor_id=agent_id,
             position=agent.position,
-            data={"prompt": prompt},
+            data={
+                "static_context_sha256": static_hash,
+                "dynamic_sha256": hashlib.sha256(dynamic_json.encode("utf-8")).hexdigest(),
+                "format": "static_context_ref_plus_compact_dynamic_v2",
+            },
             scope="private",
             recipients={agent_id},
         )

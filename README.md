@@ -13,9 +13,32 @@ python3 -m agent_world.cli run --ticks 25 --agents 5 --seed 7 --progress --out r
 python3 -m agent_world.cli replay runs/example.jsonl --last 30
 python3 -m agent_world.cli prompt --seed 7 --agents 2 --agent agent-1
 python3 -m agent_world.cli ablate --agents 4 --ticks 30 --seed 11
+python3 -m agent_world.cli experiment --agents 5 --ticks 20 --seeds 11 --environment all --objective all --progress
+python3 -m agent_world.cli experiment --brain llm --model openai/gpt-5.6-luna --environment organic --objective neutral --ticks 40 --agents 5 --seeds 29 --progress
+python3 -m agent_world.cli run --brain codex --model gpt-5.6-luna --reasoning-effort low --ticks 3 --agents 2 --progress
+python3 -m agent_world.cli run --brain claude --model claude-sonnet-5 --reasoning-effort low --ticks 3 --agents 2 --progress
 ```
 
 The default CLI run uses deterministic mock brains so the infrastructure can be tested without an LLM key.
+
+The `experiment` command runs the environment × objective factorial design. It
+defaults to the free scripted survival brain and all four cells. Select one cell
+explicitly for a paid LLM run, for example:
+
+```bash
+python3 -m agent_world.cli experiment \
+  --brain llm --environment commerce --objective individual \
+  --seeds 21 --ticks 60 --agents 5 --progress \
+  --out-dir runs/experiments/commerce-individual-glm
+```
+
+Each run directory contains raw events, a final snapshot, usage records, a run
+report, and a manifest with the Git SHA, dirty-worktree flag, source/rule and
+initial prompt hashes, model/provider/reasoning settings, condition, seed, and
+tick completion. The experiment root contains `experiment-manifest.json`,
+`summary.json`, and `summary.md` with per-condition aggregates and paired
+factorial contrasts. Use `--overwrite` only when intentionally reusing an output
+directory.
 
 ## Project Map
 
@@ -24,10 +47,13 @@ The default CLI run uses deterministic mock brains so the infrastructure can be 
 - `agent_world/maps.py`: canonical handcrafted 16x16 world map.
 - `agent_world/interface.py`: per-agent observation and neutral prompt construction.
 - `agent_world/openai_brain.py`: OpenAI-backed `AgentBrain` with retry/throttle handling.
+- `agent_world/codex_brain.py`: ChatGPT-plan-backed `AgentBrain` using isolated `codex exec` decisions.
+- `agent_world/claude_brain.py`: Claude-plan-backed `AgentBrain` using isolated headless `claude -p` decisions.
 - `agent_world/runner.py`: observe -> decide -> validate simulation orchestration.
 - `agent_world/observer.py`: local web observatory for live/replay visualization.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
 - `agent_world/run_report.py`: per-run structured data export (`-report.json`/`-report.md`) and cross-run comparison.
+- `agent_world/experiments.py`: reproducible multi-seed environment × objective experiments with provenance manifests and paired contrasts.
 - `tests/`: regression coverage for world rules, maps, observer, and OpenAI adapter helpers.
 - `docs/`: design notes and future handoff context.
 
@@ -71,17 +97,129 @@ python3 -m agent_world.cli run --brain llm --model z-ai/glm-5.2 --reasoning-effo
 
 To connect a different provider or local agent policy, implement the `AgentBrain` protocol in `agent_world/agents.py`: receive an observation dictionary, return the same JSON shape described in the prompt, and let `WorldEngine` validate everything.
 
+### Codex plan agents
+
+`CodexBrain` runs Luna or Terra through the locally installed Codex CLI and its
+saved ChatGPT login. It does not use `OPENAI_API_KEY` or `CODEX_API_KEY`, and it
+records each call with `provider=codex_cli`, `billing_mode=chatgpt_plan`, token
+usage, prompt hashes, and zero marginal API cost. Codex runs also sample the
+account's plan limits before the first decision and after every tick. The
+`*-plan-usage.json` artifact preserves the raw 5-hour/weekly utilization and
+credit-balance checkpoints; reports show the observed before/after drawdown.
+These are account-level readings, so concurrent Codex work may contribute to a
+run's observed delta. Install and sign in to Codex,
+then verify the login before starting a run:
+
+```bash
+codex login status
+python3 -m agent_world.cli run \
+  --brain codex --model gpt-5.6-luna --reasoning-effort low \
+  --ticks 10 --agents 3 --progress \
+  --out runs/codex-luna.jsonl --snapshot runs/codex-luna-snapshot.json
+```
+
+Use `gpt-5.6-terra` for a stronger Codex-plan condition. Each living agent gets
+an independent, ephemeral, read-only Codex invocation per tick. The adapter
+disables shell tools, apps, and subagent delegation, runs outside the repository,
+and constrains the final response to an equivalent strict decision contract that
+the adapter normalizes back to Agent World's flat action shape.
+Codex-plan results should be labeled separately from raw API results because the
+Codex harness adds its own runtime instructions. Runs default to one concurrent
+Codex decision; raise `CODEX_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
+after benchmarking account limits and host load.
+
+### Claude plan agents
+
+`ClaudeBrain` runs Anthropic models through the locally installed Claude Code
+CLI and its saved claude.ai login, so decisions draw on the Pro/Max plan's usage
+limits instead of the metered Anthropic API. The adapter strips
+`ANTHROPIC_API_KEY` (and Bedrock/Vertex/Foundry toggles) from the child
+environment so the subscription login is always used, and records each call
+with `provider=claude_cli`, `billing_mode=claude_plan`, token usage, prompt
+hashes, and zero marginal API cost. Sign in to Claude Code (`claude` then
+`/login`, or check `claude auth`) before starting a run:
+
+```bash
+python3 -m agent_world.cli run \
+  --brain claude --model claude-sonnet-5 --reasoning-effort low \
+  --ticks 10 --agents 3 --progress \
+  --out runs/claude-sonnet.jsonl --snapshot runs/claude-sonnet-snapshot.json
+```
+
+Each living agent gets an independent, tool-less, session-less `claude -p`
+invocation per tick with the run's rulebook as a stable system prompt (so the
+provider prompt cache is reused) and a `--json-schema` constrained decision. The
+adapter runs in an empty temporary directory with user/project settings, MCP
+servers, and skills disabled so nothing outside the observation leaks into the
+decision. Models: `claude-haiku-4-5` (cheapest against plan limits),
+`claude-sonnet-5` (default), `claude-opus-4-8`. Unlike Codex, the Claude CLI
+has no headless plan-limit endpoint, so no `*-plan-usage.json` is produced;
+per-call token usage is still recorded. When plan limits are hit the run stops
+early with `Claude quota unavailable` so the log is not mistaken for agent
+behavior. Extended thinking is disabled by default (it costs thousands of plan
+tokens and ~a minute per decision); set `CLAUDE_MAX_THINKING_TOKENS` to a
+positive budget to re-enable it. Other environment knobs: `CLAUDE_MODEL`,
+`CLAUDE_REASONING_EFFORT`, `CLAUDE_TIMEOUT_SECONDS`, `CLAUDE_EXECUTABLE`,
+`CLAUDE_MAX_PARALLEL_AGENTS`.
+
+### Mixed-model populations
+
+A run can assign deterministic cohorts to different providers and models. Repeat
+`--population COUNT@MODEL`; familiar Claude and GPT-5.6 model names infer the
+`claude` and `codex` brains automatically:
+
+```bash
+python3 -m agent_world.cli run \
+  --population 10@claude-sonnet-5 \
+  --population 10@gpt-5.6-luna \
+  --ticks 50 --seed 41 --economy-mode organic \
+  --max-workers 8 --progress \
+  --out runs/sonnet-luna.jsonl \
+  --snapshot runs/sonnet-luna-snapshot.json
+```
+
+Use `COUNT@BRAIN:MODEL` when inference is ambiguous or for a newly released
+model, for example `10@claude:claude-fable-model-id`. An optional effort suffix
+is accepted as `COUNT@BRAIN:MODEL:EFFORT`. Cohorts are assigned in command-line
+order (`agent-1` onward), saved with the checkpoint, and restored unchanged on
+resume. Do not repeat the population flags when resuming:
+
+```bash
+python3 -m agent_world.cli run \
+  --resume-checkpoint runs/sonnet-luna-checkpoint.pkl \
+  --ticks 75 --progress
+```
+
+The run report includes each cohort's model, membership, survival, action mix,
+gifts, trades, token use, API cost, and Codex plan credits. A shared usage JSONL
+retains provider/model/agent identity per call. Quota and throttling state are
+isolated by provider, while any provider quota failure stops the complete run so
+the remaining ticks are not mistaken for comparable mixed-model behavior.
+
 Runs log private observations, prompts, responses, validation errors, actions, state transitions, trades, messages, claims, groups, and deaths. Use `--no-agent-io-log` when you want smaller event logs.
 
 ## Run Reports
 
-Every `run` with `--out` automatically exports `<name>-report.json` (machine-readable: config, survival, action mix, structure timeline, groups, gift network, trades, milestone first-ticks, reliability, LLM cost, full say transcript) and `<name>-report.md` (human summary) next to the event log. All reports share one schema, so runs are directly comparable across experiments. Regenerate reports for old logs — or compare several runs side by side — with:
+Every `run` with `--out` automatically exports `<name>-report.json` (machine-readable: config, survival, action mix, structure timeline, groups, valued gift flows, trades, productive assets, milestone first-ticks, reliability, LLM cost, full say transcript) and `<name>-report.md` (human summary) next to the event log. All reports share one schema, so runs are directly comparable across experiments. Regenerate reports for old logs — or compare several runs side by side — with:
 
 ```bash
 python3 -m agent_world.cli report runs/a.jsonl runs/b.jsonl
 ```
 
 Passing multiple logs prints a metric-by-metric comparison table after writing the reports.
+
+### Efficient, run-scoped telemetry
+
+Codex reports now calculate `simulation_credits` from the token usage of the simulation's own decisions. Uncached input, cached input, and output are priced separately with a versioned Luna/Terra/Sol rate table; reasoning tokens are reported but not double-charged because they are already included in output. This is separate from `*-plan-usage.json`, whose sparse account snapshots can include work done by the supervising Codex task or another window. Account snapshots default to run start and terminal state only; set `CODEX_PLAN_SNAPSHOT_INTERVAL_TICKS` to a positive interval if you want additional diagnostics during a long run.
+
+Run persistence is incremental: new events are appended once, while the current snapshot and full crash checkpoint are atomically replaced each tick. `--out runs/example.jsonl` creates `runs/example-checkpoint.pkl`; resume that trusted local file and preserve the exact engine/RNG state with:
+
+```bash
+python3 -m agent_world.cli run \
+  --resume-checkpoint runs/example-checkpoint.pkl --ticks 60 --progress
+```
+
+The audit log stores each distinct static prompt context once and links compact per-decision observations to it by hash. This keeps the run auditable without repeating the full rulebook and prompt for every agent on every tick. Checkpoints use Python pickle and must not be loaded from untrusted sources.
 
 The LLM request is split to minimize input tokens (~85% of API cost): the static rulebook (actions, costs, recipes, terrain, mechanics) is rendered once as terse text in the system message — byte-identical across every agent and tick, so provider-side prompt caching can reuse it — while the per-tick user message carries only the slim dynamic state (tiles omit empty/derivable fields, events omit engine internals). No information is removed, only redundancy: everything an agent could act on is still present each call. Build-readiness diagnostics are intentionally kept out of agent observations so agents are not nudged with "you can now build X" hints.
 
@@ -129,10 +267,13 @@ Invalid or unaffordable actions fail explicitly and are logged; they do not muta
 
 - Standard 16x16 handcrafted world with a coast, river/lake system, forests, plains, and an eastern mountain range.
 - Water tiles are not occupiable; agents gather water or fish from adjacent land.
-- Discrete ticks with fixed agent resolution order.
+- Discrete ticks with a deterministic rotating resolution order, avoiding permanent first-mover priority.
 - Local observations filtered by visibility radius and event scope.
 - Inventories, item piles, structures, tile claims, groups, trade offers, and persistent memories.
 - Trade offers can target a specific visible agent or be posted locally for any visible counterparty; offered goods are escrowed until the offer resolves.
+- Optional commerce treatments add global standing offers, completed-price history, secured credit, access fees, contributor dividends, and productive-asset upkeep/capacity.
+- The optional organic treatment keeps exchange physical and knowledge local: offers deposit goods at a tile, both parties must meet there, and expired escrow remains as an owned pile. It adds stronger comparative advantage, high-fixed-cost/high-capacity infrastructure, and carried coins without telling agents to use any of them.
+- Optional dispersed geography gives agents separated resource regions, different specialties, aptitudes, endowments, and needs so comparative advantage is mechanically meaningful.
 - Groups can receive access grants, directly own claimed tiles/structures, and keep persistent agreement ledgers, making shared infrastructure mechanically useful.
 - Survival pressure through food, water, energy, health, carrying capacity, action points, and carried-food spoilage.
 - Replayable JSONL event logs and summary metrics for economy/social analysis.
@@ -140,6 +281,7 @@ Invalid or unaffordable actions fail explicitly and are logged; they do not muta
 
 Current inventory resources:
 
+- `coin`: durable, negligible-weight physical token. Organic agents begin with a small stock; workshops can mint eight coins from one ingot.
 - `water`: consumed to restore thirst, gathered from adjacent water.
 - `food`: consumed to restore hunger and a little energy. Carried food spoils periodically; stored food is protected.
 - `fiber`: building/crafting input, especially early farms/storage/tools.
@@ -147,6 +289,8 @@ Current inventory resources:
 - `stone`: building/crafting input, produced by mining.
 - `ore`: high-value raw material, present for later production chains.
 - `tool`: craftable/equippable item, present for later tool/skill mechanics.
+- `ingot`: workshop-smelted intermediate made from ore and wood.
+- `advanced_tool`: durable workshop-made capital good with a larger productivity and energy advantage.
 
 ## Structures
 
@@ -170,7 +314,11 @@ W = water
 
 ## Current Research State
 
-The first GLM-5.2 run (5 agents, 18 ticks) produced solo infrastructure investment (a well, two farm plots, storage), the first accepted trade, access grants, functional coordination speech, and spontaneous division-of-labor language ("I farm, you bring water") — with zero deaths. Two gaps drove the current tuning: agents verbally promised structure access without executing `grant_access` (owners now receive an `access_denied` event when someone is turned away at their structure, and visible structures show `access_granted` per observer), and a survival treadmill left no surplus for heavy cooperative builds (reserve ceilings raised: food/water 15→20, energy 25→30 with start 25, so agents can bank a good trip into project time). Decay rates are unchanged — pressure still binds, but a full tank now buys more ticks. Cooperative construction (`contribute` on under-construction sites) has not yet been exercised by real agents; watch `construction.cooperative_sites`.
+The completed 60-tick Lakeside GLM-5.2 run produced ten structures, two heavy cooperative builds, one five-member polity, six group-owned structures, 27 gifts, eight trade offers, and one accepted barter trade with no deaths. Detailed inspection showed that 23 gift actions were food/water aid, while only four moved productive materials. This motivated explicit objective/geography/economy treatments instead of interpreting a single small-group run as evidence for one economic ideology.
+
+The commerce treatment now supplies the previously missing conditions for exchange and entrepreneurship: real skill/tool productivity, a deeper capital chain, separated specialists, priced productive access, contributor returns, standing markets with price history, secured credit, upkeep, finite service capacity, and nonzero coordination costs. Use `agent_world.cli experiment` to run matched multi-seed cells; ordinary runs retain the neutral historical baseline.
+
+The organic treatment asks a different question: can stronger models discover society without a global order book or engine-assisted delivery? It uses a neutral objective, local information, physical escrow/settlement, much stronger skill differences, expensive but high-capacity infrastructure, free local speech, and physical coins. The engine supplies constraints and objects; agents still have to travel, bargain, transport goods, share assets, and decide whether coins mean anything.
 
 The most important diagnostics to watch are:
 
@@ -188,9 +336,11 @@ Use `agent_world.cli ablate` to sweep one variable at a time (carry capacity, en
 For richer context, see:
 
 - [docs/world-design.md](docs/world-design.md)
+- [docs/architecture.md](docs/architecture.md)
 - [docs/agent-interface.md](docs/agent-interface.md)
 - [docs/observability.md](docs/observability.md)
 - [docs/research-notes.md](docs/research-notes.md)
+- [docs/economy-experiments.md](docs/economy-experiments.md)
 
 ## Design Principle
 

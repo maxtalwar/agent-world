@@ -6,10 +6,11 @@ the simulation has no required runtime dependencies beyond Python.
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 import json
+import hashlib
 import os
 from pathlib import Path
+import queue
 import re
 import ssl
 import threading
@@ -17,6 +18,7 @@ import time
 from typing import Any
 from urllib import error, request
 
+from agent_world.brain_runtime import BrainRuntime
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
 
@@ -70,7 +72,7 @@ AGENT_DECISION_SCHEMA: dict[str, Any] = {
 
 SYSTEM_INSTRUCTIONS = (
     "You are choosing one tick of behavior for a simulated world agent. "
-    "Balance immediate survival with longer-term resilience. "
+    "Pursue the objective stated in the world rulebook while respecting the simulated constraints. "
     "Use only valid actions from the observation. Return JSON only. "
     "Keep the JSON concise. Use short strings. "
     "Do not describe plans outside the JSON. Do not assume hidden abilities."
@@ -87,11 +89,6 @@ class OpenAIBrain:
         forced with the ``LLM_API_STYLE`` environment variable / ``api_style`` argument.
     """
 
-    _rate_lock = threading.Lock()
-    _next_allowed_at = 0.0
-    _quota_unavailable_message: str | None = None
-    _usage_records: list[dict[str, Any]] = []
-
     def __init__(
         self,
         model: str | None = None,
@@ -103,7 +100,10 @@ class OpenAIBrain:
         max_retries: int | None = None,
         min_request_interval_seconds: float | None = None,
         api_style: str | None = None,
+        hard_deadline_grace_seconds: float | None = None,
+        runtime: BrainRuntime | None = None,
     ):
+        self.runtime = runtime or BrainRuntime()
         self.model = model or os.environ.get("OPENAI_MODEL", "gpt-5.4-mini")
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
         self.base_url = (base_url or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")).rstrip("/")
@@ -119,26 +119,18 @@ class OpenAIBrain:
         self.min_request_interval_seconds = (
             min_request_interval_seconds
             if min_request_interval_seconds is not None
-            else float(os.environ.get("OPENAI_MIN_REQUEST_INTERVAL_SECONDS", "0.75"))
+            else float(os.environ.get("OPENAI_MIN_REQUEST_INTERVAL_SECONDS", "0.5"))
+        )
+        self.hard_deadline_grace_seconds = (
+            hard_deadline_grace_seconds
+            if hard_deadline_grace_seconds is not None
+            else float(os.environ.get("OPENAI_HARD_DEADLINE_GRACE_SECONDS", "30"))
         )
         self.ssl_context = _ssl_context()
         if not self.api_key:
             raise ValueError("OPENAI_API_KEY is required for OpenAIBrain. Put it in .env or export it.")
 
-    @classmethod
-    def reset_runtime_state(cls) -> None:
-        with cls._rate_lock:
-            cls._next_allowed_at = 0.0
-            cls._quota_unavailable_message = None
-            cls._usage_records = []
-
-    @classmethod
-    def usage_records(cls) -> list[dict[str, Any]]:
-        """Per-call usage/cost records (OpenRouter returns these when usage.include is set)."""
-        with cls._rate_lock:
-            return list(cls._usage_records)
-
-    def _record_usage(self, response: dict[str, Any]) -> None:
+    def _record_usage(self, response: dict[str, Any], request_meta: dict[str, Any] | None = None) -> None:
         usage = response.get("usage")
         if not isinstance(usage, dict):
             return
@@ -146,6 +138,11 @@ class OpenAIBrain:
         completion_details = usage.get("completion_tokens_details") or {}
         record = {
             "model": self.model,
+            "response_model": response.get("model"),
+            "provider": response.get("provider"),
+            "api_style": self.api_style,
+            "base_url": self.base_url,
+            "reasoning_effort": self.reasoning_effort,
             "prompt_tokens": usage.get("prompt_tokens", 0),
             "cached_tokens": prompt_details.get("cached_tokens", 0),
             "completion_tokens": usage.get("completion_tokens", 0),
@@ -153,17 +150,8 @@ class OpenAIBrain:
             "cost": usage.get("cost", 0),
             "time": time.time(),
         }
-        with self._rate_lock:
-            self.__class__._usage_records.append(record)
-        # Persist incrementally so an interrupted run (crash, kill, laptop sleep) keeps
-        # its cost data; the in-memory list is only summarized at normal run end.
-        usage_log = os.environ.get("AGENT_WORLD_USAGE_LOG")
-        if usage_log:
-            try:
-                with open(usage_log, "a", encoding="utf-8") as handle:
-                    handle.write(json.dumps(record, sort_keys=True) + "\n")
-            except OSError:
-                pass
+        record.update(request_meta or {})
+        self.runtime.record_usage(record)
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
         quota_message = self._quota_message()
@@ -179,9 +167,21 @@ class OpenAIBrain:
             endpoint, payload, extractor = "/chat/completions", self._chat_payload(static_context, dynamic_json), extract_chat_text
         else:
             endpoint, payload, extractor = "/responses", self._responses_payload(static_context, dynamic_json), extract_output_text
+        request_bytes = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8")
+        request_meta = {
+            "agent_id": observation.get("self", {}).get("id"),
+            "tick": observation.get("tick"),
+            "agent_static_context_chars": len(static_context),
+            "agent_dynamic_observation_chars": len(dynamic_json),
+            "request_payload_bytes": len(request_bytes),
+            "static_prompt_sha256": hashlib.sha256(
+                f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
+            ).hexdigest(),
+            "request_sha256": hashlib.sha256(request_bytes).hexdigest(),
+        }
         try:
             response = self._post_json_with_retries(endpoint, payload)
-            self._record_usage(response)
+            self._record_usage(response, request_meta)
             return parse_agent_response(extractor(response))
         except OpenAIQuotaError as exc:
             self._mark_quota_unavailable(str(exc))
@@ -255,27 +255,37 @@ class OpenAIBrain:
         raise ValueError("OpenAI request failed without an error.")
 
     def _throttle(self) -> None:
-        if self.min_request_interval_seconds <= 0:
-            return
-        with self._rate_lock:
-            now = time.monotonic()
-            if now < self._next_allowed_at:
-                time.sleep(self._next_allowed_at - now)
-            self.__class__._next_allowed_at = time.monotonic() + self.min_request_interval_seconds
+        self.runtime.throttle(self.min_request_interval_seconds)
 
     def _post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
-        # urllib's timeout only bounds each socket read; providers that trickle keep-alive
-        # bytes during slow generations reset it forever. Run the request in a worker and
-        # enforce a hard wall-clock deadline so a stuck request cannot freeze the run.
-        with ThreadPoolExecutor(max_workers=1, thread_name_prefix="openai-brain-request") as executor:
-            future = executor.submit(self._post_json_blocking, path, payload)
+        # urllib's timeout bounds individual socket reads, not total wall time.
+        # A daemon worker lets the simulation enforce a real caller deadline;
+        # unlike ThreadPoolExecutor's context manager, this path never waits for
+        # a timed-out worker during shutdown.
+        result_queue: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
+
+        def request_worker() -> None:
             try:
-                return future.result(timeout=self.timeout_seconds + 30)
-            except FuturesTimeoutError as exc:
-                future.cancel()
-                raise OSError(
-                    f"Request exceeded hard deadline of {self.timeout_seconds + 30}s (provider kept the connection alive without finishing)."
-                ) from exc
+                result_queue.put(("result", self._post_json_blocking(path, payload)))
+            except Exception as exc:  # Forward the original provider exception.
+                result_queue.put(("error", exc))
+
+        worker = threading.Thread(target=request_worker, name="openai-brain-request", daemon=True)
+        worker.start()
+        hard_deadline = self.timeout_seconds + self.hard_deadline_grace_seconds
+        worker.join(timeout=hard_deadline)
+        if worker.is_alive():
+            raise OSError(
+                f"Request exceeded hard deadline of {hard_deadline:g}s "
+                "(provider kept the connection alive without finishing)."
+            )
+        try:
+            outcome, value = result_queue.get_nowait()
+        except queue.Empty as exc:
+            raise OSError("OpenAI request worker ended without a result.") from exc
+        if outcome == "error":
+            raise value
+        return value
 
     def _post_json_blocking(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
         body = json.dumps(payload).encode("utf-8")
@@ -303,12 +313,10 @@ class OpenAIBrain:
             raise ValueError(f"OpenAI API error {exc.code}: {detail}") from exc
 
     def _quota_message(self) -> str | None:
-        with self._rate_lock:
-            return self.__class__._quota_unavailable_message
+        return self.runtime.quota_message()
 
     def _mark_quota_unavailable(self, message: str) -> None:
-        with self._rate_lock:
-            self.__class__._quota_unavailable_message = message
+        self.runtime.mark_quota_unavailable(message)
 
 
 class OpenAIRateLimitError(ValueError):

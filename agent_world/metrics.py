@@ -6,7 +6,7 @@ from collections import Counter
 from typing import Any
 
 from agent_world.models import WorldState
-from agent_world.rules import RECIPES, RESOURCE_VALUES, STRUCTURE_TYPES
+from agent_world.rules import RESOURCE_VALUES, STRUCTURE_TYPES, recipes_for_mode
 
 
 def compute_metrics(state: WorldState) -> dict[str, Any]:
@@ -18,8 +18,14 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
     for trade in state.trades.values():
         if trade.status == "open" and not trade.escrow_released:
             wealth[trade.from_agent] = wealth.get(trade.from_agent, 0) + sum(
-                RESOURCE_VALUES.get(item, 1) * qty for item, qty in trade.give.items()
+                RESOURCE_VALUES.get(item, 1) * qty * getattr(trade, "lots_remaining", 1)
+                for item, qty in trade.give.items()
             )
+    for contract in getattr(state, "contracts", {}).values():
+        if contract.status == "offered" and not contract.advance_released:
+            wealth[contract.lender_id] = wealth.get(contract.lender_id, 0) + _item_value(contract.advance)
+        if contract.status == "active" and not contract.collateral_released:
+            wealth[contract.borrower_id] = wealth.get(contract.borrower_id, 0) + _item_value(contract.collateral)
     resource_totals: Counter[str] = Counter()
     for row in state.tiles:
         for tile in row:
@@ -32,7 +38,17 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
         resource_totals[pile.item] += pile.quantity
     for trade in state.trades.values():
         if trade.status == "open" and not trade.escrow_released:
-            resource_totals.update(trade.give)
+            resource_totals.update(
+                {
+                    item: quantity * getattr(trade, "lots_remaining", 1)
+                    for item, quantity in trade.give.items()
+                }
+            )
+    for contract in getattr(state, "contracts", {}).values():
+        if contract.status == "offered" and not contract.advance_released:
+            resource_totals.update(contract.advance)
+        if contract.status == "active" and not contract.collateral_released:
+            resource_totals.update(contract.collateral)
 
     event_counts = Counter(event.type for event in state.events)
     complete_structures = [structure for structure in state.structures.values() if structure.is_complete]
@@ -50,6 +66,9 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
         if event.type == "accept_trade":
             value = event.data.get("value", {})
             trade_volume += int(value.get("give", 0)) + int(value.get("receive", 0))
+    economic_flows = _economic_flow_metrics(state)
+    specialization = _specialization_metrics(state)
+    productive_assets = _productive_asset_metrics(state, wealth)
 
     return {
         "tick": state.tick,
@@ -74,6 +93,9 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
         "resources": dict(sorted(resource_totals.items())),
         "wealth": wealth,
         "wealth_gini": _gini(list(wealth.values())),
+        "productive_assets": productive_assets,
+        "economic_flows": economic_flows,
+        "specialization": specialization,
         "claims": {
             "tiles": sum(1 for row in state.tiles for tile in row if tile.claimed_by),
             "structures": len(state.structures),
@@ -110,8 +132,14 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
         "trade": {
             "open": sum(1 for trade in state.trades.values() if trade.status == "open"),
             "public_open": sum(1 for trade in state.trades.values() if trade.status == "open" and trade.to_agent == "any"),
-            "accepted": sum(1 for trade in state.trades.values() if trade.status == "accepted"),
-            "public_accepted": sum(1 for trade in state.trades.values() if trade.status == "accepted" and trade.to_agent == "any"),
+            "accepted": event_counts.get("accept_trade", 0),
+            "public_accepted": sum(
+                1
+                for event in state.events
+                if event.type == "accept_trade"
+                and isinstance(event.data.get("trade"), dict)
+                and event.data["trade"].get("public")
+            ),
             "rejected": sum(1 for trade in state.trades.values() if trade.status == "rejected"),
             "expired": sum(1 for trade in state.trades.values() if trade.status == "expired"),
             "volume": trade_volume,
@@ -148,6 +176,10 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
         (
             "OpenAI decision failed:",
             "OpenAI quota unavailable:",
+            "Codex decision failed:",
+            "Codex quota unavailable:",
+            "Claude decision failed:",
+            "Claude quota unavailable:",
             "Invalid JSON response:",
             "Agent brain failed:",
         )
@@ -157,7 +189,10 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
 def is_quota_failure_message(event_type: str | None, message: str | None) -> bool:
     if event_type != "agent_response" or not message:
         return False
-    return message.startswith("OpenAI quota unavailable:") or "insufficient_quota" in message
+    return (
+        message.startswith(("OpenAI quota unavailable:", "Codex quota unavailable:", "Claude quota unavailable:"))
+        or "insufficient_quota" in message
+    )
 
 
 def _median(values: list[int]) -> float:
@@ -182,6 +217,157 @@ def _gini(values: list[int]) -> float:
     return (2 * weighted_sum) / (n * total) - (n + 1) / n
 
 
+def _item_value(items: dict[str, int] | Counter[str]) -> int:
+    return sum(RESOURCE_VALUES.get(item, 1) * int(quantity) for item, quantity in items.items())
+
+
+def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:
+    gift_events = [event for event in state.events if event.type == "gift"]
+    gift_by_item: Counter[str] = Counter()
+    gift_edges: Counter[str] = Counter()
+    within_group_actions = 0
+    for event in gift_events:
+        items = event.data.get("items", {})
+        if isinstance(items, dict):
+            gift_by_item.update({str(item): int(qty) for item, qty in items.items() if int(qty) > 0})
+        recipient = str(event.data.get("to", ""))
+        gift_edges[f"{event.actor_id}->{recipient}"] += 1
+        giver = state.agents.get(str(event.actor_id))
+        receiver = state.agents.get(recipient)
+        if giver is not None and receiver is not None and giver.groups.intersection(receiver.groups):
+            within_group_actions += 1
+
+    accept_events = [event for event in state.events if event.type == "accept_trade"]
+    acceptance_latencies = []
+    trade_value = 0
+    for event in accept_events:
+        trade = event.data.get("trade", {})
+        if isinstance(trade, dict):
+            created = trade.get("created_tick")
+            if isinstance(created, int):
+                acceptance_latencies.append(max(0, event.tick - created))
+            give = trade.get("give", {})
+            receive = trade.get("receive", {})
+            if isinstance(give, dict):
+                trade_value += _item_value(give)
+            if isinstance(receive, dict):
+                trade_value += _item_value(receive)
+
+    reciprocal_edges = sum(
+        1
+        for edge in gift_edges
+        if "->" in edge and f"{edge.split('->', 1)[1]}->{edge.split('->', 1)[0]}" in gift_edges
+    ) // 2
+    offers = sum(event.type == "offer_trade" for event in state.events)
+    invalid_accepts = sum(
+        event.type == "invalid_action"
+        and isinstance(event.data.get("action"), dict)
+        and event.data["action"].get("type") == "accept_trade"
+        for event in state.events
+    )
+    contract_types = (
+        "create_contract",
+        "accept_contract",
+        "fulfill_contract",
+        "default_contract",
+        "repay_contract",
+    )
+    return {
+        "gifts": {
+            "actions": len(gift_events),
+            "units": sum(gift_by_item.values()),
+            "value": _item_value(gift_by_item),
+            "by_item": dict(sorted(gift_by_item.items())),
+            "subsistence_units": gift_by_item.get("food", 0) + gift_by_item.get("water", 0),
+            "productive_input_units": sum(
+                quantity for item, quantity in gift_by_item.items() if item not in {"food", "water"}
+            ),
+            "edges": dict(sorted(gift_edges.items())),
+            "reciprocal_pairs": reciprocal_edges,
+            "within_final_group_actions": within_group_actions,
+        },
+        "market": {
+            "offers": offers,
+            "accepted": len(accept_events),
+            "conversion_pct": round(100 * len(accept_events) / offers, 1) if offers else 0.0,
+            "invalid_accept_attempts": invalid_accepts,
+            "transfer_value": trade_value,
+            "median_acceptance_ticks": _median(acceptance_latencies),
+            "completed_price_history": len(getattr(state, "market_history", [])),
+        },
+        "contracts": {
+            event_type: sum(event.type == event_type for event in state.events)
+            for event_type in contract_types
+        },
+    }
+
+
+def _specialization_metrics(state: WorldState) -> dict[str, Any]:
+    productive_types = {"gather", "chop", "mine", "harvest", "fish", "farm", "craft"}
+    by_agent: dict[str, Counter[str]] = {agent_id: Counter() for agent_id in state.agents}
+    by_action: dict[str, Counter[str]] = {action: Counter() for action in productive_types}
+    for event in state.events:
+        if event.type not in productive_types or event.actor_id not in by_agent:
+            continue
+        by_agent[event.actor_id][event.type] += 1
+        by_action[event.type][event.actor_id] += 1
+
+    agent_rows: dict[str, Any] = {}
+    agent_hhi: list[float] = []
+    for agent_id, counts in sorted(by_agent.items()):
+        total = sum(counts.values())
+        hhi = sum((count / total) ** 2 for count in counts.values()) if total else 0.0
+        if total:
+            agent_hhi.append(hhi)
+        agent_rows[agent_id] = {
+            "actions": dict(counts.most_common()),
+            "dominant_activity": counts.most_common(1)[0][0] if counts else None,
+            "activity_concentration": round(hhi, 3),
+        }
+
+    occupation_hhi = []
+    for counts in by_action.values():
+        total = sum(counts.values())
+        if total:
+            occupation_hhi.append(sum((count / total) ** 2 for count in counts.values()))
+    return {
+        "agents": agent_rows,
+        "mean_agent_activity_concentration": round(sum(agent_hhi) / len(agent_hhi), 3) if agent_hhi else 0.0,
+        "division_of_labor_index": round(sum(occupation_hhi) / len(occupation_hhi), 3) if occupation_hhi else 0.0,
+    }
+
+
+def _productive_asset_metrics(state: WorldState, inventory_wealth: dict[str, int]) -> dict[str, Any]:
+    recipes = recipes_for_mode(state.config.economy_mode)
+    owner_values: Counter[str] = Counter()
+    structure_values: dict[str, int] = {}
+    for structure in state.structures.values():
+        recipe = recipes.get(structure.type)
+        replacement_value = _item_value(dict(recipe.inputs)) if recipe is not None else 0
+        stored_value = _item_value(structure.inventory)
+        value = replacement_value + stored_value
+        structure_values[structure.id] = value
+        owner_values[structure.owner_id] += value
+
+    extended = {agent_id: int(value) for agent_id, value in inventory_wealth.items()}
+    for owner_id, value in owner_values.items():
+        if owner_id in extended:
+            extended[owner_id] += value
+            continue
+        group = state.groups.get(owner_id)
+        if group is None or not group.members:
+            continue
+        quotient, remainder = divmod(value, len(group.members))
+        for index, agent_id in enumerate(sorted(group.members)):
+            extended[agent_id] = extended.get(agent_id, 0) + quotient + (1 if index < remainder else 0)
+    return {
+        "structure_replacement_value": dict(sorted(structure_values.items())),
+        "value_by_owner": dict(sorted(owner_values.items())),
+        "agent_wealth_including_asset_shares": dict(sorted(extended.items())),
+        "asset_adjusted_gini": _gini(list(extended.values())),
+    }
+
+
 def _build_readiness(state: WorldState) -> dict[str, Any]:
     """Structure types each agent could start AND finish from its own inventory right now.
 
@@ -189,12 +375,13 @@ def _build_readiness(state: WorldState) -> dict[str, Any]:
     "instant build" signal; staged progress shows up in the construction metrics instead.
     """
     ready_counts: Counter[str] = Counter()
+    recipes = recipes_for_mode(state.config.economy_mode)
     for agent in state.agents.values():
         if not agent.alive:
             continue
         tile = state.tile_at(agent.position)
         for structure_type in STRUCTURE_TYPES:
-            recipe = RECIPES[structure_type]
+            recipe = recipes[structure_type]
             missing = {
                 item: qty - agent.inventory.get(item, 0)
                 for item, qty in recipe.inputs.items()
