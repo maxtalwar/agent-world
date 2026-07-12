@@ -161,6 +161,7 @@ def build_report(
         },
         "simulation_credits": summarize_codex_simulation_credits(usage_records),
         "plan_limits": plan_usage,
+        "dynamic_input_components": _dynamic_input_components(events),
     }
     population = _summarize_population(events, snapshot, usage_records)
 
@@ -282,6 +283,11 @@ def _summarize_population(
             for event in cohort_events
             if event.get("type") not in AGENT_IO_EVENT_TYPES
         )
+        decision_count = sum(event.get("type") == "agent_response" for event in cohort_events)
+        resolved_models = Counter(
+            str(record.get("response_model") or record.get("model") or "unknown")
+            for record in cohort_usage
+        )
         cohorts[group_id] = {
             "brain": raw.get("type"),
             "model": raw.get("model"),
@@ -298,6 +304,10 @@ def _summarize_population(
             "trades_offered": action_counts.get("offer_trade", 0),
             "trades_accepted": action_counts.get("accept_trade", 0),
             "invalid_actions": action_counts.get("invalid_action", 0),
+            "invalid_actions_per_decision": round(
+                action_counts.get("invalid_action", 0) / decision_count, 3
+            ) if decision_count else None,
+            "decisions": decision_count,
             "usage": {
                 "calls": len(cohort_usage),
                 "total_cost_usd": round(sum(record.get("cost") or 0 for record in cohort_usage), 4),
@@ -305,13 +315,66 @@ def _summarize_population(
                 "cached_tokens": sum(record.get("cached_tokens") or 0 for record in cohort_usage),
                 "completion_tokens": completion_tokens,
                 "simulation_credits": summarize_codex_simulation_credits(cohort_usage),
+                "resolved_models": dict(resolved_models),
             },
         }
+    successful_offers: Counter[str] = Counter()
+    trade_matrix: Counter[str] = Counter()
+    gift_matrix: Counter[str] = Counter()
+    construction_matrix: Counter[str] = Counter()
+    for event in events:
+        actor = str(event.get("actor_id") or "")
+        actor_group = assignments.get(actor)
+        data = event.get("data") or {}
+        if event.get("type") == "accept_trade":
+            trade = data.get("trade") or {}
+            origin_group = assignments.get(str(trade.get("from_agent") or ""))
+            if origin_group:
+                successful_offers[origin_group] += 1
+                trade_matrix[f"{origin_group}->{actor_group or 'unknown'}"] += 1
+        elif event.get("type") == "gift" and actor_group:
+            target_group = assignments.get(str(data.get("to") or ""), "unknown")
+            gift_matrix[f"{actor_group}->{target_group}"] += 1
+        elif event.get("type") == "contribute" and actor_group:
+            structure = data.get("structure") or {}
+            owner_group = assignments.get(str(structure.get("owner_id") or ""), "unknown")
+            construction_matrix[f"{actor_group}->{owner_group}"] += 1
+    for group_id, cohort in cohorts.items():
+        success = successful_offers[group_id]
+        cohort["successful_offers"] = success
+        offered = cohort["trades_offered"]
+        cohort["offer_conversion_rate_pct"] = round(100 * success / offered, 1) if offered else 0.0
     return {
         "type": metadata.get("type"),
         "total_agents": metadata.get("total_agents"),
         "assignments": dict(sorted((str(key), str(value)) for key, value in assignments.items())),
+        "assignment_strategy": metadata.get("assignment_strategy"),
+        "assignment_seed": metadata.get("assignment_seed"),
         "cohorts": cohorts,
+        "interaction_matrices": {
+            "accepted_trades": dict(trade_matrix),
+            "gifts": dict(gift_matrix),
+            "construction_contributions": dict(construction_matrix),
+        },
+    }
+
+
+def _dynamic_input_components(events: list[dict[str, Any]]) -> dict[str, Any]:
+    totals: Counter[str] = Counter()
+    samples = 0
+    for event in events:
+        if event.get("type") != "agent_prompt":
+            continue
+        components = (event.get("data") or {}).get("dynamic_component_chars")
+        if not isinstance(components, dict):
+            continue
+        samples += 1
+        totals.update({str(key): int(value) for key, value in components.items()})
+    return {
+        "samples": samples,
+        "mean_chars": {
+            key: round(value / samples, 1) for key, value in totals.most_common()
+        } if samples else {},
     }
 
 

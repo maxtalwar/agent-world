@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+import random
 from typing import Any, Iterable
 
 from agent_world.agents import AgentBrain, SurvivalBrain
@@ -102,6 +103,9 @@ class PopulationSpec:
     """Ordered model cohorts and their deterministic agent assignments."""
 
     groups: tuple[PopulationGroup, ...]
+    assignment_strategy: str = "ordered"
+    assignment_seed: int = 0
+    assigned_groups: tuple[tuple[str, str], ...] = ()
 
     def __post_init__(self) -> None:
         if not self.groups:
@@ -111,6 +115,8 @@ class PopulationSpec:
         ids = [group.id for group in self.groups]
         if len(ids) != len(set(ids)):
             raise ValueError("population group ids must be unique")
+        if self.assignment_strategy not in {"ordered", "stratified"}:
+            raise ValueError("assignment strategy must be ordered or stratified")
 
     @property
     def total_agents(self) -> int:
@@ -177,7 +183,71 @@ class PopulationSpec:
                     id=str(raw.get("id") or f"cohort-{index}"),
                 )
             )
-        return cls(tuple(groups))
+        raw_assignments = value.get("assignments")
+        assigned_groups = (
+            tuple(sorted((str(agent_id), str(group_id)) for agent_id, group_id in raw_assignments.items()))
+            if isinstance(raw_assignments, dict)
+            else ()
+        )
+        return cls(
+            tuple(groups),
+            assignment_strategy=str(value.get("assignment_strategy") or "ordered"),
+            assignment_seed=int(value.get("assignment_seed") or 0),
+            assigned_groups=assigned_groups,
+        )
+
+    def bind_assignments(
+        self,
+        engine: WorldEngine,
+        *,
+        strategy: str,
+        seed: int,
+    ) -> "PopulationSpec":
+        """Freeze a reproducible assignment before any model decisions occur."""
+
+        agent_ids = list(engine.state.agents)
+        if strategy == "ordered":
+            ordered = agent_ids
+        elif strategy == "stratified":
+            # Interleave spawn locations before assigning interleaved cohort slots.
+            # This prevents a contiguous model cohort from inheriting the crowded
+            # center or the resource-rich outer spawn positions by construction.
+            rng = random.Random(seed)
+            by_position: dict[tuple[int, int], list[str]] = {}
+            for agent_id in agent_ids:
+                pos = engine.state.agents[agent_id].position
+                by_position.setdefault((pos.x, pos.y), []).append(agent_id)
+            positions = list(by_position)
+            rng.shuffle(positions)
+            for members in by_position.values():
+                rng.shuffle(members)
+            ordered = []
+            while any(by_position.values()):
+                for position in positions:
+                    if by_position[position]:
+                        ordered.append(by_position[position].pop())
+        else:
+            raise ValueError("assignment strategy must be ordered or stratified")
+
+        group_slots: list[PopulationGroup] = []
+        remaining = {group.id: group.count for group in self.groups}
+        group_order = list(self.groups)
+        rng = random.Random(seed ^ 0xA53C)
+        rng.shuffle(group_order)
+        while any(remaining.values()):
+            for group in group_order:
+                if remaining[group.id] > 0:
+                    group_slots.append(group)
+                    remaining[group.id] -= 1
+        assigned = tuple(
+            sorted((agent_id, group.id) for agent_id, group in zip(ordered, group_slots))
+        )
+        return PopulationSpec(
+            self.groups,
+            assignment_strategy=strategy,
+            assignment_seed=seed,
+            assigned_groups=assigned,
+        )
 
     def assignments(self, agent_ids: Iterable[str]) -> dict[str, PopulationGroup]:
         ordered_ids = list(agent_ids)
@@ -185,6 +255,14 @@ class PopulationSpec:
             raise ValueError(
                 f"population describes {self.total_agents} agents but world contains {len(ordered_ids)}"
             )
+        groups_by_id = {group.id: group for group in self.groups}
+        if self.assigned_groups:
+            assignments = {
+                agent_id: groups_by_id[group_id] for agent_id, group_id in self.assigned_groups
+            }
+            if set(assignments) != set(ordered_ids):
+                raise ValueError("saved population assignments do not match world agents")
+            return assignments
         assignments: dict[str, PopulationGroup] = {}
         cursor = 0
         for group in self.groups:
@@ -198,6 +276,8 @@ class PopulationSpec:
             "type": self.run_type,
             "total_agents": self.total_agents,
             "groups": [group.to_dict() for group in self.groups],
+            "assignment_strategy": self.assignment_strategy,
+            "assignment_seed": self.assignment_seed,
         }
         if agent_ids is not None:
             result["assignments"] = {

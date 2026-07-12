@@ -1970,10 +1970,19 @@ class WorldEngine:
     def _remember(self, agent: Agent, memory_updates: list[str]) -> None:
         for memory in memory_updates:
             text = memory.strip()
+            duplicate_prefix = f"tick {self.state.tick}:"
+            if text.lower().startswith(duplicate_prefix):
+                text = text[len(duplicate_prefix) :].lstrip()
+            text = text[: self.state.config.memory_update_max_chars].rstrip()
             if text:
                 agent.memory.append(f"tick {self.state.tick}: {text}")
         if len(agent.memory) > self.state.config.max_memory:
             agent.memory = agent.memory[-self.state.config.max_memory :]
+        while (
+            len(agent.memory) > 1
+            and sum(len(item) for item in agent.memory) > self.state.config.memory_char_budget
+        ):
+            agent.memory.pop(0)
 
     def _create_item_pile(self, item: str, quantity: int, position: Position, owner_id: str | None = None) -> ItemPile:
         pile_id = f"item-{self.state.next_item_id}"

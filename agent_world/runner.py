@@ -5,6 +5,7 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import hashlib
 import json
+import threading
 from typing import Any
 
 from agent_world.agents import AgentBrain
@@ -32,12 +33,22 @@ class SimulationRunner:
         log_agent_io: bool = True,
         concurrent_decisions: bool = False,
         max_workers: int | None = None,
+        provider_max_workers: dict[str, int] | None = None,
+        decision_mode: str = "raw",
     ):
         self.engine = engine
         self.brains = brains
         self.log_agent_io = log_agent_io
         self.concurrent_decisions = concurrent_decisions
         self.max_workers = max_workers
+        self.provider_max_workers = dict(provider_max_workers or {})
+        self.decision_mode = decision_mode
+        if decision_mode not in {"raw", "validated"}:
+            raise ValueError("decision mode must be raw or validated")
+        self._provider_semaphores = {
+            provider: threading.BoundedSemaphore(limit)
+            for provider, limit in self.provider_max_workers.items()
+        }
         self._logged_static_contexts: set[str] = {
             str(event.data.get("static_context_sha256"))
             for event in self.engine.state.events
@@ -63,14 +74,14 @@ class SimulationRunner:
     ) -> dict[str, AgentDecision]:
         if not self.concurrent_decisions or len(agent_ids) <= 1:
             return {
-                agent_id: parse_agent_response(self.brains[agent_id].decide(observations[agent_id]))
+                agent_id: self._decide(agent_id, observations[agent_id])
                 for agent_id in agent_ids
             }
         decisions: dict[str, AgentDecision] = {}
         worker_count = self.max_workers or len(agent_ids)
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
             futures = {
-                executor.submit(self.brains[agent_id].decide, observations[agent_id]): agent_id
+                executor.submit(self._decide, agent_id, observations[agent_id]): agent_id
                 for agent_id in agent_ids
             }
             for future in as_completed(futures):
@@ -85,6 +96,20 @@ class SimulationRunner:
                         memory_updates=[],
                     )
         return decisions
+
+    def _decide(self, agent_id: str, observation: dict[str, Any]) -> AgentDecision:
+        brain = self.brains[agent_id]
+        runtime = getattr(brain, "runtime", None)
+        provider = getattr(runtime, "scope", None) or "default"
+        semaphore = self._provider_semaphores.get(provider)
+        if semaphore is None:
+            decision = parse_agent_response(brain.decide(observation))
+        else:
+            with semaphore:
+                decision = parse_agent_response(brain.decide(observation))
+        if self.decision_mode == "validated":
+            decision = _truncate_to_declared_action_budget(decision, observation)
+        return decision
 
     def _log_agent_input(self, agent_id: str, observation: dict[str, Any]) -> None:
         if not self.log_agent_io:
@@ -107,6 +132,10 @@ class SimulationRunner:
             self._logged_static_contexts.add(static_hash)
         dynamic = build_dynamic_observation(observation)
         dynamic_json = json.dumps(dynamic, separators=(",", ":"), sort_keys=True)
+        component_chars = {
+            key: len(json.dumps(value, separators=(",", ":"), sort_keys=True))
+            for key, value in dynamic.items()
+        }
         self.engine.log_event(
             "agent_observation",
             actor_id=agent_id,
@@ -122,8 +151,32 @@ class SimulationRunner:
             data={
                 "static_context_sha256": static_hash,
                 "dynamic_sha256": hashlib.sha256(dynamic_json.encode("utf-8")).hexdigest(),
+                "dynamic_component_chars": component_chars,
                 "format": "static_context_ref_plus_compact_dynamic_v2",
             },
             scope="private",
             recipients={agent_id},
         )
+
+
+def _truncate_to_declared_action_budget(
+    decision: AgentDecision, observation: dict[str, Any]
+) -> AgentDecision:
+    """Optional assisted condition: remove only actions that exceed declared AP."""
+
+    remaining = int((observation.get("world") or {}).get("action_points_per_tick") or 0)
+    costs = {
+        str(action.get("type")): (action.get("cost") or {}).get("action_points")
+        for action in observation.get("valid_actions", [])
+        if isinstance(action, dict)
+    }
+    kept: list[dict[str, Any]] = []
+    for action in decision.actions:
+        raw_cost = costs.get(str(action.get("type")), 1)
+        cost = raw_cost if isinstance(raw_cost, int) else 1
+        if cost > remaining:
+            break
+        kept.append(action)
+        remaining -= cost
+    decision.actions = kept or [{"type": "wait"}]
+    return decision

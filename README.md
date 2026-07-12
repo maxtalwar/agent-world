@@ -170,6 +170,7 @@ A run can assign deterministic cohorts to different providers and models. Repeat
 
 ```bash
 python3 -m agent_world.cli run \
+  --preset organic-society \
   --population 10@claude-sonnet-5 \
   --population 10@gpt-5.6-luna \
   --ticks 50 --seed 41 --economy-mode organic \
@@ -177,6 +178,25 @@ python3 -m agent_world.cli run \
   --out runs/sonnet-luna.jsonl \
   --snapshot runs/sonnet-luna-snapshot.json
 ```
+
+`--preset organic-society` expands to `organic / dispersed / neutral`. The CLI
+prints the resolved world, population, assignment seed, concurrency, and harness
+before spending model capacity. Mixed populations default to deterministic
+stratified assignment across spawn positions; override with
+`--assignment-seed N`, or use `--assignment-strategy ordered` only for legacy
+comparisons.
+
+Provider concurrency is independently bounded even when the global worker pool
+is larger:
+
+```bash
+--max-workers 8 --claude-max-workers 4 --codex-max-workers 4
+```
+
+`--decision-mode raw` preserves every model-proposed action for unassisted
+research. `--decision-mode validated` is an explicit assisted condition that
+truncates only the portion of an action list exceeding the declared AP budget.
+Never mix these conditions in one comparison.
 
 Use `COUNT@BRAIN:MODEL` when inference is ambiguous or for a newly released
 model, for example `10@claude:claude-fable-model-id`. An optional effort suffix
@@ -195,6 +215,16 @@ gifts, trades, token use, API cost, and Codex plan credits. A shared usage JSONL
 retains provider/model/agent identity per call. Quota and throttling state are
 isolated by provider, while any provider quota failure stops the complete run so
 the remaining ticks are not mistaken for comparable mixed-model behavior.
+Every ordinary run with `--out` also writes `*-manifest.json` with the resolved
+preset, complete assignment, assignment seed, harness condition, concurrency,
+command, git provenance, resolved response-model versions, and output paths.
+
+For a balanced comparison, run equal cohorts across several world and assignment
+seeds, then add homogeneous controls on those same world seeds. For example,
+repeat a 5/5/5/5 mixed population with `--seed 11 --assignment-seed 101`, then
+rotate assignment seeds while keeping the world seed fixed before changing the
+world seed. Reports expose offer conversion and cross-cohort trade, gift, and
+construction matrices so these runs can be aggregated without re-parsing logs.
 
 Runs log private observations, prompts, responses, validation errors, actions, state transitions, trades, messages, claims, groups, and deaths. Use `--no-agent-io-log` when you want smaller event logs.
 

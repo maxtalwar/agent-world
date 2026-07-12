@@ -45,6 +45,8 @@ class SimulationSession:
         brains: dict[str, AgentBrain] | None = None,
         population_spec: PopulationSpec | None = None,
         max_workers: int | None = None,
+        provider_max_workers: dict[str, int] | None = None,
+        decision_mode: str = "raw",
         log_agent_io: bool = True,
         concurrent_decisions: bool | None = None,
         lifecycle_metadata: dict[str, Any] | None = None,
@@ -75,6 +77,8 @@ class SimulationSession:
         self.max_workers = max_workers or max(
             group.brain.max_workers or 1 for group in self.population_spec.groups
         )
+        self.provider_max_workers = dict(provider_max_workers or {})
+        self.decision_mode = decision_mode
         self.log_agent_io = log_agent_io
         self.concurrent_decisions = (
             self.max_workers > 1
@@ -96,6 +100,8 @@ class SimulationSession:
             log_agent_io=log_agent_io,
             concurrent_decisions=self.concurrent_decisions,
             max_workers=self.max_workers,
+            provider_max_workers=self.provider_max_workers,
+            decision_mode=self.decision_mode,
         )
         self.capture_plan_usage = next(
             (

@@ -37,6 +37,8 @@ class WorldConfig:
     visible_radius: int = 2
     action_points_per_tick: int = 4
     max_memory: int = 50
+    memory_char_budget: int = 2400
+    memory_update_max_chars: int = 240
     recent_event_limit: int = 20
     default_carry_capacity: int = 10
     storage_capacity: int = 120

@@ -98,6 +98,7 @@ class CodexBrain:
         self.model = model or os.environ.get("CODEX_MODEL", "gpt-5.6-luna")
         self.reasoning_effort = reasoning_effort or os.environ.get("CODEX_REASONING_EFFORT", "low")
         self.timeout_seconds = timeout_seconds or int(os.environ.get("CODEX_TIMEOUT_SECONDS", "300"))
+        self.timeout_retries = max(0, int(os.environ.get("CODEX_TIMEOUT_RETRIES", "1")))
         self.executable = executable or os.environ.get("CODEX_EXECUTABLE") or _resolve_codex_executable()
         if not self.executable:
             raise ValueError("Codex CLI is required for CodexBrain, but 'codex' was not found on PATH.")
@@ -154,7 +155,15 @@ class CodexBrain:
 
         started_at = time.monotonic()
         try:
-            completed = self._execute(prompt)
+            completed = None
+            for attempt in range(self.timeout_retries + 1):
+                try:
+                    completed = self._execute(prompt)
+                    break
+                except subprocess.TimeoutExpired:
+                    if attempt >= self.timeout_retries:
+                        raise
+            assert completed is not None
             elapsed = time.monotonic() - started_at
             if completed.returncode != 0:
                 detail = _failure_detail(completed.stdout, completed.stderr)

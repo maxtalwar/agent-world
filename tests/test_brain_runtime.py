@@ -78,6 +78,23 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(population.groups[0].brain.model, "claude-fable-future")
         self.assertEqual(population.groups[0].brain.reasoning_effort, "high")
 
+    def test_stratified_assignments_are_interleaved_and_survive_round_trip(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(seed=9), agent_names=[f"A{index}" for index in range(1, 9)]
+        )
+        population = PopulationSpec.parse_many(
+            ["4@claude-sonnet-5", "4@gpt-5.6-luna"]
+        ).bind_assignments(engine, strategy="stratified", seed=77)
+
+        assignments = population.assignments(engine.state.agents)
+        first_four = {assignments[f"agent-{index}"].brain.type for index in range(1, 5)}
+        self.assertEqual(first_four, {"claude", "codex"})
+        restored = PopulationSpec.from_dict(population.to_dict(engine.state.agents))
+        self.assertEqual(
+            {key: value.id for key, value in assignments.items()},
+            {key: value.id for key, value in restored.assignments(engine.state.agents).items()},
+        )
+
     def test_mixed_factory_assigns_deterministic_cohorts_and_isolates_providers(self) -> None:
         class FakeBrain:
             def __init__(self, model=None, reasoning_effort=None, runtime=None):

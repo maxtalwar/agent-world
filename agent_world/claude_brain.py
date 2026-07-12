@@ -58,6 +58,7 @@ class ClaudeBrain:
         self.model = model or os.environ.get("CLAUDE_MODEL", "claude-sonnet-5")
         self.reasoning_effort = reasoning_effort or os.environ.get("CLAUDE_REASONING_EFFORT", "low")
         self.timeout_seconds = timeout_seconds or int(os.environ.get("CLAUDE_TIMEOUT_SECONDS", "300"))
+        self.timeout_retries = max(0, int(os.environ.get("CLAUDE_TIMEOUT_RETRIES", "1")))
         self.executable = executable or os.environ.get("CLAUDE_EXECUTABLE") or _resolve_claude_executable()
         if not self.executable:
             raise ValueError("Claude Code CLI is required for ClaudeBrain, but 'claude' was not found on PATH.")
@@ -82,7 +83,15 @@ class ClaudeBrain:
 
         started_at = time.monotonic()
         try:
-            completed = self._execute(system_prompt, user_prompt)
+            completed = None
+            for attempt in range(self.timeout_retries + 1):
+                try:
+                    completed = self._execute(system_prompt, user_prompt)
+                    break
+                except subprocess.TimeoutExpired:
+                    if attempt >= self.timeout_retries:
+                        raise
+            assert completed is not None
             elapsed = time.monotonic() - started_at
             result = _parse_result_json(completed.stdout)
             if completed.returncode != 0 or (isinstance(result, dict) and result.get("is_error")):

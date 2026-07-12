@@ -400,7 +400,23 @@ def build_dynamic_observation(observation: dict[str, Any]) -> dict[str, Any]:
     ]
     dynamic["recent_action_feedback"] = [_slim_feedback(item) for item in feedback]
     dynamic["memory"] = list(observation.get("memory", []))[-16:]
+    dynamic["market_history"] = [
+        _slim_market_transaction(item) for item in observation.get("market_history", [])[-12:]
+    ]
     return {key: value for key, value in dynamic.items() if value not in ([], {}, None)}
+
+
+def _slim_market_transaction(item: dict[str, Any]) -> dict[str, Any]:
+    keys = (
+        "tick",
+        "trade_id",
+        "seller_id",
+        "buyer_id",
+        "give",
+        "receive",
+        "position",
+    )
+    return {key: item[key] for key in keys if item.get(key) not in (None, {}, [])}
 
 
 def _slim_tile(tile: dict[str, Any]) -> dict[str, Any]:
