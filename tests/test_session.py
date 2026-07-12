@@ -92,6 +92,37 @@ class SimulationSessionTests(unittest.TestCase):
         self.assertEqual(result.final_tick, 1)
         self.assertEqual([event.type for event in engine.state.events].count("run_stopped"), 1)
 
+    def test_session_preflight_stops_before_any_provider_decision(self) -> None:
+        class LoggedOutBrain:
+            decisions = 0
+
+            def preflight(self):
+                return "Claude provider unavailable: Claude Code is not logged in"
+
+            def decide(self, _observation):
+                self.decisions += 1
+                return AgentDecision(intent="wait", actions=[{"type": "wait"}])
+
+        brain = LoggedOutBrain()
+        engine = WorldEngine.create(WorldConfig(seed=7), agent_names=["A1"])
+        session = SimulationSession(
+            engine=engine,
+            brain_spec=BrainSpec(type="claude", model="claude-sonnet-5"),
+            runtime=BrainRuntime(),
+            writer=IncrementalRunWriter(None, None, fsync=False),
+            target_ticks=10,
+            brains={"agent-1": brain},
+            log_agent_io=False,
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "stopped")
+        self.assertEqual(result.stop_reason, "provider_unavailable")
+        self.assertEqual(result.final_tick, 0)
+        self.assertEqual(brain.decisions, 0)
+        self.assertEqual([event.type for event in engine.state.events].count("run_stopped"), 1)
+
     def test_session_records_mixed_population_and_report_cohorts(self) -> None:
         class WaitBrain:
             def decide(self, _observation):

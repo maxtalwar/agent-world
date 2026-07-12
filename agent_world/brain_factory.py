@@ -209,39 +209,55 @@ class PopulationSpec:
         if strategy == "ordered":
             ordered = agent_ids
         elif strategy == "stratified":
-            # Interleave spawn locations before assigning interleaved cohort slots.
-            # This prevents a contiguous model cohort from inheriting the crowded
-            # center or the resource-rich outer spawn positions by construction.
             rng = random.Random(seed)
-            by_position: dict[tuple[int, int], list[str]] = {}
+            strata: dict[str, list[str]] = {}
             for agent_id in agent_ids:
-                pos = engine.state.agents[agent_id].position
-                by_position.setdefault((pos.x, pos.y), []).append(agent_id)
-            positions = list(by_position)
-            rng.shuffle(positions)
-            for members in by_position.values():
+                agent = engine.state.agents[agent_id]
+                strata.setdefault(agent.specialty or "generalist", []).append(agent_id)
+            stratum_names = sorted(strata)
+            rng.shuffle(stratum_names)
+            remaining = {group.id: group.count for group in self.groups}
+            remaining_agents = len(agent_ids)
+            assigned_pairs: list[tuple[str, str]] = []
+            for stratum_index, stratum_name in enumerate(stratum_names):
+                members = strata[stratum_name]
                 rng.shuffle(members)
-            ordered = []
-            while any(by_position.values()):
-                for position in positions:
-                    if by_position[position]:
-                        ordered.append(by_position[position].pop())
+                if stratum_index == len(stratum_names) - 1:
+                    allocations = dict(remaining)
+                else:
+                    raw = {
+                        group.id: remaining[group.id] * len(members) / remaining_agents
+                        for group in self.groups
+                    }
+                    allocations = {group_id: int(value) for group_id, value in raw.items()}
+                    unfilled = len(members) - sum(allocations.values())
+                    ranked = sorted(
+                        self.groups,
+                        key=lambda group: (raw[group.id] - allocations[group.id], remaining[group.id], group.id),
+                        reverse=True,
+                    )
+                    for group in ranked[:unfilled]:
+                        allocations[group.id] += 1
+                slots = [
+                    group.id
+                    for group in self.groups
+                    for _ in range(allocations[group.id])
+                ]
+                rng.shuffle(slots)
+                assigned_pairs.extend(zip(members, slots))
+                for group_id, count in allocations.items():
+                    remaining[group_id] -= count
+                remaining_agents -= len(members)
+            assigned = tuple(sorted(assigned_pairs))
         else:
             raise ValueError("assignment strategy must be ordered or stratified")
-
-        group_slots: list[PopulationGroup] = []
-        remaining = {group.id: group.count for group in self.groups}
-        group_order = list(self.groups)
-        rng = random.Random(seed ^ 0xA53C)
-        rng.shuffle(group_order)
-        while any(remaining.values()):
-            for group in group_order:
-                if remaining[group.id] > 0:
-                    group_slots.append(group)
-                    remaining[group.id] -= 1
-        assigned = tuple(
-            sorted((agent_id, group.id) for agent_id, group in zip(ordered, group_slots))
-        )
+        if strategy == "ordered":
+            group_slots: list[PopulationGroup] = []
+            for group in self.groups:
+                group_slots.extend([group] * group.count)
+            assigned = tuple(
+                sorted((agent_id, group.id) for agent_id, group in zip(ordered, group_slots))
+            )
         return PopulationSpec(
             self.groups,
             assignment_strategy=strategy,

@@ -71,6 +71,7 @@ class WorldConfig:
     farm_food_capacity: int = 24
     farm_passive_food_growth: int = 2
     geography_mode: str = "shared_oasis"
+    specialization_mode: str = "generalists"
     economy_mode: str = "baseline"
     objective_mode: str = "neutral"
     # None selects the treatment default: one AP in commerce, free in baseline
@@ -85,6 +86,8 @@ class WorldConfig:
     def __post_init__(self) -> None:
         if self.geography_mode not in {"shared_oasis", "dispersed"}:
             raise ValueError("geography_mode must be shared_oasis or dispersed")
+        if self.specialization_mode not in {"generalists", "specialists"}:
+            raise ValueError("specialization_mode must be generalists or specialists")
         if self.economy_mode not in {"baseline", "commerce", "organic"}:
             raise ValueError("economy_mode must be baseline, commerce, or organic")
         if self.objective_mode not in {"neutral", "collective", "individual"}:

@@ -43,7 +43,7 @@ class StandardMapTests(unittest.TestCase):
             WorldEngine.create(WorldConfig(width=8, height=8), agent_names=[])
 
     def test_dispersed_geography_spawns_heterogeneous_specialists(self) -> None:
-        config = WorldConfig(seed=4, geography_mode="dispersed")
+        config = WorldConfig(seed=4, geography_mode="dispersed", specialization_mode="specialists")
         engine = WorldEngine.create(config, agent_names=["Farmer", "Forester", "Miner", "Fisher", "Artisan"])
         agents = list(engine.state.agents.values())
 
@@ -58,6 +58,16 @@ class StandardMapTests(unittest.TestCase):
         self.assertGreater(agents[0].aptitudes["farming"], agents[0].aptitudes["mining"])
         self.assertEqual(agents[2].inventory["ore"], 1)
         self.assertGreater(agents[2].need_multipliers["food"], 1.0)
+
+    def test_dispersed_generalists_have_no_preset_economic_role(self) -> None:
+        config = WorldConfig(seed=4, geography_mode="dispersed", specialization_mode="generalists")
+        engine = WorldEngine.create(config, agent_names=["A1", "A2", "A3", "A4", "A5"])
+        agents = list(engine.state.agents.values())
+
+        self.assertTrue(all(agent.specialty is None for agent in agents))
+        self.assertTrue(all(not agent.aptitudes for agent in agents))
+        self.assertTrue(all(not agent.need_multipliers for agent in agents))
+        self.assertEqual(len({agent.position for agent in agents}), 5)
 
     def test_world_config_validates_treatment_names(self) -> None:
         with self.assertRaises(ValueError):

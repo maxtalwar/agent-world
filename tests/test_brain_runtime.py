@@ -78,17 +78,34 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(population.groups[0].brain.model, "claude-fable-future")
         self.assertEqual(population.groups[0].brain.reasoning_effort, "high")
 
-    def test_stratified_assignments_are_interleaved_and_survive_round_trip(self) -> None:
+    def test_stratified_assignments_balance_each_specialty_and_survive_round_trip(self) -> None:
         engine = WorldEngine.create(
-            WorldConfig(seed=9), agent_names=[f"A{index}" for index in range(1, 9)]
+            WorldConfig(
+                seed=9,
+                economy_mode="organic",
+                geography_mode="dispersed",
+                specialization_mode="specialists",
+            ),
+            agent_names=[f"A{index}" for index in range(1, 31)],
         )
         population = PopulationSpec.parse_many(
-            ["4@claude-sonnet-5", "4@gpt-5.6-luna"]
+            [
+                "5@claude-opus-4-8",
+                "10@claude-sonnet-5",
+                "10@gpt-5.6-luna",
+                "5@gpt-5.6-terra",
+            ]
         ).bind_assignments(engine, strategy="stratified", seed=77)
 
         assignments = population.assignments(engine.state.agents)
-        first_four = {assignments[f"agent-{index}"].brain.type for index in range(1, 5)}
-        self.assertEqual(first_four, {"claude", "codex"})
+        by_specialty: dict[str, dict[str, int]] = {}
+        for agent_id, agent in engine.state.agents.items():
+            counts = by_specialty.setdefault(agent.specialty or "generalist", {})
+            cohort = assignments[agent_id].id
+            counts[cohort] = counts.get(cohort, 0) + 1
+        expected = {group.id: group.count // 5 for group in population.groups}
+        self.assertEqual(len(by_specialty), 5)
+        self.assertTrue(all(counts == expected for counts in by_specialty.values()))
         restored = PopulationSpec.from_dict(population.to_dict(engine.state.agents))
         self.assertEqual(
             {key: value.id for key, value in assignments.items()},

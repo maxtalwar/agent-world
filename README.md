@@ -156,7 +156,9 @@ decision. Models: `claude-haiku-4-5` (cheapest against plan limits),
 has no headless plan-limit endpoint, so no `*-plan-usage.json` is produced;
 per-call token usage is still recorded. When plan limits are hit the run stops
 early with `Claude quota unavailable` so the log is not mistaken for agent
-behavior. Extended thinking is disabled by default (it costs thousands of plan
+behavior. Run startup also checks `claude auth status` without spending a model
+turn and stops at tick zero if the saved Claude-plan login is unavailable.
+Extended thinking is disabled by default (it costs thousands of plan
 tokens and ~a minute per decision); set `CLAUDE_MAX_THINKING_TOKENS` to a
 positive budget to re-enable it. Other environment knobs: `CLAUDE_MODEL`,
 `CLAUDE_REASONING_EFFORT`, `CLAUDE_TIMEOUT_SECONDS`, `CLAUDE_EXECUTABLE`,
@@ -170,7 +172,7 @@ A run can assign deterministic cohorts to different providers and models. Repeat
 
 ```bash
 python3 -m agent_world.cli run \
-  --preset organic-society \
+  --preset organic-generalists \
   --population 10@claude-sonnet-5 \
   --population 10@gpt-5.6-luna \
   --ticks 50 --seed 41 --economy-mode organic \
@@ -179,10 +181,16 @@ python3 -m agent_world.cli run \
   --snapshot runs/sonnet-luna-snapshot.json
 ```
 
-`--preset organic-society` expands to `organic / dispersed / neutral`. The CLI
+`--preset organic-generalists` expands to an organic, dispersed world with no
+preset occupations or agent-specific production/need advantages. Use
+`--preset experimental-organic-specialists` to deliberately test preset
+farmer, forester, miner, fisher, and artisan roles with asymmetric aptitudes,
+starting inventories, and needs. That specialist preset is an experimental
+economic treatment, not the neutral/default society condition. The CLI
 prints the resolved world, population, assignment seed, concurrency, and harness
 before spending model capacity. Mixed populations default to deterministic
-stratified assignment across spawn positions; override with
+stratified assignment within each specialty (or across all agents in the
+generalist condition); override with
 `--assignment-seed N`, or use `--assignment-strategy ordered` only for legacy
 comparisons.
 

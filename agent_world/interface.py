@@ -89,6 +89,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "objective_mode": getattr(state.config, "objective_mode", "neutral"),
             "economy_mode": getattr(state.config, "economy_mode", "baseline"),
             "geography_mode": getattr(state.config, "geography_mode", "shared_oasis"),
+            "specialization_mode": getattr(state.config, "specialization_mode", "generalists"),
             "communication_action_cost": getattr(state.config, "communication_cost", lambda: 0)(),
             "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
             "trade_settlement": (

@@ -12,7 +12,7 @@ from agent_world.brain_factory import BrainSpec, PopulationSpec, create_populati
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.codex_brain import summarize_plan_usage
 from agent_world.io import atomic_write_json
-from agent_world.metrics import is_quota_failure_message
+from agent_world.metrics import is_provider_failure_message, is_quota_failure_message
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.run_report import write_report
 from agent_world.runner import SimulationRunner
@@ -112,14 +112,18 @@ class SimulationSession:
             None,
         )
         self._started = False
+        self.preflight_error: str | None = None
 
     def run(self) -> SessionResult:
         self.start()
         status = "running"
         stop_reason: str | None = None
         error: str | None = None
+        if self.preflight_error:
+            status = "stopped"
+            stop_reason = "provider_unavailable"
         try:
-            while self.engine.state.tick < self.target_ticks:
+            while status == "running" and self.engine.state.tick < self.target_ticks:
                 if self.before_tick is not None and self.before_tick():
                     status = "stopped"
                     stop_reason = "stop_requested"
@@ -136,6 +140,20 @@ class SimulationSession:
                     self.engine.log_event(
                         "run_stopped",
                         message="Model quota is unavailable; stopped early so the run is not mistaken for agent behavior.",
+                        data={"reason": stop_reason, "target_ticks": self.target_ticks},
+                        scope="public",
+                    )
+                elif any(
+                    is_provider_failure_message(
+                        getattr(event, "type", None), getattr(event, "message", None)
+                    )
+                    for event in events
+                ):
+                    status = "stopped"
+                    stop_reason = "provider_unavailable"
+                    self.engine.log_event(
+                        "run_stopped",
+                        message="A requested model provider became unavailable; stopped before producing misleading behavior.",
                         data={"reason": stop_reason, "target_ticks": self.target_ticks},
                         scope="public",
                     )
@@ -217,9 +235,33 @@ class SimulationSession:
         if self._started:
             return
         self._log_start()
+        self.preflight_error = self._provider_preflight_error()
+        if self.preflight_error:
+            self.engine.log_event(
+                "run_stopped",
+                message=self.preflight_error,
+                data={"reason": "provider_unavailable", "target_ticks": self.target_ticks},
+                scope="public",
+            )
         self._capture_plan_usage(self.engine.state.tick)
         self.flush()
         self._started = True
+
+    def _provider_preflight_error(self) -> str | None:
+        checked: set[tuple[type[Any], str]] = set()
+        for brain in self.brains.values():
+            preflight = getattr(brain, "preflight", None)
+            if not callable(preflight):
+                continue
+            scope = str(getattr(getattr(brain, "runtime", None), "scope", "default"))
+            key = (type(brain), scope)
+            if key in checked:
+                continue
+            checked.add(key)
+            error = preflight()
+            if error:
+                return str(error)
+        return None
 
     def flush(self) -> None:
         extra = self.checkpoint_extra_factory(self) if self.checkpoint_extra_factory else None

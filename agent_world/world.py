@@ -108,7 +108,10 @@ class WorldEngine:
             # immediately. Coins remain ordinary inventory; agents may ignore,
             # store, gift, lose, or exchange them.
             agent.inventory["coin"] += 4
-        if self.state.config.geography_mode == "dispersed":
+        if (
+            self.state.config.geography_mode == "dispersed"
+            and self.state.config.specialization_mode == "specialists"
+        ):
             self._apply_specialist_profile(agent, spawn_index)
         self.state.agents[agent.id] = agent
         self.log_event(

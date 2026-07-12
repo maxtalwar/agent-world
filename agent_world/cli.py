@@ -43,11 +43,19 @@ RUN_PRESETS = {
         "economy_mode": "baseline",
         "geography_mode": "shared_oasis",
         "objective_mode": "neutral",
+        "specialization_mode": "generalists",
     },
-    "organic-society": {
+    "organic-generalists": {
         "economy_mode": "organic",
         "geography_mode": "dispersed",
         "objective_mode": "neutral",
+        "specialization_mode": "generalists",
+    },
+    "experimental-organic-specialists": {
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "objective_mode": "neutral",
+        "specialization_mode": "specialists",
     },
 }
 
@@ -66,6 +74,7 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default=None)
     run_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default=None)
     run_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default=None)
+    run_parser.add_argument("--specialization-mode", choices=["generalists", "specialists"], default=None)
     run_parser.add_argument("--brain", choices=["survival", "llm", "codex", "claude"], default=None)
     run_parser.add_argument("--model", default=None, help="Model for --brain llm/codex/claude. Uses the selected brain's environment default.")
     run_parser.add_argument(
@@ -257,6 +266,7 @@ def _run(args: argparse.Namespace) -> None:
         args.objective_mode = getattr(args, "objective_mode", None) or preset["objective_mode"]
         args.economy_mode = getattr(args, "economy_mode", None) or preset["economy_mode"]
         args.geography_mode = getattr(args, "geography_mode", None) or preset["geography_mode"]
+        args.specialization_mode = getattr(args, "specialization_mode", None) or preset["specialization_mode"]
         args.decision_mode = getattr(args, "decision_mode", None) or "raw"
         if getattr(args, "population", None):
             if args.brain is not None or args.model is not None:
@@ -281,6 +291,7 @@ def _run(args: argparse.Namespace) -> None:
             objective_mode=getattr(args, "objective_mode", "neutral"),
             economy_mode=getattr(args, "economy_mode", "baseline"),
             geography_mode=getattr(args, "geography_mode", "shared_oasis"),
+            specialization_mode=getattr(args, "specialization_mode", "generalists"),
         )
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
@@ -355,6 +366,7 @@ def _run(args: argparse.Namespace) -> None:
         "objective_mode": engine.state.config.objective_mode,
         "economy_mode": engine.state.config.economy_mode,
         "geography_mode": engine.state.config.geography_mode,
+        "specialization_mode": engine.state.config.specialization_mode,
         "decision_mode": decision_mode,
         "provider_max_workers": provider_max_workers,
     }
@@ -367,7 +379,7 @@ def _run(args: argparse.Namespace) -> None:
         print(
             f"Starting {population_spec.total_agents}-agent {population_spec.run_type} run | "
             f"world={engine.state.config.economy_mode}/{engine.state.config.geography_mode}/"
-            f"{engine.state.config.objective_mode} | population={cohort_text} | "
+            f"{engine.state.config.specialization_mode}/{engine.state.config.objective_mode} | population={cohort_text} | "
             f"ticks={args.ticks} | assignment={population_spec.assignment_strategy}:"
             f"{population_spec.assignment_seed} | harness={decision_mode}",
             flush=True,

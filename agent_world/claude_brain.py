@@ -63,6 +63,25 @@ class ClaudeBrain:
         if not self.executable:
             raise ValueError("Claude Code CLI is required for ClaudeBrain, but 'claude' was not found on PATH.")
 
+    def preflight(self) -> str | None:
+        """Verify saved Claude-plan authentication without spending a model turn."""
+
+        try:
+            completed = subprocess.run(
+                [self.executable, "auth", "status"],
+                text=True,
+                capture_output=True,
+                timeout=min(self.timeout_seconds, 30),
+                env=_plan_auth_environment(),
+                check=False,
+            )
+            status = json.loads(completed.stdout or "{}")
+        except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+            return f"Claude provider unavailable: authentication preflight failed: {exc}"
+        if completed.returncode != 0 or not status.get("loggedIn"):
+            return "Claude provider unavailable: Claude Code is not logged in; run `claude auth login`."
+        return None
+
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
         quota_message = self._quota_message()
         if quota_message is not None:
@@ -98,6 +117,10 @@ class ClaudeBrain:
                 detail = _failure_detail(result, completed.stdout, completed.stderr)
                 if _is_quota_error(detail):
                     message = f"Claude quota unavailable: {detail}"
+                    self._mark_quota_unavailable(message)
+                    return _failure_decision(message)
+                if _is_auth_error(detail):
+                    message = f"Claude provider unavailable: {detail}"
                     self._mark_quota_unavailable(message)
                     return _failure_decision(message)
                 raise ValueError(f"claude -p exited {completed.returncode}: {detail}")
@@ -277,6 +300,11 @@ def _is_quota_error(detail: str) -> bool:
             "credit balance is too low",
         )
     )
+
+
+def _is_auth_error(detail: str) -> bool:
+    lowered = detail.lower()
+    return any(marker in lowered for marker in ("not logged in", "please run /login", "authentication required"))
 
 
 @lru_cache(maxsize=1)
