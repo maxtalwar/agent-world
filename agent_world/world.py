@@ -108,7 +108,10 @@ class WorldEngine:
             # immediately. Coins remain ordinary inventory; agents may ignore,
             # store, gift, lose, or exchange them.
             agent.inventory["coin"] += 4
-        if self.state.config.geography_mode == "dispersed":
+        if (
+            self.state.config.geography_mode == "dispersed"
+            and self.state.config.specialization_mode == "specialists"
+        ):
             self._apply_specialist_profile(agent, spawn_index)
         self.state.agents[agent.id] = agent
         self.log_event(
@@ -1970,10 +1973,19 @@ class WorldEngine:
     def _remember(self, agent: Agent, memory_updates: list[str]) -> None:
         for memory in memory_updates:
             text = memory.strip()
+            duplicate_prefix = f"tick {self.state.tick}:"
+            if text.lower().startswith(duplicate_prefix):
+                text = text[len(duplicate_prefix) :].lstrip()
+            text = text[: self.state.config.memory_update_max_chars].rstrip()
             if text:
                 agent.memory.append(f"tick {self.state.tick}: {text}")
         if len(agent.memory) > self.state.config.max_memory:
             agent.memory = agent.memory[-self.state.config.max_memory :]
+        while (
+            len(agent.memory) > 1
+            and sum(len(item) for item in agent.memory) > self.state.config.memory_char_budget
+        ):
+            agent.memory.pop(0)
 
     def _create_item_pile(self, item: str, quantity: int, position: Position, owner_id: str | None = None) -> ItemPile:
         pile_id = f"item-{self.state.next_item_id}"

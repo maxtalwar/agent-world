@@ -114,7 +114,12 @@ class EconomicInterfaceTests(unittest.TestCase):
 
     def test_commerce_prompt_state_exposes_treatment_costs_and_specialty(self) -> None:
         engine = WorldEngine.create(
-            WorldConfig(economy_mode="commerce", geography_mode="dispersed", objective_mode="individual"),
+            WorldConfig(
+                economy_mode="commerce",
+                geography_mode="dispersed",
+                objective_mode="individual",
+                specialization_mode="specialists",
+            ),
             agent_names=["A1"],
         )
         observation = build_observation(engine.state, "agent-1")

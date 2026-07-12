@@ -46,6 +46,26 @@ def _successful_stdout(intent: str = "wait", actions: list[dict] | None = None) 
 
 
 class ClaudeBrainTests(unittest.TestCase):
+    def test_preflight_accepts_saved_plan_login(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude", "auth", "status"], 0, stdout=json.dumps({"loggedIn": True}), stderr=""
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+            error = ClaudeBrain(executable="claude").preflight()
+
+        self.assertIsNone(error)
+        self.assertEqual(run.call_args.args[0], ["claude", "auth", "status"])
+        self.assertNotIn("ANTHROPIC_API_KEY", run.call_args.kwargs["env"])
+
+    def test_preflight_rejects_missing_plan_login(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude", "auth", "status"], 1, stdout=json.dumps({"loggedIn": False}), stderr=""
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+            error = ClaudeBrain(executable="claude").preflight()
+
+        self.assertIn("Claude Code is not logged in", error or "")
+
     def test_extract_claude_result_prefers_structured_output(self) -> None:
         decision, usage, response_model = extract_claude_result(json.loads(_successful_stdout("observe")))
         self.assertEqual(decision["intent"], "observe")
@@ -108,6 +128,19 @@ class ClaudeBrainTests(unittest.TestCase):
         self.assertTrue(first.intent.startswith("Claude quota unavailable:"))
         self.assertEqual(second.intent, first.intent)
         self.assertEqual(first.actions, [{"type": "wait"}])
+
+    def test_auth_failure_opens_circuit(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude"], 1, stdout="", stderr="Not logged in. Please run /login."
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+            brain = ClaudeBrain(executable="claude")
+            first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(run.call_count, 1)
+        self.assertTrue(first.intent.startswith("Claude provider unavailable:"))
+        self.assertEqual(second.intent, first.intent)
 
     def test_error_result_json_is_reported(self) -> None:
         stdout = json.dumps(

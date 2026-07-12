@@ -58,9 +58,29 @@ class ClaudeBrain:
         self.model = model or os.environ.get("CLAUDE_MODEL", "claude-sonnet-5")
         self.reasoning_effort = reasoning_effort or os.environ.get("CLAUDE_REASONING_EFFORT", "low")
         self.timeout_seconds = timeout_seconds or int(os.environ.get("CLAUDE_TIMEOUT_SECONDS", "300"))
+        self.timeout_retries = max(0, int(os.environ.get("CLAUDE_TIMEOUT_RETRIES", "1")))
         self.executable = executable or os.environ.get("CLAUDE_EXECUTABLE") or _resolve_claude_executable()
         if not self.executable:
             raise ValueError("Claude Code CLI is required for ClaudeBrain, but 'claude' was not found on PATH.")
+
+    def preflight(self) -> str | None:
+        """Verify saved Claude-plan authentication without spending a model turn."""
+
+        try:
+            completed = subprocess.run(
+                [self.executable, "auth", "status"],
+                text=True,
+                capture_output=True,
+                timeout=min(self.timeout_seconds, 30),
+                env=_plan_auth_environment(),
+                check=False,
+            )
+            status = json.loads(completed.stdout or "{}")
+        except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+            return f"Claude provider unavailable: authentication preflight failed: {exc}"
+        if completed.returncode != 0 or not status.get("loggedIn"):
+            return "Claude provider unavailable: Claude Code is not logged in; run `claude auth login`."
+        return None
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
         quota_message = self._quota_message()
@@ -82,13 +102,25 @@ class ClaudeBrain:
 
         started_at = time.monotonic()
         try:
-            completed = self._execute(system_prompt, user_prompt)
+            completed = None
+            for attempt in range(self.timeout_retries + 1):
+                try:
+                    completed = self._execute(system_prompt, user_prompt)
+                    break
+                except subprocess.TimeoutExpired:
+                    if attempt >= self.timeout_retries:
+                        raise
+            assert completed is not None
             elapsed = time.monotonic() - started_at
             result = _parse_result_json(completed.stdout)
             if completed.returncode != 0 or (isinstance(result, dict) and result.get("is_error")):
                 detail = _failure_detail(result, completed.stdout, completed.stderr)
                 if _is_quota_error(detail):
                     message = f"Claude quota unavailable: {detail}"
+                    self._mark_quota_unavailable(message)
+                    return _failure_decision(message)
+                if _is_auth_error(detail):
+                    message = f"Claude provider unavailable: {detail}"
                     self._mark_quota_unavailable(message)
                     return _failure_decision(message)
                 raise ValueError(f"claude -p exited {completed.returncode}: {detail}")
@@ -268,6 +300,11 @@ def _is_quota_error(detail: str) -> bool:
             "credit balance is too low",
         )
     )
+
+
+def _is_auth_error(detail: str) -> bool:
+    lowered = detail.lower()
+    return any(marker in lowered for marker in ("not logged in", "please run /login", "authentication required"))
 
 
 @lru_cache(maxsize=1)

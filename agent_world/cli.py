@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import asdict
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import subprocess
+import sys
 from typing import Any
 
 from agent_world.ablation import format_table, run_ablation
@@ -21,7 +24,7 @@ from agent_world.codex_brain import CodexBrain
 from agent_world.env import load_dotenv
 from agent_world.experiments import run_factorial_experiment
 from agent_world.interface import build_agent_prompt, build_observation
-from agent_world.io import atomic_write_text as _atomic_write_text
+from agent_world.io import atomic_write_json, atomic_write_text as _atomic_write_text
 from agent_world.maps import render_tiles
 from agent_world.metrics import compute_metrics
 from agent_world.models import WorldConfig
@@ -35,6 +38,28 @@ from agent_world.usage import summarize_codex_simulation_credits
 from agent_world.world import WorldEngine
 
 
+RUN_PRESETS = {
+    "baseline": {
+        "economy_mode": "baseline",
+        "geography_mode": "shared_oasis",
+        "objective_mode": "neutral",
+        "specialization_mode": "generalists",
+    },
+    "organic-generalists": {
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "objective_mode": "neutral",
+        "specialization_mode": "generalists",
+    },
+    "experimental-organic-specialists": {
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "objective_mode": "neutral",
+        "specialization_mode": "specialists",
+    },
+}
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="agent-world")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -45,9 +70,11 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--seed", type=int, default=1)
     run_parser.add_argument("--width", type=int, default=16)
     run_parser.add_argument("--height", type=int, default=16)
-    run_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default="neutral")
-    run_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default="baseline")
-    run_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default="shared_oasis")
+    run_parser.add_argument("--preset", choices=sorted(RUN_PRESETS), default=None)
+    run_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default=None)
+    run_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default=None)
+    run_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default=None)
+    run_parser.add_argument("--specialization-mode", choices=["generalists", "specialists"], default=None)
     run_parser.add_argument("--brain", choices=["survival", "llm", "codex", "claude"], default=None)
     run_parser.add_argument("--model", default=None, help="Model for --brain llm/codex/claude. Uses the selected brain's environment default.")
     run_parser.add_argument(
@@ -73,6 +100,12 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--no-agent-io-log", action="store_true", help="Do not log private observations/prompts.")
     run_parser.add_argument("--sequential-decisions", action="store_true", help="Disable same-tick concurrent brain calls.")
     run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. Provider-backed brains default to one worker.")
+    run_parser.add_argument("--codex-max-workers", type=int, default=None)
+    run_parser.add_argument("--claude-max-workers", type=int, default=None)
+    run_parser.add_argument("--llm-max-workers", type=int, default=None)
+    run_parser.add_argument("--assignment-strategy", choices=["ordered", "stratified"], default=None)
+    run_parser.add_argument("--assignment-seed", type=int, default=None)
+    run_parser.add_argument("--decision-mode", choices=["raw", "validated"], default=None)
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
 
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
@@ -223,8 +256,18 @@ def _run(args: argparse.Namespace) -> None:
             args.no_agent_io_log = not bool(saved.get("log_agent_io", True))
         if not args.sequential_decisions:
             args.sequential_decisions = bool(saved.get("sequential_decisions", False))
+        for name in ("codex_max_workers", "claude_max_workers", "llm_max_workers", "decision_mode"):
+            if getattr(args, name, None) is None and saved.get(name) is not None:
+                setattr(args, name, saved[name])
     else:
         args.ticks = args.ticks if args.ticks is not None else 25
+        preset_name = getattr(args, "preset", None) or "baseline"
+        preset = RUN_PRESETS[preset_name]
+        args.objective_mode = getattr(args, "objective_mode", None) or preset["objective_mode"]
+        args.economy_mode = getattr(args, "economy_mode", None) or preset["economy_mode"]
+        args.geography_mode = getattr(args, "geography_mode", None) or preset["geography_mode"]
+        args.specialization_mode = getattr(args, "specialization_mode", None) or preset["specialization_mode"]
+        args.decision_mode = getattr(args, "decision_mode", None) or "raw"
         if getattr(args, "population", None):
             if args.brain is not None or args.model is not None:
                 raise ValueError("Use either --population or --brain/--model, not both.")
@@ -248,6 +291,7 @@ def _run(args: argparse.Namespace) -> None:
             objective_mode=getattr(args, "objective_mode", "neutral"),
             economy_mode=getattr(args, "economy_mode", "baseline"),
             geography_mode=getattr(args, "geography_mode", "shared_oasis"),
+            specialization_mode=getattr(args, "specialization_mode", "generalists"),
         )
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
@@ -268,12 +312,27 @@ def _run(args: argparse.Namespace) -> None:
         population_spec = PopulationSpec.uniform(len(engine.state.agents), brain_spec)
     else:
         brain_spec = population_spec.groups[0].brain
+    if not population_spec.assigned_groups:
+        assignment_strategy = getattr(args, "assignment_strategy", None) or (
+            "stratified" if population_spec.mixed else "ordered"
+        )
+        raw_assignment_seed = getattr(args, "assignment_seed", None)
+        assignment_seed = raw_assignment_seed if raw_assignment_seed is not None else engine.state.config.seed
+        population_spec = population_spec.bind_assignments(
+            engine, strategy=assignment_strategy, seed=assignment_seed
+        )
     max_workers = args.max_workers or max(
         group.brain.max_workers or 1 for group in population_spec.groups
     )
     args.model = brain_spec.model if not population_spec.mixed else None
     args.reasoning_effort = brain_spec.reasoning_effort if not population_spec.mixed else None
     args.max_workers = max_workers
+    provider_max_workers = {
+        "codex_cli": int(getattr(args, "codex_max_workers", None) or min(max_workers, 4)),
+        "claude_cli": int(getattr(args, "claude_max_workers", None) or min(max_workers, 4)),
+        "openai_compatible": int(getattr(args, "llm_max_workers", None) or min(max_workers, 2)),
+    }
+    decision_mode = args.decision_mode or "raw"
     usage_path: Path | None = None
     initial_usage: list[dict[str, Any]] = []
     if population_spec.model_backed and args.out:
@@ -303,10 +362,28 @@ def _run(args: argparse.Namespace) -> None:
     if resumed:
         run_writer.rebase(engine)
     lifecycle_metadata = {
+        "preset": getattr(args, "preset", None) or "baseline",
         "objective_mode": engine.state.config.objective_mode,
         "economy_mode": engine.state.config.economy_mode,
         "geography_mode": engine.state.config.geography_mode,
+        "specialization_mode": engine.state.config.specialization_mode,
+        "decision_mode": decision_mode,
+        "provider_max_workers": provider_max_workers,
     }
+
+    if not resumed:
+        cohort_text = ", ".join(
+            f"{group.count} {group.brain.model or group.brain.type}"
+            for group in population_spec.groups
+        )
+        print(
+            f"Starting {population_spec.total_agents}-agent {population_spec.run_type} run | "
+            f"world={engine.state.config.economy_mode}/{engine.state.config.geography_mode}/"
+            f"{engine.state.config.specialization_mode}/{engine.state.config.objective_mode} | population={cohort_text} | "
+            f"ticks={args.ticks} | assignment={population_spec.assignment_strategy}:"
+            f"{population_spec.assignment_seed} | harness={decision_mode}",
+            flush=True,
+        )
 
     session: SimulationSession
 
@@ -321,6 +398,10 @@ def _run(args: argparse.Namespace) -> None:
                 "events_path": str(args.out.resolve()) if args.out else None,
                 "snapshot_path": str(args.snapshot.resolve()) if args.snapshot else None,
                 "max_workers": max_workers,
+                "codex_max_workers": provider_max_workers["codex_cli"],
+                "claude_max_workers": provider_max_workers["claude_cli"],
+                "llm_max_workers": provider_max_workers["openai_compatible"],
+                "decision_mode": decision_mode,
                 "log_agent_io": not args.no_agent_io_log,
                 "sequential_decisions": args.sequential_decisions,
             },
@@ -337,6 +418,20 @@ def _run(args: argparse.Namespace) -> None:
         else None
     )
     report_stem = args.out.with_name(args.out.stem) if args.out else None
+    manifest_path = args.out.with_name(args.out.stem + "-manifest.json") if args.out else None
+    run_manifest = _ordinary_run_manifest(
+        engine=engine,
+        population=population_spec,
+        args=args,
+        provider_max_workers=provider_max_workers,
+        decision_mode=decision_mode,
+        events_path=args.out,
+        snapshot_path=args.snapshot,
+        checkpoint_path=checkpoint_path,
+        report_stem=report_stem,
+    )
+    if manifest_path is not None:
+        atomic_write_json(manifest_path, run_manifest)
     session = SimulationSession(
         engine=engine,
         brain_spec=brain_spec,
@@ -346,6 +441,8 @@ def _run(args: argparse.Namespace) -> None:
         brains=create_population_brains(engine, population_spec, runtime),
         population_spec=population_spec,
         max_workers=max_workers,
+        provider_max_workers=provider_max_workers,
+        decision_mode=decision_mode,
         log_agent_io=not args.no_agent_io_log,
         concurrent_decisions=not args.sequential_decisions and max_workers > 1,
         lifecycle_metadata=lifecycle_metadata,
@@ -384,6 +481,72 @@ def _run(args: argparse.Namespace) -> None:
         print(json.dumps(result.plan_usage, indent=2, sort_keys=True))
     if args.out:
         print(f"Wrote run report to {report_stem}-report.json and {report_stem}-report.md")
+    if manifest_path is not None:
+        run_manifest.update(
+            {
+                "status": result.status,
+                "final_tick": result.final_tick,
+                "stop_reason": result.stop_reason,
+                "error": result.error,
+                "ended_at_utc": datetime.now(timezone.utc).isoformat(),
+                "resolved_models": dict(
+                    sorted(
+                        __import__("collections").Counter(
+                            str(record.get("response_model") or record.get("model") or "unknown")
+                            for record in usage_records
+                        ).items()
+                    )
+                ),
+            }
+        )
+        atomic_write_json(manifest_path, run_manifest)
+        print(f"Wrote run manifest to {manifest_path}")
+
+
+def _ordinary_run_manifest(
+    *,
+    engine: WorldEngine,
+    population: PopulationSpec,
+    args: argparse.Namespace,
+    provider_max_workers: dict[str, int],
+    decision_mode: str,
+    events_path: Path | None,
+    snapshot_path: Path | None,
+    checkpoint_path: Path | None,
+    report_stem: Path | None,
+) -> dict[str, Any]:
+    try:
+        git_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+        dirty = bool(
+            subprocess.run(
+                ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+            ).stdout.strip()
+        )
+    except (OSError, subprocess.CalledProcessError):
+        git_sha, dirty = None, None
+    return {
+        "schema_version": 1,
+        "status": "running",
+        "started_at_utc": datetime.now(timezone.utc).isoformat(),
+        "target_ticks": args.ticks,
+        "final_tick": engine.state.tick,
+        "preset": getattr(args, "preset", None) or "baseline",
+        "decision_mode": decision_mode,
+        "command": ["python3", "-m", "agent_world.cli", *sys.argv[1:]],
+        "config": asdict(engine.state.config),
+        "population": population.to_dict(engine.state.agents),
+        "concurrency": {"global": args.max_workers, "providers": provider_max_workers},
+        "provenance": {"git_sha": git_sha, "dirty_worktree": dirty},
+        "outputs": {
+            "events": str(events_path) if events_path else None,
+            "snapshot": str(snapshot_path) if snapshot_path else None,
+            "checkpoint": str(checkpoint_path) if checkpoint_path else None,
+            "report_json": f"{report_stem}-report.json" if report_stem else None,
+            "report_markdown": f"{report_stem}-report.md" if report_stem else None,
+        },
+    }
 
 
 def _report_llm_usage(args: argparse.Namespace, ticks_completed: int, records: list[dict[str, Any]]) -> None:

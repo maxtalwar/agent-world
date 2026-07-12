@@ -280,6 +280,7 @@ class WorldEngineTests(unittest.TestCase):
                 seed=3,
                 geography_mode="dispersed",
                 economy_mode="organic",
+                specialization_mode="specialists",
                 survival_food_decay=0,
                 survival_water_decay=0,
                 survival_energy_decay=0,
@@ -1122,7 +1123,12 @@ class WorldEngineTests(unittest.TestCase):
 
     def test_snapshot_exposes_economic_treatment_state(self) -> None:
         engine = WorldEngine.create(
-            WorldConfig(seed=3, economy_mode="commerce", geography_mode="dispersed"),
+            WorldConfig(
+                seed=3,
+                economy_mode="commerce",
+                geography_mode="dispersed",
+                specialization_mode="specialists",
+            ),
             agent_names=["A1"],
         )
         snapshot = engine.snapshot()
