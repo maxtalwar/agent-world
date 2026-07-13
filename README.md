@@ -194,6 +194,12 @@ generalist condition); override with
 `--assignment-seed N`, or use `--assignment-strategy ordered` only for legacy
 comparisons.
 
+For a paired treatment/control comparison, preserve the exact model-to-spawn
+mapping from a compatible prior run with
+`--assignment-from-manifest runs/prior-run-manifest.json`. Reusing only the
+assignment seed is insufficient when a treatment changes the assignment
+strata, such as specialists versus generalists.
+
 Provider concurrency is independently bounded even when the global worker pool
 is larger:
 

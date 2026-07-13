@@ -106,6 +106,12 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--llm-max-workers", type=int, default=None)
     run_parser.add_argument("--assignment-strategy", choices=["ordered", "stratified"], default=None)
     run_parser.add_argument("--assignment-seed", type=int, default=None)
+    run_parser.add_argument(
+        "--assignment-from-manifest",
+        type=Path,
+        default=None,
+        help="Reuse the exact agent-to-cohort mapping from a prior compatible run manifest.",
+    )
     run_parser.add_argument("--decision-mode", choices=["raw", "validated"], default=None)
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
 
@@ -316,6 +322,20 @@ def _run(args: argparse.Namespace) -> None:
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
 
+        assignment_manifest = getattr(args, "assignment_from_manifest", None)
+        if assignment_manifest is not None:
+            if population_spec is None:
+                raise ValueError("--assignment-from-manifest requires --population")
+            population_spec = _population_with_manifest_assignments(
+                population_spec,
+                assignment_manifest,
+                set(engine.state.agents),
+            )
+            if args.assignment_strategy is not None and args.assignment_strategy != population_spec.assignment_strategy:
+                raise ValueError("--assignment-strategy conflicts with the source manifest")
+            if args.assignment_seed is not None and args.assignment_seed != population_spec.assignment_seed:
+                raise ValueError("--assignment-seed conflicts with the source manifest")
+
     if args.ticks < engine.state.tick:
         raise ValueError(
             f"Target tick {args.ticks} is behind checkpoint tick {engine.state.tick}. "
@@ -389,6 +409,9 @@ def _run(args: argparse.Namespace) -> None:
         "specialization_mode": engine.state.config.specialization_mode,
         "decision_mode": decision_mode,
         "provider_max_workers": provider_max_workers,
+        "assignment_source_manifest": (
+            str(args.assignment_from_manifest) if getattr(args, "assignment_from_manifest", None) else None
+        ),
     }
 
     if not resumed:
@@ -558,6 +581,9 @@ def _ordinary_run_manifest(
         "command": ["python3", "-m", "agent_world.cli", *sys.argv[1:]],
         "config": asdict(engine.state.config),
         "population": population.to_dict(engine.state.agents),
+        "assignment_source_manifest": (
+            str(args.assignment_from_manifest) if getattr(args, "assignment_from_manifest", None) else None
+        ),
         "concurrency": {"global": args.max_workers, "providers": provider_max_workers},
         "provenance": {"git_sha": git_sha, "dirty_worktree": dirty},
         "outputs": {
@@ -586,6 +612,37 @@ def _provider_context_parity(records: list[dict[str, Any]]) -> dict[str, Any]:
         "same_static_game_context": len(set(static_sets)) <= 1 if static_sets else None,
         "same_context_format": len(set(format_sets)) <= 1 if format_sets else None,
     }
+
+
+def _population_with_manifest_assignments(
+    requested: PopulationSpec,
+    manifest_path: Path,
+    agent_ids: set[str],
+) -> PopulationSpec:
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    raw_population = payload.get("population") if isinstance(payload, dict) else None
+    if not isinstance(raw_population, dict):
+        raise ValueError("assignment manifest is missing population metadata")
+    source = PopulationSpec.from_dict(raw_population)
+    requested_signatures = [
+        (group.id, group.count, group.brain.type, group.brain.model, group.brain.reasoning_effort)
+        for group in requested.groups
+    ]
+    source_signatures = [
+        (group.id, group.count, group.brain.type, group.brain.model, group.brain.reasoning_effort)
+        for group in source.groups
+    ]
+    if requested_signatures != source_signatures:
+        raise ValueError("assignment manifest population does not match the requested population")
+    assigned_ids = {agent_id for agent_id, _group_id in source.assigned_groups}
+    if assigned_ids != agent_ids:
+        raise ValueError("assignment manifest agent ids do not match the new world")
+    return PopulationSpec(
+        requested.groups,
+        assignment_strategy=source.assignment_strategy,
+        assignment_seed=source.assignment_seed,
+        assigned_groups=source.assigned_groups,
+    )
 
 
 def _report_llm_usage(args: argparse.Namespace, ticks_completed: int, records: list[dict[str, Any]]) -> None:
