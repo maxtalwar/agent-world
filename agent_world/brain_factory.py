@@ -24,6 +24,7 @@ class BrainSpec:
     type: str = "survival"
     model: str | None = None
     reasoning_effort: str | None = None
+    thinking_budget_tokens: int | None = None
     max_workers: int | None = None
 
     @classmethod
@@ -33,6 +34,7 @@ class BrainSpec:
         *,
         model: str | None = None,
         reasoning_effort: str | None = None,
+        thinking_budget_tokens: int | None = None,
         max_workers: int | None = None,
     ) -> "BrainSpec":
         if brain_type not in SUPPORTED_BRAIN_TYPES:
@@ -41,6 +43,10 @@ class BrainSpec:
             raise ValueError("max_workers must be at least 1")
         if reasoning_effort is not None and reasoning_effort not in ALLOWED_EFFORTS:
             raise ValueError("unsupported reasoning effort")
+        if thinking_budget_tokens is not None and thinking_budget_tokens < 0:
+            raise ValueError("thinking budget must be a non-negative integer")
+        if thinking_budget_tokens is not None and brain_type != "claude":
+            raise ValueError("thinking budget is supported only for Claude brains")
         defaults = {
             "llm": ("OPENAI_MODEL", "z-ai/glm-5.2", "OPENAI_REASONING_EFFORT", "medium"),
             "codex": ("CODEX_MODEL", "gpt-5.6-luna", "CODEX_REASONING_EFFORT", "low"),
@@ -62,6 +68,13 @@ class BrainSpec:
             type=brain_type,
             model=model or os.environ.get(model_env, model_default),
             reasoning_effort=resolved_effort,
+            thinking_budget_tokens=(
+                thinking_budget_tokens
+                if thinking_budget_tokens is not None
+                else int(os.environ.get("CLAUDE_MAX_THINKING_TOKENS", "0"))
+                if brain_type == "claude"
+                else None
+            ),
             max_workers=max(1, workers),
         )
 
@@ -82,6 +95,7 @@ class BrainSpec:
             "type": self.type,
             "model": self.model,
             "reasoning_effort": self.reasoning_effort,
+            "thinking_budget_tokens": self.thinking_budget_tokens,
             "max_workers": self.max_workers,
             "provider": self.provider,
             "billing_mode": self.billing_mode,
@@ -125,7 +139,12 @@ class PopulationSpec:
     @property
     def mixed(self) -> bool:
         signatures = {
-            (group.brain.type, group.brain.model, group.brain.reasoning_effort)
+            (
+                group.brain.type,
+                group.brain.model,
+                group.brain.reasoning_effort,
+                group.brain.thinking_budget_tokens,
+            )
             for group in self.groups
         }
         return len(signatures) > 1
@@ -148,6 +167,7 @@ class PopulationSpec:
         values: Iterable[str],
         *,
         reasoning_effort: str | None = None,
+        claude_thinking_budget_tokens: int | None = None,
         max_workers: int | None = None,
     ) -> "PopulationSpec":
         groups = tuple(
@@ -155,6 +175,7 @@ class PopulationSpec:
                 value,
                 index=index,
                 default_effort=reasoning_effort,
+                claude_thinking_budget_tokens=claude_thinking_budget_tokens,
                 max_workers=max_workers,
             )
             for index, value in enumerate(values, start=1)
@@ -174,6 +195,7 @@ class PopulationSpec:
                 str(raw.get("type") or "survival"),
                 model=raw.get("model"),
                 reasoning_effort=raw.get("reasoning_effort"),
+                thinking_budget_tokens=raw.get("thinking_budget_tokens"),
                 max_workers=raw.get("max_workers"),
             )
             groups.append(
@@ -307,6 +329,7 @@ def _parse_population_group(
     *,
     index: int,
     default_effort: str | None,
+    claude_thinking_budget_tokens: int | None,
     max_workers: int | None,
 ) -> PopulationGroup:
     try:
@@ -333,6 +356,7 @@ def _parse_population_group(
         brain_type,
         model=None if brain_type == "survival" else model,
         reasoning_effort=effort,
+        thinking_budget_tokens=(claude_thinking_budget_tokens if brain_type == "claude" else None),
         max_workers=max_workers,
     )
     return PopulationGroup(count=count, brain=brain, id=f"cohort-{index}")
@@ -381,9 +405,12 @@ def create_population_brains(
         brain_class = constructors[spec.type]
         scope = spec.provider or spec.type
         scoped_runtime = scoped_runtimes.setdefault(scope, runtime.scoped(scope))
-        brains[agent_id] = brain_class(
+        kwargs = dict(
             model=spec.model,
             reasoning_effort=spec.reasoning_effort,
             runtime=scoped_runtime,
         )
+        if spec.type == "claude":
+            kwargs["thinking_budget_tokens"] = spec.thinking_budget_tokens
+        brains[agent_id] = brain_class(**kwargs)
     return brains

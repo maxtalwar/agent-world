@@ -50,6 +50,7 @@ class ClaudeBrain:
         self,
         model: str | None = None,
         reasoning_effort: str | None = None,
+        thinking_budget_tokens: int | None = None,
         timeout_seconds: int | None = None,
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
@@ -57,6 +58,7 @@ class ClaudeBrain:
         self.runtime = runtime or BrainRuntime()
         self.model = model or os.environ.get("CLAUDE_MODEL", "claude-sonnet-5")
         self.reasoning_effort = reasoning_effort or os.environ.get("CLAUDE_REASONING_EFFORT", "low")
+        self.thinking_budget_tokens = _resolve_thinking_budget(thinking_budget_tokens)
         self.timeout_seconds = timeout_seconds or int(os.environ.get("CLAUDE_TIMEOUT_SECONDS", "300"))
         self.timeout_retries = max(0, int(os.environ.get("CLAUDE_TIMEOUT_RETRIES", "1")))
         self.executable = executable or os.environ.get("CLAUDE_EXECUTABLE") or _resolve_claude_executable()
@@ -72,7 +74,7 @@ class ClaudeBrain:
                 text=True,
                 capture_output=True,
                 timeout=min(self.timeout_seconds, 30),
-                env=_plan_auth_environment(),
+                env=_plan_auth_environment(self.thinking_budget_tokens),
                 check=False,
             )
             status = json.loads(completed.stdout or "{}")
@@ -147,7 +149,7 @@ class ClaudeBrain:
             text=True,
             capture_output=True,
             timeout=self.timeout_seconds,
-            env=_plan_auth_environment(),
+            env=_plan_auth_environment(self.thinking_budget_tokens),
             check=False,
         )
 
@@ -186,6 +188,7 @@ class ClaudeBrain:
             "base_url": None,
             "billing_mode": "claude_plan",
             "reasoning_effort": self.reasoning_effort,
+            "thinking_budget_tokens": self.thinking_budget_tokens,
             "prompt_tokens": input_tokens + cache_read + cache_creation,
             "cached_tokens": cache_read,
             "completion_tokens": int(usage.get("output_tokens") or 0),
@@ -262,7 +265,18 @@ def _claude_effort(reasoning_effort: str) -> str:
     return "low" if effort == "minimal" else effort
 
 
-def _plan_auth_environment() -> dict[str, str]:
+def _resolve_thinking_budget(value: int | None) -> int:
+    raw = os.environ.get("CLAUDE_MAX_THINKING_TOKENS", "0") if value is None else value
+    try:
+        budget = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("Claude thinking budget must be a non-negative integer") from exc
+    if budget < 0:
+        raise ValueError("Claude thinking budget must be a non-negative integer")
+    return budget
+
+
+def _plan_auth_environment(thinking_budget_tokens: int | None = None) -> dict[str, str]:
     child_env = os.environ.copy()
     # API and third-party-gateway credentials take precedence over the saved
     # claude.ai login. Remove them so decisions bill the subscription plan.
@@ -279,7 +293,7 @@ def _plan_auth_environment() -> dict[str, str]:
     child_env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
     # Extended thinking burns thousands of plan tokens and ~a minute per tick
     # for a single schema-constrained decision; keep it off unless asked for.
-    child_env["MAX_THINKING_TOKENS"] = os.environ.get("CLAUDE_MAX_THINKING_TOKENS", "0")
+    child_env["MAX_THINKING_TOKENS"] = str(_resolve_thinking_budget(thinking_budget_tokens))
     # Nested-session guard: allow launching claude from inside another claude.
     child_env.pop("CLAUDECODE", None)
     return child_env

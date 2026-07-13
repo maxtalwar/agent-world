@@ -94,6 +94,12 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Reasoning effort for --brain llm/codex/claude. Uses the selected brain's environment default.",
     )
+    run_parser.add_argument(
+        "--claude-thinking-budget-tokens",
+        type=int,
+        default=None,
+        help="Extended-thinking token allowance for Claude decisions (default: CLAUDE_MAX_THINKING_TOKENS or 0).",
+    )
     run_parser.add_argument("--out", type=Path, default=None)
     run_parser.add_argument("--snapshot", type=Path, default=None)
     run_parser.add_argument("--checkpoint", type=Path, default=None, help="Crash-resume checkpoint path. Derived from --out when omitted.")
@@ -249,10 +255,11 @@ def _run(args: argparse.Namespace) -> None:
                 or args.brain
                 or args.model
                 or args.reasoning_effort
+                or getattr(args, "claude_thinking_budget_tokens", None) is not None
             ):
                 raise ValueError(
                     "A population-aware checkpoint must be resumed with its saved population; "
-                    "omit --population, --brain, --model, and --reasoning-effort."
+                    "omit --population, --brain, --model, --reasoning-effort, and --claude-thinking-budget-tokens."
                 )
             population_spec = PopulationSpec.from_dict(saved_population)
         else:
@@ -270,6 +277,18 @@ def _run(args: argparse.Namespace) -> None:
             if args.reasoning_effort is not None and saved_effort is not None and args.reasoning_effort != saved_effort:
                 raise ValueError("A checkpoint must be resumed with its original reasoning effort.")
             args.reasoning_effort = saved_effort if saved_effort is not None else args.reasoning_effort
+            saved_thinking_budget = saved.get("claude_thinking_budget_tokens")
+            if (
+                getattr(args, "claude_thinking_budget_tokens", None) is not None
+                and saved_thinking_budget is not None
+                and args.claude_thinking_budget_tokens != saved_thinking_budget
+            ):
+                raise ValueError("A checkpoint must be resumed with its original Claude thinking budget.")
+            args.claude_thinking_budget_tokens = (
+                saved_thinking_budget
+                if saved_thinking_budget is not None
+                else getattr(args, "claude_thinking_budget_tokens", None)
+            )
         args.ticks = args.ticks if args.ticks is not None else int(saved.get("target_ticks") or engine.state.tick)
         args.agents = len(engine.state.agents)
         if args.out is None and saved.get("events_path"):
@@ -300,6 +319,7 @@ def _run(args: argparse.Namespace) -> None:
             population_spec = PopulationSpec.parse_many(
                 args.population,
                 reasoning_effort=args.reasoning_effort,
+                claude_thinking_budget_tokens=getattr(args, "claude_thinking_budget_tokens", None),
                 max_workers=args.max_workers,
             )
             if args.agents is not None and args.agents != population_spec.total_agents:
@@ -347,6 +367,11 @@ def _run(args: argparse.Namespace) -> None:
             args.brain,
             model=args.model,
             reasoning_effort=args.reasoning_effort,
+            thinking_budget_tokens=(
+                getattr(args, "claude_thinking_budget_tokens", None)
+                if args.brain == "claude"
+                else None
+            ),
             max_workers=args.max_workers,
         )
         population_spec = PopulationSpec.uniform(len(engine.state.agents), brain_spec)
@@ -409,6 +434,7 @@ def _run(args: argparse.Namespace) -> None:
         "specialization_mode": engine.state.config.specialization_mode,
         "decision_mode": decision_mode,
         "provider_max_workers": provider_max_workers,
+        "provider_settings": _provider_settings(population_spec),
         "assignment_source_manifest": (
             str(args.assignment_from_manifest) if getattr(args, "assignment_from_manifest", None) else None
         ),
@@ -436,6 +462,9 @@ def _run(args: argparse.Namespace) -> None:
                 "brain": population_spec.run_type,
                 "model": brain_spec.model if not population_spec.mixed else None,
                 "reasoning_effort": brain_spec.reasoning_effort if not population_spec.mixed else None,
+                "claude_thinking_budget_tokens": (
+                    brain_spec.thinking_budget_tokens if not population_spec.mixed else None
+                ),
                 "population": population_spec.to_dict(engine.state.agents),
                 "target_ticks": args.ticks,
                 "events_path": str(args.out.resolve()) if args.out else None,
@@ -585,6 +614,7 @@ def _ordinary_run_manifest(
             str(args.assignment_from_manifest) if getattr(args, "assignment_from_manifest", None) else None
         ),
         "concurrency": {"global": args.max_workers, "providers": provider_max_workers},
+        "provider_settings": _provider_settings(population),
         "provenance": {"git_sha": git_sha, "dirty_worktree": dirty},
         "outputs": {
             "events": str(events_path) if events_path else None,
@@ -614,6 +644,21 @@ def _provider_context_parity(records: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def _provider_settings(population: PopulationSpec) -> dict[str, Any]:
+    claude_budgets = sorted(
+        {
+            int(group.brain.thinking_budget_tokens or 0)
+            for group in population.groups
+            if group.brain.type == "claude"
+        }
+    )
+    return {
+        "claude_cli": {"thinking_budget_tokens": claude_budgets}
+        if claude_budgets
+        else None
+    }
+
+
 def _population_with_manifest_assignments(
     requested: PopulationSpec,
     manifest_path: Path,
@@ -625,15 +670,15 @@ def _population_with_manifest_assignments(
         raise ValueError("assignment manifest is missing population metadata")
     source = PopulationSpec.from_dict(raw_population)
     requested_signatures = [
-        (group.id, group.count, group.brain.type, group.brain.model, group.brain.reasoning_effort)
+        (group.id, group.count, group.brain.type, group.brain.model)
         for group in requested.groups
     ]
     source_signatures = [
-        (group.id, group.count, group.brain.type, group.brain.model, group.brain.reasoning_effort)
+        (group.id, group.count, group.brain.type, group.brain.model)
         for group in source.groups
     ]
     if requested_signatures != source_signatures:
-        raise ValueError("assignment manifest population does not match the requested population")
+        raise ValueError("assignment manifest cohort ids, counts, brain types, or models do not match")
     assigned_ids = {agent_id for agent_id, _group_id in source.assigned_groups}
     if assigned_ids != agent_ids:
         raise ValueError("assignment manifest agent ids do not match the new world")

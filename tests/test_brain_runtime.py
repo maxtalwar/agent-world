@@ -63,7 +63,8 @@ class BrainRuntimeTests(unittest.TestCase):
 
     def test_population_parser_infers_claude_and_codex_models(self) -> None:
         population = PopulationSpec.parse_many(
-            ["10@claude-sonnet-5", "10@gpt-5.6-luna"]
+            ["10@claude-sonnet-5", "10@gpt-5.6-luna"],
+            claude_thinking_budget_tokens=1024,
         )
 
         self.assertEqual(population.total_agents, 20)
@@ -71,6 +72,8 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(population.groups[0].brain.type, "claude")
         self.assertEqual(population.groups[1].brain.type, "codex")
         self.assertEqual(population.groups[0].brain.model, "claude-sonnet-5")
+        self.assertEqual(population.groups[0].brain.thinking_budget_tokens, 1024)
+        self.assertIsNone(population.groups[1].brain.thinking_budget_tokens)
 
     def test_population_parser_accepts_explicit_future_claude_model(self) -> None:
         population = PopulationSpec.parse_many(["3@claude:claude-fable-future:high"])
@@ -114,9 +117,16 @@ class BrainRuntimeTests(unittest.TestCase):
 
     def test_mixed_factory_assigns_deterministic_cohorts_and_isolates_providers(self) -> None:
         class FakeBrain:
-            def __init__(self, model=None, reasoning_effort=None, runtime=None):
+            def __init__(
+                self,
+                model=None,
+                reasoning_effort=None,
+                thinking_budget_tokens=None,
+                runtime=None,
+            ):
                 self.model = model
                 self.reasoning_effort = reasoning_effort
+                self.thinking_budget_tokens = thinking_budget_tokens
                 self.runtime = runtime
 
         engine = WorldEngine.create(

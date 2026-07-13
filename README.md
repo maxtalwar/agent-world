@@ -158,9 +158,10 @@ per-call token usage is still recorded. When plan limits are hit the run stops
 early with `Claude quota unavailable` so the log is not mistaken for agent
 behavior. Run startup also checks `claude auth status` without spending a model
 turn and stops at tick zero if the saved Claude-plan login is unavailable.
-Extended thinking is disabled by default (it costs thousands of plan
-tokens and ~a minute per decision); set `CLAUDE_MAX_THINKING_TOKENS` to a
-positive budget to re-enable it. Other environment knobs: `CLAUDE_MODEL`,
+Extended thinking is disabled by default. Enable it reproducibly with
+`--claude-thinking-budget-tokens N` (or set `CLAUDE_MAX_THINKING_TOKENS`);
+the resolved budget is saved in the population, run manifest, checkpoint, and
+every Claude usage record. Other environment knobs: `CLAUDE_MODEL`,
 `CLAUDE_REASONING_EFFORT`, `CLAUDE_TIMEOUT_SECONDS`, `CLAUDE_EXECUTABLE`,
 `CLAUDE_MAX_PARALLEL_AGENTS`.
 
@@ -205,6 +206,14 @@ is larger:
 
 ```bash
 --max-workers 8 --claude-max-workers 4 --codex-max-workers 4
+```
+
+Reasoning experiments can keep the same model-to-agent mapping while changing
+effort and Claude's extended-thinking budget:
+
+```bash
+--reasoning-effort medium --claude-thinking-budget-tokens 1024 \
+--assignment-from-manifest runs/prior-run-manifest.json
 ```
 
 `--decision-mode raw` preserves every model-proposed action for unassisted

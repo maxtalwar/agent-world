@@ -60,6 +60,33 @@ class CliTelemetryTests(unittest.TestCase):
             {"agent-1": "cohort-2", "agent-2": "cohort-1"},
         )
 
+    def test_assignment_replay_allows_reasoning_treatment_changes(self) -> None:
+        source_population = PopulationSpec.parse_many(
+            ["1@claude-sonnet-5:low", "1@gpt-5.6-luna:low"]
+        )
+        requested = PopulationSpec.parse_many(
+            ["1@claude-sonnet-5:medium", "1@gpt-5.6-luna:medium"],
+            claude_thinking_budget_tokens=1024,
+        )
+        source = {
+            "population": {
+                **source_population.to_dict(["agent-1", "agent-2"]),
+                "assignment_strategy": "stratified",
+                "assignment_seed": 101,
+                "assignments": {"agent-1": "cohort-2", "agent-2": "cohort-1"},
+            }
+        }
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "manifest.json"
+            path.write_text(json.dumps(source), encoding="utf-8")
+            replayed = _population_with_manifest_assignments(
+                requested, path, {"agent-1", "agent-2"}
+            )
+
+        self.assertEqual(replayed.groups[0].brain.reasoning_effort, "medium")
+        self.assertEqual(replayed.groups[0].brain.thinking_budget_tokens, 1024)
+        self.assertEqual(dict(replayed.assigned_groups)["agent-1"], "cohort-2")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -99,6 +99,7 @@ class ClaudeBrainTests(unittest.TestCase):
         records = brain.runtime.usage_records()
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["billing_mode"], "claude_plan")
+        self.assertEqual(records[0]["thinking_budget_tokens"], 0)
         self.assertEqual(records[0]["prompt_tokens"], 1200)
         self.assertEqual(records[0]["cached_tokens"], 700)
         self.assertEqual(records[0]["tick"], 2)
@@ -114,6 +115,23 @@ class ClaudeBrainTests(unittest.TestCase):
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
         command = run.call_args.args[0]
         self.assertEqual(command[command.index("--effort") + 1], "low")
+
+    def test_explicit_thinking_budget_reaches_child_and_usage_provenance(self) -> None:
+        completed = subprocess.CompletedProcess(["claude"], 0, stdout=_successful_stdout(), stderr="")
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+            brain = ClaudeBrain(
+                executable="claude",
+                reasoning_effort="medium",
+                thinking_budget_tokens=1024,
+            )
+            brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+
+        self.assertEqual(run.call_args.kwargs["env"]["MAX_THINKING_TOKENS"], "1024")
+        self.assertEqual(brain.runtime.usage_records()[0]["thinking_budget_tokens"], 1024)
+
+    def test_negative_thinking_budget_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "non-negative"):
+            ClaudeBrain(executable="claude", thinking_budget_tokens=-1)
 
     def test_quota_failure_opens_circuit(self) -> None:
         completed = subprocess.CompletedProcess(
