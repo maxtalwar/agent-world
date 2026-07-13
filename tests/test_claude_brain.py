@@ -103,6 +103,9 @@ class ClaudeBrainTests(unittest.TestCase):
         self.assertEqual(records[0]["cached_tokens"], 700)
         self.assertEqual(records[0]["tick"], 2)
         self.assertEqual(records[0]["cost"], 0)
+        self.assertEqual(records[0]["game_context_format"], "static_context_v2+compact_dynamic_v2")
+        self.assertEqual(len(records[0]["game_static_context_sha256"]), 64)
+        self.assertEqual(len(records[0]["game_dynamic_observation_sha256"]), 64)
 
     def test_minimal_effort_maps_to_low_for_the_cli(self) -> None:
         completed = subprocess.CompletedProcess(["claude"], 0, stdout=_successful_stdout(), stderr="")

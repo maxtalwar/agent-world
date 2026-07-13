@@ -150,6 +150,9 @@ class CodexBrain:
             "static_prompt_sha256": hashlib.sha256(
                 f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
             ).hexdigest(),
+            "game_static_context_sha256": hashlib.sha256(static_context.encode("utf-8")).hexdigest(),
+            "game_dynamic_observation_sha256": hashlib.sha256(dynamic_json.encode("utf-8")).hexdigest(),
+            "game_context_format": "static_context_v2+compact_dynamic_v2",
             "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
         }
 

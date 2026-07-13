@@ -191,7 +191,8 @@ PROMPT_RULES = [
     "Actions run in list order until action points run out; budget listed AP and energy.",
     "Messages happen before actions and use the listed communication AP cost.",
     "self.reserves are food/water/energy: higher is better, 0 is danger.",
-    "Use recent_action_feedback to avoid repeating invalid actions.",
+    "Use recent_action_feedback; do not repeat invalid actions.",
+    "Others may change state before resolution.",
 ]
 
 
@@ -334,7 +335,8 @@ def build_static_context(world: dict[str, Any]) -> str:
             [
                 "",
                 "PHYSICAL EXCHANGE:",
-                "- Offer give-items are deposited at escrow_position; both parties must meet there to settle.",
+                "- Give-items are escrowed here; both parties must meet at escrow_position.",
+                "- Payment is unreserved until settlement.",
                 "- Public offers/prices are local knowledge; agents must move information.",
                 "- Expired/rejected goods remain as an owned pile if the owner is away.",
                 "- High-aptitude specialty work yields more for less energy; low aptitude costs +2 energy and learns slowly.",

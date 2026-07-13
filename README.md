@@ -246,6 +246,21 @@ python3 -m agent_world.cli report runs/a.jsonl runs/b.jsonl
 
 Passing multiple logs prints a metric-by-metric comparison table after writing the reports.
 
+Reports use proposed model actions—not the much larger event stream—as the
+invalid-action denominator. They also include invalidity attribution from each
+logged pre-tick observation, a trade funnel, occupation and
+model-by-occupation outcomes, and provider game-context fingerprints in the
+run manifest. Disable agent IO logging only when smaller logs matter more than
+those diagnostics.
+
+Before changing the experimental specialist packages, measure their non-social
+scripted survival floor across many seeds:
+
+```bash
+python3 -m agent_world.cli benchmark-roles --seeds $(seq 1 100) --ticks 50 \
+  --out runs/role-viability.json
+```
+
 ### Efficient, run-scoped telemetry
 
 Codex reports now calculate `simulation_credits` from the token usage of the simulation's own decisions. Uncached input, cached input, and output are priced separately with a versioned Luna/Terra/Sol rate table; reasoning tokens are reported but not double-charged because they are already included in output. This is separate from `*-plan-usage.json`, whose sparse account snapshots can include work done by the supervising Codex task or another window. Account snapshots default to run start and terminal state only; set `CODEX_PLAN_SNAPSHOT_INTERVAL_TICKS` to a positive interval if you want additional diagnostics during a long run.

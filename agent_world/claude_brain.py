@@ -97,6 +97,9 @@ class ClaudeBrain:
             "agent_dynamic_observation_chars": len(dynamic_json),
             "request_payload_bytes": len(f"{system_prompt}\n\n{user_prompt}".encode("utf-8")),
             "static_prompt_sha256": hashlib.sha256(system_prompt.encode("utf-8")).hexdigest(),
+            "game_static_context_sha256": hashlib.sha256(static_context.encode("utf-8")).hexdigest(),
+            "game_dynamic_observation_sha256": hashlib.sha256(dynamic_json.encode("utf-8")).hexdigest(),
+            "game_context_format": "static_context_v2+compact_dynamic_v2",
             "request_sha256": hashlib.sha256(f"{system_prompt}\n\n{user_prompt}".encode("utf-8")).hexdigest(),
         }
 

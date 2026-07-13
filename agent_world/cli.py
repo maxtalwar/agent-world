@@ -32,6 +32,7 @@ from agent_world.openai_brain import OpenAIBrain
 from agent_world.observer import serve_observer
 from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
 from agent_world.replay import format_event, read_events
+from agent_world.role_benchmark import run_role_viability_benchmark
 from agent_world.run_report import format_comparison, load_run_files, write_report
 from agent_world.session import SimulationSession
 from agent_world.usage import summarize_codex_simulation_credits
@@ -150,6 +151,14 @@ def main(argv: list[str] | None = None) -> None:
     )
     report_parser.add_argument("paths", type=Path, nargs="+", help="Run event logs (.jsonl) with matching -snapshot.json files.")
 
+    role_parser = subparsers.add_parser(
+        "benchmark-roles",
+        help="Measure the non-social scripted survival floor of experimental specialist packages.",
+    )
+    role_parser.add_argument("--seeds", type=int, nargs="+", default=list(range(1, 101)))
+    role_parser.add_argument("--ticks", type=int, default=50)
+    role_parser.add_argument("--out", type=Path, default=None)
+
     experiment_parser = subparsers.add_parser(
         "experiment",
         help="Run a reproducible multi-seed environment x objective factorial experiment.",
@@ -203,8 +212,19 @@ def main(argv: list[str] | None = None) -> None:
         _ablate(args)
     elif args.command == "report":
         _report(args)
+    elif args.command == "benchmark-roles":
+        _benchmark_roles(args)
     elif args.command == "experiment":
         _experiment(args)
+
+
+def _benchmark_roles(args: argparse.Namespace) -> None:
+    result = run_role_viability_benchmark(args.seeds, ticks=args.ticks)
+    rendered = json.dumps(result, indent=2, sort_keys=True)
+    print(rendered)
+    if args.out is not None:
+        atomic_write_json(args.out, result)
+        print(f"Wrote role viability benchmark to {args.out}")
 
 
 def _run(args: argparse.Namespace) -> None:
@@ -497,6 +517,7 @@ def _run(args: argparse.Namespace) -> None:
                         ).items()
                     )
                 ),
+                "provider_context_parity": _provider_context_parity(usage_records),
             }
         )
         atomic_write_json(manifest_path, run_manifest)
@@ -546,6 +567,24 @@ def _ordinary_run_manifest(
             "report_json": f"{report_stem}-report.json" if report_stem else None,
             "report_markdown": f"{report_stem}-report.md" if report_stem else None,
         },
+    }
+
+
+def _provider_context_parity(records: list[dict[str, Any]]) -> dict[str, Any]:
+    providers: dict[str, dict[str, Any]] = {}
+    for provider in sorted({str(record.get("provider") or "unknown") for record in records}):
+        provider_records = [record for record in records if str(record.get("provider") or "unknown") == provider]
+        providers[provider] = {
+            "records": len(provider_records),
+            "formats": sorted({str(record.get("game_context_format")) for record in provider_records if record.get("game_context_format")}),
+            "static_context_sha256": sorted({str(record.get("game_static_context_sha256")) for record in provider_records if record.get("game_static_context_sha256")}),
+        }
+    static_sets = [tuple(provider["static_context_sha256"]) for provider in providers.values() if provider["static_context_sha256"]]
+    format_sets = [tuple(provider["formats"]) for provider in providers.values() if provider["formats"]]
+    return {
+        "providers": providers,
+        "same_static_game_context": len(set(static_sets)) <= 1 if static_sets else None,
+        "same_context_format": len(set(format_sets)) <= 1 if format_sets else None,
     }
 
 

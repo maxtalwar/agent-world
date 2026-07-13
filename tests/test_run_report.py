@@ -347,6 +347,9 @@ class RunReportTests(unittest.TestCase):
         self.assertEqual(trades["invalid_accept_reasons"], {"Trade is not open.": 1})
         self.assertEqual(trades["offered_group_status"]["in_group"], 2)
         self.assertEqual(trades["accepted_group_status"]["in_group"], 1)
+        self.assertEqual(trades["funnel"]["offer_creation_attempts"], 2)
+        self.assertEqual(trades["funnel"]["offers_with_acceptance_attempt"], 2)
+        self.assertEqual(trades["funnel"]["offers_completed"], 1)
 
         construction = economy["construction"]
         self.assertEqual(construction["contributions"]["quantity"], 3)
@@ -358,6 +361,74 @@ class RunReportTests(unittest.TestCase):
             construction["contributor_ownership"]["agent-1"]["contribution_value_to_group_owned_assets"],
             6,
         )
+
+    def test_report_uses_proposed_actions_and_attributes_observed_invalidity(self) -> None:
+        snapshot = {
+            "tick": 1,
+            "config": {"seed": 1, "action_points_per_tick": 4},
+            "agents": {
+                "agent-1": {
+                    "alive": True,
+                    "health": 100,
+                    "inventory": {},
+                    "groups": [],
+                    "specialty": "miner",
+                }
+            },
+            "groups": {},
+            "structures": {},
+            "trades": {},
+        }
+        population = {
+            "type": "uniform",
+            "total_agents": 1,
+            "assignment_strategy": "ordered",
+            "assignment_seed": 1,
+            "assignments": {"agent-1": "cohort-1"},
+            "groups": [{"id": "cohort-1", "type": "survival", "model": None}],
+        }
+        events = [
+            {"type": "run_started", "tick": 0, "actor_id": None, "message": "start", "data": {"population": population, "target_ticks": 1}},
+            {
+                "type": "agent_observation",
+                "tick": 0,
+                "actor_id": "agent-1",
+                "message": None,
+                "data": {
+                    "observation": {
+                        "self": {"id": "agent-1", "position": {"x": 1, "y": 1}, "inventory": {}},
+                        "local_map": [{"p": [1, 1], "t": "mountain", "r": {}}],
+                    }
+                },
+            },
+            {
+                "type": "agent_response",
+                "tick": 0,
+                "actor_id": "agent-1",
+                "message": "mine",
+                "data": {"actions": [{"type": "mine", "resource": "ore"}, {"type": "wait"}]},
+            },
+            {
+                "type": "invalid_action",
+                "tick": 0,
+                "actor_id": "agent-1",
+                "message": "No ore is available.",
+                "data": {"action": {"type": "mine", "resource": "ore"}},
+            },
+            {"type": "run_completed", "tick": 1, "actor_id": None, "message": "done", "data": {"target_ticks": 1}},
+        ]
+
+        report = build_report(events, snapshot)
+
+        self.assertEqual(report["actions"]["diagnostics"]["proposed_actions"], 2)
+        self.assertEqual(report["reliability"]["invalid_actions_per_proposed_action_pct"], 50.0)
+        self.assertEqual(
+            report["actions"]["diagnostics"]["observation_attribution"],
+            {"known_invalid_from_observation": 1},
+        )
+        specialty = report["population"]["specialties"]["by_specialty"]["miner"]
+        self.assertEqual(specialty["living"], 1)
+        self.assertEqual(specialty["invalid_actions_per_proposed_action_pct"], 50.0)
 
     def test_write_report_creates_json_and_markdown(self) -> None:
         events, snapshot = _run_short_sim()

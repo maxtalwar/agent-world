@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_world.metrics import is_decision_failure_message, is_quota_failure_message
-from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
+from agent_world.rules import RESOURCE_VALUES, TERRAIN_RULES, recipes_for_mode
 from agent_world.usage import summarize_codex_simulation_credits
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
@@ -80,13 +80,14 @@ def build_report(
 
     transfer_group_context = _transfer_group_context(events, snapshot)
     gifts = _summarize_gifts(sim_events, transfer_group_context)
-    trades = _summarize_trades(sim_events, snapshot, transfer_group_context)
+    trades = _summarize_trades(events, snapshot, transfer_group_context)
     construction = _summarize_construction_economy(sim_events, snapshot)
     institutions = _summarize_economic_institutions(sim_events, snapshot)
 
     invalid_reasons = Counter(
         event["message"] for event in sim_events if event["type"] == "invalid_action"
     )
+    action_diagnostics = _summarize_action_validity(events)
     llm_failures = [
         event
         for event in events
@@ -167,7 +168,7 @@ def build_report(
 
     wealth_values = [agent["wealth"] for agent in agents.values()]
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "source": source,
         "run": run_summary,
         "config": snapshot.get("config", {}),
@@ -193,6 +194,7 @@ def build_report(
             },
             "invalid_total": action_counts.get("invalid_action", 0),
             "invalid_reasons": dict(invalid_reasons.most_common()),
+            "diagnostics": action_diagnostics,
         },
         "structures": {
             "complete": dict(Counter(structure["type"] for structure in complete)),
@@ -238,7 +240,16 @@ def build_report(
                 Counter(event.get("actor_id") or "unknown" for event in llm_failures).most_common()
             ),
             "invalid_action_rate_pct": (
-                round(100 * action_counts.get("invalid_action", 0) / len(sim_events), 1) if sim_events else 0.0
+                action_diagnostics["invalid_actions_per_proposed_action_pct"]
+            ),
+            "invalid_actions_per_proposed_action_pct": action_diagnostics[
+                "invalid_actions_per_proposed_action_pct"
+            ],
+            "invalid_actions_per_decision": action_diagnostics["invalid_actions_per_decision"],
+            "invalid_event_share_pct": (
+                round(100 * action_counts.get("invalid_action", 0) / len(sim_events), 1)
+                if sim_events
+                else 0.0
             ),
         },
         "usage": usage,
@@ -284,6 +295,11 @@ def _summarize_population(
             if event.get("type") not in AGENT_IO_EVENT_TYPES
         )
         decision_count = sum(event.get("type") == "agent_response" for event in cohort_events)
+        proposed_action_count = sum(
+            len(((event.get("data") or {}).get("actions") or []))
+            for event in cohort_events
+            if event.get("type") == "agent_response"
+        )
         resolved_models = Counter(
             str(record.get("response_model") or record.get("model") or "unknown")
             for record in cohort_usage
@@ -307,6 +323,10 @@ def _summarize_population(
             "invalid_actions_per_decision": round(
                 action_counts.get("invalid_action", 0) / decision_count, 3
             ) if decision_count else None,
+            "proposed_actions": proposed_action_count,
+            "invalid_actions_per_proposed_action_pct": round(
+                100 * action_counts.get("invalid_action", 0) / proposed_action_count, 1
+            ) if proposed_action_count else 0.0,
             "decisions": decision_count,
             "usage": {
                 "calls": len(cohort_usage),
@@ -356,6 +376,217 @@ def _summarize_population(
             "gifts": dict(gift_matrix),
             "construction_contributions": dict(construction_matrix),
         },
+        "specialties": _summarize_specialties(events, snapshot, assignments),
+    }
+
+
+def _summarize_action_validity(events: list[dict[str, Any]]) -> dict[str, Any]:
+    responses = [event for event in events if event.get("type") == "agent_response"]
+    proposed_actions = sum(len(((event.get("data") or {}).get("actions") or [])) for event in responses)
+    invalid_events = [event for event in events if event.get("type") == "invalid_action"]
+    observations = {
+        (event.get("tick"), event.get("actor_id")): (event.get("data") or {}).get("observation") or {}
+        for event in events
+        if event.get("type") == "agent_observation"
+    }
+    reason_categories: Counter[str] = Counter()
+    observation_attribution: Counter[str] = Counter()
+    for event in invalid_events:
+        reason = str(event.get("message") or "")
+        action = ((event.get("data") or {}).get("action") or {})
+        observation = observations.get((event.get("tick"), event.get("actor_id")))
+        reason_categories[_invalid_reason_category(reason)] += 1
+        observation_attribution[_invalid_observation_attribution(reason, action, observation)] += 1
+    decisions = len(responses)
+    invalid_count = len(invalid_events)
+    return {
+        "decisions": decisions,
+        "proposed_actions": proposed_actions,
+        "mean_proposed_actions_per_decision": round(proposed_actions / decisions, 3) if decisions else 0.0,
+        "invalid_actions_per_decision": round(invalid_count / decisions, 3) if decisions else 0.0,
+        "invalid_actions_per_proposed_action_pct": (
+            round(100 * invalid_count / proposed_actions, 1) if proposed_actions else 0.0
+        ),
+        "reason_categories": dict(reason_categories.most_common()),
+        "observation_attribution": dict(observation_attribution.most_common()),
+        "observation_attribution_note": (
+            "Diagnostic classification from the logged pre-tick observation. "
+            "Potential state changes include other-agent contention and earlier actions in the same submitted plan."
+        ),
+    }
+
+
+def _invalid_reason_category(reason: str) -> str:
+    if any(marker in reason for marker in ("action points", "requires 2 action points", "requires 3 action points", "requires 8 energy", "Not enough energy", "gather requires")):
+        return "action_budget_or_energy"
+    if any(marker in reason for marker in ("Trade", "trade", "Offerer", "Recipient", "Both parties", "own trade")):
+        return "trade_coordination_or_state"
+    if any(marker in reason for marker in ("Destination", "outside world bounds", "Moving into")):
+        return "movement_or_occupancy"
+    if reason.startswith("No ") or any(marker in reason for marker in ("requires fishable food", "requires an accessible farm", "finite food capacity", "requires access")):
+        return "resource_or_access_unavailable"
+    if any(marker in reason for marker in ("Gift", "Whisper", "carrying capacity")):
+        return "target_or_carry_constraint"
+    return "other"
+
+
+def _invalid_observation_attribution(
+    reason: str,
+    action: dict[str, Any],
+    observation: dict[str, Any] | None,
+) -> str:
+    if observation is None:
+        return "observation_unavailable"
+    category = _invalid_reason_category(reason)
+    if category == "action_budget_or_energy":
+        return "known_constraint_or_plan_sequence"
+    if "Both parties must meet" in reason:
+        return "coordination_state_uncertain"
+    if reason == "Recipient lacks requested goods.":
+        trade = _observed_trade(observation, str(action.get("trade_id") or ""))
+        required = (trade or {}).get("receive") or {}
+        inventory = ((observation.get("self") or {}).get("inventory") or {})
+        return (
+            "potential_same_tick_or_plan_state_change"
+            if required and _mapping_contains(inventory, required)
+            else "known_invalid_from_observation"
+        )
+    if reason == "Offerer does not currently hold the offered goods.":
+        inventory = ((observation.get("self") or {}).get("inventory") or {})
+        required = action.get("give") or {}
+        return (
+            "potential_same_tick_or_plan_state_change"
+            if required and _mapping_contains(inventory, required)
+            else "known_invalid_from_observation"
+        )
+    if reason == "Trade is not open.":
+        return (
+            "potential_same_tick_or_plan_state_change"
+            if _observed_trade(observation, str(action.get("trade_id") or ""))
+            else "known_invalid_from_observation"
+        )
+    if category in {"resource_or_access_unavailable", "movement_or_occupancy"}:
+        supported = _observation_supports_action(observation, action)
+        if supported is True:
+            return "potential_same_tick_or_plan_state_change"
+        if supported is False:
+            return "known_invalid_from_observation"
+    if category == "trade_coordination_or_state":
+        return "coordination_state_uncertain"
+    return "not_classified"
+
+
+def _observed_trade(observation: dict[str, Any], trade_id: str) -> dict[str, Any] | None:
+    return next(
+        (trade for trade in observation.get("open_trades", []) if str(trade.get("id")) == trade_id),
+        None,
+    )
+
+
+def _mapping_contains(inventory: dict[str, Any], required: dict[str, Any]) -> bool:
+    return all(int(inventory.get(item) or 0) >= int(quantity or 0) for item, quantity in required.items())
+
+
+def _observation_supports_action(observation: dict[str, Any], action: dict[str, Any]) -> bool | None:
+    self_state = observation.get("self") or {}
+    position = self_state.get("position") or {}
+    try:
+        current = (int(position["x"]), int(position["y"]))
+    except (KeyError, TypeError, ValueError):
+        return None
+    tiles = {
+        tuple(tile.get("p") or ()): tile
+        for tile in observation.get("local_map", [])
+        if len(tile.get("p") or ()) == 2
+    }
+    action_type = str(action.get("type") or "")
+    if action_type == "consume":
+        item = str(action.get("item") or "")
+        return int((self_state.get("inventory") or {}).get(item) or 0) >= int(action.get("quantity") or 1)
+    if action_type in {"gather", "chop", "mine"}:
+        item = str(action.get("resource") or "")
+        if action_type == "chop":
+            item = "wood"
+        elif action_type == "mine" and item not in {"ore", "stone"}:
+            item = "ore"
+        if item == "water":
+            return any(
+                abs(pos[0] - current[0]) + abs(pos[1] - current[1]) <= 1
+                and int((tile.get("r") or {}).get("water") or 0) > 0
+                for pos, tile in tiles.items()
+            )
+        return int((tiles.get(current, {}).get("r") or {}).get(item) or 0) > 0
+    if action_type == "fish":
+        return any(
+            abs(pos[0] - current[0]) + abs(pos[1] - current[1]) <= 1
+            and tile.get("t") == "water"
+            and int((tile.get("r") or {}).get("food") or 0) > 0
+            for pos, tile in tiles.items()
+        )
+    if action_type == "move":
+        delta = {"north": (0, -1), "south": (0, 1), "east": (1, 0), "west": (-1, 0)}.get(str(action.get("direction") or ""))
+        if delta is None:
+            return False
+        destination = (current[0] + delta[0], current[1] + delta[1])
+        tile = tiles.get(destination)
+        if tile is None:
+            return False
+        terrain = TERRAIN_RULES.get(str(tile.get("t") or ""))
+        if terrain is None or not terrain.passable:
+            return False
+        occupants = sum(
+            tuple(agent.get("p") or ()) == destination for agent in observation.get("nearby_agents", [])
+        )
+        return occupants < terrain.max_occupants
+    return None
+
+
+def _summarize_specialties(
+    events: list[dict[str, Any]],
+    snapshot: dict[str, Any],
+    assignments: dict[str, Any],
+) -> dict[str, Any]:
+    agents = snapshot.get("agents") or {}
+    structures = snapshot.get("structures") or {}
+    by_specialty: dict[str, dict[str, Any]] = {}
+    matrix: dict[str, dict[str, Any]] = {}
+    specialties = sorted({str((agent or {}).get("specialty") or "generalist") for agent in agents.values()})
+    cohort_ids = sorted({str(value) for value in assignments.values()})
+    for specialty in specialties:
+        members = sorted(agent_id for agent_id, agent in agents.items() if str((agent or {}).get("specialty") or "generalist") == specialty)
+        by_specialty[specialty] = _agent_slice_summary(events, agents, structures, members)
+        for cohort_id in cohort_ids:
+            cohort_members = [agent_id for agent_id in members if str(assignments.get(agent_id)) == cohort_id]
+            if cohort_members:
+                matrix[f"{cohort_id}:{specialty}"] = _agent_slice_summary(events, agents, structures, cohort_members)
+    return {"by_specialty": by_specialty, "cohort_specialty_matrix": matrix}
+
+
+def _agent_slice_summary(
+    events: list[dict[str, Any]],
+    agents: dict[str, Any],
+    structures: dict[str, Any],
+    members: list[str],
+) -> dict[str, Any]:
+    member_set = set(members)
+    member_events = [event for event in events if event.get("actor_id") in member_set]
+    responses = [event for event in member_events if event.get("type") == "agent_response"]
+    proposed = sum(len(((event.get("data") or {}).get("actions") or [])) for event in responses)
+    counts = Counter(event.get("type") for event in member_events if event.get("type") not in AGENT_IO_EVENT_TYPES)
+    invalid = counts.get("invalid_action", 0)
+    return {
+        "agents": members,
+        "initial_agents": len(members),
+        "living": sum(bool((agents.get(agent_id) or {}).get("alive")) for agent_id in members),
+        "dead": sum(not bool((agents.get(agent_id) or {}).get("alive")) for agent_id in members),
+        "decisions": len(responses),
+        "proposed_actions": proposed,
+        "invalid_actions": invalid,
+        "invalid_actions_per_proposed_action_pct": round(100 * invalid / proposed, 1) if proposed else 0.0,
+        "gifts_sent": counts.get("gift", 0),
+        "trades_offered": counts.get("offer_trade", 0),
+        "trades_accepted": counts.get("accept_trade", 0),
+        "structures_owned": sum(str(structure.get("owner_id")) in member_set for structure in structures.values()),
     }
 
 
@@ -636,6 +867,63 @@ def _summarize_trades(
     offered_group_statuses = Counter(
         group_context.get(id(event), {"status": "unknown"})["status"] for event in offered_events
     )
+    invalid_offer_events = [
+        event
+        for event in events
+        if event.get("type") == "invalid_action"
+        and ((event.get("data") or {}).get("action") or {}).get("type") == "offer_trade"
+    ]
+    observed_by_counterparty: set[str] = set()
+    offer_observations = 0
+    for event in events:
+        if event.get("type") != "agent_observation":
+            continue
+        actor_id = str(event.get("actor_id") or "")
+        for trade in (((event.get("data") or {}).get("observation") or {}).get("open_trades") or []):
+            trade_id = str(trade.get("id") or "")
+            if trade_id and str(trade.get("from_agent") or "") != actor_id:
+                observed_by_counterparty.add(trade_id)
+                offer_observations += 1
+    attempted_offer_ids = {
+        str((((event.get("data") or {}).get("trade") or {}).get("id") or ""))
+        for event in accepted_events
+    }
+    attempted_offer_ids.update(
+        str((((event.get("data") or {}).get("action") or {}).get("trade_id") or ""))
+        for event in invalid_accept_events
+    )
+    attempted_offer_ids.discard("")
+    completed_offer_ids = {
+        str((((event.get("data") or {}).get("trade") or {}).get("id") or ""))
+        for event in accepted_events
+    }
+    completed_offer_ids.discard("")
+    reached_meeting_ids = set(completed_offer_ids)
+    failure_stages: Counter[str] = Counter()
+    for event in invalid_accept_events:
+        reason = str(event.get("message") or "unknown")
+        trade_id = str((((event.get("data") or {}).get("action") or {}).get("trade_id") or ""))
+        if "Both parties must meet" in reason:
+            stage = "meeting_not_complete"
+        elif reason == "Recipient lacks requested goods.":
+            stage = "buyer_payment_unavailable"
+            if trade_id:
+                reached_meeting_ids.add(trade_id)
+        elif "carrying capacity" in reason or "escrow" in reason:
+            stage = "settlement_capacity_or_escrow"
+            if trade_id:
+                reached_meeting_ids.add(trade_id)
+        elif reason == "Trade is not open.":
+            stage = "offer_already_resolved"
+        else:
+            stage = "eligibility_or_counterparty_state"
+        failure_stages[stage] += 1
+    expired_without_attempt = sum(
+        1
+        for event in events
+        if event.get("type") == "expire_trade"
+        and str((((event.get("data") or {}).get("trade") or {}).get("id") or "")) not in attempted_offer_ids
+    )
 
     return {
         "offered": offered,
@@ -659,6 +947,21 @@ def _summarize_trades(
         "accept_success_rate_pct": round(100 * accepted / accept_attempts, 1) if accept_attempts else 0.0,
         "invalid_accepts": len(invalid_accept_events),
         "invalid_accept_reasons": dict(invalid_accept_reasons.most_common()),
+        "funnel": {
+            "offer_creation_attempts": offered + len(invalid_offer_events),
+            "offers_created": offered,
+            "offer_creation_invalid": len(invalid_offer_events),
+            "offer_creation_invalid_reasons": dict(
+                Counter(event.get("message") or "unknown" for event in invalid_offer_events).most_common()
+            ),
+            "offers_observed_by_counterparty": len(observed_by_counterparty),
+            "counterparty_offer_observations": offer_observations,
+            "offers_with_acceptance_attempt": len(attempted_offer_ids),
+            "offers_reaching_meeting_and_inventory_checks": len(reached_meeting_ids),
+            "offers_completed": len(completed_offer_ids),
+            "acceptance_failure_stages": dict(failure_stages.most_common()),
+            "offers_expired_without_acceptance_attempt": expired_without_attempt,
+        },
         "offered_group_status": {
             status: offered_group_statuses.get(status, 0)
             for status in ("in_group", "out_group", "unknown")
@@ -1156,6 +1459,15 @@ def render_markdown(report: dict[str, Any]) -> str:
             f"{cohort.get('gifts_sent', 0)} gifts, "
             f"{cohort.get('trades_offered', 0)} offers/{cohort.get('trades_accepted', 0)} accepts"
         )
+    specialty_lines = [
+        f"- {specialty}: {summary.get('living')}/{summary.get('initial_agents')} living, "
+        f"{summary.get('invalid_actions_per_proposed_action_pct', 0)}% proposed actions invalid, "
+        f"{summary.get('trades_offered', 0)} offers/{summary.get('trades_accepted', 0)} accepts, "
+        f"{summary.get('structures_owned', 0)} structures"
+        for specialty, summary in ((population.get("specialties") or {}).get("by_specialty") or {}).items()
+    ]
+    action_diagnostics = report.get("actions", {}).get("diagnostics", {})
+    trade_funnel = economy.get("trades", {}).get("funnel", {})
     lines = [
         f"# Run report: {report.get('source') or 'unnamed'}",
         "",
@@ -1170,6 +1482,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         *_render_simulation_credit_lines(usage.get("simulation_credits")),
         *_render_plan_usage_lines(usage.get("plan_limits")),
         *(["", "## Model cohorts", *cohort_lines] if len(cohort_lines) > 1 else []),
+        *(["", "## Occupations", *specialty_lines] if specialty_lines else []),
         "",
         "## Society",
         f"- Groups: {len(report['groups'])}"
@@ -1191,6 +1504,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         f" / {economy['trades']['expired']} expired"
         f" | conversion: {economy['trades'].get('conversion_rate_pct', '?')}%"
         f" | invalid accepts: {economy['trades'].get('invalid_accepts', 0)}",
+        f"- Trade funnel: {trade_funnel.get('offers_observed_by_counterparty', 0)} offers observed by counterparties"
+        f" / {trade_funnel.get('offers_with_acceptance_attempt', 0)} attempted"
+        f" / {trade_funnel.get('offers_reaching_meeting_and_inventory_checks', 0)} reached settlement checks"
+        f" / {trade_funnel.get('offers_completed', 0)} completed"
+        f" | expired without attempt: {trade_funnel.get('offers_expired_without_acceptance_attempt', 0)}",
         f"- Construction contributions: {construction.get('contributions', {}).get('value', '?')} value"
         f" | productive assets: {construction.get('assets', {}).get('count', '?')}",
         f"- Contracts: {institutions.get('contracts', {}).get('offered', 0)} offered"
@@ -1223,7 +1541,11 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         "## Reliability",
         f"- Invalid actions: {report['actions']['invalid_total']}"
-        f" ({report['reliability']['invalid_action_rate_pct']}% of events)",
+        f" / {action_diagnostics.get('proposed_actions', 0)} proposed"
+        f" ({report['reliability']['invalid_actions_per_proposed_action_pct']}% of proposed actions)"
+        f" | {report['reliability']['invalid_actions_per_decision']} per decision",
+        f"- Invalid categories: {action_diagnostics.get('reason_categories', {})}",
+        f"- Observation attribution: {action_diagnostics.get('observation_attribution', {})}",
         f"- LLM failure events: {report['reliability']['llm_failure_events']}",
         f"- Decision quality: {report['reliability']['quality_status']}"
         f" | failure rate {report['reliability']['decision_failure_rate_pct']}%"

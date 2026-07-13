@@ -78,6 +78,9 @@ class CodexBrainTests(unittest.TestCase):
         self.assertEqual(records[0]["prompt_tokens"], 1200)
         self.assertEqual(records[0]["tick"], 2)
         self.assertEqual(records[0]["cost"], 0)
+        self.assertEqual(records[0]["game_context_format"], "static_context_v2+compact_dynamic_v2")
+        self.assertEqual(len(records[0]["game_static_context_sha256"]), 64)
+        self.assertEqual(len(records[0]["game_dynamic_observation_sha256"]), 64)
 
     def test_quota_failure_opens_circuit(self) -> None:
         completed = subprocess.CompletedProcess(
