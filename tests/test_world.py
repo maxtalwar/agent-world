@@ -1158,6 +1158,31 @@ class WorldEngineTests(unittest.TestCase):
         self.assertEqual(observation_event.data["format"], "compact_dynamic_v2")
         self.assertNotIn("prompt", prompt_event.data)
 
+    def test_runner_logs_grounded_observation_provenance(self) -> None:
+        class WaitBrain:
+            def decide(self, observation):
+                return {"intent": "wait", "actions": [{"type": "wait"}], "messages": [], "memory_updates": []}
+
+        engine = self.make_engine(1)
+        runner = SimulationRunner(
+            engine,
+            {"agent-1": WaitBrain()},
+            observation_mode="grounded-v3",
+        )
+
+        runner.step()
+
+        observation_event = next(
+            event for event in engine.state.events if event.type == "agent_observation"
+        )
+        prompt_event = next(event for event in engine.state.events if event.type == "agent_prompt")
+        self.assertEqual(observation_event.data["format"], "grounded_dynamic_v3")
+        self.assertIn("here", observation_event.data["observation"])
+        self.assertEqual(
+            prompt_event.data["game_context_format"],
+            "static_context_v2+grounded_dynamic_v3",
+        )
+
     def test_old_fields_wrapper_actions_are_normalized(self) -> None:
         engine = self.make_engine(1)
         agent = engine.state.agents["agent-1"]

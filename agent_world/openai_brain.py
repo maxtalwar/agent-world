@@ -19,7 +19,12 @@ from typing import Any
 from urllib import error, request
 
 from agent_world.brain_runtime import BrainRuntime
-from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
+from agent_world.interface import (
+    build_dynamic_observation,
+    build_static_context,
+    game_context_format,
+    parse_agent_response,
+)
 from agent_world.models import AgentDecision
 
 
@@ -178,6 +183,7 @@ class OpenAIBrain:
                 f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
             ).hexdigest(),
             "request_sha256": hashlib.sha256(request_bytes).hexdigest(),
+            "game_context_format": game_context_format(observation),
         }
         try:
             response = self._post_json_with_retries(endpoint, payload)

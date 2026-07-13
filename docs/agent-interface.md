@@ -43,6 +43,23 @@ The `world` object includes treatment modes, coordination costs, terrain passabi
 
 Agents also receive visible standing offers, completed market-price history, and contracts to which they are a party. In organic mode, public offers and price history are local, trade summaries include a physical `escrow_position`, and engine-enforced contract actions are absent. Public structures expose access fees, capacity, upkeep state, treasury, and contributor shares.
 
+## Versioned Model-Facing Boundaries
+
+The full observation above is the engine's canonical private view. The model-facing
+rendering is a selectable, manifest-recorded experimental treatment:
+
+- `compact-v2` is the control. It sends the slim local map and self state used by prior runs.
+- `grounded-v3` retains that complete compact view and additionally repeats three literal
+  embodiment summaries: `body` (start-of-tick action points, energy, and remaining carry
+  capacity), `here` (the current tile), and `adjacent` (north/east/south/west tiles with
+  passability and movement cost).
+
+`grounded-v3` does not enumerate legal actions, recommend a plan, identify profitable
+opportunities, or repair proposed actions. It makes already-visible physical facts easier
+to bind together while leaving strategy and validation to the agent and engine. Select it
+with `--observation-mode grounded-v3`; omitted runs remain on `compact-v2` for historical
+comparability.
+
 ## Explicitly Not Included
 
 Agent observations do not include `buildable_structures_here` or other "you can afford X now" hints. Build readiness exists in researcher diagnostics only.

@@ -22,7 +22,12 @@ import time
 from typing import Any
 
 from agent_world.brain_runtime import BrainRuntime
-from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
+from agent_world.interface import (
+    build_dynamic_observation,
+    build_static_context,
+    game_context_format,
+    parse_agent_response,
+)
 from agent_world.models import AgentDecision
 from agent_world.openai_brain import SYSTEM_INSTRUCTIONS
 from agent_world.rules import ACTION_SCHEMA
@@ -152,7 +157,7 @@ class CodexBrain:
             ).hexdigest(),
             "game_static_context_sha256": hashlib.sha256(static_context.encode("utf-8")).hexdigest(),
             "game_dynamic_observation_sha256": hashlib.sha256(dynamic_json.encode("utf-8")).hexdigest(),
-            "game_context_format": "static_context_v2+compact_dynamic_v2",
+            "game_context_format": game_context_format(observation),
             "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
         }
 

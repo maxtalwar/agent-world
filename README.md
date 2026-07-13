@@ -291,6 +291,11 @@ The audit log stores each distinct static prompt context once and links compact 
 
 The LLM request is split to minimize input tokens (~85% of API cost): the static rulebook (actions, costs, recipes, terrain, mechanics) is rendered once as terse text in the system message — byte-identical across every agent and tick, so provider-side prompt caching can reuse it — while the per-tick user message carries only the slim dynamic state (tiles omit empty/derivable fields, events omit engine internals). No information is removed, only redundancy: everything an agent could act on is still present each call. Build-readiness diagnostics are intentionally kept out of agent observations so agents are not nudged with "you can now build X" hints.
 
+The model-facing agent boundary is versioned. `compact-v2` remains the default control;
+`--observation-mode grounded-v3` adds neutral `body`, `here`, and direction-keyed
+`adjacent` summaries without recommending or pre-validating actions. Runs, checkpoints,
+event logs, and provider usage records retain the selected format for clean A/B analysis.
+
 ## Observatory
 
 Open the local observatory:

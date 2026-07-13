@@ -10,9 +10,12 @@ from typing import Any
 
 from agent_world.agents import AgentBrain
 from agent_world.interface import (
+    DEFAULT_OBSERVATION_MODE,
     build_dynamic_observation,
     build_observation,
     build_static_context,
+    dynamic_observation_format,
+    game_context_format,
     parse_agent_response,
 )
 from agent_world.models import AgentDecision
@@ -35,6 +38,7 @@ class SimulationRunner:
         max_workers: int | None = None,
         provider_max_workers: dict[str, int] | None = None,
         decision_mode: str = "raw",
+        observation_mode: str = DEFAULT_OBSERVATION_MODE,
     ):
         self.engine = engine
         self.brains = brains
@@ -43,6 +47,7 @@ class SimulationRunner:
         self.max_workers = max_workers
         self.provider_max_workers = dict(provider_max_workers or {})
         self.decision_mode = decision_mode
+        self.observation_mode = observation_mode
         if decision_mode not in {"raw", "validated"}:
             raise ValueError("decision mode must be raw or validated")
         self._provider_semaphores = {
@@ -61,7 +66,12 @@ class SimulationRunner:
             for agent_id in sorted(self.engine.state.agents)
             if self.engine.state.agents[agent_id].alive and agent_id in self.brains
         ]
-        observations = {agent_id: build_observation(self.engine.state, agent_id) for agent_id in agent_ids}
+        observations = {
+            agent_id: build_observation(
+                self.engine.state, agent_id, observation_mode=self.observation_mode
+            )
+            for agent_id in agent_ids
+        }
         for agent_id, observation in observations.items():
             self._log_agent_input(agent_id, observation)
         decisions = self._collect_decisions(agent_ids, observations)
@@ -140,7 +150,7 @@ class SimulationRunner:
             "agent_observation",
             actor_id=agent_id,
             position=agent.position,
-            data={"observation": dynamic, "format": "compact_dynamic_v2"},
+            data={"observation": dynamic, "format": dynamic_observation_format(observation)},
             scope="private",
             recipients={agent_id},
         )
@@ -152,7 +162,8 @@ class SimulationRunner:
                 "static_context_sha256": static_hash,
                 "dynamic_sha256": hashlib.sha256(dynamic_json.encode("utf-8")).hexdigest(),
                 "dynamic_component_chars": component_chars,
-                "format": "static_context_ref_plus_compact_dynamic_v2",
+                "format": f"static_context_ref_plus_{dynamic_observation_format(observation)}",
+                "game_context_format": game_context_format(observation),
             },
             scope="private",
             recipients={agent_id},

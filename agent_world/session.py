@@ -12,6 +12,7 @@ from agent_world.brain_factory import BrainSpec, PopulationSpec, create_populati
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.codex_brain import summarize_plan_usage
 from agent_world.io import atomic_write_json
+from agent_world.interface import DEFAULT_OBSERVATION_MODE
 from agent_world.metrics import is_provider_failure_message, is_quota_failure_message
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.run_report import write_report
@@ -47,6 +48,7 @@ class SimulationSession:
         max_workers: int | None = None,
         provider_max_workers: dict[str, int] | None = None,
         decision_mode: str = "raw",
+        observation_mode: str = DEFAULT_OBSERVATION_MODE,
         log_agent_io: bool = True,
         concurrent_decisions: bool | None = None,
         lifecycle_metadata: dict[str, Any] | None = None,
@@ -79,6 +81,7 @@ class SimulationSession:
         )
         self.provider_max_workers = dict(provider_max_workers or {})
         self.decision_mode = decision_mode
+        self.observation_mode = observation_mode
         self.log_agent_io = log_agent_io
         self.concurrent_decisions = (
             self.max_workers > 1
@@ -102,6 +105,7 @@ class SimulationSession:
             max_workers=self.max_workers,
             provider_max_workers=self.provider_max_workers,
             decision_mode=self.decision_mode,
+            observation_mode=self.observation_mode,
         )
         self.capture_plan_usage = next(
             (

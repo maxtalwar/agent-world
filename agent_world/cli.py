@@ -23,7 +23,7 @@ from agent_world.claude_brain import ClaudeBrain
 from agent_world.codex_brain import CodexBrain
 from agent_world.env import load_dotenv
 from agent_world.experiments import run_factorial_experiment
-from agent_world.interface import build_agent_prompt, build_observation
+from agent_world.interface import OBSERVATION_MODES, build_agent_prompt, build_observation
 from agent_world.io import atomic_write_json, atomic_write_text as _atomic_write_text
 from agent_world.maps import render_tiles
 from agent_world.metrics import compute_metrics
@@ -119,6 +119,12 @@ def main(argv: list[str] | None = None) -> None:
         help="Reuse the exact agent-to-cohort mapping from a prior compatible run manifest.",
     )
     run_parser.add_argument("--decision-mode", choices=["raw", "validated"], default=None)
+    run_parser.add_argument(
+        "--observation-mode",
+        choices=OBSERVATION_MODES,
+        default=None,
+        help="Versioned model-facing agent boundary (default: compact-v2).",
+    )
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
 
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
@@ -134,6 +140,7 @@ def main(argv: list[str] | None = None) -> None:
     prompt_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default="neutral")
     prompt_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default="baseline")
     prompt_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default="shared_oasis")
+    prompt_parser.add_argument("--observation-mode", choices=OBSERVATION_MODES, default="compact-v2")
 
     map_parser = subparsers.add_parser("map", help="Print the standard world map.")
     map_parser.add_argument("--width", type=int, default=16)
@@ -301,7 +308,21 @@ def _run(args: argparse.Namespace) -> None:
             args.no_agent_io_log = not bool(saved.get("log_agent_io", True))
         if not args.sequential_decisions:
             args.sequential_decisions = bool(saved.get("sequential_decisions", False))
-        for name in ("codex_max_workers", "claude_max_workers", "llm_max_workers", "decision_mode"):
+        saved_observation_mode = saved.get("observation_mode") or "compact-v2"
+        if (
+            getattr(args, "observation_mode", None) is not None
+            and args.observation_mode != saved_observation_mode
+        ):
+            raise ValueError(
+                "A checkpoint must be resumed with its original observation mode."
+            )
+        for name in (
+            "codex_max_workers",
+            "claude_max_workers",
+            "llm_max_workers",
+            "decision_mode",
+            "observation_mode",
+        ):
             if getattr(args, name, None) is None and saved.get(name) is not None:
                 setattr(args, name, saved[name])
     else:
@@ -313,6 +334,7 @@ def _run(args: argparse.Namespace) -> None:
         args.geography_mode = getattr(args, "geography_mode", None) or preset["geography_mode"]
         args.specialization_mode = getattr(args, "specialization_mode", None) or preset["specialization_mode"]
         args.decision_mode = getattr(args, "decision_mode", None) or "raw"
+        args.observation_mode = getattr(args, "observation_mode", None) or "compact-v2"
         if getattr(args, "population", None):
             if args.brain is not None or args.model is not None:
                 raise ValueError("Use either --population or --brain/--model, not both.")
@@ -398,6 +420,7 @@ def _run(args: argparse.Namespace) -> None:
         "openai_compatible": int(getattr(args, "llm_max_workers", None) or min(max_workers, 2)),
     }
     decision_mode = args.decision_mode or "raw"
+    observation_mode = args.observation_mode or "compact-v2"
     usage_path: Path | None = None
     initial_usage: list[dict[str, Any]] = []
     if population_spec.model_backed and args.out:
@@ -433,6 +456,7 @@ def _run(args: argparse.Namespace) -> None:
         "geography_mode": engine.state.config.geography_mode,
         "specialization_mode": engine.state.config.specialization_mode,
         "decision_mode": decision_mode,
+        "observation_mode": observation_mode,
         "provider_max_workers": provider_max_workers,
         "provider_settings": _provider_settings(population_spec),
         "assignment_source_manifest": (
@@ -450,7 +474,7 @@ def _run(args: argparse.Namespace) -> None:
             f"world={engine.state.config.economy_mode}/{engine.state.config.geography_mode}/"
             f"{engine.state.config.specialization_mode}/{engine.state.config.objective_mode} | population={cohort_text} | "
             f"ticks={args.ticks} | assignment={population_spec.assignment_strategy}:"
-            f"{population_spec.assignment_seed} | harness={decision_mode}",
+            f"{population_spec.assignment_seed} | harness={decision_mode}/{observation_mode}",
             flush=True,
         )
 
@@ -474,6 +498,7 @@ def _run(args: argparse.Namespace) -> None:
                 "claude_max_workers": provider_max_workers["claude_cli"],
                 "llm_max_workers": provider_max_workers["openai_compatible"],
                 "decision_mode": decision_mode,
+                "observation_mode": observation_mode,
                 "log_agent_io": not args.no_agent_io_log,
                 "sequential_decisions": args.sequential_decisions,
             },
@@ -497,6 +522,7 @@ def _run(args: argparse.Namespace) -> None:
         args=args,
         provider_max_workers=provider_max_workers,
         decision_mode=decision_mode,
+        observation_mode=observation_mode,
         events_path=args.out,
         snapshot_path=args.snapshot,
         checkpoint_path=checkpoint_path,
@@ -515,6 +541,7 @@ def _run(args: argparse.Namespace) -> None:
         max_workers=max_workers,
         provider_max_workers=provider_max_workers,
         decision_mode=decision_mode,
+        observation_mode=observation_mode,
         log_agent_io=not args.no_agent_io_log,
         concurrent_decisions=not args.sequential_decisions and max_workers > 1,
         lifecycle_metadata=lifecycle_metadata,
@@ -583,6 +610,7 @@ def _ordinary_run_manifest(
     args: argparse.Namespace,
     provider_max_workers: dict[str, int],
     decision_mode: str,
+    observation_mode: str,
     events_path: Path | None,
     snapshot_path: Path | None,
     checkpoint_path: Path | None,
@@ -607,6 +635,7 @@ def _ordinary_run_manifest(
         "final_tick": engine.state.tick,
         "preset": getattr(args, "preset", None) or "baseline",
         "decision_mode": decision_mode,
+        "observation_mode": observation_mode,
         "command": ["python3", "-m", "agent_world.cli", *sys.argv[1:]],
         "config": asdict(engine.state.config),
         "population": population.to_dict(engine.state.agents),
@@ -786,7 +815,9 @@ def _prompt(args: argparse.Namespace) -> None:
     )
     names = [f"Agent {index + 1}" for index in range(args.agents)]
     engine = WorldEngine.create(config=config, agent_names=names)
-    observation: dict[str, Any] = build_observation(engine.state, args.agent)
+    observation: dict[str, Any] = build_observation(
+        engine.state, args.agent, observation_mode=args.observation_mode
+    )
     print(build_agent_prompt(observation))
 
 

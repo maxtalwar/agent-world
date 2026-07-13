@@ -9,6 +9,7 @@ from agent_world.models import Agent, AgentDecision, Event, Position, WorldState
 from agent_world.rules import (
     ACTION_SCHEMA,
     COMMUNICATION_ACTION_TYPES,
+    DIRECTIONS,
     GROUP_ADMIN_ACTION_TYPES,
     MECHANICS_SUMMARY,
     TERRAIN_RULES,
@@ -17,9 +18,17 @@ from agent_world.rules import (
 
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
+OBSERVATION_MODES = ("compact-v2", "grounded-v3")
+DEFAULT_OBSERVATION_MODE = "compact-v2"
 
 
-def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
+def build_observation(
+    state: WorldState,
+    agent_id: str,
+    observation_mode: str = DEFAULT_OBSERVATION_MODE,
+) -> dict[str, Any]:
+    if observation_mode not in OBSERVATION_MODES:
+        raise ValueError(f"observation mode must be one of: {', '.join(OBSERVATION_MODES)}")
     agent = state.agents[agent_id]
     radius = state.config.visible_radius
     visible_positions = _visible_positions(agent.position, radius, state.config.width, state.config.height)
@@ -82,6 +91,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
     return {
         "tick": state.tick,
         "world": {
+            "observation_mode": observation_mode,
             "width": state.config.width,
             "height": state.config.height,
             "visible_radius": radius,
@@ -284,10 +294,17 @@ def build_static_context(world: dict[str, Any]) -> str:
         "RESERVES (min 0, higher is better): "
         + ", ".join(f"{name} max {value}" for name, value in sorted(reserve_max.items()))
     )
-    lines.append(
-        "DYNAMIC KEYS: map p=[x,y],t=terrain,r=resources,c=claim,a=access; "
-        "nearby p=[x,y],hp=health,d=distance,carry/condition are visible summaries."
-    )
+    if world.get("observation_mode") == "grounded-v3":
+        lines.append(
+            "DYNAMIC KEYS: body=start-of-tick AP, energy, carry remaining; here=current tile; "
+            "adjacent=north/east/south/west tiles; map p=[x,y],t=terrain,r=resources,c=claim,a=access; "
+            "nearby p=[x,y],hp=health,d=distance,carry/condition are visible summaries."
+        )
+    else:
+        lines.append(
+            "DYNAMIC KEYS: map p=[x,y],t=terrain,r=resources,c=claim,a=access; "
+            "nearby p=[x,y],hp=health,d=distance,carry/condition are visible summaries."
+        )
     lines.append("")
     lines.append("TERRAIN (move_cost/max_occupants):")
     for name, rule in sorted(TERRAIN_RULES.items()):
@@ -406,7 +423,77 @@ def build_dynamic_observation(observation: dict[str, Any]) -> dict[str, Any]:
     dynamic["market_history"] = [
         _slim_market_transaction(item) for item in observation.get("market_history", [])[-12:]
     ]
+    if observation.get("world", {}).get("observation_mode") == "grounded-v3":
+        dynamic.update(_grounding_fields(observation))
     return {key: value for key, value in dynamic.items() if value not in ([], {}, None)}
+
+
+def dynamic_observation_format(observation: dict[str, Any]) -> str:
+    """Return the provenance label for the selected model-facing observation."""
+
+    if observation.get("world", {}).get("observation_mode") == "grounded-v3":
+        return "grounded_dynamic_v3"
+    return "compact_dynamic_v2"
+
+
+def game_context_format(observation: dict[str, Any]) -> str:
+    return f"static_context_v2+{dynamic_observation_format(observation)}"
+
+
+def _grounding_fields(observation: dict[str, Any]) -> dict[str, Any]:
+    """Add literal embodiment facts without suggesting or pre-validating actions."""
+
+    self_state = observation.get("self", {})
+    position = self_state.get("position", {})
+    x, y = position.get("x"), position.get("y")
+    tiles = {
+        (tile.get("x"), tile.get("y")): tile
+        for tile in observation.get("local_map", [])
+    }
+    here = _grounded_tile(tiles.get((x, y)), x=x, y=y)
+    adjacent: dict[str, dict[str, Any]] = {}
+    for direction in ("north", "east", "south", "west"):
+        dx, dy = DIRECTIONS[direction]
+        adjacent[direction] = _grounded_tile(
+            tiles.get((x + dx, y + dy)),
+            x=x + dx,
+            y=y + dy,
+        )
+    capacity = int(self_state.get("carry_capacity") or 0)
+    carried = int(self_state.get("carry_weight") or 0)
+    return {
+        "body": {
+            "action_points": int(observation.get("world", {}).get("action_points_per_tick") or 0),
+            "energy": int(self_state.get("reserves", {}).get("energy") or 0),
+            "carry_remaining": max(0, capacity - carried),
+        },
+        "here": here,
+        "adjacent": adjacent,
+    }
+
+
+def _grounded_tile(tile: dict[str, Any] | None, *, x: Any, y: Any) -> dict[str, Any]:
+    if tile is None:
+        return {"position": [x, y], "in_world": False, "passable": False}
+    grounded: dict[str, Any] = {
+        "position": [x, y],
+        "in_world": True,
+        "terrain": tile.get("terrain"),
+        "passable": bool(tile.get("passable")),
+        "move_cost": tile.get("move_cost"),
+        "resources": {
+            item: quantity
+            for item, quantity in tile.get("resources", {}).items()
+            if quantity
+        },
+    }
+    if tile.get("claimed_by"):
+        grounded["claimed_by"] = tile["claimed_by"]
+        grounded["access_granted"] = bool(tile.get("access_granted"))
+    for key in ("item_piles", "structures", "agents"):
+        if tile.get(key):
+            grounded[key] = tile[key]
+    return grounded
 
 
 def _slim_market_transaction(item: dict[str, Any]) -> dict[str, Any]:

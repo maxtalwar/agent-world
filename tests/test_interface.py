@@ -3,12 +3,74 @@ from __future__ import annotations
 import json
 import unittest
 
-from agent_world.interface import build_dynamic_observation, build_observation, build_static_context
+from agent_world.interface import (
+    build_dynamic_observation,
+    build_observation,
+    build_static_context,
+    game_context_format,
+)
 from agent_world.models import AgentDecision, Position, WorldConfig
 from agent_world.world import WorldEngine
 
 
 class EconomicInterfaceTests(unittest.TestCase):
+    def test_grounded_v3_adds_literal_embodiment_without_action_advice(self) -> None:
+        engine = WorldEngine.create(WorldConfig(seed=11), agent_names=["A1"])
+        agent = engine.state.agents["agent-1"]
+        agent.position = Position(8, 8)
+        agent.inventory["wood"] = 2
+        observation = build_observation(
+            engine.state, agent.id, observation_mode="grounded-v3"
+        )
+
+        dynamic = build_dynamic_observation(observation)
+
+        self.assertEqual(dynamic["here"]["position"], [8, 8])
+        self.assertEqual(set(dynamic["adjacent"]), {"north", "east", "south", "west"})
+        self.assertEqual(dynamic["adjacent"]["north"]["position"], [8, 7])
+        self.assertIn("move_cost", dynamic["adjacent"]["north"])
+        self.assertEqual(dynamic["body"]["action_points"], 4)
+        self.assertEqual(dynamic["body"]["energy"], agent.needs.energy)
+        self.assertEqual(
+            dynamic["body"]["carry_remaining"],
+            agent.carry_capacity - agent.inventory_weight(),
+        )
+        rendered = json.dumps(dynamic, sort_keys=True).lower()
+        for advisory_term in ("recommended", "opportunity", "profitable", "legal_actions"):
+            self.assertNotIn(advisory_term, rendered)
+        self.assertEqual(
+            game_context_format(observation),
+            "static_context_v2+grounded_dynamic_v3",
+        )
+
+    def test_compact_v2_shape_remains_the_default_control(self) -> None:
+        engine = WorldEngine.create(WorldConfig(seed=11), agent_names=["A1"])
+        observation = build_observation(engine.state, "agent-1")
+
+        dynamic = build_dynamic_observation(observation)
+
+        self.assertNotIn("body", dynamic)
+        self.assertNotIn("here", dynamic)
+        self.assertNotIn("adjacent", dynamic)
+        self.assertEqual(
+            game_context_format(observation),
+            "static_context_v2+compact_dynamic_v2",
+        )
+
+    def test_grounded_v3_marks_off_map_neighbors_explicitly(self) -> None:
+        engine = WorldEngine.create(WorldConfig(seed=11), agent_names=["A1"])
+        engine.state.agents["agent-1"].position = Position(0, 0)
+
+        dynamic = build_dynamic_observation(
+            build_observation(engine.state, "agent-1", observation_mode="grounded-v3")
+        )
+
+        self.assertEqual(
+            dynamic["adjacent"]["north"],
+            {"position": [0, -1], "in_world": False, "passable": False},
+        )
+        self.assertFalse(dynamic["adjacent"]["west"]["in_world"])
+
     def test_twenty_agent_organic_prompt_stays_within_infrastructure_budgets(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(economy_mode="organic", geography_mode="dispersed"),
