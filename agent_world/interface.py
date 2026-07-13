@@ -18,7 +18,12 @@ from agent_world.rules import (
 
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
-OBSERVATION_MODES = ("compact-v2", "grounded-v3")
+OBSERVATION_MODES = (
+    "compact-v2",
+    "body-only-v3",
+    "indexed-v3",
+    "grounded-v3",
+)
 DEFAULT_OBSERVATION_MODE = "compact-v2"
 
 
@@ -294,10 +299,23 @@ def build_static_context(world: dict[str, Any]) -> str:
         "RESERVES (min 0, higher is better): "
         + ", ".join(f"{name} max {value}" for name, value in sorted(reserve_max.items()))
     )
-    if world.get("observation_mode") == "grounded-v3":
+    observation_mode = world.get("observation_mode")
+    if observation_mode == "grounded-v3":
         lines.append(
             "DYNAMIC KEYS: body=start-of-tick AP, energy, carry remaining; here=current tile; "
             "adjacent=north/east/south/west tiles; map p=[x,y],t=terrain,r=resources,c=claim,a=access; "
+            "nearby p=[x,y],hp=health,d=distance,carry/condition are visible summaries."
+        )
+    elif observation_mode == "indexed-v3":
+        lines.append(
+            "DYNAMIC KEYS: body ap=start-of-tick action points,en=energy,free=carry remaining; "
+            "map p=[x,y],rel=here|north|east|south|west,t=terrain,r=resources,c=claim,a=access; "
+            "nearby p=[x,y],hp=health,d=distance,carry/condition are visible summaries."
+        )
+    elif observation_mode == "body-only-v3":
+        lines.append(
+            "DYNAMIC KEYS: body ap=start-of-tick action points,en=energy,free=carry remaining; "
+            "map p=[x,y],t=terrain,r=resources,c=claim,a=access; "
             "nearby p=[x,y],hp=health,d=distance,carry/condition are visible summaries."
         )
     else:
@@ -423,7 +441,15 @@ def build_dynamic_observation(observation: dict[str, Any]) -> dict[str, Any]:
     dynamic["market_history"] = [
         _slim_market_transaction(item) for item in observation.get("market_history", [])[-12:]
     ]
-    if observation.get("world", {}).get("observation_mode") == "grounded-v3":
+    observation_mode = observation.get("world", {}).get("observation_mode")
+    if observation_mode == "indexed-v3":
+        dynamic["local_map"] = _indexed_local_map(
+            dynamic["local_map"], observation.get("self", {}).get("position", {})
+        )
+        dynamic["body"] = _body_summary(observation)
+    elif observation_mode == "body-only-v3":
+        dynamic["body"] = _body_summary(observation)
+    elif observation_mode == "grounded-v3":
         dynamic.update(_grounding_fields(observation))
     return {key: value for key, value in dynamic.items() if value not in ([], {}, None)}
 
@@ -431,7 +457,12 @@ def build_dynamic_observation(observation: dict[str, Any]) -> dict[str, Any]:
 def dynamic_observation_format(observation: dict[str, Any]) -> str:
     """Return the provenance label for the selected model-facing observation."""
 
-    if observation.get("world", {}).get("observation_mode") == "grounded-v3":
+    observation_mode = observation.get("world", {}).get("observation_mode")
+    if observation_mode == "body-only-v3":
+        return "body_only_dynamic_v3"
+    if observation_mode == "indexed-v3":
+        return "indexed_dynamic_v3"
+    if observation_mode == "grounded-v3":
         return "grounded_dynamic_v3"
     return "compact_dynamic_v2"
 
@@ -459,17 +490,49 @@ def _grounding_fields(observation: dict[str, Any]) -> dict[str, Any]:
             x=x + dx,
             y=y + dy,
         )
-    capacity = int(self_state.get("carry_capacity") or 0)
-    carried = int(self_state.get("carry_weight") or 0)
     return {
-        "body": {
-            "action_points": int(observation.get("world", {}).get("action_points_per_tick") or 0),
-            "energy": int(self_state.get("reserves", {}).get("energy") or 0),
-            "carry_remaining": max(0, capacity - carried),
-        },
+        "body": _body_summary(observation, verbose=True),
         "here": here,
         "adjacent": adjacent,
     }
+
+
+def _body_summary(
+    observation: dict[str, Any], *, verbose: bool = False
+) -> dict[str, int]:
+    self_state = observation.get("self", {})
+    capacity = int(self_state.get("carry_capacity") or 0)
+    carried = int(self_state.get("carry_weight") or 0)
+    action_points = int(
+        observation.get("world", {}).get("action_points_per_tick") or 0
+    )
+    energy = int(self_state.get("reserves", {}).get("energy") or 0)
+    free = max(0, capacity - carried)
+    if verbose:
+        return {
+            "action_points": action_points,
+            "energy": energy,
+            "carry_remaining": free,
+        }
+    return {"ap": action_points, "en": energy, "free": free}
+
+
+def _indexed_local_map(
+    local_map: list[dict[str, Any]], position: dict[str, Any]
+) -> list[dict[str, Any]]:
+    x, y = position.get("x"), position.get("y")
+    relative_positions = {(x, y): "here"}
+    for direction in ("north", "east", "south", "west"):
+        dx, dy = DIRECTIONS[direction]
+        relative_positions[(x + dx, y + dy)] = direction
+    indexed: list[dict[str, Any]] = []
+    for tile in local_map:
+        rendered = dict(tile)
+        point = tile.get("p") or []
+        if len(point) == 2 and (point[0], point[1]) in relative_positions:
+            rendered["rel"] = relative_positions[(point[0], point[1])]
+        indexed.append(rendered)
+    return indexed
 
 
 def _grounded_tile(tile: dict[str, Any] | None, *, x: Any, y: Any) -> dict[str, Any]:

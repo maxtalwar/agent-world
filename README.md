@@ -295,6 +295,9 @@ The model-facing agent boundary is versioned. `compact-v2` remains the default c
 `--observation-mode grounded-v3` adds neutral `body`, `here`, and direction-keyed
 `adjacent` summaries without recommending or pre-validating actions. Runs, checkpoints,
 event logs, and provider usage records retain the selected format for clean A/B analysis.
+Lighter experimental treatments are also available: `body-only-v3` adds only AP, energy,
+and free carry capacity, while `indexed-v3` additionally labels the existing current and
+cardinal map entries without duplicating tile contents.
 
 ## Observatory
 

@@ -49,16 +49,21 @@ The full observation above is the engine's canonical private view. The model-fac
 rendering is a selectable, manifest-recorded experimental treatment:
 
 - `compact-v2` is the control. It sends the slim local map and self state used by prior runs.
+- `body-only-v3` adds only a three-value `body` summary: start-of-tick action points,
+  current energy, and remaining carry capacity.
+- `indexed-v3` adds the same compact `body` summary and labels the already-present
+  current/cardinal map entries with `rel: here|north|east|south|west`. It does not
+  repeat those tiles or their contents.
 - `grounded-v3` retains that complete compact view and additionally repeats three literal
   embodiment summaries: `body` (start-of-tick action points, energy, and remaining carry
   capacity), `here` (the current tile), and `adjacent` (north/east/south/west tiles with
   passability and movement cost).
 
-`grounded-v3` does not enumerate legal actions, recommend a plan, identify profitable
-opportunities, or repair proposed actions. It makes already-visible physical facts easier
-to bind together while leaving strategy and validation to the agent and engine. Select it
-with `--observation-mode grounded-v3`; omitted runs remain on `compact-v2` for historical
-comparability.
+None of these treatments enumerate legal actions, recommend a plan, identify profitable
+opportunities, or repair proposed actions. They vary only how already-visible physical
+facts are indexed or repeated while leaving strategy and validation to the agent and
+engine. Select one with `--observation-mode`; omitted runs remain on `compact-v2` for
+historical comparability.
 
 ## Explicitly Not Included
 

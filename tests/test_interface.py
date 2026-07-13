@@ -57,6 +57,115 @@ class EconomicInterfaceTests(unittest.TestCase):
             "static_context_v2+compact_dynamic_v2",
         )
 
+    def test_body_only_v3_adds_only_compact_body_summary(self) -> None:
+        engine = WorldEngine.create(WorldConfig(seed=11), agent_names=["A1"])
+        control = build_dynamic_observation(
+            build_observation(engine.state, "agent-1")
+        )
+        body_only_observation = build_observation(
+            engine.state, "agent-1", observation_mode="body-only-v3"
+        )
+
+        body_only = build_dynamic_observation(body_only_observation)
+
+        agent = engine.state.agents["agent-1"]
+        self.assertEqual(
+            body_only["body"],
+            {
+                "ap": 4,
+                "en": 25,
+                "free": agent.carry_capacity - agent.inventory_weight(),
+            },
+        )
+        self.assertEqual(
+            {key: value for key, value in body_only.items() if key != "body"},
+            control,
+        )
+        self.assertNotIn("here", body_only)
+        self.assertNotIn("adjacent", body_only)
+        self.assertEqual(
+            game_context_format(body_only_observation),
+            "static_context_v2+body_only_dynamic_v3",
+        )
+
+    def test_indexed_v3_labels_existing_tiles_without_duplication(self) -> None:
+        engine = WorldEngine.create(WorldConfig(seed=11), agent_names=["A1"])
+        engine.state.agents["agent-1"].position = Position(8, 8)
+        control_observation = build_observation(engine.state, "agent-1")
+        indexed_observation = build_observation(
+            engine.state, "agent-1", observation_mode="indexed-v3"
+        )
+
+        control = build_dynamic_observation(control_observation)
+        indexed = build_dynamic_observation(indexed_observation)
+        labels = {
+            tuple(tile["p"]): tile["rel"]
+            for tile in indexed["local_map"]
+            if "rel" in tile
+        }
+
+        self.assertEqual(
+            labels,
+            {
+                (8, 8): "here",
+                (8, 7): "north",
+                (9, 8): "east",
+                (8, 9): "south",
+                (7, 8): "west",
+            },
+        )
+        stripped_map = [
+            {key: value for key, value in tile.items() if key != "rel"}
+            for tile in indexed["local_map"]
+        ]
+        self.assertEqual(stripped_map, control["local_map"])
+        agent = engine.state.agents["agent-1"]
+        self.assertEqual(
+            indexed["body"],
+            {
+                "ap": 4,
+                "en": 25,
+                "free": agent.carry_capacity - agent.inventory_weight(),
+            },
+        )
+        self.assertNotIn("here", indexed)
+        self.assertNotIn("adjacent", indexed)
+        self.assertNotIn("passable", json.dumps(indexed["local_map"]))
+        self.assertEqual(
+            game_context_format(indexed_observation),
+            "static_context_v2+indexed_dynamic_v3",
+        )
+
+    def test_indexed_v3_is_materially_smaller_than_grounded_v3(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(economy_mode="organic", geography_mode="dispersed"),
+            agent_names=[f"A{index}" for index in range(20)],
+        )
+        indexed_sizes = []
+        grounded_sizes = []
+        for agent_id in engine.state.agents:
+            for mode, sizes in (
+                ("indexed-v3", indexed_sizes),
+                ("grounded-v3", grounded_sizes),
+            ):
+                observation = build_observation(
+                    engine.state, agent_id, observation_mode=mode
+                )
+                sizes.append(
+                    len(
+                        json.dumps(
+                            build_dynamic_observation(observation),
+                            separators=(",", ":"),
+                            sort_keys=True,
+                        )
+                    )
+                )
+
+        self.assertLess(
+            sum(indexed_sizes) / len(indexed_sizes),
+            (sum(grounded_sizes) / len(grounded_sizes)) * 0.75,
+        )
+
     def test_grounded_v3_marks_off_map_neighbors_explicitly(self) -> None:
         engine = WorldEngine.create(WorldConfig(seed=11), agent_names=["A1"])
         engine.state.agents["agent-1"].position = Position(0, 0)
