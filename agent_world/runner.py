@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from collections import Counter
 import hashlib
 import json
 import threading
@@ -20,6 +21,7 @@ from agent_world.interface import (
 )
 from agent_world.models import AgentDecision
 from agent_world.world import WorldEngine
+from agent_world.world import DEFAULT_TURN_MODE, TURN_MODES
 
 
 class SimulationRunner:
@@ -39,6 +41,7 @@ class SimulationRunner:
         provider_max_workers: dict[str, int] | None = None,
         decision_mode: str = "raw",
         observation_mode: str = DEFAULT_OBSERVATION_MODE,
+        turn_mode: str = DEFAULT_TURN_MODE,
     ):
         self.engine = engine
         self.brains = brains
@@ -48,8 +51,11 @@ class SimulationRunner:
         self.provider_max_workers = dict(provider_max_workers or {})
         self.decision_mode = decision_mode
         self.observation_mode = observation_mode
+        self.turn_mode = turn_mode
         if decision_mode not in {"raw", "validated"}:
             raise ValueError("decision mode must be raw or validated")
+        if turn_mode not in TURN_MODES:
+            raise ValueError(f"turn mode must be one of: {', '.join(TURN_MODES)}")
         self._provider_semaphores = {
             provider: threading.BoundedSemaphore(limit)
             for provider, limit in self.provider_max_workers.items()
@@ -61,6 +67,11 @@ class SimulationRunner:
         }
 
     def step(self) -> list[Any]:
+        if self.turn_mode == "shuffled-sequential-v1":
+            return self._step_shuffled_sequential()
+        return self._step_simultaneous()
+
+    def _step_simultaneous(self) -> list[Any]:
         agent_ids = [
             agent_id
             for agent_id in sorted(self.engine.state.agents)
@@ -72,10 +83,51 @@ class SimulationRunner:
             )
             for agent_id in agent_ids
         }
+        activation_order = self.engine.activation_order(self.turn_mode)
+        activation_indexes = {agent_id: index for index, agent_id in enumerate(activation_order)}
+        tick_event_offset = len(self.engine.state.events)
         for agent_id, observation in observations.items():
-            self._log_agent_input(agent_id, observation)
+            self._log_agent_input(
+                agent_id,
+                observation,
+                activation_index=activation_indexes[agent_id],
+                activation_total=len(activation_order),
+                observed_after_activations=0,
+                tick_event_offset=tick_event_offset,
+            )
         decisions = self._collect_decisions(agent_ids, observations)
-        return self.engine.tick(decisions)
+        return self.engine.tick(decisions, turn_mode=self.turn_mode)
+
+    def _step_shuffled_sequential(self) -> list[Any]:
+        before = len(self.engine.state.events)
+        activation_order = self.engine.activation_order(self.turn_mode)
+        self.engine.begin_tick(turn_mode=self.turn_mode, activation_order=activation_order)
+        tick_event_offset = len(self.engine.state.events)
+        total = len(activation_order)
+        for activation_index, agent_id in enumerate(activation_order):
+            if agent_id not in self.brains or not self.engine.state.agents[agent_id].alive:
+                decision = AgentDecision(actions=[{"type": "wait"}])
+            else:
+                observation = build_observation(
+                    self.engine.state, agent_id, observation_mode=self.observation_mode
+                )
+                self._log_agent_input(
+                    agent_id,
+                    observation,
+                    activation_index=activation_index,
+                    activation_total=total,
+                    observed_after_activations=activation_index,
+                    tick_event_offset=tick_event_offset,
+                )
+                decision = self._safe_decide(agent_id, observation)
+            self.engine.resolve_agent_turn(
+                agent_id,
+                decision,
+                activation_index=activation_index,
+                observed_after_activations=activation_index,
+            )
+        self.engine.finish_tick()
+        return self.engine.state.events[before:]
 
     def _collect_decisions(
         self,
@@ -84,20 +136,20 @@ class SimulationRunner:
     ) -> dict[str, AgentDecision]:
         if not self.concurrent_decisions or len(agent_ids) <= 1:
             return {
-                agent_id: self._decide(agent_id, observations[agent_id])
+                agent_id: self._safe_decide(agent_id, observations[agent_id])
                 for agent_id in agent_ids
             }
         decisions: dict[str, AgentDecision] = {}
         worker_count = self.max_workers or len(agent_ids)
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
             futures = {
-                executor.submit(self._decide, agent_id, observations[agent_id]): agent_id
+                executor.submit(self._safe_decide, agent_id, observations[agent_id]): agent_id
                 for agent_id in agent_ids
             }
             for future in as_completed(futures):
                 agent_id = futures[future]
                 try:
-                    decisions[agent_id] = parse_agent_response(future.result())
+                    decisions[agent_id] = future.result()
                 except Exception as exc:  # Defensive shell around third-party brains.
                     decisions[agent_id] = AgentDecision(
                         intent=f"Agent brain failed: {exc}",
@@ -106,6 +158,17 @@ class SimulationRunner:
                         memory_updates=[],
                     )
         return decisions
+
+    def _safe_decide(self, agent_id: str, observation: dict[str, Any]) -> AgentDecision:
+        try:
+            return self._decide(agent_id, observation)
+        except Exception as exc:  # Defensive shell around third-party brains.
+            return AgentDecision(
+                intent=f"Agent brain failed: {exc}",
+                actions=[{"type": "wait"}],
+                messages=[],
+                memory_updates=[],
+            )
 
     def _decide(self, agent_id: str, observation: dict[str, Any]) -> AgentDecision:
         brain = self.brains[agent_id]
@@ -121,7 +184,16 @@ class SimulationRunner:
             decision = _truncate_to_declared_action_budget(decision, observation)
         return decision
 
-    def _log_agent_input(self, agent_id: str, observation: dict[str, Any]) -> None:
+    def _log_agent_input(
+        self,
+        agent_id: str,
+        observation: dict[str, Any],
+        *,
+        activation_index: int,
+        activation_total: int,
+        observed_after_activations: int,
+        tick_event_offset: int,
+    ) -> None:
         if not self.log_agent_io:
             return
         agent = self.engine.state.agents[agent_id]
@@ -146,11 +218,43 @@ class SimulationRunner:
             key: len(json.dumps(value, separators=(",", ":"), sort_keys=True))
             for key, value in dynamic.items()
         }
+        visible_signatures = Counter(
+            (
+                event.get("tick"),
+                event.get("type"),
+                event.get("actor_id"),
+                event.get("message"),
+            )
+            for event in observation.get("recent_events", [])
+        )
+        same_tick_events = []
+        for event in self.engine.state.events[tick_event_offset:]:
+            signature = (event.tick, event.type, event.actor_id, event.message)
+            if visible_signatures[signature] <= 0:
+                continue
+            visible_signatures[signature] -= 1
+            same_tick_events.append(event)
+        activation = {
+            "turn_mode": self.turn_mode,
+            "index": activation_index,
+            "position": activation_index + 1,
+            "total": activation_total,
+            "prior_resolved_activations": activation_index,
+            "observed_after_activations": observed_after_activations,
+            "observed_same_tick_event_count": len(same_tick_events),
+            "observed_same_tick_event_types": sorted(
+                {event.type for event in same_tick_events}
+            ),
+        }
         self.engine.log_event(
             "agent_observation",
             actor_id=agent_id,
             position=agent.position,
-            data={"observation": dynamic, "format": dynamic_observation_format(observation)},
+            data={
+                "observation": dynamic,
+                "format": dynamic_observation_format(observation),
+                "activation": activation,
+            },
             scope="private",
             recipients={agent_id},
         )
@@ -164,6 +268,7 @@ class SimulationRunner:
                 "dynamic_component_chars": component_chars,
                 "format": f"static_context_ref_plus_{dynamic_observation_format(observation)}",
                 "game_context_format": game_context_format(observation),
+                "activation": activation,
             },
             scope="private",
             recipients={agent_id},

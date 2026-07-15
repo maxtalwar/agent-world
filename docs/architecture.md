@@ -21,7 +21,10 @@ PopulationSpec -> BrainRuntime -> SimulationSession -> SimulationRunner -> World
 - Mixed runs freeze model assignments before tick zero and persist the exact mapping in lifecycle events, manifests, and checkpoints. Stratified assignment balances provider cohorts within preset specialties so model comparisons do not inherit role differences. Provider semaphores enforce independent concurrency ceilings inside the global decision pool.
 - Usage records fingerprint the provider-neutral static rulebook and dynamic observation separately from provider harness text. Completed manifests summarize these fingerprints so Claude/Codex context parity is auditable rather than assumed.
 - `SimulationSession` owns lifecycle events, the target-tick loop, quota and external-stop handling, progress hooks, checkpoint flushes, plan snapshots, and terminal reports.
-- `SimulationRunner` remains the thin observe-decide-resolve bridge for one tick.
+- `SimulationRunner` remains the thin observe-decide-resolve bridge for one tick. Its
+  versioned turn treatment is either `simultaneous-v1` (all decisions see the same
+  pre-resolution state) or `shuffled-sequential-v1` (each deterministically shuffled
+  activation sees the state produced by earlier activations).
 - `WorldEngine` owns all deterministic state transitions and validation.
 
 CLI, experiment, and observatory callers retain their presentation-specific responsibilities. Experiments update provenance manifests through session callbacks; the observatory updates live status and pause/stop controls through callbacks. They do not implement separate simulation loops.
@@ -38,7 +41,16 @@ The JSON snapshot is an observational export, not a canonical restore format. It
 
 Each `BrainRuntime` optionally owns one usage JSONL path. Concurrent agents serialize complete records to that path. Reports distinguish API dollars, exact simulation-only Codex credits, and coarse account-level plan snapshots.
 
-Reports retain both invalid-event share and the meaningful invalid/proposed-action rate, classify failures against the logged pre-tick observation, expose the offer-to-settlement trade funnel, and break outcomes down by occupation and model-by-occupation cells.
+Reports retain both invalid-event share and the meaningful invalid/proposed-action rate, classify failures against the logged decision-time observation, expose the offer-to-settlement trade funnel, and break outcomes down by occupation and model-by-occupation cells.
+
+Every tick logs its activation order. Decision-time observations, prompts, responses,
+and invalid actions carry activation position metadata; reports summarize which agents
+observed earlier same-tick events and outcomes by early/middle/late activation. These
+rows are descriptive because agents in one world are not statistically independent.
+
+Completed local runs refresh a rebuildable `runs/catalog.json` and `runs/catalog.md`.
+Raw artifacts remain canonical, while `docs/research-ledger.md` stores durable human
+interpretations and points back to exact evidence directories.
 
 ## Tests and CI
 

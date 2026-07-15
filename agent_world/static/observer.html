@@ -895,6 +895,13 @@
           <label for="run-workers">Max workers</label>
           <input id="run-workers" class="lock" type="number" min="1" max="20" value="1">
         </label>
+        <label class="field">
+          <label for="run-turn-mode">Turn timing</label>
+          <select id="run-turn-mode" class="lock">
+            <option value="simultaneous-v1" selected>shared-state decisions</option>
+            <option value="shuffled-sequential-v1">fresh state after each agent</option>
+          </select>
+        </label>
         <label class="field check">
           <input id="run-io" class="lock" type="checkbox" checked>
           <label for="run-io">Log agent IO</label>
@@ -1830,6 +1837,7 @@
         reasoning_effort: document.getElementById("run-reasoning").value,
         log_agent_io: document.getElementById("run-io").checked,
         max_workers: numberValue("run-workers"),
+        turn_mode: document.getElementById("run-turn-mode").value,
         objective_mode: document.getElementById("cfg-objective-mode").value,
         economy_mode: document.getElementById("cfg-economy-mode").value,
         geography_mode: document.getElementById("cfg-geography-mode").value,

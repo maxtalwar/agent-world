@@ -34,9 +34,10 @@ from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
 from agent_world.replay import format_event, read_events
 from agent_world.role_benchmark import run_role_viability_benchmark
 from agent_world.run_report import format_comparison, load_run_files, write_report
+from agent_world.run_catalog import refresh_catalog_for_output, write_run_catalog
 from agent_world.session import SimulationSession
 from agent_world.usage import summarize_codex_simulation_credits
-from agent_world.world import WorldEngine
+from agent_world.world import DEFAULT_TURN_MODE, TURN_MODES, WorldEngine
 
 
 RUN_PRESETS = {
@@ -125,6 +126,15 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Versioned model-facing agent boundary (default: compact-v2).",
     )
+    run_parser.add_argument(
+        "--turn-mode",
+        choices=TURN_MODES,
+        default=None,
+        help=(
+            "Agent activation treatment. simultaneous-v1 collects all decisions before "
+            "resolution; shuffled-sequential-v1 observes and resolves one shuffled agent at a time."
+        ),
+    )
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
 
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
@@ -178,6 +188,13 @@ def main(argv: list[str] | None = None) -> None:
     role_parser.add_argument("--ticks", type=int, default=50)
     role_parser.add_argument("--out", type=Path, default=None)
 
+    catalog_parser = subparsers.add_parser(
+        "catalog-runs", help="Rebuild a searchable index of local run artifacts."
+    )
+    catalog_parser.add_argument("--root", type=Path, default=Path("runs"))
+    catalog_parser.add_argument("--json", type=Path, default=None)
+    catalog_parser.add_argument("--markdown", type=Path, default=None)
+
     experiment_parser = subparsers.add_parser(
         "experiment",
         help="Run a reproducible multi-seed environment x objective factorial experiment.",
@@ -213,6 +230,7 @@ def main(argv: list[str] | None = None) -> None:
     experiment_parser.add_argument("--out-dir", type=Path, default=None)
     experiment_parser.add_argument("--no-agent-io-log", action="store_true")
     experiment_parser.add_argument("--max-workers", type=int, default=None)
+    experiment_parser.add_argument("--turn-mode", choices=TURN_MODES, default=DEFAULT_TURN_MODE)
     experiment_parser.add_argument("--overwrite", action="store_true")
     experiment_parser.add_argument("--progress", action="store_true")
 
@@ -233,6 +251,9 @@ def main(argv: list[str] | None = None) -> None:
         _report(args)
     elif args.command == "benchmark-roles":
         _benchmark_roles(args)
+    elif args.command == "catalog-runs":
+        catalog = write_run_catalog(args.root, json_path=args.json, markdown_path=args.markdown)
+        print(f"Indexed {catalog['run_count']} runs under {catalog['root']}")
     elif args.command == "experiment":
         _experiment(args)
 
@@ -316,12 +337,16 @@ def _run(args: argparse.Namespace) -> None:
             raise ValueError(
                 "A checkpoint must be resumed with its original observation mode."
             )
+        saved_turn_mode = saved.get("turn_mode") or DEFAULT_TURN_MODE
+        if getattr(args, "turn_mode", None) is not None and args.turn_mode != saved_turn_mode:
+            raise ValueError("A checkpoint must be resumed with its original turn mode.")
         for name in (
             "codex_max_workers",
             "claude_max_workers",
             "llm_max_workers",
             "decision_mode",
             "observation_mode",
+            "turn_mode",
         ):
             if getattr(args, name, None) is None and saved.get(name) is not None:
                 setattr(args, name, saved[name])
@@ -335,6 +360,7 @@ def _run(args: argparse.Namespace) -> None:
         args.specialization_mode = getattr(args, "specialization_mode", None) or preset["specialization_mode"]
         args.decision_mode = getattr(args, "decision_mode", None) or "raw"
         args.observation_mode = getattr(args, "observation_mode", None) or "compact-v2"
+        args.turn_mode = getattr(args, "turn_mode", None) or DEFAULT_TURN_MODE
         if getattr(args, "population", None):
             if args.brain is not None or args.model is not None:
                 raise ValueError("Use either --population or --brain/--model, not both.")
@@ -421,6 +447,7 @@ def _run(args: argparse.Namespace) -> None:
     }
     decision_mode = args.decision_mode or "raw"
     observation_mode = args.observation_mode or "compact-v2"
+    turn_mode = args.turn_mode or DEFAULT_TURN_MODE
     usage_path: Path | None = None
     initial_usage: list[dict[str, Any]] = []
     if population_spec.model_backed and args.out:
@@ -457,6 +484,7 @@ def _run(args: argparse.Namespace) -> None:
         "specialization_mode": engine.state.config.specialization_mode,
         "decision_mode": decision_mode,
         "observation_mode": observation_mode,
+        "turn_mode": turn_mode,
         "provider_max_workers": provider_max_workers,
         "provider_settings": _provider_settings(population_spec),
         "assignment_source_manifest": (
@@ -474,7 +502,7 @@ def _run(args: argparse.Namespace) -> None:
             f"world={engine.state.config.economy_mode}/{engine.state.config.geography_mode}/"
             f"{engine.state.config.specialization_mode}/{engine.state.config.objective_mode} | population={cohort_text} | "
             f"ticks={args.ticks} | assignment={population_spec.assignment_strategy}:"
-            f"{population_spec.assignment_seed} | harness={decision_mode}/{observation_mode}",
+            f"{population_spec.assignment_seed} | harness={decision_mode}/{observation_mode}/{turn_mode}",
             flush=True,
         )
 
@@ -499,6 +527,7 @@ def _run(args: argparse.Namespace) -> None:
                 "llm_max_workers": provider_max_workers["openai_compatible"],
                 "decision_mode": decision_mode,
                 "observation_mode": observation_mode,
+                "turn_mode": turn_mode,
                 "log_agent_io": not args.no_agent_io_log,
                 "sequential_decisions": args.sequential_decisions,
             },
@@ -523,6 +552,7 @@ def _run(args: argparse.Namespace) -> None:
         provider_max_workers=provider_max_workers,
         decision_mode=decision_mode,
         observation_mode=observation_mode,
+        turn_mode=turn_mode,
         events_path=args.out,
         snapshot_path=args.snapshot,
         checkpoint_path=checkpoint_path,
@@ -542,6 +572,7 @@ def _run(args: argparse.Namespace) -> None:
         provider_max_workers=provider_max_workers,
         decision_mode=decision_mode,
         observation_mode=observation_mode,
+        turn_mode=turn_mode,
         log_agent_io=not args.no_agent_io_log,
         concurrent_decisions=not args.sequential_decisions and max_workers > 1,
         lifecycle_metadata=lifecycle_metadata,
@@ -601,6 +632,7 @@ def _run(args: argparse.Namespace) -> None:
         )
         atomic_write_json(manifest_path, run_manifest)
         print(f"Wrote run manifest to {manifest_path}")
+    refresh_catalog_for_output(args.out)
 
 
 def _ordinary_run_manifest(
@@ -611,6 +643,7 @@ def _ordinary_run_manifest(
     provider_max_workers: dict[str, int],
     decision_mode: str,
     observation_mode: str,
+    turn_mode: str,
     events_path: Path | None,
     snapshot_path: Path | None,
     checkpoint_path: Path | None,
@@ -636,6 +669,7 @@ def _ordinary_run_manifest(
         "preset": getattr(args, "preset", None) or "baseline",
         "decision_mode": decision_mode,
         "observation_mode": observation_mode,
+        "turn_mode": turn_mode,
         "command": ["python3", "-m", "agent_world.cli", *sys.argv[1:]],
         "config": asdict(engine.state.config),
         "population": population.to_dict(engine.state.agents),
@@ -786,6 +820,7 @@ def _experiment(args: argparse.Namespace) -> None:
         height=args.height,
         log_agent_io=not args.no_agent_io_log,
         max_workers=args.max_workers,
+        turn_mode=getattr(args, "turn_mode", DEFAULT_TURN_MODE),
         overwrite=args.overwrite,
         progress_callback=progress,
     )

@@ -17,7 +17,7 @@ from agent_world.metrics import is_provider_failure_message, is_quota_failure_me
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.run_report import write_report
 from agent_world.runner import SimulationRunner
-from agent_world.world import WorldEngine
+from agent_world.world import DEFAULT_TURN_MODE, TURN_MODES, WorldEngine
 
 
 @dataclass
@@ -49,6 +49,7 @@ class SimulationSession:
         provider_max_workers: dict[str, int] | None = None,
         decision_mode: str = "raw",
         observation_mode: str = DEFAULT_OBSERVATION_MODE,
+        turn_mode: str = DEFAULT_TURN_MODE,
         log_agent_io: bool = True,
         concurrent_decisions: bool | None = None,
         lifecycle_metadata: dict[str, Any] | None = None,
@@ -82,8 +83,11 @@ class SimulationSession:
         self.provider_max_workers = dict(provider_max_workers or {})
         self.decision_mode = decision_mode
         self.observation_mode = observation_mode
+        if turn_mode not in TURN_MODES:
+            raise ValueError(f"turn mode must be one of: {', '.join(TURN_MODES)}")
+        self.turn_mode = turn_mode
         self.log_agent_io = log_agent_io
-        self.concurrent_decisions = (
+        self.concurrent_decisions = turn_mode == "simultaneous-v1" and (
             self.max_workers > 1
             if concurrent_decisions is None
             else concurrent_decisions
@@ -106,6 +110,7 @@ class SimulationSession:
             provider_max_workers=self.provider_max_workers,
             decision_mode=self.decision_mode,
             observation_mode=self.observation_mode,
+            turn_mode=self.turn_mode,
         )
         self.capture_plan_usage = next(
             (
@@ -284,6 +289,7 @@ class SimulationSession:
             "reasoning_effort": first_spec.reasoning_effort if uniform else None,
             "provider": first_spec.provider if uniform else "mixed",
             "billing_mode": first_spec.billing_mode if uniform else "mixed",
+            "turn_mode": self.turn_mode,
             "population": population,
             **self.lifecycle_metadata,
         }

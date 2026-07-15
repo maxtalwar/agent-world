@@ -299,6 +299,13 @@ Lighter experimental treatments are also available: `body-only-v3` adds only AP,
 and free carry capacity, while `indexed-v3` additionally labels the existing current and
 cardinal map entries without duplicating tile contents.
 
+Turn timing is versioned separately from the observation boundary. The historical
+control is `--turn-mode simultaneous-v1`: all agents decide against the same state, then
+resolve in rotating order. `--turn-mode shuffled-sequential-v1` deterministically
+reshuffles agents each tick and gives every activation a fresh post-activation view.
+It does not change world rules or tell agents which mode is active. Reports record order,
+same-tick event visibility, and early/middle/late activation diagnostics.
+
 ## Observatory
 
 Open the local observatory:
@@ -416,6 +423,7 @@ For richer context, see:
 - [docs/agent-interface.md](docs/agent-interface.md)
 - [docs/observability.md](docs/observability.md)
 - [docs/research-notes.md](docs/research-notes.md)
+- [docs/research-ledger.md](docs/research-ledger.md)
 - [docs/economy-experiments.md](docs/economy-experiments.md)
 
 ## Design Principle

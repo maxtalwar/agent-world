@@ -19,11 +19,18 @@ from agent_world.env import load_dotenv
 from agent_world.metrics import compute_metrics, is_decision_failure_message, is_quota_failure_message
 from agent_world.models import WorldConfig
 from agent_world.persistence import IncrementalRunWriter
+from agent_world.run_catalog import refresh_catalog_for_output
 from agent_world.session import SimulationSession
-from agent_world.world import WorldEngine
+from agent_world.world import DEFAULT_TURN_MODE, TURN_MODES, WorldEngine
 
 
-AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context"}
+AGENT_IO_EVENT_TYPES = {
+    "agent_observation",
+    "agent_prompt",
+    "agent_prompt_context",
+    "agent_activation",
+    "tick_activation_order",
+}
 
 TUNED_OBSERVATORY_DEFAULTS = {
     "ticks": 20,
@@ -46,6 +53,7 @@ class RunConfig:
     reasoning_effort: str | None = None
     log_agent_io: bool = True
     max_workers: int = 1
+    turn_mode: str = DEFAULT_TURN_MODE
     world_config: WorldConfig = field(default_factory=WorldConfig)
 
     def public_dict(self) -> dict[str, Any]:
@@ -64,6 +72,7 @@ class RunStatus:
     reasoning_effort: str | None = None
     log_agent_io: bool = True
     max_workers: int = 1
+    turn_mode: str = DEFAULT_TURN_MODE
     started_at: float | None = None
     finished_at: float | None = None
     stop_requested: bool = False
@@ -116,6 +125,7 @@ class RunController:
                 reasoning_effort=config.reasoning_effort,
                 log_agent_io=config.log_agent_io,
                 max_workers=config.max_workers,
+                turn_mode=config.turn_mode,
                 started_at=time.time(),
                 config=config.public_dict(),
             )
@@ -204,6 +214,7 @@ class RunController:
                 target_ticks=config.ticks,
                 log_agent_io=config.log_agent_io,
                 concurrent_decisions=config.max_workers > 1,
+                turn_mode=config.turn_mode,
                 lifecycle_metadata={"config": config.public_dict()},
                 checkpoint_extra=checkpoint_extra,
                 before_tick=before_tick,
@@ -216,6 +227,7 @@ class RunController:
                 ),
             )
             result = session.run()
+            refresh_catalog_for_output(self.events_path)
             metrics = compute_metrics(engine.state)
             with self._lock:
                 self._status.state = result.status
@@ -317,6 +329,9 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         reasoning_effort=reasoning_effort if brain in {"llm", "codex", "claude"} else None,
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
         max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=20),
+        turn_mode=_bounded_choice(
+            payload.get("turn_mode", DEFAULT_TURN_MODE), "turn_mode", set(TURN_MODES)
+        ),
         world_config=world_config,
     )
 

@@ -32,9 +32,10 @@ from agent_world.metrics import compute_metrics
 from agent_world.models import WorldConfig
 from agent_world.openai_brain import OpenAIBrain, SYSTEM_INSTRUCTIONS
 from agent_world.persistence import IncrementalRunWriter
+from agent_world.run_catalog import refresh_catalog_for_output
 from agent_world.session import SimulationSession
 from agent_world.usage import summarize_codex_simulation_credits
-from agent_world.world import WorldEngine
+from agent_world.world import DEFAULT_TURN_MODE, TURN_MODES, WorldEngine
 
 
 SCHEMA_VERSION = 1
@@ -138,6 +139,7 @@ def run_factorial_experiment(
     height: int = 16,
     log_agent_io: bool = True,
     max_workers: int | None = None,
+    turn_mode: str = DEFAULT_TURN_MODE,
     overwrite: bool = False,
     progress_callback: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
@@ -159,6 +161,8 @@ def run_factorial_experiment(
         raise ValueError("brain must be 'survival', 'llm', 'codex', or 'claude'.")
     if max_workers is not None and max_workers < 1:
         raise ValueError("max_workers must be at least 1.")
+    if turn_mode not in TURN_MODES:
+        raise ValueError(f"turn mode must be one of: {', '.join(TURN_MODES)}")
 
     conditions = selected_conditions(environments, objectives)
     output_root = out_dir.expanduser().resolve()
@@ -209,6 +213,7 @@ def run_factorial_experiment(
             "height": height,
             "log_agent_io": log_agent_io,
             "max_workers": effective_workers,
+            "turn_mode": turn_mode,
             **_declared_brain_settings(
                 brain,
                 experiment_brain_spec.model,
@@ -258,6 +263,7 @@ def run_factorial_experiment(
                 reasoning_effort=reasoning_effort,
                 log_agent_io=log_agent_io,
                 max_workers=effective_workers,
+                turn_mode=turn_mode,
                 progress_callback=progress_callback,
             )
             results.append(result)
@@ -274,6 +280,7 @@ def run_factorial_experiment(
     experiment_manifest["updated_at_utc"] = _utc_now()
     experiment_manifest["aggregate_summary"] = aggregate
     _atomic_write_json(manifest_path, experiment_manifest)
+    refresh_catalog_for_output(output_root)
     return experiment_manifest
 
 
@@ -295,6 +302,7 @@ def _run_single(
     reasoning_effort: str | None,
     log_agent_io: bool,
     max_workers: int,
+    turn_mode: str,
     progress_callback: Callable[[dict[str, Any]], None] | None,
 ) -> dict[str, Any]:
     run_dir = output_root / run_id
@@ -336,6 +344,7 @@ def _run_single(
         "final_ticks": 0,
         "agents": agents,
         "log_agent_io": log_agent_io,
+        "turn_mode": turn_mode,
         "config": asdict(config),
         "provenance": _code_provenance(),
         "brain": _declared_brain_settings(
@@ -421,6 +430,7 @@ def _run_single(
             brains=brains,
             log_agent_io=log_agent_io,
             concurrent_decisions=(brain_spec.max_workers or 1) > 1,
+            turn_mode=turn_mode,
             lifecycle_metadata={
                 "experiment_id": experiment_id,
                 "run_id": run_id,
@@ -976,6 +986,7 @@ def _experiment_checkpoint_extra(
             "max_workers": brain.get("max_workers", 1),
             "log_agent_io": bool(run_manifest.get("log_agent_io", True)),
             "sequential_decisions": brain.get("max_workers", 1) <= 1,
+            "turn_mode": run_manifest.get("turn_mode", DEFAULT_TURN_MODE),
         },
         "plan_usage_checkpoints": list(checkpoints),
     }

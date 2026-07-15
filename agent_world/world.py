@@ -23,6 +23,10 @@ from agent_world.models import (
     WorldConfig,
     WorldState,
 )
+
+
+TURN_MODES = ("simultaneous-v1", "shuffled-sequential-v1")
+DEFAULT_TURN_MODE = "simultaneous-v1"
 from agent_world.maps import build_standard_tiles, find_specialist_spawn, specialist_profile
 from agent_world.rules import (
     BASE_WAIT_ENERGY_RECOVERY,
@@ -60,6 +64,17 @@ class WorldEngine:
     def __init__(self, state: WorldState):
         self.state = state
         self.rng = random.Random(state.config.seed)
+        self._tick_in_progress = False
+        self._tick_schedule: dict[str, Any] | None = None
+        self._activation_context: dict[str, Any] | None = None
+
+    def __setstate__(self, values: dict[str, Any]) -> None:
+        """Keep checkpoints created before versioned turn modes resumable."""
+
+        self.__dict__.update(values)
+        self.__dict__.setdefault("_tick_in_progress", False)
+        self.__dict__.setdefault("_tick_schedule", None)
+        self.__dict__.setdefault("_activation_context", None)
 
     @classmethod
     def create(
@@ -203,33 +218,128 @@ class WorldEngine:
         self.state.events.append(event)
         return event
 
-    def tick(self, decisions: dict[str, AgentDecision | dict[str, Any]]) -> list[Event]:
+    def tick(
+        self,
+        decisions: dict[str, AgentDecision | dict[str, Any]],
+        *,
+        turn_mode: str = DEFAULT_TURN_MODE,
+    ) -> list[Event]:
+        """Resolve a complete tick from decisions made against one shared state."""
+
         before = len(self.state.events)
+        order = self.activation_order(turn_mode)
+        self.begin_tick(turn_mode=turn_mode, activation_order=order)
+        for activation_index, agent_id in enumerate(order):
+            decision = decisions.get(agent_id, AgentDecision(actions=[{"type": "wait"}]))
+            self.resolve_agent_turn(
+                agent_id,
+                decision,
+                activation_index=activation_index,
+                observed_after_activations=0,
+            )
+        self.finish_tick()
+        return self.state.events[before:]
+
+    def activation_order(self, turn_mode: str = DEFAULT_TURN_MODE) -> list[str]:
+        """Return the reproducible activation order for the current tick."""
+
+        if turn_mode not in TURN_MODES:
+            raise ValueError(f"turn mode must be one of: {', '.join(TURN_MODES)}")
+        ordered = sorted(agent_id for agent_id, agent in self.state.agents.items() if agent.alive)
+        if turn_mode == "simultaneous-v1":
+            return self._rotating_actor_order(ordered)
+        shuffled = list(ordered)
+        # Use an isolated RNG so activation scheduling neither consumes nor depends on
+        # the engine RNG used by world mechanics and survives exact checkpoint resume.
+        random.Random(
+            f"agent-world:shuffled-sequential-v1:{self.state.config.seed}:{self.state.tick}"
+        ).shuffle(shuffled)
+        return shuffled
+
+    def begin_tick(self, *, turn_mode: str, activation_order: list[str]) -> None:
+        """Start one tick so a runner may resolve agent turns incrementally."""
+
+        if self._tick_in_progress:
+            raise RuntimeError("A world tick is already in progress.")
+        if turn_mode not in TURN_MODES:
+            raise ValueError(f"turn mode must be one of: {', '.join(TURN_MODES)}")
+        living = {agent_id for agent_id, agent in self.state.agents.items() if agent.alive}
+        if len(activation_order) != len(set(activation_order)) or set(activation_order) != living:
+            raise ValueError("activation_order must contain every living agent exactly once")
+        self._tick_in_progress = True
         self._reset_structure_capacity()
-        for agent_id in self._actor_order():
-            agent = self.state.agents[agent_id]
-            if not agent.alive:
-                continue
-            decision = AgentDecision.from_json_like(decisions.get(agent_id, AgentDecision(actions=[{"type": "wait"}])))
-            self._remember(agent, decision.memory_updates)
-            self.log_event(
-                "agent_response",
-                actor_id=agent.id,
-                position=agent.position,
-                message=decision.intent,
-                data={
-                    "intent": decision.intent,
-                    "actions": decision.actions,
-                    "messages": decision.messages,
-                    "memory_updates": decision.memory_updates,
-                },
-                scope="private",
-                recipients={agent.id},
-            )
-            spare_ap = self._process_decision(agent, decision)
-            self.state.capacity_samples.append(
-                {"spare_ap": max(0, spare_ap), "energy": max(0, agent.needs.energy)}
-            )
+        self._tick_schedule = {"turn_mode": turn_mode, "order": list(activation_order)}
+        self.log_event(
+            "tick_activation_order",
+            data=dict(self._tick_schedule),
+            scope="private",
+        )
+
+    def resolve_agent_turn(
+        self,
+        agent_id: str,
+        decision: AgentDecision | dict[str, Any],
+        *,
+        activation_index: int,
+        observed_after_activations: int,
+    ) -> list[Event]:
+        """Resolve one agent's decision inside the active tick."""
+
+        if not self._tick_in_progress:
+            raise RuntimeError("begin_tick must be called before resolving an agent turn")
+        before = len(self.state.events)
+        agent = self.state.agents[agent_id]
+        if not agent.alive:
+            return []
+        parsed = AgentDecision.from_json_like(decision)
+        schedule = self._tick_schedule
+        if schedule is None:
+            raise RuntimeError("Active tick has no activation schedule")
+        activation = {
+            "turn_mode": schedule["turn_mode"],
+            "index": activation_index,
+            "position": activation_index + 1,
+            "total": len(schedule["order"]),
+            "prior_resolved_activations": activation_index,
+            "observed_after_activations": observed_after_activations,
+        }
+        self._activation_context = activation
+        self.log_event(
+            "agent_activation",
+            actor_id=agent.id,
+            position=agent.position,
+            data=activation,
+            scope="private",
+            recipients={agent.id},
+        )
+        self._remember(agent, parsed.memory_updates)
+        self.log_event(
+            "agent_response",
+            actor_id=agent.id,
+            position=agent.position,
+            message=parsed.intent,
+            data={
+                "intent": parsed.intent,
+                "actions": parsed.actions,
+                "messages": parsed.messages,
+                "memory_updates": parsed.memory_updates,
+                "activation": activation,
+            },
+            scope="private",
+            recipients={agent.id},
+        )
+        spare_ap = self._process_decision(agent, parsed)
+        self.state.capacity_samples.append(
+            {"spare_ap": max(0, spare_ap), "energy": max(0, agent.needs.energy)}
+        )
+        self._activation_context = None
+        return self.state.events[before:]
+
+    def finish_tick(self) -> None:
+        """Apply global end-of-tick mechanics after all activations resolve."""
+
+        if not self._tick_in_progress:
+            raise RuntimeError("begin_tick must be called before finish_tick")
         self._accumulate_build_readiness()
         self._apply_survival()
         self._apply_food_spoilage()
@@ -239,12 +349,13 @@ class WorldEngine:
         self._settle_due_contracts()
         self._apply_structure_upkeep()
         self.state.tick += 1
-        return self.state.events[before:]
+        self._tick_in_progress = False
+        self._tick_schedule = None
+        self._activation_context = None
 
-    def _actor_order(self) -> list[str]:
+    def _rotating_actor_order(self, ordered: list[str]) -> list[str]:
         """Rotate resolution priority every tick while remaining seed-reproducible."""
 
-        ordered = sorted(agent_id for agent_id, agent in self.state.agents.items() if agent.alive)
         if len(ordered) <= 1:
             return ordered
         direction = 1 if self.state.config.seed % 2 else -1
@@ -1703,12 +1814,15 @@ class WorldEngine:
         return action_points
 
     def _invalid(self, agent: Agent, action: dict[str, Any], reason: str) -> None:
+        data: dict[str, Any] = {"action": action}
+        if self._activation_context is not None:
+            data["activation"] = dict(self._activation_context)
         self.log_event(
             "invalid_action",
             actor_id=agent.id,
             position=agent.position,
             message=reason,
-            data={"action": action},
+            data=data,
             scope="private",
             recipients={agent.id},
         )

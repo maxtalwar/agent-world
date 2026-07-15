@@ -17,7 +17,14 @@ from agent_world.rules import (
 )
 
 
-AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
+AGENT_IO_EVENT_TYPES = {
+    "agent_observation",
+    "agent_prompt",
+    "agent_prompt_context",
+    "agent_response",
+    "agent_activation",
+    "tick_activation_order",
+}
 OBSERVATION_MODES = (
     "compact-v2",
     "body-only-v3",

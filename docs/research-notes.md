@@ -1,6 +1,9 @@
 # Research Notes
 
-This file captures current observations and next hypotheses so future chats can continue without rediscovering the state of the project.
+This file captures current hypotheses so future chats can continue without
+rediscovering the state of the project. Completed experiment interpretations, evidence
+paths, exclusions, and decisions live in the append-only-style
+[research ledger](research-ledger.md).
 
 ## What Has Emerged So Far
 
@@ -38,6 +41,12 @@ To distinguish agent priors from world incentives:
 - reports value transfers/assets and correctly identify interrupted runs and LLM failures
 
 Important: build-readiness diagnostics are for researchers only and are not included in agent observations.
+
+Model-facing boundary experiments found a recurring attention tradeoff: literal
+grounding reduced invalid actions but also suppressed speech and offers; body-only did
+not help; lightweight map indexing narrowly reduced observation-obvious errors but did
+not clearly improve downstream society. `compact-v2` therefore remains the control.
+See the research ledger for exact runs, metrics, exclusions, and inference limits.
 
 ## Current Hypothesis
 

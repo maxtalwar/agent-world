@@ -17,7 +17,14 @@ from agent_world.metrics import is_decision_failure_message, is_quota_failure_me
 from agent_world.rules import RESOURCE_VALUES, TERRAIN_RULES, recipes_for_mode
 from agent_world.usage import summarize_codex_simulation_credits
 
-AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
+AGENT_IO_EVENT_TYPES = {
+    "agent_observation",
+    "agent_prompt",
+    "agent_prompt_context",
+    "agent_response",
+    "agent_activation",
+    "tick_activation_order",
+}
 SUBSISTENCE_ITEMS = frozenset({"food", "water"})
 MILESTONE_EVENT_TYPES = (
     "build_started",
@@ -165,14 +172,16 @@ def build_report(
         "dynamic_input_components": _dynamic_input_components(events),
     }
     population = _summarize_population(events, snapshot, usage_records)
+    turn_dynamics = _summarize_turn_dynamics(events)
 
     wealth_values = [agent["wealth"] for agent in agents.values()]
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "source": source,
         "run": run_summary,
         "config": snapshot.get("config", {}),
         "population": population,
+        "turn_dynamics": turn_dynamics,
         "survival": {
             "living": sum(1 for agent in agents.values() if agent["alive"]),
             "dead": len(deaths),
@@ -410,10 +419,149 @@ def _summarize_action_validity(events: list[dict[str, Any]]) -> dict[str, Any]:
         "reason_categories": dict(reason_categories.most_common()),
         "observation_attribution": dict(observation_attribution.most_common()),
         "observation_attribution_note": (
-            "Diagnostic classification from the logged pre-tick observation. "
+            "Diagnostic classification from the logged decision-time observation. "
             "Potential state changes include other-agent contention and earlier actions in the same submitted plan."
         ),
     }
+
+
+def _summarize_turn_dynamics(events: list[dict[str, Any]]) -> dict[str, Any]:
+    """Summarize activation timing without treating interacting agents as independent."""
+
+    schedules = [event for event in events if event.get("type") == "tick_activation_order"]
+    observations = {
+        (event.get("tick"), event.get("actor_id")): (event.get("data") or {}).get("activation") or {}
+        for event in events
+        if event.get("type") == "agent_observation"
+    }
+    responses = [event for event in events if event.get("type") == "agent_response"]
+    response_activations = {
+        (event.get("tick"), event.get("actor_id")): (event.get("data") or {}).get("activation") or {}
+        for event in responses
+    }
+    invalid_events = [event for event in events if event.get("type") == "invalid_action"]
+    modes = Counter(
+        str((event.get("data") or {}).get("turn_mode") or "unknown") for event in schedules
+    )
+    position_bins: dict[str, Counter[str]] = defaultdict(Counter)
+    for response in responses:
+        activation = (response.get("data") or {}).get("activation") or {}
+        bucket = _activation_position_bucket(activation)
+        position_bins[bucket]["decisions"] += 1
+        actions = (response.get("data") or {}).get("actions") or []
+        position_bins[bucket]["proposed_actions"] += len(actions)
+    for event in invalid_events:
+        activation = (event.get("data") or {}).get("activation") or {}
+        position_bins[_activation_position_bucket(activation)]["invalid_actions"] += 1
+    for event in events:
+        if event.get("type") not in {"say", "broadcast", "whisper", "offer_trade", "accept_trade"}:
+            continue
+        activation = response_activations.get((event.get("tick"), event.get("actor_id")), {})
+        position_bins[_activation_position_bucket(activation)][str(event.get("type"))] += 1
+
+    by_position = {}
+    for bucket in ("early", "middle", "late", "unknown"):
+        counts = position_bins.get(bucket, Counter())
+        if not counts:
+            continue
+        proposed = counts.get("proposed_actions", 0)
+        by_position[bucket] = {
+            **dict(counts),
+            "invalid_actions_per_proposed_action_pct": (
+                round(100 * counts.get("invalid_actions", 0) / proposed, 1)
+                if proposed
+                else 0.0
+            ),
+        }
+
+    observed_same_tick = [
+        activation
+        for activation in observations.values()
+        if int(activation.get("observed_same_tick_event_count") or 0) > 0
+    ]
+    observed_types = Counter(
+        event_type
+        for activation in observations.values()
+        for event_type in activation.get("observed_same_tick_event_types") or []
+    )
+    invalid_with_prior_resolutions = sum(
+        int((((event.get("data") or {}).get("activation") or {}).get("prior_resolved_activations") or 0) > 0)
+        for event in invalid_events
+    )
+    invalid_with_unobserved_prior_resolutions = sum(
+        int(
+            int(activation.get("prior_resolved_activations") or 0) > 0
+            and int(activation.get("observed_after_activations") or 0) == 0
+        )
+        for event in invalid_events
+        for activation in [((event.get("data") or {}).get("activation") or {})]
+    )
+    invalid_after_visible_event = sum(
+        int(
+            int(
+                observations.get((event.get("tick"), event.get("actor_id")), {}).get(
+                    "observed_same_tick_event_count", 0
+                )
+                or 0
+            )
+            > 0
+        )
+        for event in invalid_events
+    )
+    communication_types = {"say", "broadcast", "whisper"}
+    decisions_after_same_tick_speech = []
+    for response in responses:
+        activation = observations.get((response.get("tick"), response.get("actor_id")), {})
+        if communication_types.intersection(activation.get("observed_same_tick_event_types") or []):
+            decisions_after_same_tick_speech.append(response)
+    post_speech_actions = Counter(
+        str(action.get("type") or "unknown")
+        for response in decisions_after_same_tick_speech
+        for action in ((response.get("data") or {}).get("actions") or [])
+        if isinstance(action, dict)
+    )
+    return {
+        "mode": modes.most_common(1)[0][0] if modes else None,
+        "ticks_with_schedule": len(schedules),
+        "activation_orders": [
+            {"tick": event.get("tick"), "order": (event.get("data") or {}).get("order", [])}
+            for event in schedules
+        ],
+        "observations": len(observations),
+        "observations_after_prior_activations": sum(
+            int(int(activation.get("observed_after_activations") or 0) > 0)
+            for activation in observations.values()
+        ),
+        "observations_with_same_tick_events": len(observed_same_tick),
+        "same_tick_event_types_observed": dict(observed_types.most_common()),
+        "invalid_actions_with_prior_resolutions": invalid_with_prior_resolutions,
+        "invalid_actions_with_unobserved_prior_resolutions": invalid_with_unobserved_prior_resolutions,
+        "invalid_actions_after_observing_same_tick_events": invalid_after_visible_event,
+        "decisions_after_observing_same_tick_speech": len(decisions_after_same_tick_speech),
+        "actions_after_observing_same_tick_speech": dict(post_speech_actions.most_common()),
+        "by_activation_position": by_position,
+        "interpretation_note": (
+            "Activation-position rows are descriptive. Agents interact within one world, so they "
+            "are not independent statistical samples. In simultaneous-v1, prior activations were "
+            "not included in the decision observation; in shuffled-sequential-v1, they were."
+        ),
+    }
+
+
+def _activation_position_bucket(activation: dict[str, Any]) -> str:
+    try:
+        index = int(activation.get("index"))
+        total = int(activation.get("total"))
+    except (TypeError, ValueError):
+        return "unknown"
+    if total <= 0 or index < 0:
+        return "unknown"
+    fraction = (index + 0.5) / total
+    if fraction <= 1 / 3:
+        return "early"
+    if fraction <= 2 / 3:
+        return "middle"
+    return "late"
 
 
 def _invalid_reason_category(reason: str) -> str:
@@ -1467,6 +1615,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         for specialty, summary in ((population.get("specialties") or {}).get("by_specialty") or {}).items()
     ]
     action_diagnostics = report.get("actions", {}).get("diagnostics", {})
+    turn_dynamics = report.get("turn_dynamics", {})
     trade_funnel = economy.get("trades", {}).get("funnel", {})
     lines = [
         f"# Run report: {report.get('source') or 'unnamed'}",
@@ -1540,6 +1689,11 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines += [
         "",
         "## Reliability",
+        f"- Turn mode: {turn_dynamics.get('mode') or 'legacy/unknown'}"
+        f" | observations seeing earlier same-tick events: {turn_dynamics.get('observations_with_same_tick_events', 0)}"
+        f" | potential stale invalids after unobserved prior resolutions: "
+        f"{turn_dynamics.get('invalid_actions_with_unobserved_prior_resolutions', 0)}",
+        f"- Activation position diagnostics: {turn_dynamics.get('by_activation_position', {})}",
         f"- Invalid actions: {report['actions']['invalid_total']}"
         f" / {action_diagnostics.get('proposed_actions', 0)} proposed"
         f" ({report['reliability']['invalid_actions_per_proposed_action_pct']}% of proposed actions)"

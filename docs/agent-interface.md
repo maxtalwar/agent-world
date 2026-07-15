@@ -2,6 +2,13 @@
 
 Agents receive a local observation each tick and return a structured decision. They never mutate state directly. The world engine validates every proposed action.
 
+Turn timing is a versioned infrastructure treatment and is not disclosed in the model
+prompt. In `simultaneous-v1`, every agent decides from the same pre-resolution state and
+the engine resolves decisions in rotating order. In `shuffled-sequential-v1`, agents are
+deterministically reshuffled each tick; each agent observes and resolves immediately, so
+later agents can see earlier movement, speech, offers, and resource changes. Neither
+mode changes action rules or enables remote exchange.
+
 ## Prompt Principle
 
 Prompts expose constraints and affordances, not goals. They should not instruct agents to trade, cooperate, build, form firms, create laws, or optimize wealth.
