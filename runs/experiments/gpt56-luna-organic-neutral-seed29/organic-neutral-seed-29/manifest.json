@@ -1,0 +1,451 @@
+{
+  "agents": 5,
+  "brain": {
+    "api_style": "chat",
+    "base_url": "https://openrouter.ai/api/v1",
+    "max_output_tokens": 12000,
+    "max_retries": 4,
+    "max_workers": 5,
+    "min_request_interval_seconds": 0.5,
+    "model": "openai/gpt-5.6-luna",
+    "provider": "openrouter",
+    "provider_order": [],
+    "reasoning_effort": "medium",
+    "timeout_seconds": 180,
+    "type": "llm"
+  },
+  "condition": {
+    "applied_config_overrides": {
+      "economy_mode": "organic",
+      "geography_mode": "dispersed",
+      "objective_mode": "neutral"
+    },
+    "environment": "organic",
+    "id": "organic-neutral",
+    "objective": "neutral",
+    "requested_config_overrides": {
+      "economy_mode": "organic",
+      "geography_mode": "dispersed",
+      "objective_mode": "neutral"
+    },
+    "unsupported_config_overrides": {}
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "organic",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "neutral",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 29,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "created_at_utc": "2026-07-10T04:40:58.639163Z",
+  "error": null,
+  "execution_index": 1,
+  "experiment_id": "gpt56-luna-organic-neutral-seed29",
+  "final_ticks": 40,
+  "hashes": {
+    "experiments_source_sha256": "70008e5ba22b4fcbd6749e04ecc2fb75d393859f215265216c2f568ac2c7c8d9",
+    "initial_api_system_prompt_sha256": "d5812ff3bba336cd5e146d442273c0e464c81fe953b891e8283cab47a9866398",
+    "initial_api_user_prompt_sha256": "51e8832e5fa556e5666d318a10dac1c18b4a269f1d8384a133caae2c35c30c00",
+    "initial_static_context_sha256": "c9d85879eec6ddbd40ac9f11dedba535ad11bee61065640167cf86f55f583841",
+    "interface_source_sha256": "322b147e34c16cca805adcf1c2df8d152247f0aeeb0a5378c3be809f60c43424",
+    "maps_source_sha256": "e7d85834a7e2cddd95221489bf0c742f6b9459317893b5ddaac9ad71c4ddd3cc",
+    "models_source_sha256": "0b3f4305f8b85b6b73783bc63a96a18a7816ee85b9ba160088f901f72fd2d7f3",
+    "openai_brain_source_sha256": "8292bc86825f5604b282c7b45fcc95f3e319e186e006953b4d2b7cb7dcd2767c",
+    "rules_source_sha256": "a10a67b120788b755fecd63432632fecc9fc216719c21954a4561a4942ec78d0",
+    "runner_source_sha256": "af51b13005f44c5646e2e250d31f78f2577f41ae1e9e60b5f1fb7286ced3fe60",
+    "world_source_sha256": "a96b3d9ce646363b2f744104616bacf5ab9035b80ac69742b84d23b81f1bb869"
+  },
+  "outputs": {
+    "directory": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/gpt56-luna-organic-neutral-seed29/organic-neutral-seed-29",
+    "events": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/gpt56-luna-organic-neutral-seed29/organic-neutral-seed-29/run.jsonl",
+    "manifest": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/gpt56-luna-organic-neutral-seed29/organic-neutral-seed-29/manifest.json",
+    "report_json": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/gpt56-luna-organic-neutral-seed29/organic-neutral-seed-29/run-report.json",
+    "report_markdown": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/gpt56-luna-organic-neutral-seed29/organic-neutral-seed-29/run-report.md",
+    "snapshot": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/gpt56-luna-organic-neutral-seed29/organic-neutral-seed-29/run-snapshot.json",
+    "usage": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/gpt56-luna-organic-neutral-seed29/organic-neutral-seed-29/run-usage.jsonl"
+  },
+  "provenance": {
+    "git_dirty": false,
+    "git_root": "/Users/maxtalwar/Desktop/agent-world",
+    "git_sha": "cdfbeea763c80f2bcc0de4d6935c1f3fb2a2a87c",
+    "platform": "macOS-15.7.3-arm64-arm-64bit",
+    "python_version": "3.10.2"
+  },
+  "run_id": "organic-neutral-seed-29",
+  "schema_version": 1,
+  "seed": 29,
+  "status": "completed",
+  "stop_reason": null,
+  "summary": {
+    "event_counts": {
+      "agent_observation": 200,
+      "agent_prompt": 200,
+      "agent_response": 200,
+      "agent_spawned": 5,
+      "build": 1,
+      "chop": 5,
+      "claimed_item_taken": 1,
+      "consume": 95,
+      "drop": 8,
+      "expire_trade": 1,
+      "farm": 1,
+      "fish": 13,
+      "food_spoilage": 21,
+      "gather": 79,
+      "gift": 5,
+      "grant_access": 5,
+      "harvest": 27,
+      "inspect": 4,
+      "invalid_action": 109,
+      "maintain_structure": 3,
+      "mine": 3,
+      "move": 128,
+      "offer_trade": 1,
+      "run_completed": 1,
+      "run_started": 1,
+      "say": 43,
+      "structure_upkeep_paid": 2,
+      "survival_damage": 25,
+      "wait": 109,
+      "world_created": 1
+    },
+    "headline": {
+      "asset_adjusted_gini": 0.1420560747663553,
+      "complete_structures": 1,
+      "construction_contribution_events": 1,
+      "construction_contribution_value": 10,
+      "contract_actions": 0,
+      "division_of_labor_index": 0.67,
+      "final_tick": 40,
+      "gift_units": 5,
+      "gift_value": 7,
+      "gifts": 5,
+      "groups": 0,
+      "living_agents": 5,
+      "llm_cost_usd": 1.4682,
+      "market_actions": 6,
+      "market_conversion_pct": 0.0,
+      "productive_asset_value": 10,
+      "survival_rate": 1.0,
+      "trade_offers": 1,
+      "trade_volume": 0,
+      "trades_accepted": 0,
+      "wealth_gini": 0.0742268041237113
+    },
+    "metrics": {
+      "agents": {
+        "dead": 0,
+        "living": 5,
+        "max_lifespan": 40,
+        "median_lifespan": 40.0,
+        "min_lifespan": 40,
+        "total": 5
+      },
+      "capacity": {
+        "agent_ticks_with_spare_capacity_pct": 31.5,
+        "median_energy": 16.0,
+        "median_spare_action_points": 0.0,
+        "samples": 200
+      },
+      "claims": {
+        "item_piles": 7,
+        "structures": 1,
+        "tiles": 1
+      },
+      "construction": {
+        "contributions": 0,
+        "cooperative_sites": 0,
+        "in_progress_by_type": {},
+        "sites_completed": 1,
+        "sites_in_progress": 0,
+        "sites_started": 0
+      },
+      "economic_flows": {
+        "contracts": {
+          "accept_contract": 0,
+          "create_contract": 0,
+          "default_contract": 0,
+          "fulfill_contract": 0,
+          "repay_contract": 0
+        },
+        "gifts": {
+          "actions": 5,
+          "by_item": {
+            "food": 2,
+            "water": 3
+          },
+          "edges": {
+            "agent-1->agent-5": 2,
+            "agent-5->agent-1": 1,
+            "agent-5->agent-3": 2
+          },
+          "productive_input_units": 0,
+          "reciprocal_pairs": 1,
+          "subsistence_units": 5,
+          "units": 5,
+          "value": 7,
+          "within_final_group_actions": 0
+        },
+        "market": {
+          "accepted": 0,
+          "completed_price_history": 0,
+          "conversion_pct": 0.0,
+          "invalid_accept_attempts": 3,
+          "median_acceptance_ticks": 0.0,
+          "offers": 1,
+          "transfer_value": 0
+        }
+      },
+      "events": {
+        "agent_observation": 200,
+        "agent_prompt": 200,
+        "agent_response": 200,
+        "agent_spawned": 5,
+        "build": 1,
+        "chop": 5,
+        "claimed_item_taken": 1,
+        "consume": 95,
+        "drop": 8,
+        "expire_trade": 1,
+        "farm": 1,
+        "fish": 13,
+        "food_spoilage": 21,
+        "gather": 79,
+        "gift": 5,
+        "grant_access": 5,
+        "harvest": 27,
+        "inspect": 4,
+        "invalid_action": 109,
+        "maintain_structure": 3,
+        "mine": 3,
+        "move": 128,
+        "offer_trade": 1,
+        "run_completed": 1,
+        "run_started": 1,
+        "say": 43,
+        "structure_upkeep_paid": 2,
+        "survival_damage": 25,
+        "wait": 109,
+        "world_created": 1
+      },
+      "groups": {
+        "agreements": 0,
+        "claimed_tiles": 0,
+        "count": 0,
+        "memberships": 0,
+        "owned_structures": 0,
+        "rules": 0
+      },
+      "infrastructure": {
+        "build_readiness": {
+          "ready_counts": {}
+        },
+        "builds": 1,
+        "ever_buildable": [
+          "farm_plot",
+          "storage"
+        ],
+        "farm_actions": 1,
+        "farm_plots": 1,
+        "harvest_actions": 27,
+        "houses": 0,
+        "improved_food_gather_actions": 0,
+        "never_buildable": [
+          "house",
+          "shelter",
+          "well",
+          "workshop"
+        ],
+        "retrieve_actions": 0,
+        "storage_capacity": 0,
+        "storage_used": 0,
+        "store_actions": 0,
+        "structures_by_type": {
+          "farm_plot": 1
+        },
+        "wells": 0,
+        "workshops": 0
+      },
+      "invalid_actions": {
+        "reasons": {
+          "Agent cannot accept their own trade offer.": 1,
+          "Agent does not control that subject.": 1,
+          "Agent lacks gifted items.": 1,
+          "Farming requires a farm plot on this tile.": 1,
+          "Fishing requires fishable food in current or adjacent water.": 8,
+          "Food on this improved tile requires access to its farm plot.": 1,
+          "Moving into forest requires 2 action points.": 1,
+          "No action points remain this tick.": 3,
+          "No fiber is available.": 4,
+          "No food available to consume.": 4,
+          "No food is available on this tile.": 4,
+          "No food is available.": 13,
+          "No ore is available.": 3,
+          "No stone is available.": 1,
+          "No water available to consume.": 17,
+          "No water is available on this tile, from an accessible well, or adjacent water.": 3,
+          "No water is available.": 33,
+          "No wood is available.": 3,
+          "Offerer carrying capacity would be exceeded.": 1,
+          "Recipient lacks requested goods.": 1,
+          "Target carrying capacity would be exceeded.": 4,
+          "farm requires 7 energy.": 1
+        },
+        "total": 109
+      },
+      "llm": {
+        "decision_failures": 0,
+        "quota_failures": 0,
+        "rate_limit_failures": 0
+      },
+      "productive_assets": {
+        "agent_wealth_including_asset_shares": {
+          "agent-1": 18,
+          "agent-2": 20,
+          "agent-3": 19,
+          "agent-4": 16,
+          "agent-5": 34
+        },
+        "asset_adjusted_gini": 0.1420560747663553,
+        "structure_replacement_value": {
+          "structure-1": 10
+        },
+        "value_by_owner": {
+          "agent-5": 10
+        }
+      },
+      "resources": {
+        "coin": 20,
+        "fiber": 419,
+        "food": 197,
+        "ore": 92,
+        "stone": 336,
+        "water": 915,
+        "wood": 895
+      },
+      "specialization": {
+        "agents": {
+          "agent-1": {
+            "actions": {
+              "gather": 22,
+              "harvest": 6
+            },
+            "activity_concentration": 0.663,
+            "dominant_activity": "gather"
+          },
+          "agent-2": {
+            "actions": {
+              "chop": 3,
+              "gather": 16
+            },
+            "activity_concentration": 0.734,
+            "dominant_activity": "gather"
+          },
+          "agent-3": {
+            "actions": {
+              "fish": 1,
+              "gather": 13,
+              "harvest": 5,
+              "mine": 3
+            },
+            "activity_concentration": 0.421,
+            "dominant_activity": "gather"
+          },
+          "agent-4": {
+            "actions": {
+              "fish": 12,
+              "gather": 16
+            },
+            "activity_concentration": 0.51,
+            "dominant_activity": "gather"
+          },
+          "agent-5": {
+            "actions": {
+              "chop": 2,
+              "farm": 1,
+              "gather": 12,
+              "harvest": 16
+            },
+            "activity_concentration": 0.421,
+            "dominant_activity": "harvest"
+          }
+        },
+        "division_of_labor_index": 0.67,
+        "mean_agent_activity_concentration": 0.55
+      },
+      "tick": 40,
+      "trade": {
+        "accepted": 0,
+        "expired": 1,
+        "open": 0,
+        "public_accepted": 0,
+        "public_open": 0,
+        "rejected": 0,
+        "volume": 0
+      },
+      "wealth": {
+        "agent-1": 18,
+        "agent-2": 20,
+        "agent-3": 19,
+        "agent-4": 16,
+        "agent-5": 24
+      },
+      "wealth_gini": 0.0742268041237113
+    },
+    "report_summary": {
+      "completed": true,
+      "stop_reason": null,
+      "usage": {
+        "cache_hit_rate_pct": 0.0,
+        "calls": 200,
+        "completion_tokens": 97690,
+        "prompt_tokens": 705800,
+        "reasoning_tokens": 85258,
+        "total_cost_usd": 1.4682
+      }
+    }
+  },
+  "target_ticks": 40,
+  "updated_at_utc": "2026-07-10T04:47:26.941054Z",
+  "valid_for_analysis": true
+}

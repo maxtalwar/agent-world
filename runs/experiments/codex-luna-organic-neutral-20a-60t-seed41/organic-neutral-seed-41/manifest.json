@@ -1,0 +1,772 @@
+{
+  "agents": 20,
+  "brain": {
+    "api_style": "codex_exec",
+    "base_url": null,
+    "billing_mode": "chatgpt_plan",
+    "executable": "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "max_workers": 10,
+    "model": "gpt-5.6-luna",
+    "provider": "codex_cli",
+    "reasoning_effort": "low",
+    "timeout_seconds": 300,
+    "type": "codex"
+  },
+  "codex_plan_usage": {
+    "attribution": "Account-level observed delta during this run; concurrent Codex usage on the same account may be included.",
+    "available": true,
+    "buckets": {
+      "codex": {
+        "credits": {
+          "after_balance": "2658.8093750000",
+          "balance_delta": "0E-10",
+          "before_balance": "2658.8093750000",
+          "has_credits": true,
+          "unlimited": false
+        },
+        "limit_name": null,
+        "plan_type": "prolite",
+        "primary": {
+          "after_resets_at": 1783670583,
+          "after_used_percent": 58,
+          "before_resets_at": 1783670583,
+          "before_used_percent": 45,
+          "same_window": true,
+          "used_percent_delta": 13,
+          "window_duration_mins": 300
+        },
+        "rate_limit_reached_type": null,
+        "secondary": {
+          "after_resets_at": 1784239375,
+          "after_used_percent": 22,
+          "before_resets_at": 1784239375,
+          "before_used_percent": 20,
+          "same_window": true,
+          "used_percent_delta": 2,
+          "window_duration_mins": 10080
+        }
+      },
+      "codex_bengalfox": {
+        "credits": null,
+        "limit_name": "GPT-5.3-Codex-Spark",
+        "plan_type": "prolite",
+        "primary": {
+          "after_resets_at": 1783680374,
+          "after_used_percent": 0,
+          "before_resets_at": 1783679126,
+          "before_used_percent": 0,
+          "same_window": false,
+          "used_percent_delta": null,
+          "window_duration_mins": 300
+        },
+        "rate_limit_reached_type": null,
+        "secondary": {
+          "after_resets_at": 1784267174,
+          "after_used_percent": 0,
+          "before_resets_at": 1784265926,
+          "before_used_percent": 0,
+          "same_window": false,
+          "used_percent_delta": null,
+          "window_duration_mins": 10080
+        }
+      }
+    },
+    "checkpoint_count": 61,
+    "ended_at_utc": "2026-07-10T05:46:13.930930+00:00",
+    "started_at_utc": "2026-07-10T05:25:25.943590+00:00",
+    "successful_checkpoint_count": 61
+  },
+  "condition": {
+    "applied_config_overrides": {
+      "economy_mode": "organic",
+      "geography_mode": "dispersed",
+      "objective_mode": "neutral"
+    },
+    "environment": "organic",
+    "id": "organic-neutral",
+    "objective": "neutral",
+    "requested_config_overrides": {
+      "economy_mode": "organic",
+      "geography_mode": "dispersed",
+      "objective_mode": "neutral"
+    },
+    "unsupported_config_overrides": {}
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "organic",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "neutral",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 41,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "created_at_utc": "2026-07-10T05:25:25.795887Z",
+  "error": null,
+  "execution_index": 1,
+  "experiment_id": "codex-luna-organic-neutral-20a-60t-seed41",
+  "final_ticks": 60,
+  "hashes": {
+    "codex_brain_source_sha256": "4bff5d325caded9d2e1affd85ac5582a94be487344505f72c6daf3ad4217442c",
+    "experiments_source_sha256": "cb613b56e0da14f5818bf4aa7faa3737574827948f5680e9a78ccc1b7c13ae95",
+    "initial_api_system_prompt_sha256": "d5812ff3bba336cd5e146d442273c0e464c81fe953b891e8283cab47a9866398",
+    "initial_api_user_prompt_sha256": "5d6bf7ae9c2aee09c5308103ec731e7553fe6ef59aba7e87e27a2e1422cba20f",
+    "initial_codex_prompt_sha256": "e5cc930a94bbea2be2935dddd6721d2cb69cf584baec93b2de7348c4cd708f63",
+    "initial_static_context_sha256": "c9d85879eec6ddbd40ac9f11dedba535ad11bee61065640167cf86f55f583841",
+    "interface_source_sha256": "322b147e34c16cca805adcf1c2df8d152247f0aeeb0a5378c3be809f60c43424",
+    "maps_source_sha256": "e7d85834a7e2cddd95221489bf0c742f6b9459317893b5ddaac9ad71c4ddd3cc",
+    "models_source_sha256": "0b3f4305f8b85b6b73783bc63a96a18a7816ee85b9ba160088f901f72fd2d7f3",
+    "openai_brain_source_sha256": "8292bc86825f5604b282c7b45fcc95f3e319e186e006953b4d2b7cb7dcd2767c",
+    "rules_source_sha256": "a10a67b120788b755fecd63432632fecc9fc216719c21954a4561a4942ec78d0",
+    "runner_source_sha256": "af51b13005f44c5646e2e250d31f78f2577f41ae1e9e60b5f1fb7286ced3fe60",
+    "world_source_sha256": "a96b3d9ce646363b2f744104616bacf5ab9035b80ac69742b84d23b81f1bb869"
+  },
+  "outputs": {
+    "directory": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/codex-luna-organic-neutral-20a-60t-seed41/organic-neutral-seed-41",
+    "events": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/codex-luna-organic-neutral-20a-60t-seed41/organic-neutral-seed-41/run.jsonl",
+    "manifest": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/codex-luna-organic-neutral-20a-60t-seed41/organic-neutral-seed-41/manifest.json",
+    "plan_usage": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/codex-luna-organic-neutral-20a-60t-seed41/organic-neutral-seed-41/run-plan-usage.json",
+    "report_json": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/codex-luna-organic-neutral-20a-60t-seed41/organic-neutral-seed-41/run-report.json",
+    "report_markdown": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/codex-luna-organic-neutral-20a-60t-seed41/organic-neutral-seed-41/run-report.md",
+    "snapshot": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/codex-luna-organic-neutral-20a-60t-seed41/organic-neutral-seed-41/run-snapshot.json",
+    "usage": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/codex-luna-organic-neutral-20a-60t-seed41/organic-neutral-seed-41/run-usage.jsonl"
+  },
+  "provenance": {
+    "git_dirty": false,
+    "git_root": "/Users/maxtalwar/Desktop/agent-world",
+    "git_sha": "f7b1b09417bf82bb8d73d4285fa65c87d43efa99",
+    "platform": "macOS-15.7.3-arm64-arm-64bit",
+    "python_version": "3.10.2"
+  },
+  "run_id": "organic-neutral-seed-41",
+  "schema_version": 1,
+  "seed": 41,
+  "status": "completed",
+  "stop_reason": null,
+  "summary": {
+    "event_counts": {
+      "accept_trade": 7,
+      "agent_observation": 872,
+      "agent_prompt": 872,
+      "agent_response": 872,
+      "agent_spawned": 20,
+      "broadcast": 29,
+      "build": 1,
+      "chop": 12,
+      "claimed_item_taken": 1,
+      "consume": 258,
+      "death": 14,
+      "drop": 26,
+      "expire_trade": 48,
+      "farm": 1,
+      "fish": 24,
+      "food_spoilage": 47,
+      "gather": 284,
+      "gift": 23,
+      "harvest": 6,
+      "inspect": 11,
+      "invalid_action": 500,
+      "mine": 4,
+      "move": 545,
+      "offer_trade": 55,
+      "pick_up": 2,
+      "run_completed": 1,
+      "run_started": 1,
+      "say": 174,
+      "survival_damage": 361,
+      "wait": 507,
+      "whisper": 10,
+      "world_created": 1
+    },
+    "headline": {
+      "asset_adjusted_gini": 0.12349726775956271,
+      "complete_structures": 1,
+      "construction_contribution_events": 1,
+      "construction_contribution_value": 10,
+      "contract_actions": 0,
+      "division_of_labor_index": 0.438,
+      "final_tick": 60,
+      "gift_units": 23,
+      "gift_value": 27,
+      "gifts": 23,
+      "groups": 0,
+      "living_agents": 6,
+      "llm_cost_usd": 0.0,
+      "market_actions": 62,
+      "market_conversion_pct": 12.7,
+      "productive_asset_value": 10,
+      "survival_rate": 0.3,
+      "trade_offers": 55,
+      "trade_volume": 20,
+      "trades_accepted": 7,
+      "wealth_gini": 0.10477528089887644
+    },
+    "metrics": {
+      "agents": {
+        "dead": 14,
+        "living": 6,
+        "max_lifespan": 60,
+        "median_lifespan": 40.0,
+        "min_lifespan": 25,
+        "total": 20
+      },
+      "capacity": {
+        "agent_ticks_with_spare_capacity_pct": 68.7,
+        "median_energy": 21.0,
+        "median_spare_action_points": 1.0,
+        "samples": 872
+      },
+      "claims": {
+        "item_piles": 43,
+        "structures": 1,
+        "tiles": 1
+      },
+      "construction": {
+        "contributions": 0,
+        "cooperative_sites": 0,
+        "in_progress_by_type": {},
+        "sites_completed": 1,
+        "sites_in_progress": 0,
+        "sites_started": 0
+      },
+      "economic_flows": {
+        "contracts": {
+          "accept_contract": 0,
+          "create_contract": 0,
+          "default_contract": 0,
+          "fulfill_contract": 0,
+          "repay_contract": 0
+        },
+        "gifts": {
+          "actions": 23,
+          "by_item": {
+            "coin": 1,
+            "food": 4,
+            "water": 18
+          },
+          "edges": {
+            "agent-1->agent-15": 1,
+            "agent-1->agent-16": 2,
+            "agent-1->agent-5": 1,
+            "agent-11->agent-6": 1,
+            "agent-16->agent-1": 1,
+            "agent-16->agent-5": 1,
+            "agent-19->agent-14": 2,
+            "agent-19->agent-20": 1,
+            "agent-2->agent-17": 2,
+            "agent-20->agent-1": 1,
+            "agent-20->agent-19": 1,
+            "agent-3->agent-13": 1,
+            "agent-4->agent-1": 1,
+            "agent-4->agent-19": 2,
+            "agent-6->agent-11": 1,
+            "agent-6->agent-17": 1,
+            "agent-6->agent-2": 3
+          },
+          "productive_input_units": 1,
+          "reciprocal_pairs": 3,
+          "subsistence_units": 22,
+          "units": 23,
+          "value": 27,
+          "within_final_group_actions": 0
+        },
+        "market": {
+          "accepted": 7,
+          "completed_price_history": 7,
+          "conversion_pct": 12.7,
+          "invalid_accept_attempts": 64,
+          "median_acceptance_ticks": 2.0,
+          "offers": 55,
+          "transfer_value": 20
+        }
+      },
+      "events": {
+        "accept_trade": 7,
+        "agent_observation": 872,
+        "agent_prompt": 872,
+        "agent_response": 872,
+        "agent_spawned": 20,
+        "broadcast": 29,
+        "build": 1,
+        "chop": 12,
+        "claimed_item_taken": 1,
+        "consume": 258,
+        "death": 14,
+        "drop": 26,
+        "expire_trade": 48,
+        "farm": 1,
+        "fish": 24,
+        "food_spoilage": 47,
+        "gather": 284,
+        "gift": 23,
+        "harvest": 6,
+        "inspect": 11,
+        "invalid_action": 500,
+        "mine": 4,
+        "move": 545,
+        "offer_trade": 55,
+        "pick_up": 2,
+        "run_completed": 1,
+        "run_started": 1,
+        "say": 174,
+        "survival_damage": 361,
+        "wait": 507,
+        "whisper": 10,
+        "world_created": 1
+      },
+      "groups": {
+        "agreements": 0,
+        "claimed_tiles": 0,
+        "count": 0,
+        "memberships": 0,
+        "owned_structures": 0,
+        "rules": 0
+      },
+      "infrastructure": {
+        "build_readiness": {
+          "ready_counts": {}
+        },
+        "builds": 1,
+        "ever_buildable": [
+          "farm_plot",
+          "storage"
+        ],
+        "farm_actions": 1,
+        "farm_plots": 1,
+        "harvest_actions": 6,
+        "houses": 0,
+        "improved_food_gather_actions": 0,
+        "never_buildable": [
+          "house",
+          "shelter",
+          "well",
+          "workshop"
+        ],
+        "retrieve_actions": 0,
+        "storage_capacity": 0,
+        "storage_used": 0,
+        "store_actions": 0,
+        "structures_by_type": {
+          "farm_plot": 1
+        },
+        "wells": 0,
+        "workshops": 0
+      },
+      "invalid_actions": {
+        "reasons": {
+          "Agent cannot accept their own trade offer.": 21,
+          "Agent lacks gifted items.": 4,
+          "Both parties must meet at (1, 9) to exchange the physical goods.": 2,
+          "Both parties must meet at (11, 11) to exchange the physical goods.": 3,
+          "Both parties must meet at (11, 9) to exchange the physical goods.": 1,
+          "Both parties must meet at (12, 6) to exchange the physical goods.": 1,
+          "Both parties must meet at (6, 12) to exchange the physical goods.": 1,
+          "Both parties must meet at (9, 5) to exchange the physical goods.": 2,
+          "Cannot inspect beyond visibility radius.": 2,
+          "Destination occupancy limit is full or terrain is impassable.": 5,
+          "Fishing requires fishable food in current or adjacent water.": 45,
+          "Gift target must be adjacent or on the same tile.": 7,
+          "Move requires direction north, south, east, or west.": 2,
+          "Moving into mountain requires 3 action points.": 1,
+          "No action points remain this tick.": 8,
+          "No fiber is available on this tile.": 4,
+          "No fiber is available.": 9,
+          "No food available to consume.": 55,
+          "No food is available on this tile.": 25,
+          "No food is available.": 59,
+          "No matching item pile on this tile.": 1,
+          "No ore is available.": 7,
+          "No stone is available.": 1,
+          "No water available to consume.": 43,
+          "No water is available on this tile, from an accessible well, or adjacent water.": 14,
+          "No water is available.": 88,
+          "No wood is available.": 15,
+          "Not enough energy to move.": 3,
+          "Not enough source material or carrying capacity for the requested quantity.": 3,
+          "Offerer carrying capacity would be exceeded.": 2,
+          "Only the trade recipient can accept this offer.": 1,
+          "Recipient carrying capacity would be exceeded.": 1,
+          "Recipient lacks requested goods.": 27,
+          "Target carrying capacity would be exceeded.": 9,
+          "Trade is not open.": 2,
+          "Trade target does not exist or is not alive.": 1,
+          "Trade target is outside visibility radius.": 1,
+          "Whisper target does not exist or is not alive.": 7,
+          "Whisper target must be adjacent or on the same tile.": 2,
+          "chop requires 2 action points.": 1,
+          "fish requires 4 energy.": 1,
+          "fish requires 8 energy.": 4,
+          "gather requires 1 energy.": 3,
+          "gather requires 2 energy.": 4,
+          "gather requires 3 energy.": 2
+        },
+        "total": 500
+      },
+      "llm": {
+        "decision_failures": 9,
+        "quota_failures": 0,
+        "rate_limit_failures": 0
+      },
+      "productive_assets": {
+        "agent_wealth_including_asset_shares": {
+          "agent-1": 21,
+          "agent-10": 22,
+          "agent-11": 21,
+          "agent-12": 18,
+          "agent-13": 14,
+          "agent-14": 15,
+          "agent-15": 21,
+          "agent-16": 17,
+          "agent-17": 11,
+          "agent-18": 22,
+          "agent-19": 11,
+          "agent-2": 29,
+          "agent-20": 14,
+          "agent-3": 18,
+          "agent-4": 18,
+          "agent-5": 15,
+          "agent-6": 20,
+          "agent-7": 21,
+          "agent-8": 18,
+          "agent-9": 20
+        },
+        "asset_adjusted_gini": 0.12349726775956271,
+        "structure_replacement_value": {
+          "structure-1": 10
+        },
+        "value_by_owner": {
+          "agent-2": 10
+        }
+      },
+      "resources": {
+        "coin": 80,
+        "fiber": 521,
+        "food": 161,
+        "ore": 110,
+        "stone": 360,
+        "water": 924,
+        "wood": 980
+      },
+      "specialization": {
+        "agents": {
+          "agent-1": {
+            "actions": {
+              "fish": 1,
+              "gather": 16
+            },
+            "activity_concentration": 0.889,
+            "dominant_activity": "gather"
+          },
+          "agent-10": {
+            "actions": {
+              "gather": 14
+            },
+            "activity_concentration": 1.0,
+            "dominant_activity": "gather"
+          },
+          "agent-11": {
+            "actions": {
+              "chop": 1,
+              "fish": 2,
+              "gather": 32
+            },
+            "activity_concentration": 0.84,
+            "dominant_activity": "gather"
+          },
+          "agent-12": {
+            "actions": {
+              "chop": 2,
+              "gather": 3
+            },
+            "activity_concentration": 0.52,
+            "dominant_activity": "gather"
+          },
+          "agent-13": {
+            "actions": {
+              "gather": 4,
+              "mine": 1
+            },
+            "activity_concentration": 0.68,
+            "dominant_activity": "gather"
+          },
+          "agent-14": {
+            "actions": {
+              "fish": 5,
+              "gather": 22
+            },
+            "activity_concentration": 0.698,
+            "dominant_activity": "gather"
+          },
+          "agent-15": {
+            "actions": {
+              "fish": 1,
+              "gather": 6
+            },
+            "activity_concentration": 0.755,
+            "dominant_activity": "gather"
+          },
+          "agent-16": {
+            "actions": {
+              "chop": 1,
+              "fish": 3,
+              "gather": 23
+            },
+            "activity_concentration": 0.739,
+            "dominant_activity": "gather"
+          },
+          "agent-17": {
+            "actions": {
+              "chop": 3,
+              "gather": 7
+            },
+            "activity_concentration": 0.58,
+            "dominant_activity": "gather"
+          },
+          "agent-18": {
+            "actions": {
+              "gather": 12,
+              "mine": 1
+            },
+            "activity_concentration": 0.858,
+            "dominant_activity": "gather"
+          },
+          "agent-19": {
+            "actions": {
+              "fish": 2,
+              "gather": 11
+            },
+            "activity_concentration": 0.74,
+            "dominant_activity": "gather"
+          },
+          "agent-2": {
+            "actions": {
+              "chop": 2,
+              "farm": 1,
+              "fish": 4,
+              "gather": 18,
+              "harvest": 6
+            },
+            "activity_concentration": 0.396,
+            "dominant_activity": "gather"
+          },
+          "agent-20": {
+            "actions": {
+              "fish": 1,
+              "gather": 17
+            },
+            "activity_concentration": 0.895,
+            "dominant_activity": "gather"
+          },
+          "agent-3": {
+            "actions": {
+              "fish": 1,
+              "gather": 6,
+              "mine": 1
+            },
+            "activity_concentration": 0.594,
+            "dominant_activity": "gather"
+          },
+          "agent-4": {
+            "actions": {
+              "fish": 1,
+              "gather": 19
+            },
+            "activity_concentration": 0.905,
+            "dominant_activity": "gather"
+          },
+          "agent-5": {
+            "actions": {
+              "gather": 9
+            },
+            "activity_concentration": 1.0,
+            "dominant_activity": "gather"
+          },
+          "agent-6": {
+            "actions": {
+              "fish": 1,
+              "gather": 32
+            },
+            "activity_concentration": 0.941,
+            "dominant_activity": "gather"
+          },
+          "agent-7": {
+            "actions": {
+              "chop": 3,
+              "gather": 9
+            },
+            "activity_concentration": 0.625,
+            "dominant_activity": "gather"
+          },
+          "agent-8": {
+            "actions": {
+              "gather": 3,
+              "mine": 1
+            },
+            "activity_concentration": 0.625,
+            "dominant_activity": "gather"
+          },
+          "agent-9": {
+            "actions": {
+              "fish": 2,
+              "gather": 21
+            },
+            "activity_concentration": 0.841,
+            "dominant_activity": "gather"
+          }
+        },
+        "division_of_labor_index": 0.438,
+        "mean_agent_activity_concentration": 0.756
+      },
+      "tick": 60,
+      "trade": {
+        "accepted": 7,
+        "expired": 48,
+        "open": 0,
+        "public_accepted": 0,
+        "public_open": 0,
+        "rejected": 0,
+        "volume": 20
+      },
+      "wealth": {
+        "agent-1": 21,
+        "agent-10": 22,
+        "agent-11": 21,
+        "agent-12": 18,
+        "agent-13": 14,
+        "agent-14": 15,
+        "agent-15": 21,
+        "agent-16": 17,
+        "agent-17": 11,
+        "agent-18": 22,
+        "agent-19": 11,
+        "agent-2": 19,
+        "agent-20": 14,
+        "agent-3": 18,
+        "agent-4": 18,
+        "agent-5": 15,
+        "agent-6": 20,
+        "agent-7": 21,
+        "agent-8": 18,
+        "agent-9": 20
+      },
+      "wealth_gini": 0.10477528089887644
+    },
+    "report_summary": {
+      "completed": true,
+      "stop_reason": null,
+      "usage": {
+        "cache_hit_rate_pct": 59.3,
+        "calls": 872,
+        "completion_tokens": 322558,
+        "plan_limits": {
+          "attribution": "Account-level observed delta during this run; concurrent Codex usage on the same account may be included.",
+          "available": true,
+          "buckets": {
+            "codex": {
+              "credits": {
+                "after_balance": "2658.8093750000",
+                "balance_delta": "0E-10",
+                "before_balance": "2658.8093750000",
+                "has_credits": true,
+                "unlimited": false
+              },
+              "limit_name": null,
+              "plan_type": "prolite",
+              "primary": {
+                "after_resets_at": 1783670583,
+                "after_used_percent": 58,
+                "before_resets_at": 1783670583,
+                "before_used_percent": 45,
+                "same_window": true,
+                "used_percent_delta": 13,
+                "window_duration_mins": 300
+              },
+              "rate_limit_reached_type": null,
+              "secondary": {
+                "after_resets_at": 1784239375,
+                "after_used_percent": 22,
+                "before_resets_at": 1784239375,
+                "before_used_percent": 20,
+                "same_window": true,
+                "used_percent_delta": 2,
+                "window_duration_mins": 10080
+              }
+            },
+            "codex_bengalfox": {
+              "credits": null,
+              "limit_name": "GPT-5.3-Codex-Spark",
+              "plan_type": "prolite",
+              "primary": {
+                "after_resets_at": 1783680374,
+                "after_used_percent": 0,
+                "before_resets_at": 1783679126,
+                "before_used_percent": 0,
+                "same_window": false,
+                "used_percent_delta": null,
+                "window_duration_mins": 300
+              },
+              "rate_limit_reached_type": null,
+              "secondary": {
+                "after_resets_at": 1784267174,
+                "after_used_percent": 0,
+                "before_resets_at": 1784265926,
+                "before_used_percent": 0,
+                "same_window": false,
+                "used_percent_delta": null,
+                "window_duration_mins": 10080
+              }
+            }
+          },
+          "checkpoint_count": 61,
+          "ended_at_utc": "2026-07-10T05:46:13.930930+00:00",
+          "started_at_utc": "2026-07-10T05:25:25.943590+00:00",
+          "successful_checkpoint_count": 61
+        },
+        "prompt_tokens": 11834584,
+        "reasoning_tokens": 253104,
+        "total_cost_usd": 0
+      }
+    }
+  },
+  "target_ticks": 60,
+  "updated_at_utc": "2026-07-10T05:46:14.890340Z",
+  "valid_for_analysis": true
+}

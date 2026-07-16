@@ -1,0 +1,205 @@
+{
+  "actions": {
+    "counts": {
+      "agent_spawned": 5,
+      "chop": 15,
+      "consume": 5,
+      "food_spoilage": 15,
+      "gather": 25,
+      "invalid_action": 45,
+      "move": 71,
+      "survival_damage": 18,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Destination occupancy limit is full or terrain is impassable.": 1,
+      "Moving into forest requires 2 action points.": 13,
+      "No food is available on this tile.": 16,
+      "Not enough energy to move.": 14,
+      "gather requires 4 energy.": 1
+    },
+    "invalid_total": 45,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "chop": 3,
+        "consume": 1,
+        "food_spoilage": 3,
+        "gather": 5,
+        "invalid_action": 5,
+        "move": 15,
+        "survival_damage": 4
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "chop": 3,
+        "consume": 1,
+        "food_spoilage": 3,
+        "gather": 5,
+        "invalid_action": 9,
+        "move": 14,
+        "survival_damage": 4
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "chop": 3,
+        "consume": 1,
+        "food_spoilage": 3,
+        "gather": 5,
+        "invalid_action": 11,
+        "move": 14,
+        "survival_damage": 4
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "chop": 3,
+        "consume": 1,
+        "food_spoilage": 3,
+        "gather": 5,
+        "invalid_action": 12,
+        "move": 14,
+        "survival_damage": 3
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "chop": 3,
+        "consume": 1,
+        "food_spoilage": 3,
+        "gather": 5,
+        "invalid_action": 8,
+        "move": 14,
+        "survival_damage": 3
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {},
+    "says_total": 0
+  },
+  "config": {
+    "action_points_per_tick": 3,
+    "carried_food_spoil_interval": 5,
+    "carried_food_spoil_quantity": 1,
+    "default_carry_capacity": 18,
+    "exhaustion_damage": 2,
+    "height": 16,
+    "max_memory": 50,
+    "recent_event_limit": 20,
+    "seed": 7,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "width": 16
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "food_spoilage_events": 15,
+    "gift_network": {},
+    "gifts": 0,
+    "trades": {
+      "accepted": 0,
+      "accepted_detail": [],
+      "cancelled": 0,
+      "expired": 0,
+      "offered": 0,
+      "rejected": 0
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {},
+  "reliability": {
+    "invalid_action_rate_pct": 22.5,
+    "llm_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "final_tick": 20,
+    "stop_reason": null,
+    "target_ticks": null
+  },
+  "schema_version": 1,
+  "source": "survival-5a-20t-water-spoilage",
+  "structures": {
+    "complete": {},
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {},
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 92,
+        "inventory": {
+          "food": 3,
+          "water": 1,
+          "wood": 3
+        },
+        "wealth": 16
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 92,
+        "inventory": {
+          "food": 3,
+          "water": 1,
+          "wood": 3
+        },
+        "wealth": 16
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [],
+        "health": 92,
+        "inventory": {
+          "food": 3,
+          "water": 1,
+          "wood": 3
+        },
+        "wealth": 16
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 94,
+        "inventory": {
+          "food": 3,
+          "water": 1,
+          "wood": 3
+        },
+        "wealth": 16
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 94,
+        "inventory": {
+          "food": 3,
+          "water": 1,
+          "wood": 3
+        },
+        "wealth": 16
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 5,
+    "survival_damage_events": 18
+  },
+  "transcript": [],
+  "usage": {
+    "cache_hit_rate_pct": 0.0,
+    "calls": 0,
+    "completion_tokens": 0,
+    "prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_cost_usd": 0
+  },
+  "wealth_gini": 0.0
+}

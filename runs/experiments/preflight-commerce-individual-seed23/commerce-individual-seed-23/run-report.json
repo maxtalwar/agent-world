@@ -1,0 +1,382 @@
+{
+  "actions": {
+    "counts": {
+      "agent_spawned": 5,
+      "chop": 7,
+      "consume": 22,
+      "death": 5,
+      "food_spoilage": 2,
+      "gather": 7,
+      "invalid_action": 158,
+      "mine": 2,
+      "move": 22,
+      "run_completed": 1,
+      "run_started": 1,
+      "survival_damage": 91,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Moving into mountain requires 3 action points.": 3,
+      "No stone is available.": 4,
+      "No water is available.": 1,
+      "Not enough energy to move.": 79,
+      "chop requires 5 energy.": 5,
+      "gather requires 3 energy.": 66
+    },
+    "invalid_total": 158,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "chop": 3,
+        "consume": 3,
+        "death": 1,
+        "invalid_action": 23,
+        "move": 5,
+        "survival_damage": 15
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "chop": 1,
+        "consume": 5,
+        "death": 1,
+        "gather": 2,
+        "invalid_action": 40,
+        "move": 4,
+        "survival_damage": 21
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "consume": 3,
+        "death": 1,
+        "invalid_action": 19,
+        "mine": 2,
+        "move": 3,
+        "survival_damage": 14
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "chop": 1,
+        "consume": 7,
+        "death": 1,
+        "food_spoilage": 1,
+        "gather": 3,
+        "invalid_action": 45,
+        "move": 5,
+        "survival_damage": 25
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "chop": 2,
+        "consume": 4,
+        "death": 1,
+        "food_spoilage": 1,
+        "gather": 2,
+        "invalid_action": 31,
+        "move": 5,
+        "survival_damage": 16
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {},
+    "says_total": 0
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "commerce",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "individual",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 23,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "construction": {
+      "assets": {
+        "by_owner": {},
+        "by_owner_kind": {},
+        "complete": 0,
+        "count": 0,
+        "in_progress": 0,
+        "replacement_cost_value": 0,
+        "stored_inventory_value": 0
+      },
+      "contributions": {
+        "by_agent": {},
+        "by_item": {},
+        "by_structure": {},
+        "events": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contributor_ownership": {}
+    },
+    "food_spoilage_events": 2,
+    "gift_by_item": {},
+    "gift_categories": {
+      "materials": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      },
+      "subsistence": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      }
+    },
+    "gift_detail": [],
+    "gift_event_categories": {
+      "empty": 0,
+      "materials_only": 0,
+      "mixed": 0,
+      "subsistence_only": 0
+    },
+    "gift_group_status": {
+      "in_group": 0,
+      "out_group": 0,
+      "unknown": 0
+    },
+    "gift_network": {},
+    "gift_network_quantity": {},
+    "gift_network_value": {},
+    "gift_quantity": 0,
+    "gift_value": 0,
+    "gift_value_by_item": {},
+    "gifts": 0,
+    "institutions": {
+      "access_fees": {
+        "by_item": {},
+        "by_structure": {},
+        "payments": 0,
+        "policies_set": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contracts": {
+        "accepted": 0,
+        "advance_value": 0,
+        "collateral_value": 0,
+        "defaulted": 0,
+        "fulfilled": 0,
+        "offered": 0,
+        "repayment_value": 0,
+        "status": {}
+      },
+      "dividends": {
+        "by_item": {},
+        "claims": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "market_history_entries": 0,
+      "upkeep": {
+        "by_item": {},
+        "maintenance_actions": 0,
+        "missed_cycles": 0,
+        "paid_cycles": 0,
+        "supplied_value": 0
+      }
+    },
+    "trades": {
+      "accept_attempts": 0,
+      "accept_success_rate_pct": 0.0,
+      "acceptance_latency_ticks": {
+        "average": null,
+        "max": null,
+        "median": null,
+        "min": null,
+        "samples": 0
+      },
+      "accepted": 0,
+      "accepted_by_item": {},
+      "accepted_detail": [],
+      "accepted_give_value": 0,
+      "accepted_group_status": {
+        "in_group": 0,
+        "out_group": 0,
+        "unknown": 0
+      },
+      "accepted_receive_value": 0,
+      "accepted_transfer_detail": [],
+      "accepted_value": 0,
+      "cancelled": 0,
+      "conversion_rate_pct": 0.0,
+      "direct_offered": 0,
+      "expired": 0,
+      "invalid_accept_reasons": {},
+      "invalid_accepts": 0,
+      "offered": 0,
+      "offered_group_status": {
+        "in_group": 0,
+        "out_group": 0,
+        "unknown": 0
+      },
+      "open": 0,
+      "public_offered": 0,
+      "rejected": 0,
+      "resolution_rate_pct": 0.0,
+      "resolved_conversion_rate_pct": 0.0,
+      "status_counts": {}
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "death": 19
+  },
+  "reliability": {
+    "invalid_action_rate_pct": 48.8,
+    "llm_failure_events": 0,
+    "llm_failures_by_agent": {},
+    "llm_quota_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "completion_evidence": "run_completed",
+    "final_tick": 60,
+    "status": "completed",
+    "stop_reason": null,
+    "target_ticks": 60
+  },
+  "schema_version": 1,
+  "source": "run",
+  "structures": {
+    "complete": {},
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {},
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 2,
+          "wood": 3
+        },
+        "wealth": 13
+      },
+      "agent-2": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "wood": 3
+        },
+        "wealth": 9
+      },
+      "agent-3": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "ore": 1,
+          "stone": 2
+        },
+        "wealth": 16
+      },
+      "agent-4": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "wood": 1
+        },
+        "wealth": 3
+      },
+      "agent-5": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 2,
+          "wood": 2
+        },
+        "wealth": 10
+      }
+    },
+    "dead": 5,
+    "deaths": [
+      {
+        "agent": "agent-1",
+        "message": "Agent 1 died.",
+        "tick": 19
+      },
+      {
+        "agent": "agent-3",
+        "message": "Agent 3 died.",
+        "tick": 20
+      },
+      {
+        "agent": "agent-5",
+        "message": "Agent 5 died.",
+        "tick": 21
+      },
+      {
+        "agent": "agent-2",
+        "message": "Agent 2 died.",
+        "tick": 26
+      },
+      {
+        "agent": "agent-4",
+        "message": "Agent 4 died.",
+        "tick": 30
+      }
+    ],
+    "living": 0,
+    "survival_damage_events": 91
+  },
+  "transcript": [],
+  "usage": {
+    "cache_hit_rate_pct": 0.0,
+    "calls": 0,
+    "completion_tokens": 0,
+    "prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_cost_usd": 0
+  },
+  "wealth_gini": 0.2353
+}

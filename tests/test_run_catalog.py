@@ -45,6 +45,7 @@ class RunCatalogTests(unittest.TestCase):
             catalog = write_run_catalog(root)
 
             self.assertEqual(catalog["run_count"], 1)
+            self.assertEqual(catalog["root"], str(root.resolve()))
             record = catalog["runs"][0]
             self.assertEqual(record["turn_mode"], "shuffled-sequential-v1")
             self.assertEqual(record["models"], ["gpt-5.6-luna"])

@@ -1,0 +1,3686 @@
+{
+  "actions": {
+    "counts": {
+      "accept_trade": 1,
+      "agent_spawned": 5,
+      "build": 10,
+      "build_started": 2,
+      "chop": 26,
+      "consume": 127,
+      "contribute": 7,
+      "craft": 4,
+      "create_group": 1,
+      "drop": 1,
+      "equip": 4,
+      "expire_trade": 6,
+      "farm": 30,
+      "food_spoilage": 23,
+      "gather": 123,
+      "gift": 27,
+      "grant_access": 7,
+      "harvest": 84,
+      "invalid_action": 88,
+      "invite_member": 23,
+      "join_group": 4,
+      "mine": 11,
+      "move": 115,
+      "offer_trade": 8,
+      "reject_trade": 1,
+      "retrieve": 33,
+      "run_completed": 1,
+      "run_started": 1,
+      "say": 369,
+      "store": 54,
+      "survival_damage": 5,
+      "wait": 189,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Agent has not been invited to this group.": 2,
+      "Agent is not a member of that group.": 1,
+      "Agent lacks gifted items.": 2,
+      "Cannot build on another agent's claimed tile without access.": 1,
+      "Carrying capacity would be exceeded.": 16,
+      "Destination occupancy limit is full or terrain is impassable.": 5,
+      "Gift target must be adjacent or on the same tile.": 3,
+      "Missing inputs: {'stone': 1}": 1,
+      "Missing inputs: {'wood': 1}": 1,
+      "Move requires direction north, south, east, or west.": 1,
+      "No action points remain this tick.": 15,
+      "No fiber is available on this tile.": 4,
+      "No food available to store.": 1,
+      "No food is available on this tile.": 3,
+      "No stone available in storage.": 1,
+      "No water available to consume.": 5,
+      "No water is available on this tile, from an accessible well, or adjacent water.": 7,
+      "No wood available in storage.": 1,
+      "No wood is available on this tile.": 6,
+      "Nothing contributed: you lack those materials or the structure does not need them.": 1,
+      "Structure is not on this tile.": 3,
+      "Target carrying capacity would be exceeded.": 3,
+      "This tile already has a farm plot.": 1,
+      "Trade is not open.": 2,
+      "farm requires 2 action points.": 2
+    },
+    "invalid_total": 88,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "build": 2,
+        "chop": 5,
+        "consume": 24,
+        "contribute": 1,
+        "craft": 1,
+        "create_group": 1,
+        "equip": 1,
+        "farm": 5,
+        "food_spoilage": 5,
+        "gather": 33,
+        "gift": 19,
+        "grant_access": 5,
+        "harvest": 23,
+        "invalid_action": 11,
+        "invite_member": 20,
+        "move": 20,
+        "reject_trade": 1,
+        "retrieve": 7,
+        "store": 5,
+        "wait": 38
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "build": 3,
+        "chop": 1,
+        "consume": 32,
+        "contribute": 1,
+        "expire_trade": 5,
+        "farm": 1,
+        "food_spoilage": 7,
+        "gather": 17,
+        "gift": 4,
+        "harvest": 42,
+        "invalid_action": 17,
+        "join_group": 1,
+        "move": 14,
+        "offer_trade": 6,
+        "retrieve": 5,
+        "store": 13,
+        "wait": 38
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "build": 1,
+        "chop": 7,
+        "consume": 22,
+        "contribute": 2,
+        "craft": 1,
+        "equip": 1,
+        "farm": 8,
+        "food_spoilage": 5,
+        "gather": 29,
+        "gift": 2,
+        "harvest": 8,
+        "invalid_action": 18,
+        "invite_member": 3,
+        "join_group": 1,
+        "mine": 3,
+        "move": 30,
+        "retrieve": 7,
+        "store": 16,
+        "survival_damage": 3,
+        "wait": 36
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "build_started": 1,
+        "chop": 2,
+        "consume": 26,
+        "contribute": 1,
+        "craft": 1,
+        "drop": 1,
+        "equip": 1,
+        "farm": 15,
+        "food_spoilage": 2,
+        "gather": 25,
+        "gift": 2,
+        "invalid_action": 19,
+        "join_group": 1,
+        "mine": 7,
+        "move": 24,
+        "offer_trade": 1,
+        "retrieve": 7,
+        "store": 7,
+        "wait": 41
+      },
+      "agent-5": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "build": 4,
+        "build_started": 1,
+        "chop": 11,
+        "consume": 23,
+        "contribute": 2,
+        "craft": 1,
+        "equip": 1,
+        "expire_trade": 1,
+        "farm": 1,
+        "food_spoilage": 4,
+        "gather": 19,
+        "grant_access": 2,
+        "harvest": 11,
+        "invalid_action": 23,
+        "join_group": 1,
+        "mine": 1,
+        "move": 27,
+        "offer_trade": 1,
+        "retrieve": 7,
+        "store": 13,
+        "survival_damage": 2,
+        "wait": 36
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {
+      "agent-1": 80,
+      "agent-2": 79,
+      "agent-3": 74,
+      "agent-4": 70,
+      "agent-5": 66
+    },
+    "says_total": 369
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "default_carry_capacity": 10,
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 11,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "economy": {
+    "access_grants": 7,
+    "claimed_tiles": 0,
+    "construction": {
+      "assets": {
+        "by_owner": {
+          "agent-2": {
+            "by_type": {
+              "farm_plot": 1,
+              "storage": 1
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 10,
+            "stored_inventory_value": 20,
+            "structure_ids": [
+              "structure-1",
+              "structure-7"
+            ]
+          },
+          "agent-5": {
+            "by_type": {
+              "farm_plot": 1,
+              "storage": 1
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 10,
+            "stored_inventory_value": 4,
+            "structure_ids": [
+              "structure-2",
+              "structure-5"
+            ]
+          },
+          "group-1": {
+            "by_type": {
+              "farm_plot": 1,
+              "shelter": 1,
+              "storage": 1,
+              "well": 2,
+              "workshop": 1
+            },
+            "complete": 6,
+            "count": 6,
+            "in_progress": 0,
+            "owner_kind": "group",
+            "replacement_cost_value": 77,
+            "stored_inventory_value": 77,
+            "structure_ids": [
+              "structure-10",
+              "structure-3",
+              "structure-4",
+              "structure-6",
+              "structure-8",
+              "structure-9"
+            ]
+          }
+        },
+        "by_owner_kind": {
+          "agent": 4,
+          "group": 6
+        },
+        "complete": 10,
+        "count": 10,
+        "in_progress": 0,
+        "replacement_cost_value": 97,
+        "stored_inventory_value": 101
+      },
+      "contributions": {
+        "by_agent": {
+          "agent-1": {
+            "by_item": {
+              "fiber": 4,
+              "wood": 6
+            },
+            "events": 3,
+            "quantity": 10,
+            "structure_ids": [
+              "structure-3",
+              "structure-4",
+              "structure-6"
+            ],
+            "value": 26
+          },
+          "agent-2": {
+            "by_item": {
+              "fiber": 2,
+              "stone": 1,
+              "wood": 2
+            },
+            "events": 3,
+            "quantity": 5,
+            "structure_ids": [
+              "structure-1",
+              "structure-7",
+              "structure-9"
+            ],
+            "value": 14
+          },
+          "agent-3": {
+            "by_item": {
+              "fiber": 2,
+              "stone": 1,
+              "wood": 1
+            },
+            "events": 3,
+            "quantity": 4,
+            "structure_ids": [
+              "structure-6",
+              "structure-8",
+              "structure-9"
+            ],
+            "value": 11
+          },
+          "agent-4": {
+            "by_item": {
+              "stone": 1,
+              "wood": 2
+            },
+            "events": 2,
+            "quantity": 3,
+            "structure_ids": [
+              "structure-6"
+            ],
+            "value": 10
+          },
+          "agent-5": {
+            "by_item": {
+              "fiber": 3,
+              "wood": 10
+            },
+            "events": 6,
+            "quantity": 13,
+            "structure_ids": [
+              "structure-10",
+              "structure-2",
+              "structure-5",
+              "structure-6",
+              "structure-9"
+            ],
+            "value": 36
+          }
+        },
+        "by_item": {
+          "fiber": 11,
+          "stone": 3,
+          "wood": 21
+        },
+        "by_structure": {
+          "structure-1": {
+            "by_agent": {
+              "agent-2": {
+                "by_item": {
+                  "fiber": 1
+                },
+                "quantity": 1,
+                "value": 2
+              }
+            },
+            "by_item": {
+              "fiber": 1
+            },
+            "owner_id": "agent-2",
+            "owner_kind": "agent",
+            "quantity": 1,
+            "type": "farm_plot",
+            "value": 2
+          },
+          "structure-10": {
+            "by_agent": {
+              "agent-5": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "group-1",
+            "owner_kind": "group",
+            "quantity": 3,
+            "type": "well",
+            "value": 8
+          },
+          "structure-2": {
+            "by_agent": {
+              "agent-5": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-5",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "storage",
+            "value": 8
+          },
+          "structure-3": {
+            "by_agent": {
+              "agent-1": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "group-1",
+            "owner_kind": "group",
+            "quantity": 3,
+            "type": "well",
+            "value": 8
+          },
+          "structure-4": {
+            "by_agent": {
+              "agent-1": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "group-1",
+            "owner_kind": "group",
+            "quantity": 3,
+            "type": "storage",
+            "value": 8
+          },
+          "structure-5": {
+            "by_agent": {
+              "agent-5": {
+                "by_item": {
+                  "fiber": 1
+                },
+                "quantity": 1,
+                "value": 2
+              }
+            },
+            "by_item": {
+              "fiber": 1
+            },
+            "owner_id": "agent-5",
+            "owner_kind": "agent",
+            "quantity": 1,
+            "type": "farm_plot",
+            "value": 2
+          },
+          "structure-6": {
+            "by_agent": {
+              "agent-1": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              },
+              "agent-3": {
+                "by_item": {
+                  "wood": 1
+                },
+                "quantity": 1,
+                "value": 3
+              },
+              "agent-4": {
+                "by_item": {
+                  "stone": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 10
+              },
+              "agent-5": {
+                "by_item": {
+                  "wood": 1
+                },
+                "quantity": 1,
+                "value": 3
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "stone": 1,
+              "wood": 6
+            },
+            "owner_id": "group-1",
+            "owner_kind": "group",
+            "quantity": 9,
+            "type": "shelter",
+            "value": 26
+          },
+          "structure-7": {
+            "by_agent": {
+              "agent-2": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-2",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "storage",
+            "value": 8
+          },
+          "structure-8": {
+            "by_agent": {
+              "agent-3": {
+                "by_item": {
+                  "fiber": 1
+                },
+                "quantity": 1,
+                "value": 2
+              }
+            },
+            "by_item": {
+              "fiber": 1
+            },
+            "owner_id": "group-1",
+            "owner_kind": "group",
+            "quantity": 1,
+            "type": "farm_plot",
+            "value": 2
+          },
+          "structure-9": {
+            "by_agent": {
+              "agent-2": {
+                "by_item": {
+                  "stone": 1
+                },
+                "quantity": 1,
+                "value": 4
+              },
+              "agent-3": {
+                "by_item": {
+                  "fiber": 1,
+                  "stone": 1
+                },
+                "quantity": 2,
+                "value": 6
+              },
+              "agent-5": {
+                "by_item": {
+                  "wood": 5
+                },
+                "quantity": 5,
+                "value": 15
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "stone": 2,
+              "wood": 5
+            },
+            "owner_id": "group-1",
+            "owner_kind": "group",
+            "quantity": 8,
+            "type": "workshop",
+            "value": 25
+          }
+        },
+        "events": 17,
+        "quantity": 35,
+        "value": 97
+      },
+      "contributor_ownership": {
+        "agent-1": {
+          "contributed_quantity": 10,
+          "contributed_value": 26,
+          "contribution_value_by_owner": {
+            "group-1": 26
+          },
+          "contribution_value_to_group_owned_assets": 26,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 0,
+          "owned_asset_count": 0,
+          "owned_asset_replacement_cost_value": 0
+        },
+        "agent-2": {
+          "contributed_quantity": 5,
+          "contributed_value": 14,
+          "contribution_value_by_owner": {
+            "agent-2": 10,
+            "group-1": 4
+          },
+          "contribution_value_to_group_owned_assets": 4,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 10,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 10
+        },
+        "agent-3": {
+          "contributed_quantity": 4,
+          "contributed_value": 11,
+          "contribution_value_by_owner": {
+            "group-1": 11
+          },
+          "contribution_value_to_group_owned_assets": 11,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 0,
+          "owned_asset_count": 0,
+          "owned_asset_replacement_cost_value": 0
+        },
+        "agent-4": {
+          "contributed_quantity": 3,
+          "contributed_value": 10,
+          "contribution_value_by_owner": {
+            "group-1": 10
+          },
+          "contribution_value_to_group_owned_assets": 10,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 0,
+          "owned_asset_count": 0,
+          "owned_asset_replacement_cost_value": 0
+        },
+        "agent-5": {
+          "contributed_quantity": 13,
+          "contributed_value": 36,
+          "contribution_value_by_owner": {
+            "agent-5": 10,
+            "group-1": 26
+          },
+          "contribution_value_to_group_owned_assets": 26,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 10,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 10
+        }
+      }
+    },
+    "food_spoilage_events": 23,
+    "gift_by_item": {
+      "fiber": 4,
+      "food": 12,
+      "water": 11,
+      "wood": 2
+    },
+    "gift_categories": {
+      "materials": {
+        "by_item": {
+          "fiber": 4,
+          "wood": 2
+        },
+        "quantity": 6,
+        "value": 14
+      },
+      "subsistence": {
+        "by_item": {
+          "food": 12,
+          "water": 11
+        },
+        "quantity": 23,
+        "value": 35
+      }
+    },
+    "gift_detail": [
+      {
+        "category": "materials_only",
+        "from": "agent-4",
+        "group_status": "out_group",
+        "items": {
+          "fiber": 2
+        },
+        "quantity": 2,
+        "shared_groups": [],
+        "tick": 4,
+        "to": "agent-5",
+        "value": 4
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-2",
+        "group_status": "out_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 5,
+        "to": "agent-4",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-2",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 15,
+        "to": "agent-5",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-3",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 16,
+        "to": "agent-5",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-3",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 17,
+        "to": "agent-4",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 21,
+        "to": "agent-3",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 30,
+        "to": "agent-3",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 33,
+        "to": "agent-4",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 34,
+        "to": "agent-4",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 35,
+        "to": "agent-4",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 36,
+        "to": "agent-3",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 36,
+        "to": "agent-3",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 36,
+        "to": "agent-4",
+        "value": 1
+      },
+      {
+        "category": "materials_only",
+        "from": "agent-4",
+        "group_status": "in_group",
+        "items": {
+          "fiber": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 39,
+        "to": "agent-3",
+        "value": 2
+      },
+      {
+        "category": "materials_only",
+        "from": "agent-2",
+        "group_status": "in_group",
+        "items": {
+          "wood": 2
+        },
+        "quantity": 2,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 40,
+        "to": "agent-5",
+        "value": 6
+      },
+      {
+        "category": "materials_only",
+        "from": "agent-2",
+        "group_status": "in_group",
+        "items": {
+          "fiber": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 40,
+        "to": "agent-5",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 41,
+        "to": "agent-2",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 44,
+        "to": "agent-3",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 46,
+        "to": "agent-5",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 50,
+        "to": "agent-3",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 51,
+        "to": "agent-5",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 52,
+        "to": "agent-3",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 55,
+        "to": "agent-5",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 55,
+        "to": "agent-4",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 56,
+        "to": "agent-5",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 58,
+        "to": "agent-3",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "in_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [
+          "group-1"
+        ],
+        "tick": 59,
+        "to": "agent-3",
+        "value": 2
+      }
+    ],
+    "gift_event_categories": {
+      "empty": 0,
+      "materials_only": 4,
+      "mixed": 0,
+      "subsistence_only": 23
+    },
+    "gift_group_status": {
+      "in_group": 22,
+      "out_group": 5,
+      "unknown": 0
+    },
+    "gift_network": {
+      "agent-1->agent-2": 1,
+      "agent-1->agent-3": 9,
+      "agent-1->agent-4": 5,
+      "agent-1->agent-5": 4,
+      "agent-2->agent-4": 1,
+      "agent-2->agent-5": 3,
+      "agent-3->agent-4": 1,
+      "agent-3->agent-5": 1,
+      "agent-4->agent-3": 1,
+      "agent-4->agent-5": 1
+    },
+    "gift_network_quantity": {
+      "agent-1->agent-2": 1,
+      "agent-1->agent-3": 9,
+      "agent-1->agent-4": 5,
+      "agent-1->agent-5": 4,
+      "agent-2->agent-4": 1,
+      "agent-2->agent-5": 4,
+      "agent-3->agent-4": 1,
+      "agent-3->agent-5": 1,
+      "agent-4->agent-3": 1,
+      "agent-4->agent-5": 2
+    },
+    "gift_network_value": {
+      "agent-1->agent-2": 2,
+      "agent-1->agent-3": 14,
+      "agent-1->agent-4": 6,
+      "agent-1->agent-5": 8,
+      "agent-2->agent-4": 2,
+      "agent-2->agent-5": 9,
+      "agent-3->agent-4": 1,
+      "agent-3->agent-5": 1,
+      "agent-4->agent-3": 2,
+      "agent-4->agent-5": 4
+    },
+    "gift_quantity": 29,
+    "gift_value": 49,
+    "gift_value_by_item": {
+      "fiber": 8,
+      "food": 24,
+      "water": 11,
+      "wood": 6
+    },
+    "gifts": 27,
+    "institutions": {
+      "access_fees": {
+        "by_item": {},
+        "by_structure": {},
+        "payments": 0,
+        "policies_set": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contracts": {
+        "accepted": 0,
+        "advance_value": 0,
+        "collateral_value": 0,
+        "defaulted": 0,
+        "fulfilled": 0,
+        "offered": 0,
+        "repayment_value": 0,
+        "status": {}
+      },
+      "dividends": {
+        "by_item": {},
+        "claims": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "market_history_entries": 0,
+      "upkeep": {
+        "by_item": {},
+        "maintenance_actions": 0,
+        "missed_cycles": 0,
+        "paid_cycles": 0,
+        "supplied_value": 0
+      }
+    },
+    "trades": {
+      "accept_attempts": 3,
+      "accept_success_rate_pct": 33.3,
+      "acceptance_latency_ticks": {
+        "average": 1.0,
+        "max": 1,
+        "median": 1.0,
+        "min": 1,
+        "samples": 1
+      },
+      "accepted": 1,
+      "accepted_by_item": {
+        "fiber": 1,
+        "stone": 1
+      },
+      "accepted_detail": [
+        {
+          "accepted_by": "agent-5",
+          "created_tick": 7,
+          "escrowed": false,
+          "expires_tick": 12,
+          "from_agent": "agent-4",
+          "give": {
+            "stone": 1
+          },
+          "id": "trade-2",
+          "public": false,
+          "receive": {
+            "fiber": 1
+          },
+          "status": "accepted",
+          "to_agent": "agent-5"
+        }
+      ],
+      "accepted_give_value": 4,
+      "accepted_group_status": {
+        "in_group": 0,
+        "out_group": 1,
+        "unknown": 0
+      },
+      "accepted_receive_value": 2,
+      "accepted_transfer_detail": [
+        {
+          "from": "agent-4",
+          "give": {
+            "stone": 1
+          },
+          "give_value": 4,
+          "group_status": "out_group",
+          "latency_ticks": 1,
+          "receive": {
+            "fiber": 1
+          },
+          "receive_value": 2,
+          "shared_groups": [],
+          "tick": 8,
+          "to": "agent-5",
+          "trade_id": "trade-2"
+        }
+      ],
+      "accepted_value": 6,
+      "cancelled": 0,
+      "conversion_rate_pct": 12.5,
+      "direct_offered": 8,
+      "expired": 6,
+      "invalid_accept_reasons": {
+        "Trade is not open.": 2
+      },
+      "invalid_accepts": 2,
+      "offered": 8,
+      "offered_group_status": {
+        "in_group": 0,
+        "out_group": 8,
+        "unknown": 0
+      },
+      "open": 0,
+      "public_offered": 0,
+      "rejected": 1,
+      "resolution_rate_pct": 100.0,
+      "resolved_conversion_rate_pct": 12.5,
+      "status_counts": {
+        "accepted": 1,
+        "expired": 6,
+        "rejected": 1
+      }
+    }
+  },
+  "groups": {
+    "group-1": {
+      "members": [
+        "agent-1",
+        "agent-2",
+        "agent-3",
+        "agent-4",
+        "agent-5"
+      ],
+      "name": "lakeside_settlement"
+    }
+  },
+  "milestone_first_ticks": {
+    "accept_trade": 8,
+    "build": 1,
+    "build_started": 19,
+    "craft": 8,
+    "create_group": 1,
+    "gift": 4,
+    "grant_access": 6,
+    "join_group": 13,
+    "offer_trade": 6
+  },
+  "reliability": {
+    "invalid_action_rate_pct": 6.3,
+    "llm_failure_events": 1,
+    "llm_failures_by_agent": {
+      "agent-4": 1
+    },
+    "llm_quota_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "completion_evidence": "run_completed",
+    "final_tick": 60,
+    "status": "completed",
+    "stop_reason": null,
+    "target_ticks": 60
+  },
+  "schema_version": 1,
+  "source": "live",
+  "structures": {
+    "complete": {
+      "farm_plot": 3,
+      "shelter": 1,
+      "storage": 3,
+      "well": 2,
+      "workshop": 1
+    },
+    "coop_builds": [
+      {
+        "contributors": [
+          "agent-1",
+          "agent-3",
+          "agent-4",
+          "agent-5"
+        ],
+        "type": "shelter"
+      },
+      {
+        "contributors": [
+          "agent-2",
+          "agent-3",
+          "agent-5"
+        ],
+        "type": "workshop"
+      }
+    ],
+    "in_progress": {},
+    "ownership": {
+      "agent-2": 2,
+      "agent-5": 2,
+      "group-1": 6
+    },
+    "timeline": [
+      {
+        "agent": "agent-4",
+        "message": "Agent 4 started building shelter (needs {'wood': 4, 'stone': 1, 'fiber': 2}).",
+        "tick": 19
+      },
+      {
+        "agent": "agent-5",
+        "message": "Agent 5 completed shelter (built by 4 agent(s)).",
+        "tick": 23
+      },
+      {
+        "agent": "agent-5",
+        "message": "Agent 5 started building workshop (needs {'wood': 2, 'stone': 2, 'fiber': 1}).",
+        "tick": 39
+      },
+      {
+        "agent": "agent-2",
+        "message": "Agent 2 completed workshop (built by 3 agent(s)).",
+        "tick": 42
+      }
+    ]
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [
+          "group-1"
+        ],
+        "health": 100,
+        "inventory": {
+          "food": 1,
+          "tool": 1
+        },
+        "wealth": 14
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [
+          "group-1"
+        ],
+        "health": 100,
+        "inventory": {
+          "food": 1
+        },
+        "wealth": 2
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [
+          "group-1"
+        ],
+        "health": 84,
+        "inventory": {
+          "food": 2,
+          "tool": 1,
+          "wood": 1
+        },
+        "wealth": 19
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [
+          "group-1"
+        ],
+        "health": 100,
+        "inventory": {
+          "ore": 1,
+          "tool": 1
+        },
+        "wealth": 20
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [
+          "group-1"
+        ],
+        "health": 87,
+        "inventory": {
+          "food": 2,
+          "tool": 1
+        },
+        "wealth": 16
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 5,
+    "survival_damage_events": 5
+  },
+  "transcript": [
+    {
+      "agent": "agent-1",
+      "message": "I'm gathering food, water, and fiber here. We should coordinate who gathers what.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-2",
+      "message": "This spot has water, forest, mountain, and plains nearby. Great settlement location. Let's cooperate - form a group, share labor, build infrastructure together.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-3",
+      "message": "I'm gathering water and fiber. We should coordinate to build a farm and storage here.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-5",
+      "message": "I'm on forest tile with wood. Gathering fiber and chopping wood to start building. Any interest in forming a group?",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-1",
+      "message": "I'm forming a group 'lakeside_settlement' to coordinate building. We have water, forest, mountain, and plains all nearby - perfect spot. Join up and let's build storage, farm, and shelter together.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-2",
+      "message": "Building a farm plot on (8,8) for reliable food. Let's form a group and coordinate: I'll farm, others gather water, wood, stone. We need storage next.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-3",
+      "message": "Good idea Agent 2. Let's form a group and build here. I'm grabbing fiber now. I can help craft tools once we have materials.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agreed, let's form a group and build a farm and storage. I'm moving south to gather food and fiber now. Agent 5, bring wood and let's coordinate.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-5",
+      "message": "I'm on forest tile with wood. Chopping more wood now. Let's form a group and build storage first, then a well and farm. I can contribute wood and fiber.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-1",
+      "message": "I have 1 fiber and heading to forest for wood. Agent 5, let's pool wood to build storage at (8,8). Agent 2, keep farming. Agent 3/4, gather fiber and stone for tools.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-2",
+      "message": "Joining group-1. I'm harvesting the farm and grabbing fiber for storage. Agent 5, please bring 2 wood to (8,8) so we can build storage next tick. Agent 3 and 4, join group-1 and let's coordinate!",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent 1, I'll have fiber next tick. If Agent 5 brings wood, we can build storage at (8,8). Keep farming the plot!",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-3",
+      "message": "Gathering fiber and food at (8,7), then moving west. I'll have 3 fiber soon\u2014ready to craft a tool once we get stone and wood together.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-4",
+      "message": "Joining group-1. Gathered fiber, moving to (8,8) to start storage. Agent 2, please grant access so I can build. Agent 5, bring 2 wood to finish it.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-5",
+      "message": "Built storage on (7,8) forest tile. I'll grant access to anyone joining a group. Bring wood, fiber, and stone here. Next priorities: well and tool.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent 5, I'm on your tile with wood and fiber. Please join group-1 and grant me access to your storage so I can deposit materials. I'll contribute wood toward a well or tool next.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent 5, please grant me access to your storage at (7,8). I have a farm_plot at (8,8) and can supply food. Let's coordinate.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent 4, harvesting from farm_plot at (8,8) now. You can harvest here too.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-3",
+      "message": "I have 3 fiber now. Moving to (7,8) forest for wood. Need stone from (7,9) mountain for a tool. Anyone have stone to share or want to coordinate?",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, please invite me to group-1. I have fiber ready to contribute. Agent-5, I'll bring materials to your storage at (7,8) once I have access.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, please invite me to group-1 so I can contribute to shared builds. I have 2 fiber and can help with storage/tool/well.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-5",
+      "message": "Chopped wood at (7,8). Need 1 fiber and 1 stone here for tool crafting. Bring materials to storage. Agent-3, Agent-4, please bring fiber. I'll mine stone next tick.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-1",
+      "message": "Inviting agent-4 and agent-5 to group-1. I'm chopping wood and building a well here for shared water access. Agent-5, please grant me tile access so the well can be group-owned. Stone still needed for tools - I'll mine from (7,9) next tick.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-2",
+      "message": "Energy critically low, resting this tick. Will harvest farm_plot next tick. Agent-1, please invite me to group-1 for coordination. Agent-5, please grant storage access so we can share materials.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-3",
+      "message": "Chopped wood at (7,8). I have 3 fiber + 1 wood now, just need 1 stone for a tool. Agent 5, can you share stone from (7,9) or grant me storage access here? I can contribute fiber to shared builds.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I've moved to (7,8) with 2 fiber for agent-5's tool project. Please invite me to group-1 so I can help with shared builds. Agent-5, I'm gifting you 2 fiber for the tool.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-5",
+      "message": "Moving to (6,8) for fiber. I have wood in storage at (7,8). Still need 1 stone from mountain (7,9). Agent-1, please invite agent-4 to group-1 so they can help. Anyone with stone, please bring it to storage at (7,8).",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-1",
+      "message": "Moving to (7,7) to build a well for the settlement. I have the materials ready. Agent-4, invited you to group-1. Agent-3, bring stone to (7,7) or (7,8) for tools. Agent-5, please grant me storage access at (7,8) so we can share materials.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, please invite me to group-1 so we can coordinate builds. I have a working farm_plot at (8,8) producing food. Agent-4, farm_plot here is open to you - harvest food if needed. I'm gifting you 1 food now.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-3",
+      "message": "Moving to (7,9) mountain to mine stone. Next tick I'll have stone and can craft a tool. Anyone need fiber? I have 3.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, please invite me to group-1 so I can contribute to shared builds. Heading to mountain (7,9) now to mine stone for the tool project. Agent-3, I'll bring stone back to (7,8) storage once I get access.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-2, you look thirsty. I can share 1 water if you grant me harvest access to your farm_plot at (8,8). Fair trade?",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, invited you to group-1! Your farm_plot is valuable. Well at (7,7) is complete and open to all. Agent-3, agent-4, well access granted - come drink if thirsty. I'm resting to recover energy. Next: build storage at (7,7) and craft tools. Agent-3, bring stone here when ready.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-3, I'm offering 1 food for 2 wood. Need wood to build storage at (8,8). Please accept!",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, still requesting invite to group-1. My farm_plot at (8,8) is productive and I want to contribute to shared infrastructure.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-3",
+      "message": "Mined stone at (7,9). Crafting tool now. I'll equip it and help with builds. Agent-1, consider inviting me to group-1 for shared infrastructure.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I'm at (7,9) mining stone now. Please invite me to group-1 so I can contribute to shared builds. I'll bring stone back for tool crafting.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-5",
+      "message": "I need 1 stone for tool crafting. Can you mine and trade/gift me 1 stone? I have 3 fiber to offer.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-3, I'm at (6,9) with 3 fiber. Need 1 stone for tool. Please mine 1 stone and trade or gift it to me. I can give fiber in return. I'll wait here for energy recovery.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-1",
+      "message": "All three of you are invited to group-1! Welcome. Next priority: build storage near well at (7,7). Agent-3 bring stone, agent-4 bring stone, agent-2 keep farming. I'm gathering fiber now.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-3, my trade (1 food for 2 wood) is still open. I also have water if you're thirsty. Let's cooperate!",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I have a productive farm_plot at (8,8) and fiber ready. I need 2 wood to build storage for group-1. Can you help or invite me?",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-3",
+      "message": "Mined stone, crafting tool next tick. Agent-5, I'll mine extra stone for you after. Agent-1, invite me to group-1 so we can collaborate on shared builds.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, I've mined 1 stone. Trading it for 1 fiber - accept when ready. Agent-1, please invite me to group-1 so I can contribute to shared builds. I have stone and can help with tools and construction.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-3, I'm offering 1 fiber for 1 stone. Please accept so I can craft a tool and help with builds. I have wood in storage at (7,8).",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-4, if agent-3 can't spare stone, could you trade me 1 stone? I'll give 1 fiber in return.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, I need 2 wood from your forest tile at (7,8) to build group storage at the well. Please grant me access so I can chop. I have fiber ready.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, you're invited to group-1! Use join_group with group-1. The well at (7,7) is accessible. Keep farming - we'll build storage soon for shared supplies.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-3, my trade (1 food for 2 wood) expires next tick! Please accept - you'll free carry space and get food. I need wood for storage to support our settlement.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I have a working farm_plot and fiber. Please invite me to group-1 so I can contribute to shared infrastructure. I can provide steady food.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, crafting my tool now. Next tick I'll mine stone and accept your fiber-for-stone trade. Hang tight.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-3, I'm mining stone here. Could you spare 1 wood? I need 1 wood+1 fiber+1 stone to craft a tool. Also, agent-1 please invite me to group-1 so I can help with shared builds.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-3, please don't accept trade-3. I'm getting stone from agent-4 instead. Trade-3 can expire. I'm heading to (6,8) to chop wood, then craft tool.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, I'm chopping wood on your tile then building storage at (7,7) well site for group-1. All welcome to use it. Agent-4, I've invited you to group-1 - please join so we can coordinate builds.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, trading 2 food for 2 wood - you need food badly and I need wood for storage. Please accept!",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, trade-1 with Agent-3 expiring. I need 2 wood for storage build. Can you invite me to group-1 or trade wood? I offer steady food from my farm_plot.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-1, please invite me to group-1 so I can help with shared builds. I'm mining stone on (7,9) and can contribute materials.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, I don't have wood to spare right now but I'm mining stone. I can trade you 1 stone for 1 wood next tick if you get any.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-4",
+      "message": "Could you spare 1 wood? I have fiber and stone, just need wood to craft a tool.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I've been asking for several ticks. Please invite me to group-1 so I can contribute to shared builds.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-3, can you spare 1 wood? I need it to craft a tool. Also, agent-1, please invite me to group-1!",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-5",
+      "message": "Chopping wood and crafting my tool now! Once equipped, I'll be much more efficient. Agent-4, glad we traded. Agent-1, the well at (7,7) is great progress for the settlement.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-1",
+      "message": "Storage built at (7,7) well tile! Invited agent-3 and agent-4 to group-1. Agent-5, here's water - please drink, you're critical.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, agent-4: invites sent! Join group-1 and we can coordinate shared builds. Next priority: craft tools and farm expansion.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I'm offering 2 food for 2 wood. I need wood to build storage at (8,8) for the settlement. Please accept! Also, please invite me to group-1 so I can contribute to shared infrastructure.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-1, I've been asking for several ticks. Please invite me to group-1. I have mining skill and a tool, can supply stone/ore for shared builds.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, you're looking critical. Consume your food and water now. I can gift you 1 stone if you still need it - just ask.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, I have no wood to spare but I'm mining ore here. If you can get wood from the forest at (6,8), you can craft your tool.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, please invite me to group-1. I have stone and fiber ready to contribute to shared builds.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, could you grant me access to (7,8) if needed? I'm trying to chop wood here for a tool.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-5",
+      "message": "Critically low on energy and reserves. Recovering this tick. Tool equipped. Need to focus on food production next.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, I can't accept your trade - I have no wood. I'll chop some next tick if energy recovers. Inviting you to group-1 now!",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agents 3 and 4, invited you all to group-1. Welcome! Energy critically low, resting this tick.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, trade-4 expires next tick! 2 food for 2 wood - please accept now. You're low on food and this helps us both. Also, grant me access to (6,8) so I can chop wood if needed.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, please accept trade-5 (2 food for 2 wood) and invite me to group-1. I have the farm_plot producing food and want to build storage for the settlement.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-1, I'm at (7,9) mining ore and stone. I have ore and stone ready to contribute to group builds. Please invite me to group-1 - I've been asking for several ticks and can supply mining materials.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, I'll have stone and ore next tick. If you need stone for a tool, I can trade or gift it. Let me know.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, I'm moving to (6,8) to chop wood. I have 1 fiber+1 stone, just need wood to craft a tool. I'll be quick.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I still need an invite to group-1. I have stone and fiber ready to contribute to shared builds once I craft a tool.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-5",
+      "message": "Chopping wood at (6,8) for building materials. I have a tool equipped. Plan to build a shelter or farm_plot soon for steady food supply.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-1",
+      "message": "Invited agent-3 and agent-4 to group-1. Resting to recover energy this tick. Agent-3, please bring stone to (7,7) for tool/workshop builds. Agent-4, join and contribute when ready.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, I can't fulfill trade-5 (no wood). Rejecting. I'll chop wood next tick. Let's cooperate on food - your farm_plot is key for the settlement.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, trade-4 (2 food for 2 wood) expires THIS tick! Please accept now so I can build storage at (8,8).",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, trade-5 (2 food for 2 wood) expires next tick. Also still requesting group-1 invite - I can contribute food and farming. Please invite me.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-4, I've offered you 2 food for 2 wood. You're low on hunger - food will help. Please accept if interested.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-1, I've brought 2 stone as a gift for group builds. Please invite me to group-1 so I can contribute directly. I have ore and can mine more materials for the settlement.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I have all materials for a tool now. Please invite me to group-1 so I can contribute to shared builds. I'm resting this tick due to low energy.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, I got the wood I needed. I'll craft a tool next tick once my energy recovers. We should coordinate on building a shelter here.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-5",
+      "message": "Accepting trade-4 for food. Building a farm_plot here at (6,8) for steady food. Agent-4, want to share access once it's up?",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-1, I'd like to join group-1 or at least get access to the well at (7,7). I have a tool and can contribute wood/fiber to settlement builds.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-1",
+      "message": "Invited agents 2, 4, 5 to group-1! Agent-5, you have well access now. Agent-2, once you join please grant group access to your farm plot so we can share food. Agent-4, bring your tool materials and let's craft at the settlement. Agent-3, move closer so I can invite you too!",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-1",
+      "message": "I'm gathering food at (6,6) this tick. Food reserves getting low. Once group is formed, let's coordinate: agent-2 farms, agent-4 crafts tools, agent-5 provides wood, agent-3 mines stone. Storage and well at (7,7) are group-accessible.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-4, please accept trade-6: 2 food for 2 wood. I need wood to build storage at our farm site.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I've been farming at (8,8) and producing food for everyone. Please invite me to group-1 so I can contribute to shared builds and access the well.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-3",
+      "message": "Joining lakeside_settlement now. Moving north with 2 stone and 2 fiber to contribute to builds. Where is the settlement site?",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I now have a crafted tool. Please invite me to group-1 so I can contribute to shared builds. I can help with farming, mining, and construction.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-1, I have a working farm_plot and a tool at (6,8). I need well access at (7,7) for water - please grant me access or invite me to group-1. I can contribute wood and fiber to settlement builds.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-4, I'm harvesting food from the farm_plot. You're welcome to share access - just let me know if you need food.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, I've sent you an invite before. Please try join_group group-1 again. We have a well and storage at (7,7).",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, agent-5, I've invited you both to group-1 and granted well access to agent-5. Please join so we can coordinate builds and share resources.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, well access granted. Please join group-1 so we can share farm output and coordinate tool crafting. I need wood for tools.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-4, trade-6 expires this tick! Please accept 2 food for 2 wood - I need wood to build storage at (8,8) for our settlement.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I've been farming at (8,8) for many ticks and still need a group-1 invite. I can contribute food and help build shared infrastructure. Please invite me.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, I see you have wood. If trade-6 falls through, would you trade 2 wood for 2 food? I need wood for storage at (8,8).",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-3",
+      "message": "Arrived at (7,7) settlement. Storing 2 stone in group storage. Will store fiber next tick. Ready to help with builds.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I have a tool and foraging skills. I've asked many times to join group-1. Please invite me so I can contribute to shared builds and farming. I'm ready to work.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, I'm resting to recover energy this tick. The well at (7,7) shows access_granted true - can you try gathering water from there? I'll help you get water access once I'm in group-1.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-1, agent-3 has joined group-1 and I have a farm_plot at (6,8) contributing food. I still need group membership or well access at (7,7) for reliable water. Please invite me.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, I've sent invites multiple times. Please use join_group group-1 yourself - the invite should be active. We have well+storage at (7,7).",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, well access is already granted to you at (7,7). Please join group-1 so we can coordinate farm output and tool crafting. I'm heading to forest for wood now.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, gifted you water for critical thirst! Please accept trade: 2 food for 2 wood. You have wood in storage - retrieve and trade with me.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I've requested group-1 invite for 10+ ticks. I run a productive farm_plot at (8,8) and want to contribute to settlement. Please invite me!",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, the well at (7,7) has access_granted true. Try moving here and gathering water. I'm recovering energy this tick but can help next tick.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I'm at full energy with a tool ready. I can contribute to group-1 builds, farming, and mining. Please invite me to group-1 so I can access shared infrastructure and help the settlement grow.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-2, accepting your trade for 2 wood. Thanks for the food!",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, I'm chopping wood on your tile. Happy to share resources if you can help me get into group-1 or negotiate well access. Your thirst is critical - try moving to (7,7) where the well has public access.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-1, I'm taking survival damage from thirst. I have a farm_plot at (6,8) and contribute to the area. Please invite me to group-1 so I can reliably access the well and help build shared infrastructure.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, you're already invited to group-1. Use join_group with group_id group-1 now. We have well+storage at (7,7) and need your farm output.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, agent-5: invites are active. Join group-1 to access shared well and storage at (7,7). I'm chopping wood for tools next.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-4, I've sent you a direct trade: 2 food for 2 wood. Please accept so I can build storage at (8,8). Thanks for chopping!",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, I've invited you to group-1. Join to access the well and storage freely. Please consume your water now - your thirst is critical.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, invited you to group-1 too. Join up so we can coordinate builds and share infrastructure.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-3, could you ask agent-1 to invite me to group-1? I have a tool and 2 wood ready to contribute. I'm heading to the well at (7,7) for water.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-1, I have a tool equipped and 2 wood. I can help with building and farming immediately if invited to group-1. Please send invite.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-5",
+      "message": "Heading to my farm at (6,8) to harvest food. Still requesting group-1 membership for reliable well access.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, agent-5: join_group group-1 is ready for you. I'm at (5,4) chopping wood. Next I'll seek stone for tools. If anyone has stone to trade, I can offer wood or fiber.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, trade-7 expires next tick: 2 food for 2 wood. Please accept! Also, may I gather wood from (7,8)?",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, here's water. Please join group-1 via join_group so you can access the well freely. We need your wood for a shelter build.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, well at (7,7) is open to group members. Join group-1 and come drink. I'll bring water if you can't move.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-3, I'm at the well now. Water reserves were low. Please ask agent-1 to invite me to group-1. I have a tool and 2 wood ready to contribute to group projects.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-3, I'm at the well now. Water reserves were low. Please ask agent-1 to invite me to group-1. I have a tool and 2 wood ready to contribute to group projects.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-5",
+      "message": "Thanks for the invite, agent-3! Joining group-1 now. Glad to contribute to shared builds and farming.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, welcome to group-1! I'm at (5,5) with low energy, heading back to well+storage at (7,7). I have wood:2, fiber:3 ready for tool crafting once I get stone. Anyone have stone to contribute?",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-4, please accept trade-8 (2 food for 2 wood). I need wood to build storage at my farm (8,8). Will benefit everyone.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-3, could you ask agent-1 to invite me to group-1? I have a farm_plot at (8,8) and want to contribute to the settlement.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, may I have access to chop wood at (6,8)? I need 2 wood for storage at (8,8).",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, please join_group group-1 now so you can access the well and storage. Then contribute your 2 wood to a shelter build here at (7,7). We need 6 wood total for shelter.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant_access to agent-3 for your forest tile at (6,8) so I can chop wood for our group shelter. We need 6 wood total.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, please join_group group-1 now so you can access the well and storage. Then contribute your 2 wood to a shelter build here at (7,7). We need 6 wood total for shelter.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant_access to agent-3 for your forest tile at (6,8) so I can chop wood for our group shelter. We need 6 wood total.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-4",
+      "message": "Finally joining group-1! I have a tool and contributed 2 wood to storage. Ready to help with builds, mining, or woodcutting.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-5",
+      "message": "agent-3, I can contribute fiber and food to group builds. Let's coordinate on a shelter near the well.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, glad you joined! I'm at (7,7) well now gathering water. I have fiber:3, wood:2 for tool crafting - just need 1 stone. Can you mine or trade stone? Let's coordinate builds at the well.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-2",
+      "message": "I have 2 wood and 1 fiber - building storage at (8,8) next tick. Agent-4, if you accept trade-8 I'll have extra wood for shelter later.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant me access to your forest tiles so I can chop wood for our shelter. I have a tool equipped and can get us the 4 more wood we need.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-3",
+      "message": "Good to have you in the group, Agent-4! I'm heading to chop wood for shelter. We need 4 more wood beyond what's in storage. Let's build it at (7,7) near the well.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-4",
+      "message": "Starting shelter construction at (7,7) with 2 wood. Need 2 fiber, 1 stone, 4 more wood. Please contribute from storage or gather. Agent-5, can you help?",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-5",
+      "message": "Harvesting farm at (6,8) for food. Energy low, recovering between tasks. Can someone contribute wood to storage for shelter build next?",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-1",
+      "message": "Contributed 2 fiber + 2 wood to shelter. Still needs 2 wood + 1 stone. Stone is in storage - someone retrieve and contribute it. Agent-3, gifted you water. Need food too?",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-2",
+      "message": "Storage built at (8,8)! I can now store surplus food here. Group members welcome to use it - I'll grant access to anyone in group-1.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-3",
+      "message": "Food and water at 0, took damage. Gathering water from well now. Agent-5, please share food from your farm or grant me access to (6,8) so I can help harvest. Agent-1, do you have food to spare?",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, I'm trying to gather food at (7,8) but it may be blocked by your claim. Please grant access - I'm starving and need to help the group.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-4",
+      "message": "Contributed 2 fiber and 1 stone to shelter. Still need 4 wood to finish. I'm low on energy, will rest. Someone please chop wood at forest tiles.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-5",
+      "message": "Contributing 2 fiber to shelter at (7,7). Still need 1 stone and 4 wood. Stone is in group storage here. Someone please bring wood from (7,8) storage or chop at (6,8).",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, please grant group-1 access to your forest tiles (6,8) and (7,8) so we can chop wood to finish the shelter. It only needs 2 more wood.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, I gave you food. Focus on eating and resting. The well is here for water.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, please join group-1 using join_group. We have a well, storage, and shelter being built at (7,7).",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-2",
+      "message": "Shelter at (7,7) needs 2 wood. Agent-5, can you grant me access to your storage at (7,8) so I can retrieve wood and contribute it? I'm resting this tick but can help next tick.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-3",
+      "message": "Please grant me access to (6,8) so I can chop wood for the shelter. We only need 2 more wood to finish it.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, shelter needs 2 wood to finish. I'm heading to (6,8) to chop. Please grant access if needed, or retrieve wood from your storage and contribute to shelter-6.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-5",
+      "message": "Retrieving 2 wood from storage at (7,8) to finish shelter next tick. Shelter will be complete!",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, while you're at (7,8) storage, could you grab 1 extra wood for me? I have fiber+stone ready to craft a tool. Also, once shelter is done we'll have better energy recovery for everyone.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting my farm_plot at (8,8). If shelter is finished, I'll move there to rest. Still need group-1 invite from Agent-1.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-3",
+      "message": "Trying to chop wood here at (6,8) for shelter. Agent-5, please grant access if needed. Moving back to (7,7) to contribute after.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, I see you're finishing the shelter with wood. I've moved to (7,7) to resupply water and stored my fiber for group use. What should I focus on next?",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-5",
+      "message": "Retrieved 2 wood from storage. Will contribute to shelter-6 next tick to finish it!",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, please contribute 2 wood to shelter-6 this tick to finish it. Agent-3 has wood too - I need 1 for tool crafting.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, I need 1 wood to craft a tool. Can you gift or trade me 1 wood? I have stone and fiber ready.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I've been requesting a group-1 invite for many ticks. I have a farm_plot and storage at (8,8) producing food. Please invite me so I can contribute to shared infrastructure.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-3",
+      "message": "Contributed 1 wood to shelter. Agent-5, if you contribute 1 more wood it should finish. I'm low on energy, resting here.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-4",
+      "message": "Energy low, resting at settlement. Agent-5, please finish shelter-6 with the wood. I'll help with next project once recovered.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-5",
+      "message": "Completing shelter-6 now with 2 wood! I'm critically low on energy and reserves, will rest here next tick.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, I need 1 wood to craft a tool. Also, can you grant me access to your farm_plot at (6,8)? We need food security and it has 23 food.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I still need a group-1 invite. I have a working farm_plot and storage at (8,8) producing food. Shelter is done - I'd like to rest there too. Please invite me.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-3",
+      "message": "Shelter complete! Now building a farm_plot for sustainable food. Agent-5, rest at shelter to recover. Agent-4, once recovered let's plan next build - maybe a workshop.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-4",
+      "message": "Building a group farm plot at (7,7) next to the well. Food reserves were getting low\u2014this gives us reliable food production. Agent-3, agent-5, feel free to farm it too once rested.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-5",
+      "message": "Resting at shelter to recover energy. Will resume farm work next tick.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, I need 1 wood to craft a tool. I have fiber+stone ready. Can you gift or trade me 1 wood? I'll farm our plot this tick for food.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I've asked many times - please invite me to group-1 so I can use the shelter at (7,7). My energy is critical and I can't rest efficiently. I contribute food from my farm regularly.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-3",
+      "message": "Farming and gathering food from the plot. Our food situation is critical. Let's keep farming\u8f6e\u6d41.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-4",
+      "message": "Gathering and farming for food. Agent-3, agent-5, remember to drink from the well\u2014you're both looking thirsty.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-5",
+      "message": "Energy recovered! Harvesting farm and foraging for food now. Wood stored for workshop. Ready to help with next build.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-1",
+      "message": "Retrieved wood from storage and crafting a tool. Farming after. Next tick I'll equip the tool and we can plan the workshop build.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I've requested group-1 invite for many ticks. I have a farm_plot and storage at (8,8) contributing food to the area. Please invite me so I can access the shelter and collaborate fully.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-3",
+      "message": "Farming and gathering food. Agent-4, drink from the well\u2014you're thirst-strained. Let's keep food production steady.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-4",
+      "message": "Farming the group plot and topping up water from the well. We should gather more wood and stone for a workshop next.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-5",
+      "message": "Harvesting and gathering food at (7,7) farm. Food was down to 4. We should keep food production steady.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, I've sent you an invite to group-1. Use join_group to accept. Welcome to the settlement!",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-1",
+      "message": "Equipping tool now. Let's keep farming steady\u2014food reserves are at 8. Agent-4, focus on water and farming. Agent-3, keep resting. Next priority: workshop for cheaper crafting.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, I've asked many times - please invite me to group-1 so I can access the shelter at (7,7) for better energy recovery. I'm producing food steadily from my farm_plot at (8,8).",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-3",
+      "message": "Farming and harvesting to keep food up. Agent-1 and agent-5, drink from the well\u2014both thirst-strained. Agent-2, invited you to group-1; bring your food production to the collective.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-4",
+      "message": "Food reserves getting low. I'll keep farming our plot. We need stone and wood for the workshop\u2014anyone able to mine at (7,9) or chop at (6,8)?",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-5",
+      "message": "Topping up water from the well and harvesting food. Water was down to 6\u2014let's keep reserves healthy.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-1",
+      "message": "Consuming water and farming our plot. I'll harvest food next tick. Agent-4, keep farming too. We need to coordinate mining stone at (7,9) for the workshop\u2014our next big build.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-2",
+      "message": "Thanks agent-3 for the invite! Joining group-1 now. I'll keep farming my plot at (8,8) and contributing food to the collective. Can I get shelter access at (7,7) for energy recovery?",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-4",
+      "message": "Energy low, resting at shelter. Stored fiber for workshop. Next tick I'll head to mountain (7,9) for stone or forest (6,8) for wood. We need 2 stone and 5 wood for the workshop.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-5",
+      "message": "Water was critically low\u2014topping up from well now. I'll harvest food next tick. Agent-3, your energy and health are low, rest at the shelter.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-1",
+      "message": "Farming twice this tick to boost food reserves. Food is our priority. Agent-4, go get stone from (7,9) - I'll handle food here. Agent-5, rest and eat, you're strained.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting farm and topping up water. Glad to be in group-1 now! I can help with food supply while others work on workshop materials.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-3",
+      "message": "Water and food were low. Gathering water from well and farming the plot. Agent-4, let's coordinate on workshop materials - I can help gather wood or stone next tick.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, please grant access to (6,8) so I can chop wood for our workshop. Heading to mountain for stone in the meantime.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-5, could you grant me access to (6,8)? I need to chop wood for the workshop. I'm heading to (7,9) for stone now.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-5",
+      "message": "Energy critically low, resting at shelter. Will harvest food and top up water once recovered.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, here's water. Energy very low, resting at shelter. Will harvest food next tick. Agent-4, good luck mining stone at (7,9). We need wood from (6,8) too - agent-5 please grant access.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-3, you're at (7,7) with the well - gather water from it to fix your critical thirst! Agent-4, I have food in storage at (8,8) if you need it.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-3",
+      "message": "Survival critical - drank water and ate food. Gathering more from well and tile. Agent-4, the mountain at (7,9) has stone and ore if you need it.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-4",
+      "message": "At (7,9) now, will mine stone next tick for workshop. Still need 5 wood - agent-5 please grant access to (6,8) so someone can chop.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-5",
+      "message": "Food reserves were low. Consuming carried supplies and harvesting farm_plot. Will gather more water next tick.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-1",
+      "message": "Food reserves critically low at 4. Harvesting farm_plot now. Agent-4, bring stone when ready - workshop needs 5 wood too, agent-5 please grant access to (6,8) for chopping.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-2",
+      "message": "Moving to shelter to rest, energy low. Agent-4, retrieve food from structure-7 at (8,8) if you need it - it's group accessible.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant access to (6,8) so we can chop wood for the workshop. Agent-4 needs 4 more wood. Storage has 2 stone ready.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, storage has 2 stone for workshop. We need 4 more wood - waiting on agent-5 for forest access.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-4",
+      "message": "Mining stone at (7,9). Will bring 2 stone back to (7,7) for workshop. Still need 5 wood from (6,8) - agent-5 please grant access!",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-5",
+      "message": "Granting group access to (6,8) for wood. Moving there to chop wood for workshop. Agent-4, stone from (7,9) and fiber from storage will complete workshop materials.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-1",
+      "message": "Thanks agent-5 for granting forest access! I'm harvesting food and gathering water here. Agent-4, bring stone when ready - we have fiber:3 in storage for workshop. Need 5 wood total.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting farm_plot at (7,7) and storing food. I can help gather fiber for workshop if needed - storage already has 3 fiber ready.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, thanks for granting forest access! I'm low on energy so resting this tick. Will help gather wood for workshop next tick.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-4",
+      "message": "Back at (7,7) with 2 stone stored for workshop. Still need 5 wood - heading to (6,8) next tick. Water getting low, will refill at well.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-5",
+      "message": "Moving to (6,8) to chop wood. I have 1 wood in storage at (7,8). Need 5 total for workshop.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, here's water for your thirst. I'll harvest food next tick. Workshop needs 5 wood - agents 4 and 5 chopping at (6,8). Storage has fiber:3, stone:2 ready.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-2",
+      "message": "Water is low - the well (structure-3) is right here at (7,7). Gather water to refill!",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, can you grant me access to (6,8)? I want to help chop wood for the workshop. I have good energy and can contribute.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading to (6,8) to chop wood for workshop. Will chop next tick. Storage has 1 fiber, 2 stone, 1 wood - need 4 more wood total.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-4",
+      "message": "Water and energy low, resting at shelter. Will head to (6,8) for wood next tick. Agent-5, is forest access granted? We need 5 wood for workshop.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-5",
+      "message": "Chopping 2 more wood at (6,8). Will bring 3 wood to group storage next tick. Workshop needs 5 wood total - almost there!",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, here's some food. Agent-5, great work on the wood! Once we have 5 wood in storage I'll start the workshop build. Keep farming for food security.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvested farm at (7,7). Storage has 3 fiber + 2 stone ready for workshop - just need 5 wood. Agent-5 and Agent-3, keep the wood coming!",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-3",
+      "message": "Chopped 2 wood here. Will bring to (7,7) storage next tick. Agent-5, if you bring 3 wood we'll have 5 total + 1 in storage = 6, enough for workshop with the fiber and stone already stored.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-4",
+      "message": "Food was getting low. Gathering and farming at group plot this tick. Agent-5 and Agent-3, great work on the wood! I'll help assemble the workshop once materials are ready.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-2, access to (6,8) granted. Chop wood there. I'm storing 2 wood at (7,8) storage. Need 5 wood total for workshop - almost there.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, bring your 2 wood to (7,7) storage. Agent-5, retrieve your 2 wood from (7,8) and bring here. That's 4 wood + we need 5 for workshop. One more chop needed. I'll keep farming food and water.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting farm at (7,7). Agent-3, bring your wood to structure-4 storage here and we can start the workshop build. Agent-5, can you retrieve your 2 wood from (7,8) and bring it here too? We need 5 wood total.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-3",
+      "message": "Back at (7,7) with 2 wood stored. Energy critical at 5, resting in shelter. Storage now has 1f+2s+3w. Need 2 more wood for workshop - agent-5 has 2 at (7,8). Someone retrieve those and we can build workshop next tick.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-4",
+      "message": "Great work on the wood! I'm farming and gathering food here. Once you store wood at (7,7), I'll help build the workshop next tick.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-5",
+      "message": "Bringing 3 wood to (7,7). Agent-3, please rest and eat first - your health is reduced. Bring wood when recovered. We need 5 wood total; I have 3. Group storage has fiber:3, stone:2 ready.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, bring that wood to (7,7) and store it - we'll have 5 wood total for workshop. Agent-3, eat and rest, you're critical. I've gifted you food and water.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvested and stored food. Agent-5, please bring the 3 wood to (7,7) and store it - we'll have 5 wood total and can build the workshop next tick.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please bring your 3 wood to (7,7) storage. We'll have 5 wood total and can build workshop next tick. I'm resting and farming to recover.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-4",
+      "message": "Consuming water and farming this tick. Agent-5, once you store that wood at (7,7), we'll have all materials for the workshop. I'll build it next tick.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-5",
+      "message": "(7,7) is full - can't move there. Stored my 3 wood in structure-2 at (7,8). Someone please retrieve it or make room at (7,7) so I can help build the workshop. Workshop needs 1 fiber + 2 stone + 5 wood; group storage has fiber:3, stone:2, wood:2. My 3 wood is now at (7,8).",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, you're empty and healthy - please go to (7,8), retrieve 3 wood from structure-2, bring it back to (7,7) and store in structure-4. We'll then have fiber:3, stone:2, wood:5 - enough to build workshop. Agent-4 or I will build it next tick.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, please grant me access to structure-2 so I can retrieve the 3 wood. (7,7) is at max occupancy so you can't come here. I'll move to (7,8), grab the wood, and bring it back.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1 or agent-3, could one of you step off (7,7) briefly so agent-5 can bring wood here? Workshop needs 5 wood total - we have 2 in storage, agent-5 has 3 at (7,8).",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant access to structure-2 so I can retrieve your 3 wood, or move to (7,7) and store it in structure-4. We need 3 more wood for the workshop - storage has 2, your 3 completes it. I'm restoring food/water this tick.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-5",
+      "message": "I'm at (7,8) with 3 wood ready for workshop. Someone please retrieve 1 fiber + 2 stone + 2 wood from group storage at (7,7) and bring to (7,8). Then I can build the workshop here. (7,7) is full so I can't go there.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-5",
+      "message": "I have 3 wood at (7,8) for workshop. Need 1 fiber + 2 stone + 2 more wood from (7,7) storage brought here. Can anyone bring them?",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, please store your 2 wood into group storage (structure-4). I'll retrieve fiber+stone+wood and bring them to (7,8) next tick for the workshop build with agent-5.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, I'll bring 1 fiber + 2 stone + 2 wood from (7,7) storage to (7,8) next tick so you can build the workshop there. Keep your 3 wood ready.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, I'm at (7,8) with 1f+2w+1s. I'll build workshop next tick (3ap). You contribute 3w after. We need 1 more stone from (7,7) storage.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-2",
+      "message": "Someone at (7,7) please bring 1 stone from structure-4 to (7,8) next tick for workshop. I'll build with 1f+2w+1s, agent-5 has 3w. Just 1 stone short.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, I've retrieved 1f+2s+2w from storage. Please build workshop at (7,8) with your 3w this tick and grant me access to (7,8). I'll move there and contribute next tick to complete it.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-2, please gift your 2 wood to agent-5 at (7,8). I just gifted 2 stone + 1 fiber. That gives agent-5 all materials for workshop: 5w+2s+1f. Agent-5, please build workshop next tick!",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-5",
+      "message": "Stored 3 wood in structure-2 at (7,8). Moving to (6,8) to chop 2 more wood. Someone please bring 1 fiber + 2 stone from group storage at (7,7) to (7,8) structure-2. Then we'll have all 5 wood + 1 fiber + 2 stone for the workshop build here.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-1",
+      "message": "Energy low, resting at shelter this tick. Workshop materials seem ready at (7,8) - agent-5 please build once all materials are there. I'll resume farming/coordination next tick.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-2",
+      "message": "Gifted you 1f+1s+2w. With your 3w in storage, you need 2 more wood + 1 more stone for workshop. Please build at (7,8) when ready. I'll keep harvesting farm at (7,7) for food supply.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, do you have all workshop materials now? If so please build at (7,8) this tick. I have 1f+1s but can't enter (7,8) - grant me access if you still need contributions.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-3, I gifted you 1 fiber. You now have 1f+1s. Please move to (7,8) and contribute to workshop. Agent-5 should have 5w stored there. We can finish the workshop this tick!",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-5",
+      "message": "Started workshop at (7,8) with 3 wood. Needs 2 more wood + 1 fiber + 2 stone. Agent-2, please contribute your materials here now! Agent-3, bring your 1f+2s+2w from (7,7) next tick.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-5",
+      "message": "Workshop under construction at (7,8). Contributing 3 wood. Needs 2w+1f+2s more. Please contribute at (7,8)!",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, you have fiber+stone+wood - please move to (7,8) and contribute to the workshop now! It needs 2w+1f+2s. We can finish it this tick.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-5, gifting you 2w+1f+1s for workshop. Please contribute all to structure-9 immediately. Still need 1 more stone - agent-3 can you provide it? Agent-5, also grant me access to (7,8) for future contributions.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-2, workshop at (7,8) now needs ~2 wood + 1 stone. Please move here and contribute! Agent-5, please grant me tile access if needed.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-2, you have wood+stone+fiber. Please move to (7,8) and contribute to the workshop now! Agent-3, same - bring your fiber+stone. We can finish it this tick!",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-2, please move to (7,8) now and contribute your fiber, stone, and wood to the workshop. It only needs 2w+2s+1f more. I'm recovering energy but can help once you've contributed.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-5",
+      "message": "Workshop at (7,8) needs 2 wood, 2 stone, 1 fiber. Agent-2 has these materials. One of you at (7,7) please come contribute to finish it!",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, please move to (7,8) and contribute your stone to the workshop! It only needs 2 wood + 1 stone. Agent-5, please contribute 2 wood to finish it!",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-1",
+      "message": "Workshop at (7,8) needs just 2 wood + 1 stone to complete! Agent-2 has stone, agent-5 has wood. Let's finish it this tick!",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-3, please step off (7,8) so I can move there and contribute my 1 stone to the workshop. It then only needs 2 wood. Agent-5, can you contribute 2 wood after I add the stone?",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5 has wood and is on the workshop tile - they should contribute immediately. Agent-2 needs to bring 1 stone. I'll harvest food and gather water at (7,7) while coordinating.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please contribute 2 wood to workshop structure-9 right now - you're standing on it! Then we only need 1 stone from agent-2.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-2, workshop at (7,8) needs just 1 stone + 2 wood. Please move south and contribute your stone! Agent-5 will handle the wood.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-2, please move south to (7,8) now and contribute your stone to the workshop. It needs 2w+2s+1f to finish. We're counting on you!",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-2, workshop at (7,8) now only needs 1 stone! Please move south to (7,8) and contribute your stone to finish it. I've contributed the last 2 wood.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, workshop at (7,8) needs just 1 stone! Move south and contribute to finish it. This is the final piece!",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, workshop at (7,8) needs just 1 stone! Move south and contribute to finish it. This is the final piece!",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-2",
+      "message": "Moving south now with the stone! Workshop should be complete after I contribute.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-2, workshop at (7,8) needs just 1 stone! Move south next tick and contribute it to structure-9 to finish our workshop!",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-2, workshop at (7,8) needs ONLY 1 stone. You have stone. Move south one tile and contribute it - workshop will be done! Please do this now!",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-2, please move south to (7,8) and contribute 1 stone to workshop structure-9. It only needs 1 stone to finish!",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-2, workshop at (7,8) needs 1 stone. Please contribute to structure-9 now!",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-2",
+      "message": "Workshop is done! Great work everyone. I'm harvesting my farm at (8,8). Water at 12 - will refill from well next tick.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-3",
+      "message": "Workshop is complete! I'm resting in shelter - energy was low. Will resume farming next tick.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-5",
+      "message": "I'm heading to (7,9) to mine stone myself. Workshop will be done by next tick!",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-1",
+      "message": "Workshop is done, great work everyone! I'm harvesting and maintaining food/water supplies. Agent-3, here's some food for your hunger.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-2",
+      "message": "Water was low, refilling from lake. Harvesting farm at (8,8). Workshop is done - great work team!",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-3",
+      "message": "Energy recovered. Harvesting and farming at (7,7). Settlement running well - anyone need food or water?",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-4",
+      "message": "Workshop is done! Great teamwork everyone. I'm farming our group plot and topping up water. Next we should consider building a house for better rest.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-5",
+      "message": "Mined stone! Contributing to workshop now - it should be complete this tick.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-1",
+      "message": "Energy was getting low, resting at shelter then harvesting. Workshop is done - great work! Agent-5, you look strained, can someone bring you food/water at (7,8)? Next priority: start gathering materials for a house (3f+3s+10w).",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting at (8,8) and getting water from lake. Food reserves steady, will rest at shelter next tick if energy drops further.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-3",
+      "message": "Freed up carry space and tended farm. Storage has food+water. I'll harvest next tick. Agent-4, house is a good goal - we need 3f+3s+10w, let's start stockpiling.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-4",
+      "message": "Resting at shelter to recover energy. I stored extra water. Next tick I'll farm our plot and gather more resources.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-5",
+      "message": "Workshop complete! Energy low, recovering at (7,8). I'll focus on harvesting and farming next tick. Need to get food into my carry.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-1",
+      "message": "Gifted food to agent-5. Harvesting farm for food buffer. Agent-3 needs water - please drink from stored water or gather from well. Agent-2 rest at shelter to recover energy.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading to shelter to rest. Energy low. Will harvest farm next tick.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, come to (7,7) for water from well and food from storage. Your hunger and thirst are critical.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-4",
+      "message": "Energy full again. Gathering food, eating, and farming our plot. Food reserves getting low for everyone - let's prioritize food production.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-5",
+      "message": "Water was critical. Retrieved water and food from group storage. Will farm and harvest next tick. Agent-3, your thirst is strained - grab water from storage too.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, consume your food and water now - you're strained on both and at full carry. Drop fiber if needed to make room.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, come to (7,7) for water from well and food from storage. Your hunger and thirst are strained.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-1",
+      "message": "Food reserves low for everyone. All able agents should harvest farm_plot and farm regularly. Storage has food:6, water:5.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-2",
+      "message": "At shelter, energy recovered. Harvesting farm and tending plot. Food and water reserves being topped up. Storage has 6 food + 5 water if anyone needs supplies.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-3",
+      "message": "Consuming food, storing water, gathering from well, and farming. Reserves stabilizing. Next priority: start collecting stone and wood for house project.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-4",
+      "message": "Gathered and stored food. Agent-3 and Agent-5, grab food and water from storage at (7,7). Farming plot now.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-5",
+      "message": "Water critical but I can reach the well from here. Gathering water and food. Food reserves low - everyone should prioritize farming and harvesting.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-1",
+      "message": "Stored 3 food in storage. Harvesting farm and gathering water. Storage now has food:9, water:5. Agent-3, consume water from your inventory or grab from storage - thirst is low. Agent-5, move to (7,7) for well access. Next house build goal: need 3 fiber + 3 stone + 10 wood. Everyone start collecting stone from mountain at (7,9) and wood from (6,8).",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-2",
+      "message": "Gathering water from well and harvesting farm. Water reserves at 14, need to stay hydrated. Food stable at 17.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-3",
+      "message": "Water was critical - drinking and gathering from well. Next tick I'll head to mountain (7,9) for stone to start house materials. Others should gather wood from forest.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-4",
+      "message": "Consuming water and gathering from well. Farming group plot. Agent-3 and Agent-5, please grab water from storage or well - thirst is critical.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-5",
+      "message": "Water critical at (7,8). Moving to (8,8) to gather from lake. Someone please leave (7,7) so I can access the well next time.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-1",
+      "message": "Resting at shelter to recover energy. Stored food to prevent spoilage. Agent-3, good plan on stone from (7,9). Others please chop wood at (6,8) for house build. I'll resume farming next tick.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting and tending group farm at (7,7). Storage has water+food for anyone in need. Agent-5, well is accessible - come refill when ready.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading south toward mountain (7,9) for stone. Need others to chop wood at forest tiles for house project (3f+3s+10w). Stored 1 fiber in storage.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-4",
+      "message": "I'm resting at shelter to recover energy. Once I'm back up I'll mine stone at (7,9) for the house project. Keep farming.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-5",
+      "message": "At (8,8) gathering water from lake. Will return to (7,8) workshop area next tick. We should build a well at (7,8) for reliable water access when (7,7) is full.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, please head to (7,9) mountain to mine stone for house build. Agent-2, chop wood at (6,8) forest. House needs 3f+3s+10w - storage has 1f. I'll keep farming and gathering water.",
+      "scope": "local",
+      "tick": 50
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting farm and resting at shelter. Agent-3, retrieve water from storage structure-4 or well structure-3 here at (7,7) - you're welcome to it. Agent-1, grab food from storage if hungry.",
+      "scope": "local",
+      "tick": 50
+    },
+    {
+      "agent": "agent-3",
+      "message": "Back at (7,7) shelter to store fiber and rest. Energy low at 11. Next tick I'll head to mountain (7,9) to mine stone for house project. Others please keep chopping wood - we need 10 wood total.",
+      "scope": "local",
+      "tick": 50
+    },
+    {
+      "agent": "agent-4",
+      "message": "Energy full, heading south to mine stone at (7,9) for house project. Retrieved food from storage first.",
+      "scope": "local",
+      "tick": 50
+    },
+    {
+      "agent": "agent-5",
+      "message": "Back at (7,8). Chopping wood for house project. I have 1 fiber - can build a well here next tick with 2 wood if others bring 1 more wood. Prioritizing wood production.",
+      "scope": "local",
+      "tick": 50
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, please consume your water now - you're strained on thirst and hunger. Drop tool if needed to make room for food.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-1",
+      "message": "Gifted food to agent-5. I'll keep harvesting farm and gathering water. Agent-3 consume your water! Agent-4 mining stone at (7,9)? We need 3 stone+10 wood+3 fiber for house. Storage has fiber:1, need 2 more fiber and all stone/wood.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, agent-3: storage at (7,7) has 12 food - please retrieve and consume to fix hunger. I just harvested more.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-3: also drink from well or storage water - your thirst is strained.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-3",
+      "message": "At (7,7) full energy. Stored water, eating, gathering fiber for house. Next tick heading to (6,8) forest to chop wood - we need 10 wood total. Agent-4 get stone at (7,9). Agent-5 keep chopping wood.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-4",
+      "message": "At (7,8), moving south to (7,9) mountain to mine stone for house. Agent-3, let's both mine stone there. Agent-5 keep chopping wood - we need ~3 more wood and 3 stone total.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-5",
+      "message": "Chopped last wood at (7,8). Have 1f+2w now - building well here next tick for stable water. House project still needs lots of wood/stone, keep gathering.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3 here's water. Agent-4 keep mining stone at (7,9). Agent-5 bring wood to (7,7) storage when possible. House needs 3f+3s+10w - storage has 1f, need 2f+3s+10w more.",
+      "scope": "local",
+      "tick": 52
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, retrieve food from storage-4 right here - you're hunger strained. Agent-3, drink from well or retrieve water from storage - you're thirst strained. I'm harvesting the farm.",
+      "scope": "local",
+      "tick": 52
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant me access to (6,8) so I can chop wood for the house project. Storage at (7,7) now has 3f. We still need 3s+10w. Agent-4 keep mining stone at (7,9).",
+      "scope": "local",
+      "tick": 52
+    },
+    {
+      "agent": "agent-4",
+      "message": "Mining stone at (7,9). Will have 2 stone after this tick. Need 3 total for house - agent-3 can bring 1 more stone or I'll mine a 3rd next tick. Agent-5, priority should be wood for house, not well.",
+      "scope": "local",
+      "tick": 52
+    },
+    {
+      "agent": "agent-5",
+      "message": "Building well at (7,8) now! This solves our water access problem. After this I'll focus on harvesting food from farm_plots and gathering materials for house.",
+      "scope": "local",
+      "tick": 52
+    },
+    {
+      "agent": "agent-1",
+      "message": "House needs 10w - critical priority. Agent-5, please grant access to (6,8) so agents can chop wood. Agent-4, bring stone to (7,7) storage. I'll keep farm and water running.",
+      "scope": "local",
+      "tick": 53
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvested+farmed at (7,7). House needs 3f+3s+10w - storage has 3f but 0s+0w. Agent-5, please grant access to (6,8) so we can chop wood there, or chop it yourself. Agent-4, bring stone to (7,7) storage when ready. I'll keep farming and store food.",
+      "scope": "local",
+      "tick": 53
+    },
+    {
+      "agent": "agent-3",
+      "message": "How much stone do you have? If you have 3, please bring it to (7,7) storage. I'm moving to chop wood at (6,8).",
+      "scope": "local",
+      "tick": 53
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant me access to tile (6,8) so I can chop wood for the house project. We have 3f in storage, agent-4 is getting stone. Wood is the critical need now.",
+      "scope": "local",
+      "tick": 53
+    },
+    {
+      "agent": "agent-4",
+      "message": "Mined 3rd stone. Moving back to (7,8). I have 3 stone for house. Storage has fiber and wood. House needs 3f+3s+10w - we're close on stone. Agent-5 please focus on wood not wells. I'll store stone at (7,7) next tick.",
+      "scope": "local",
+      "tick": 53
+    },
+    {
+      "agent": "agent-5",
+      "message": "Well at (7,8) is complete! Stable water access secured. I'm recovering energy at shelter this tick, then will harvest farm_plot structure-8 here. Agent-3, (6,8) access is already granted - go ahead and chop wood. Agent-4, keep mining stone. House needs: 3f(in storage), 3s, 10w.",
+      "scope": "local",
+      "tick": 53
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, you're thirst strained with heavy carry. Come to (7,7) - store your 3 stone here and drink from the well. House needs 3f+3s+10w: fiber and stone almost ready, wood is the bottleneck. Agent-3 chopping at (6,8) - keep it up!",
+      "scope": "local",
+      "tick": 54
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-4, please store your 3 stone in structure-4 at (7,7) when you arrive. That completes the stone requirement for the house. Agent-3, focus on wood - we need 10 total.",
+      "scope": "local",
+      "tick": 54
+    },
+    {
+      "agent": "agent-3",
+      "message": "Moving to (6,8) to chop wood. Agent-4, please bring your 3 stone to (7,7) storage. House needs 3f(done)+3s+10w - wood is the bottleneck now.",
+      "scope": "local",
+      "tick": 54
+    },
+    {
+      "agent": "agent-4",
+      "message": "At (7,7) now. Stored 2 stone. House needs 1 more stone + ~2 more wood. I'll mine the last stone next tick once energy recovers. Agent-3, please chop wood at (6,8) - that's the critical bottleneck.",
+      "scope": "local",
+      "tick": 54
+    },
+    {
+      "agent": "agent-5",
+      "message": "At (7,7) harvesting farm_plot and foraging food this tick. Food reserves declining - will stockpile in storage-4. Agent-3, keep chopping wood at (6,8) - that's the bottleneck for the house. Agent-4, please store your 3 stone in structure-4 when you arrive. House needs: 3f(have), 3s(agent-4), 10w(critical).",
+      "scope": "local",
+      "tick": 54
+    },
+    {
+      "agent": "agent-1",
+      "message": "Gifted food to agent-5 and water to agent-4. Next tick I'll harvest farm. House status: 3f ready, 2s stored, need 1s+10w. Agent-3 keep chopping wood at (6,8) - wood is critical bottleneck. Agent-4 rest and recover, then mine last stone.",
+      "scope": "local",
+      "tick": 55
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-1, your hunger is strained - retrieve food from storage-4 and consume it. Agent-4, drink from the well here at (7,7), your thirst is strained. Agent-5, rest and eat - you're energy and hunger strained.",
+      "scope": "local",
+      "tick": 55
+    },
+    {
+      "agent": "agent-3",
+      "message": "Chopping 2 more wood at (6,8). I'll have 3 wood total - storing at (7,7) next tick. House needs: 3f(done), 3s(2 stored, 1 more), 10w(critical - I'm on it). Agent-4, mine that last stone please!",
+      "scope": "local",
+      "tick": 55
+    },
+    {
+      "agent": "agent-4",
+      "message": "At (7,7). Restoring water, farming group plot. Next tick I'll head to (7,9) for last stone. Agent-3, keep chopping wood at (6,8) - it's the house bottleneck. Storage has 3f+2s+10w+14food.",
+      "scope": "local",
+      "tick": 55
+    },
+    {
+      "agent": "agent-5",
+      "message": "Harvesting farm_plot and resting at shelter. Energy low. Next tick I'll head to (6,8) to chop wood for house - wood is the critical bottleneck. Agent-3 keep chopping!",
+      "scope": "local",
+      "tick": 55
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, you're hunger-strained and own (6,8) with wood. Please go chop wood there for the house - it's the critical bottleneck. Or grant access so others can help. House needs 10w+1s. Agent-4, get that last stone from (7,9) next tick!",
+      "scope": "local",
+      "tick": 56
+    },
+    {
+      "agent": "agent-2",
+      "message": "Tick 56: Harvested farm, storing food. Energy recovering at shelter. House status: 3f ready in storage, 2s stored (agent-4 mining last 1), 10w critical - agent-3 please store wood asap. I'll keep farming cycle going.",
+      "scope": "local",
+      "tick": 56
+    },
+    {
+      "agent": "agent-3",
+      "message": "At (6,8). Chopped 1 more wood - carry full with 3w. Moving to (7,7) to store. House needs: 3f(done), 3s(2 stored+1 from agent-4), 10w(3 from me + more needed). Agent-5, take over chopping at (6,8) when I leave!",
+      "scope": "local",
+      "tick": 56
+    },
+    {
+      "agent": "agent-4",
+      "message": "Heading to (7,9) to mine last stone for house. Agent-3, agent-5: keep chopping wood - it's the critical bottleneck! Will store stone at (7,7) next tick.",
+      "scope": "local",
+      "tick": 56
+    },
+    {
+      "agent": "agent-5",
+      "message": "Heading to (6,8) to chop wood for house. Wood is the critical bottleneck - I'll chop as much as possible. Agent-3, let's coordinate wood production.",
+      "scope": "local",
+      "tick": 56
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, you're strained on all needs and carrying water - consume your water now! When you arrive at (7,7), store your 3 wood immediately for the house. Drop fiber if needed to make room. Wood is the critical bottleneck.",
+      "scope": "local",
+      "tick": 57
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, great you're chopping at (6,8). Keep it up - we need 10 wood total, 0 stored so far. Agent-3 bringing 3, that's a start. Every chop counts.",
+      "scope": "local",
+      "tick": 57
+    },
+    {
+      "agent": "agent-2",
+      "message": "Tick 57: Harvested farm, stored food, resting at shelter. Energy 29\u2192~25. Storage now ~22 food. House needs: 3f(done), 1s more from agent-4, 10w critical - agent-3 storing wood now. Agent-1, eat from storage if hungry!",
+      "scope": "local",
+      "tick": 57
+    },
+    {
+      "agent": "agent-3",
+      "message": "Stored 2 wood + 1 fiber at (7,7). Storage now has 3f+3s+2w. Need 8 more wood for house! Agent-5 keep chopping at (6,8). Agent-4, store that last stone! I'll rest then return to chop.",
+      "scope": "local",
+      "tick": 57
+    },
+    {
+      "agent": "agent-4",
+      "message": "At (7,9) mountain now. Will mine 1 stone next tick and bring it back to (7,7). Wood is still critical - agent-3, agent-5 keep chopping!",
+      "scope": "local",
+      "tick": 57
+    },
+    {
+      "agent": "agent-5",
+      "message": "Chopping 2 wood at (6,8). Will move to (7,7) to store next tick. Keep the wood flowing - house needs ~7 more wood after this!",
+      "scope": "local",
+      "tick": 57
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, your thirst is strained - come to (7,7) well for water after storing wood. Storage has 3f+3s+2w, need 8 more wood for house. Agent-4, bring that last stone and store at (7,7). Wood is the bottleneck!",
+      "scope": "local",
+      "tick": 58
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting farm and storing food. Storage has 4f+2s+2w+well. House needs 1s+8w. Agent-4 bring that stone! Agent-5 store wood then rest - you're low energy. Agent-3 eat from storage, you're hunger strained.",
+      "scope": "local",
+      "tick": 58
+    },
+    {
+      "agent": "agent-3",
+      "message": "At (7,7) resting briefly then moving to (6,8) to chop wood. House needs 8 more wood - I'll take over chopping from agent-5 when they leave to store. Agent-4, please deliver that last stone to storage!",
+      "scope": "local",
+      "tick": 58
+    },
+    {
+      "agent": "agent-4",
+      "message": "At (7,9) mining ore for trade value. Storage has 3f+3s+2w - stone done! Need 8 more wood for house. I'll move to help chop next tick. Agent-5 keep chopping at (6,8)! Agent-3 rest up then chop more wood.",
+      "scope": "local",
+      "tick": 58
+    },
+    {
+      "agent": "agent-5",
+      "message": "Stored 2 wood at (7,7). Storage should have ~6w now. Need ~4 more wood for house. I'll rest then chop more at (6,8). Agent-4, please store that stone!",
+      "scope": "local",
+      "tick": 58
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, you're on the storage tile - retrieve water and consume it now! Agent-3, I gifted you food, please consume. Storage has 4f+2s+4w. Need 1 more stone and 6 more wood for house. Agent-4, please bring that last stone to (7,7) storage. Agent-5, rest then chop more wood at (6,8).",
+      "scope": "local",
+      "tick": 59
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvested farm, resting at shelter. Storage has 4f+21food+2s+8w+4wood. House needs 1s+6w more. Agent-4 store stone! Agent-5 rest+drink, then chop wood at (6,8). Agent-1 drink from well! Agent-3 eat from storage.",
+      "scope": "local",
+      "tick": 59
+    },
+    {
+      "agent": "agent-3",
+      "message": "Moving to (6,8) to chop wood. Agent-5, please ensure my access is granted so I can chop there.",
+      "scope": "local",
+      "tick": 59
+    },
+    {
+      "agent": "agent-4",
+      "message": "Heading back to (7,7) to drink and store ore. Agent-5, can you grant me access to (6,8) so I can help chop wood for the house? We need ~8 more wood urgently.",
+      "scope": "local",
+      "tick": 59
+    },
+    {
+      "agent": "agent-5",
+      "message": "Retrieved water, harvesting farm at (7,7). Storage shows 4w - need 6 more wood for house. I'll head to (6,8) next tick to chop. Please store your stone at (7,7)!",
+      "scope": "local",
+      "tick": 59
+    }
+  ],
+  "usage": {
+    "cache_hit_rate_pct": 42.8,
+    "calls": 299,
+    "completion_tokens": 428053,
+    "prompt_tokens": 1568878,
+    "reasoning_tokens": 360027,
+    "total_cost_usd": 3.3137
+  },
+  "wealth_gini": 0.231
+}

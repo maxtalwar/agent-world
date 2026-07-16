@@ -8,7 +8,25 @@ __pycache__/
 dist/
 build/
 *.egg-info/
-runs/
+# Run artifacts default to local-only. Commit the compact, durable research record;
+# keep raw event/usage streams, checkpoints, snapshots, and console logs out of Git.
+runs/**
+!runs/**/
+!runs/README.md
+!runs/catalog.json
+!runs/catalog.md
+!runs/**/manifest.json
+!runs/**/*-manifest.json
+!runs/**/*-report.json
+!runs/**/*-report.md
+!runs/**/summary.json
+!runs/**/summary.md
+!runs/**/*-summary.json
+!runs/**/*-summary.md
+!runs/**/*-analysis.json
+!runs/**/*-analysis.md
+!runs/**/*-comparison.json
+!runs/**/*-comparison.md
 
 # macOS
 .DS_Store

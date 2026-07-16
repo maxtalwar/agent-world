@@ -28,7 +28,7 @@ def write_run_catalog(
     )
     payload = {
         "schema_version": 1,
-        "root": str(root),
+        "root": _portable_path(root),
         "run_count": len(records),
         "runs": records,
         "note": (
@@ -105,6 +105,15 @@ def _matching_manifest(report_path: Path) -> Path | None:
         report_path.parent / "run-manifest.json",
     ]
     return next((candidate for candidate in candidates if candidate.exists()), None)
+
+
+def _portable_path(path: Path) -> str:
+    """Prefer a repository-relative catalog root over one user's absolute path."""
+
+    try:
+        return str(path.relative_to(Path.cwd().resolve()))
+    except ValueError:
+        return str(path)
 
 
 def _read_json(path: Path) -> dict[str, Any]:
