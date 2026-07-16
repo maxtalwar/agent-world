@@ -2,10 +2,16 @@
 
 Derived index only. Event JSONL, snapshots, manifests, reports, usage logs, and checkpoints in each run directory are the canonical evidence.
 
-Indexed runs: 95
+Indexed runs: 101
 
 | Run | Status | Ticks | Turn mode | Observation | Models | Quality | Invalid | Credits |
 |---|---:|---:|---|---|---|---:|---:|---:|
+| experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1 | completed | 20/20 | simultaneous-v1 | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 26.2 | 106.457438 |
+| experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-41/shuffled-sequential-v1-retry-1 | completed | 20/20 | shuffled-sequential-v1 | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 27.4 | 105.792198 |
+| experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-11/shuffled-sequential-v1 | completed | 20/20 | shuffled-sequential-v1 | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 27.1 | 99.207048 |
+| experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/shuffled-sequential-v1 | completed | 20/20 | shuffled-sequential-v1 | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 27.4 | 102.98468 |
+| experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-11/simultaneous-v1 | completed | 20/20 | simultaneous-v1 | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 26.8 | 120.851028 |
+| experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-41/simultaneous-v1 | completed | 20/20 | simultaneous-v1 | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 25.3 | 119.806108 |
 | experiments/indexed-vs-compact-30t-20260713-194735/compact-v2-retry | completed | 30/30 | legacy | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 28.7 | 142.262972 |
 | experiments/indexed-vs-compact-30t-20260713-194735/compact-v2 | completed | 30/30 | legacy | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 29.5 | 133.74657 |
 | experiments/indexed-vs-compact-30t-20260713-194735/indexed-v3 | completed | 30/30 | legacy | indexed-v3 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 25.4 | 179.70863 |

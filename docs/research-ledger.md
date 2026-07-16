@@ -93,6 +93,76 @@ improve downstream social/economic behavior. Compare `simultaneous-v1` with
 `shuffled-sequential-v1` across independent paired world seeds while holding the
 compact boundary, population assignment, world, and reasoning settings fixed.
 
+## 2026-07-16 — Simultaneous versus shuffled sequential turns
+
+### Question and design
+
+Does resolving each shuffled agent activation before the next agent observes and
+decides improve mechanical validity or emergent social/economic behavior?
+
+The generalist screening stage used three paired world seeds (11, 23, 41), 20 agents,
+20 ticks, stratified assignment seeds 211–213, `compact-v2`, raw decisions, and low
+reasoning. Each world contained four Luna, four Sonnet, three Terra, three Opus, three
+Sol, and three Fable agents. The intended run artifacts and complete analysis are at
+`runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/`:
+
+- Seed 11:
+  `seed-11/simultaneous-v1/` and `seed-11/shuffled-sequential-v1/`.
+- Seed 23:
+  `seed-23/simultaneous-v1/` and `seed-23/shuffled-sequential-v1/`.
+- Seed 41:
+  `seed-41/simultaneous-v1/` and
+  `seed-41/shuffled-sequential-v1-retry-1/`.
+- Excluded but preserved:
+  `seed-41/shuffled-sequential-v1/`. Its command omitted the three Sol agents and
+  routed Fable through the wrong provider, so the 17-agent run was stopped after 12
+  decisions and replaced in the retry directory.
+- Durable results:
+  `turn-mode-stage1-analysis.json` and `turn-mode-stage1-analysis.md`.
+
+All six intended runs completed with 400 decisions, 100% usage-record coverage, zero
+decision failures, and matching assignment maps within pairs. World seed was the
+experimental unit. Exact two-sided paired sign-flip tests used the three seed deltas;
+with n=3, the smallest attainable nonzero p-value is 0.25. No outcome survived
+Benjamini-Hochberg correction; the lowest q-value was 0.60.
+
+### Findings and uncertainty
+
+- Sequential observations worked as designed: an average of 201 decisions per run saw
+  earlier same-tick events and 98 followed same-tick speech. Invalid actions attributed
+  to unobserved prior resolutions fell from 318.3 per run to zero.
+- This did not improve validity. Sequential invalid rates were higher in every pair:
+  +0.3, +1.2, and +2.1 percentage points, for means of 27.3% sequential versus 26.1%
+  simultaneous (exact p=0.25). Observation-known invalid counts also rose in all three
+  seeds, and early/middle/late activation positions showed no consistent gradient.
+- Economic output did not improve. Offers fell from 24.3 to 18.3 per run and speech
+  from 124.3 to 97.3. Sequential runs completed one additional trade overall, but
+  accepted trade value was identical at 7.33 per run. Simultaneous runs completed two
+  structures; sequential runs completed none.
+- Sequential runs did consistently reduce survival damage by 12 events, increase mean
+  final health by 3.37, and reduce wealth Gini by 0.038. These are credible hypotheses
+  about reduced contention or more conservative behavior, not confirmatory results.
+- Model-level validity effects were heterogeneous and descriptive: Sol improved by 8.5
+  percentage points, Luna by 1.43, and Opus by 1.1; Terra worsened by 2.6, Sonnet by
+  4.63, and Fable by 10.87. Agents share interactive worlds, so these cohorts are not
+  independent model-ranking samples.
+- Runtime rose from 11.1 to 69.0 minutes per run, about 6.2 times slower. Prompt size
+  was effectively unchanged. Exact Codex simulation credits fell from 347.1146 across
+  the simultaneous runs to 307.9839 across sequential runs.
+
+### Decision
+
+The generalist screen did not meet the bar for the 30-tick specialist stage, so that
+conditional stage was not launched. Keep `simultaneous-v1` as the default. Retain
+`shuffled-sequential-v1` as an explicit treatment for targeted contention, survival,
+or inequality research rather than treating it as a general infrastructure upgrade.
+
+### Next question
+
+Can a lighter multi-phase turn preserve independent planning and initiative, resolve
+the plans together, and then offer a narrow reaction or settlement phase for
+conflicts, communication, and physical trades?
+
 ## 2026-07-09 — Why gifting dominated early commerce
 
 ### Evidence and finding
