@@ -80,8 +80,15 @@
       if (app.state) renderPulse();
       requestAnimationFrame(drawWorld);
     } else {
+      if (push) $("#runs-page").scrollTop = 0;
       loadCatalog();
     }
+  }
+
+  function setAnalyticsOpen(open) {
+    $("#analytics-drawer").classList.toggle("open", open);
+    $("#world-page").classList.toggle("analytics-visible", open);
+    if (open) renderAnalytics();
   }
 
   async function boot() {
@@ -113,8 +120,8 @@
     $("#pulse-collapse").addEventListener("click", () => $(".pulse-panel").classList.toggle("collapsed"));
     $("#inspector-close").addEventListener("click", clearSelection);
     $("#chronicle-toggle").addEventListener("click", () => $(".chronicle").classList.toggle("open"));
-    $("#analytics-open").addEventListener("click", () => { $("#analytics-drawer").classList.add("open"); renderAnalytics(); });
-    $("#analytics-close").addEventListener("click", () => $("#analytics-drawer").classList.remove("open"));
+    $("#analytics-open").addEventListener("click", () => setAnalyticsOpen(true));
+    $("#analytics-close").addEventListener("click", () => setAnalyticsOpen(false));
     $$("[data-analytics]").forEach(button => button.addEventListener("click", () => {
       app.analyticsTab = button.dataset.analytics;
       $$("[data-analytics]").forEach(item => item.classList.toggle("active", item === button));
@@ -562,7 +569,7 @@
     [[series.population,"#b8d47d"],[series.structures,"#dcb867"],[series.trades,"#6fa8b2"],[series.messages,"#df784e"]].forEach(([data,color]) => drawLine(c,data||[],box.width,box.height,color,2));
   }
 
-  function switchLabTab(tab) { $$("[data-lab-tab]").forEach(button => button.classList.toggle("active", button.dataset.labTab === tab)); $$(".lab-panel").forEach(panel => panel.classList.toggle("active", panel.id === `lab-${tab}`)); if (tab === "compare") renderComparison(); }
+  function switchLabTab(tab) { $$("[data-lab-tab]").forEach(button => button.classList.toggle("active", button.dataset.labTab === tab)); $$(".lab-panel").forEach(panel => panel.classList.toggle("active", panel.id === `lab-${tab}`)); $("#runs-page").scrollTop = 0; if (tab === "compare") renderComparison(); }
 
   function buildRunForm() {
     renderPresetCards();
@@ -630,10 +637,10 @@
   function renderArchivePreview() {
     const detail=app.selectedDetail||{}, report=detail.report||{}, manifest=detail.manifest||{}, run=report.run||{}, reliability=report.reliability||{}, economy=report.economy||{}, survival=report.survival||{};
     $("#archive-preview").innerHTML=`<div class="preview-head"><span class="eyebrow">${esc(reliability.quality_status||manifest.status||"preserved")}</span><h2>${esc(title(shortRunName(detail.id)))}</h2><p>${esc(manifest.preset||"legacy world")} · ${esc((manifest.population?.groups||[]).map(group=>`${group.count} ${group.model||group.type}`).join(" · "))}</p></div><div class="preview-metrics"><article><small>Final tick</small><strong>${fmt(run.final_tick)}</strong></article><article><small>Living</small><strong>${fmt(survival.living)}</strong></article><article><small>Invalid</small><strong>${reliability.invalid_action_rate_pct==null?"—":pct(reliability.invalid_action_rate_pct)}</strong></article><article><small>Offers</small><strong>${fmt(economy.trades?.offered)}</strong></article><article><small>Trades</small><strong>${fmt(economy.trades?.accepted)}</strong></article><article><small>Structures</small><strong>${fmt(economy.construction?.assets?.complete)}</strong></article></div><div class="preview-body"><div class="kv-list"><div><span>Turn mode</span><b>${esc(manifest.turn_mode||"legacy")}</b></div><div><span>Observation</span><b>${esc(manifest.observation_mode||"legacy")}</b></div><div><span>Decision calls</span><b>${fmt(report.usage?.calls)}</b></div><div><span>Codex credits</span><b>${fmt(report.usage?.simulation_credits?.credits?.total)}</b></div></div><div class="preview-actions"><button id="preview-open" class="primary">Open world</button><button id="preview-compare">${app.comparison.has(detail.id)?"Remove comparison":"Add comparison"}</button><button id="preview-clone">Clone setup</button><button id="preview-report">Open analytics</button></div></div>`;
-    $("#preview-open").addEventListener("click",()=>openArchivedRun(detail.id)); $("#preview-compare").addEventListener("click",()=>toggleComparison(detail.id,!app.comparison.has(detail.id),detail)); $("#preview-clone").addEventListener("click",()=>cloneRun(detail)); $("#preview-report").addEventListener("click",async()=>{await openArchivedRun(detail.id);$("#analytics-drawer").classList.add("open");renderAnalytics();});
+    $("#preview-open").addEventListener("click",()=>openArchivedRun(detail.id)); $("#preview-compare").addEventListener("click",()=>toggleComparison(detail.id,!app.comparison.has(detail.id),detail)); $("#preview-clone").addEventListener("click",()=>cloneRun(detail)); $("#preview-report").addEventListener("click",async()=>{await openArchivedRun(detail.id);setAnalyticsOpen(true);});
   }
 
-  async function openArchivedRun(id) { try { const state=await fetchJSON(`/api/runs/state?id=${encodeURIComponent(id)}`); app.archiveView=true; app.viewTick=null; app.camera.fitted=false; applyState(state); navigate("world"); if(!state.snapshot?.tiles?.length) { $("#analytics-drawer").classList.add("open"); renderAnalytics(); toast("Map evidence unavailable","The compact report is present, but this run has no local raw snapshot."); } } catch(error){toast("Could not open run",error.message,"error");} }
+  async function openArchivedRun(id) { try { const state=await fetchJSON(`/api/runs/state?id=${encodeURIComponent(id)}`); app.archiveView=true; app.viewTick=null; app.camera.fitted=false; applyState(state); navigate("world"); if(!state.snapshot?.tiles?.length) { setAnalyticsOpen(true); toast("Map evidence unavailable","The compact report is present, but this run has no local raw snapshot."); } } catch(error){toast("Could not open run",error.message,"error");} }
 
   function cloneRun(detail) { const manifest=detail.manifest||{}, config=manifest.config||{}, groups=manifest.population?.groups||[]; app.preset=manifest.preset&&app.config.presets[manifest.preset]?manifest.preset:"organic-generalists"; renderPresetCards(); $("#run-name").value=`${title(shortRunName(detail.id))} copy`; $("#run-seed").value=config.seed??11; $("#assignment-seed").value=manifest.population?.assignment_seed??config.seed??11; $("#run-ticks").value=manifest.target_ticks??30; $("#cohort-list").innerHTML=""; groups.forEach(group=>addCohort({count:group.count,brain:group.type,model:group.model,reasoning_effort:group.reasoning_effort})); const fields={"economy-mode":config.economy_mode,"geography-mode":config.geography_mode,"specialization-mode":config.specialization_mode,"objective-mode":config.objective_mode,"action-points":config.action_points_per_tick,"carry-capacity":config.default_carry_capacity,"resource-multiplier":config.resource_base_multiplier,"wild-food":config.wild_food_density,"wild-fiber":config.wild_fiber_density,"observation-mode":manifest.observation_mode,"turn-mode":manifest.turn_mode,"decision-mode":manifest.decision_mode,"max-workers":manifest.concurrency?.global,"codex-workers":manifest.concurrency?.providers?.codex_cli,"claude-workers":manifest.concurrency?.providers?.claude_cli,"llm-workers":manifest.concurrency?.providers?.openai_compatible}; Object.entries(fields).forEach(([id,value])=>{if(value!=null&&$(`#${id}`))$(`#${id}`).value=value;}); updateLaunchSummary(); switchLabTab("launch"); toast("Configuration cloned","Review the setup and launch it as a new preserved run."); }
 
