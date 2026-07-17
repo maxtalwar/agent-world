@@ -185,3 +185,57 @@ Treat the specialist preset as an explicitly experimental comparative-advantage
 condition. Keep physical goods, local knowledge, co-located settlement, and agent-made
 institutions; do not add remote item teleportation or automatic markets to the organic
 world.
+
+## 2026-07-17 — Sol, Terra, and Luna at medium reasoning
+
+### Question and design
+
+How do five Sol, five Terra, and five Luna agents behave in one organic generalist
+world when every cohort uses medium reasoning? The 50-tick run used world seed 11,
+stratified assignment seed 117, `compact-v2`, raw decisions, and simultaneous turns.
+The complete artifact directory is
+`runs/experiments/sol-terra-luna-medium-15a-50t-20260717-004547/`; the detailed durable
+interpretation is `run-analysis.md` inside it. No conditions were excluded or retried.
+
+### Findings and uncertainty
+
+- The run completed with 685 decisions, zero LLM failures, and identical static game
+  context and context format across cohorts. Eight of 15 agents survived.
+- Sol retained 5/5 agents, Terra 0/5, and Luna 3/5. Sol agents also built the only two
+  productive assets, a farm plot and storage.
+- Terra's failure was behavioral rather than a connector failure. Its agents waited
+  236 times in 202 decisions and gathered only 27 food plus 13 water. Sol waited 179
+  times in 250 decisions and gathered 46 food plus 48 water; Luna waited 100 times in
+  233 decisions and gathered 48 food plus 27 water. Terra suffered 99 survival-damage
+  events and all five died between ticks 33 and 46.
+- Geography is a partial confound, not a full explanation. Mean spawn distance to
+  water was 2.2 tiles for Sol, 3.2 for Terra, and 3.4 for Luna. Agents share a world,
+  deaths censor later actions, and there is only one seed, so this is a replication
+  target rather than a causal model ranking.
+- Agents created 28 offers, completed five trades, gave ten gifts, and built two
+  individually owned structures. They formed no groups, contracts, claims, or
+  cooperative assets. Trade was real local barter but remained too sparse to stabilize
+  the population.
+- Invalid actions were 433/2,158 (20.1%); 341 were resource/access failures. The
+  report marked 404 invalids as potentially exposed to unobserved earlier same-tick
+  resolutions, so turn timing remains a major measurement confound.
+- Medium reasoning usage differed by model: about 295 reasoning tokens/call for Sol,
+  162 for Terra, and 417 for Luna. Without a matched low-effort control, this run does
+  not estimate a reasoning-effort effect.
+- Exact simulation usage was 442.094882 plan credits, including 304.280025 Sol,
+  85.090612 Terra, and 52.724245 Luna. Account telemetry showed the available weekly
+  bucket moving from 18% to 22%, but that delta can include concurrent Codex activity.
+
+### Decision
+
+Do not alter the world or agent boundary to compensate for Terra on one seed. Treat
+Sol's clean survival and investment advantage, and Terra's wait-heavy collapse, as
+high-priority hypotheses for replication.
+
+### Next question
+
+Does the survival and investment ordering repeat across paired world seeds? Separately,
+does medium reasoning outperform low reasoning when world seed, assignment seed, and
+population are held fixed? Add neutral telemetry for feasible survival opportunities
+declined in favor of waiting so future reports can distinguish resource scarcity from
+planning failure.
