@@ -50,6 +50,8 @@ class ObserverTests(unittest.TestCase):
         for element_id in (
             "pulse-chart",
             "inspector",
+            "map-legend",
+            "structure-legend-items",
             "chronicle-drawer",
             "timeline-slider",
             "tick-live",
@@ -64,6 +66,7 @@ class ObserverTests(unittest.TestCase):
             "function drawTerrain(",
             "function drawStructures(",
             "function drawAgents(",
+            "function renderStructureLegend(",
             "function renderInspector(",
             "function renderAnalytics(",
             "function renderEvents(",

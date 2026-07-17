@@ -47,10 +47,19 @@
 
   const canvas = $("#world-canvas");
   const ctx = canvas.getContext("2d");
-  const terrainColors = { water: "#315f69", forest: "#294d36", mountain: "#6b6b60", plains: "#668259" };
-  const resourceColors = { food: "#e2bd69", water: "#69b7c2", wood: "#8d6845", fiber: "#d6d1a4", stone: "#a7aaa5", ore: "#7f91a5", coin: "#ebc65e", tool: "#df8b57" };
+  const terrainColors = { water: "#7eb8c0", forest: "#709a72", mountain: "#aaa995", plains: "#9dbb82" };
+  const resourceColors = { food: "#e0a52f", water: "#2f94aa", wood: "#82572f", fiber: "#e7dfb4", stone: "#858c88", ore: "#596d84", coin: "#d89d20", tool: "#cc6d38" };
   const providerColors = { codex: "#a6c973", codex_cli: "#a6c973", claude: "#df9367", claude_cli: "#df9367", llm: "#6fb4bd", openai_compatible: "#6fb4bd", survival: "#c3c8b7" };
-  const structureGlyphs = { house: "⌂", well: "◉", farm_plot: "≋", storage: "▣", shelter: "⌃", workshop: "⚒" };
+  const structureStyles = {
+    farm_plot: { abbreviation: "FM", label: "Farm", fill: "#f1c75b", stroke: "#73551d" },
+    well: { abbreviation: "WL", label: "Well", fill: "#79c7d4", stroke: "#285e6d" },
+    storage: { abbreviation: "ST", label: "Storage", fill: "#d3a66c", stroke: "#704923" },
+    shelter: { abbreviation: "SH", label: "Shelter", fill: "#c9b793", stroke: "#675b42" },
+    workshop: { abbreviation: "WS", label: "Workshop", fill: "#df8d5e", stroke: "#71371e" },
+    house: { abbreviation: "HM", label: "Home", fill: "#d9a4a0", stroke: "#743e42" },
+  };
+  const defaultStructureStyle = { abbreviation: "BL", label: "Building", fill: "#d8c78d", stroke: "#544a32" };
+  const structureGlyphs = Object.fromEntries(Object.entries(structureStyles).map(([type, style]) => [type, style.abbreviation]));
   const eventGlyphs = { say: "◌", whisper: "◌", broadcast: "◎", offer_trade: "⇄", accept_trade: "✓", gift: "◇", build: "⌂", build_started: "⌂", death: "†", invalid_action: "!", move: "→", gather: "◆", consume: "●", mine: "▲", chop: "♣", fish: "≈", create_group: "◉" };
   const resourceValues = { water: 1, food: 2, fiber: 2, wood: 3, stone: 4, ore: 8, coin: 1, tool: 10, advanced_tool: 24, ingot: 14 };
 
@@ -173,6 +182,7 @@
     if (!app.camera.fitted && snapshot.tiles?.length) fitCamera();
     renderHeader();
     renderWorldPlate();
+    renderStructureLegend(snapshot);
     renderPulse();
     renderEvents();
     renderTimeline();
@@ -205,6 +215,18 @@
     $("#world-title").textContent = state.run?.run_id ? title(shortRunName(state.run.run_id)) : title(state.manifest?.preset || "The Frontier");
     const pieces = [config.economy_mode, config.geography_mode, config.specialization_mode].filter(Boolean).map(title);
     $("#world-subtitle").textContent = pieces.length ? pieces.join(" · ") : "Awaiting first light";
+  }
+
+  function renderStructureLegend(snapshot) {
+    const counts = values(snapshot.structures).reduce((memo, structure) => {
+      memo[structure.type] = number(memo[structure.type]) + 1;
+      return memo;
+    }, {});
+    const entries = Object.entries(counts).sort(([a], [b]) => title(a).localeCompare(title(b)));
+    $("#structure-legend-items").innerHTML = entries.length ? entries.map(([type, count]) => {
+      const style = structureStyles[type] || defaultStructureStyle;
+      return `<span class="structure-legend-item"><i style="background:${style.fill};border-color:${style.stroke};color:${style.stroke}">${style.abbreviation}</i><span>${esc(style.label)}${count > 1 ? ` ×${count}` : ""}</span></span>`;
+    }).join("") : `<span class="structure-legend-item">No structures yet</span>`;
   }
 
   function worldMetrics() {
@@ -293,7 +315,7 @@
     const tiles = app.state?.snapshot?.tiles || [];
     const rows = tiles.length, columns = tiles[0]?.length || 0;
     const box = canvas.getBoundingClientRect();
-    const base = rows && columns ? Math.min((box.width - 110) / columns, (box.height - 85) / rows) : 0;
+    const base = rows && columns ? Math.min((box.width - 110) / columns, (box.height - 165) / rows) : 0;
     const size = base * app.camera.zoom;
     return { rows, columns, size, ox: box.width / 2 - columns * size / 2 + app.camera.x, oy: box.height / 2 - rows * size / 2 + app.camera.y, width: box.width, height: box.height };
   }
@@ -318,8 +340,8 @@
 
   function drawTerrain(tiles, geo, now) {
     ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,.45)"; ctx.shadowBlur = 35;
-    ctx.fillStyle = "#10231d"; ctx.fillRect(geo.ox - 8, geo.oy - 8, geo.columns * geo.size + 16, geo.rows * geo.size + 16);
+    ctx.shadowColor = "rgba(46,67,54,.24)"; ctx.shadowBlur = 28;
+    ctx.fillStyle = "#e7ebdf"; ctx.fillRect(geo.ox - 8, geo.oy - 8, geo.columns * geo.size + 16, geo.rows * geo.size + 16);
     ctx.shadowBlur = 0;
     tiles.forEach((row, y) => row.forEach((tile, x) => {
       const px = geo.ox + x * geo.size, py = geo.oy + y * geo.size;
@@ -331,7 +353,7 @@
       }
       if (app.layers.resources) drawResources(tile.resources || {}, px, py, geo.size);
     }));
-    ctx.strokeStyle = "rgba(225,235,219,.09)"; ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(45,68,53,.16)"; ctx.lineWidth = 1;
     for (let x = 0; x <= geo.columns; x++) { ctx.beginPath(); ctx.moveTo(geo.ox + x * geo.size, geo.oy); ctx.lineTo(geo.ox + x * geo.size, geo.oy + geo.rows * geo.size); ctx.stroke(); }
     for (let y = 0; y <= geo.rows; y++) { ctx.beginPath(); ctx.moveTo(geo.ox, geo.oy + y * geo.size); ctx.lineTo(geo.ox + geo.columns * geo.size, geo.oy + y * geo.size); ctx.stroke(); }
     ctx.restore();
@@ -341,16 +363,16 @@
     const seed = (x * 19 + y * 31) % 7;
     ctx.save(); ctx.globalAlpha = .34;
     if (tile.terrain === "water") {
-      ctx.strokeStyle = "#8cc3c7"; ctx.lineWidth = Math.max(.7, size * .025);
+      ctx.strokeStyle = "#d7eef0"; ctx.lineWidth = Math.max(.7, size * .025);
       for (let i = 0; i < 2; i++) { const yy = py + size * (.3 + i * .32) + Math.sin(now / 700 + x + y + i) * 1.4; ctx.beginPath(); ctx.moveTo(px + size * .15, yy); ctx.quadraticCurveTo(px + size * .5, yy - 2, px + size * .82, yy); ctx.stroke(); }
     } else if (tile.terrain === "forest") {
-      ctx.fillStyle = "#173a2a";
+      ctx.fillStyle = "#3e7650";
       const wood = number(tile.resources?.wood); const count = clamp(Math.round(wood / 2) + 2, 2, 6);
       for (let i = 0; i < count; i++) { const tx = px + size * (.2 + ((seed + i * 3) % 7) / 10); const ty = py + size * (.25 + ((seed * 2 + i * 5) % 6) / 11); ctx.beginPath(); ctx.moveTo(tx, ty - size * .12); ctx.lineTo(tx - size * .09, ty + size * .08); ctx.lineTo(tx + size * .09, ty + size * .08); ctx.fill(); }
     } else if (tile.terrain === "mountain") {
-      ctx.strokeStyle = "#b3afa2"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px + size * .12, py + size * .75); ctx.lineTo(px + size * .42, py + size * (.23 + seed * .015)); ctx.lineTo(px + size * .59, py + size * .56); ctx.lineTo(px + size * .73, py + size * .32); ctx.lineTo(px + size * .9, py + size * .75); ctx.stroke();
+      ctx.strokeStyle = "#6e7063"; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px + size * .12, py + size * .75); ctx.lineTo(px + size * .42, py + size * (.23 + seed * .015)); ctx.lineTo(px + size * .59, py + size * .56); ctx.lineTo(px + size * .73, py + size * .32); ctx.lineTo(px + size * .9, py + size * .75); ctx.stroke();
     } else {
-      ctx.strokeStyle = "#a2b879"; ctx.lineWidth = .8; for (let i = 0; i < 3; i++) { const gx = px + size * (.22 + i * .23); const gy = py + size * (.58 + ((seed + i) % 3) * .08); ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx - 2, gy - size * .13); ctx.moveTo(gx, gy); ctx.lineTo(gx + 3, gy - size * .1); ctx.stroke(); }
+      ctx.strokeStyle = "#6f945d"; ctx.lineWidth = .8; for (let i = 0; i < 3; i++) { const gx = px + size * (.22 + i * .23); const gy = py + size * (.58 + ((seed + i) % 3) * .08); ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx - 2, gy - size * .13); ctx.moveTo(gx, gy); ctx.lineTo(gx + 3, gy - size * .1); ctx.stroke(); }
     }
     ctx.restore();
   }
@@ -366,11 +388,20 @@
   function drawStructures(snapshot, geo) {
     values(snapshot.structures).forEach(structure => {
       const pos = structure.position || {}; const x = geo.ox + (number(pos.x) + .5) * geo.size, y = geo.oy + (number(pos.y) + .5) * geo.size;
-      const radius = clamp(geo.size * .27, 7, 18);
-      ctx.save(); ctx.translate(x, y); ctx.fillStyle = structure.status === "complete" ? "#d8c78d" : "rgba(216,199,141,.35)"; ctx.strokeStyle = "#3a3c31"; ctx.lineWidth = 1.4;
+      const style = structureStyles[structure.type] || defaultStructureStyle;
+      const markerWidth = clamp(geo.size * .72, 25, 45), markerHeight = clamp(geo.size * .45, 18, 28);
+      ctx.save(); ctx.translate(x, y); ctx.fillStyle = structure.status === "complete" ? style.fill : "rgba(255,255,255,.58)"; ctx.strokeStyle = style.stroke; ctx.lineWidth = 2;
       if (structure.status !== "complete") ctx.setLineDash([3, 3]);
-      ctx.beginPath(); ctx.roundRect(-radius, -radius, radius * 2, radius * 2, 3); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle = "#29352d"; ctx.font = `${Math.max(9, radius)}px Georgia`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(structureGlyphs[structure.type] || "⌂", 0, 1); ctx.restore();
+      ctx.shadowColor = "rgba(43,55,47,.25)"; ctx.shadowBlur = 6; ctx.shadowOffsetY = 2;
+      ctx.beginPath(); ctx.roundRect(-markerWidth / 2, -markerHeight / 2, markerWidth, markerHeight, 4); ctx.fill(); ctx.shadowColor = "transparent"; ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = style.stroke; ctx.font = `800 ${clamp(geo.size * .2, 8, 12)}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(style.abbreviation, 0, .5);
+      if (geo.size >= 28) {
+        const fontSize = clamp(geo.size * .17, 8, 10); ctx.font = `700 ${fontSize}px sans-serif`;
+        const labelWidth = ctx.measureText(style.label).width + 8, labelY = -markerHeight / 2 - 8;
+        ctx.fillStyle = "rgba(250,248,238,.92)"; ctx.beginPath(); ctx.roundRect(-labelWidth / 2, labelY - fontSize / 2 - 2, labelWidth, fontSize + 4, 4); ctx.fill();
+        ctx.fillStyle = "#24372e"; ctx.fillText(style.label, 0, labelY);
+      }
+      ctx.restore();
     });
   }
 
@@ -396,7 +427,7 @@
       ctx.shadowColor = "rgba(0,0,0,.55)"; ctx.shadowBlur = 7; ctx.beginPath(); ctx.ellipse(0, radius * .95, radius * 1.1, radius * .5, 0, 0, Math.PI * 2); ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fill(); ctx.shadowBlur = 0;
       ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = app.selection?.type === "agent" && app.selection.id === agent.id ? "#fff5c6" : "rgba(255,255,255,.65)"; ctx.lineWidth = app.selection?.id === agent.id ? 2.5 : 1; ctx.stroke();
       const health = clamp(number(agent.health) / 100, 0, 1); ctx.beginPath(); ctx.arc(0, 0, radius + 3, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * health); ctx.strokeStyle = health < .35 ? "#e45f55" : "rgba(205,235,190,.65)"; ctx.lineWidth = 1.3; ctx.stroke();
-      if (app.layers.labels && geo.size > 27) { ctx.font = `${clamp(geo.size * .18, 8, 11)}px sans-serif`; ctx.fillStyle = "rgba(239,245,231,.92)"; ctx.textAlign = "center"; ctx.fillText(agent.name || agent.id, 0, -radius - 6); }
+      if (app.layers.labels && geo.size > 27) { ctx.font = `600 ${clamp(geo.size * .18, 8, 11)}px sans-serif`; ctx.textAlign = "center"; ctx.lineWidth = 3; ctx.strokeStyle = "rgba(250,248,238,.9)"; ctx.strokeText(agent.name || agent.id, 0, -radius - 6); ctx.fillStyle = "#23372e"; ctx.fillText(agent.name || agent.id, 0, -radius - 6); }
       ctx.restore();
     });
   }
