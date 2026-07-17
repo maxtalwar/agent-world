@@ -239,3 +239,62 @@ does medium reasoning outperform low reasoning when world seed, assignment seed,
 population are held fixed? Add neutral telemetry for feasible survival opportunities
 declined in favor of waiting so future reports can distinguish resource scarcity from
 planning failure.
+
+## 2026-07-17 — Low versus medium versus high reasoning
+
+### Question and design
+
+Does reasoning effort change survival, validity, commerce, or society formation for a
+matched population of five Sol, five Terra, and five Luna agents? Each valid condition
+ran 50 ticks with world seed 11, stratified assignment seed 117,
+`organic-generalists`, `compact-v2`, raw decisions, and simultaneous turns.
+
+Exact artifact paths:
+
+- Low, included: `runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low-retry-1/`
+- Medium, included: `runs/experiments/sol-terra-luna-medium-15a-50t-20260717-004547/`
+- High, included: `runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/high/`
+- Low, preserved and excluded: `runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low/`. Sol agent 6 hit transient model capacity at tick 0, producing one LLM failure and 99.85% usage coverage.
+- Durable comparison: `runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/reasoning-effort-comparison-analysis.{json,md}`.
+
+All included conditions completed 50/50 ticks with zero LLM failures and 100% usage
+coverage. Assignments, spawns, configuration, and static game-context hashes matched.
+Only one world seed was used; interacting agents are not independent experimental
+units, so no inferential p-values are reported.
+
+### Findings and uncertainty
+
+- Survival was non-monotonic: low retained 12/15 agents, medium 8/15, and high 11/15.
+  Sol retained 5/5 in every condition. Terra retained 4/5 at low, 0/5 at medium, and
+  4/5 at high; the prior all-Terra collapse therefore did not replicate. Luna retained
+  3/5, 3/5, and 2/5.
+- Trade execution improved monotonically. Low completed 2/22 offers (9.1%), medium
+  5/28 (17.9%), and high 6/20 (30.0%). High had only four meeting failures, versus nine
+  at low and ten at medium. Five of six high trades used coin, versus one of five at
+  medium and none at low.
+- High reduced invalidity to 17.8%, from 19.5% low and 20.1% medium. Terra and Luna
+  improved at high; Sol's high and low rates were both 17.6%. Observation-known and
+  unavailable-resource failures fell, while target/carry failures increased.
+- Higher reasoning did not yield broader society. Structures were 2/2/1 for
+  low/medium/high; no condition formed a group, contract, cooperative asset, fee
+  policy, or dividend system. High produced one Terra-owned tile claim.
+- Exact credits were 351.568658 low, 442.094882 medium, and 514.184610 high. High cost
+  46.3% more than low. Visible output stayed around 63,000 to 66,000 tokens while
+  hidden reasoning rose from 148,939 to 379,174 tokens.
+- The excluded low run still consumed 421.234605 credits. New high, excluded low, and
+  low-retry execution overlapped, so account-level plan deltas cannot be summed; exact
+  simulation credits are the reliable attribution.
+
+### Decision
+
+Keep low reasoning as the efficiency default. Treat high reasoning as a promising
+experimental setting for physical trade coordination and currency use, not as a
+blanket intelligence upgrade. Do not infer that medium reasoning harms Terra; that
+single collapse now looks stochastic or path-dependent.
+
+### Next question
+
+Does high reasoning's trade-conversion, meeting-success, and coin-use advantage repeat
+across independent paired world seeds? Preregister trade conversion, meeting failures,
+coin-denominated completed trades, invalidity, survival, and productive asset value,
+then use world-seed pairs as the statistical units.

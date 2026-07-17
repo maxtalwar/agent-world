@@ -2,10 +2,13 @@
 
 Derived index only. Event JSONL, snapshots, manifests, reports, usage logs, and checkpoints in each run directory are the canonical evidence.
 
-Indexed runs: 102
+Indexed runs: 105
 
 | Run | Status | Ticks | Turn mode | Observation | Models | Quality | Invalid | Credits |
 |---|---:|---:|---|---|---|---:|---:|---:|
+| experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low-retry-1 | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 19.5 | 351.568658 |
+| experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/high | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 17.8 | 514.18461 |
+| experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 19.3 | 421.234605 |
 | experiments/sol-terra-luna-medium-15a-50t-20260717-004547 | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 20.1 | 442.094882 |
 | experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1 | completed | 20/20 | simultaneous-v1 | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 26.2 | 106.457438 |
 | experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-41/shuffled-sequential-v1-retry-1 | completed | 20/20 | shuffled-sequential-v1 | compact-v2 | claude-opus-4-8, claude-sonnet-5, fable, gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 27.4 | 105.792198 |

@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "question": "How does low, medium, or high reasoning affect matched Sol, Terra, and Luna societies over 50 ticks?",
+  "design": {
+    "ticks": 50,
+    "world_seed": 11,
+    "assignment_seed": 117,
+    "assignment_strategy": "stratified",
+    "population": {
+      "gpt-5.6-sol": 5,
+      "gpt-5.6-terra": 5,
+      "gpt-5.6-luna": 5
+    },
+    "preset": "organic-generalists",
+    "observation_mode": "compact-v2",
+    "decision_mode": "raw",
+    "turn_mode": "simultaneous-v1",
+    "experimental_unit_note": "Only one shared world seed was run per condition. Agents interact and are not independent experimental units, so results are descriptive and no inferential p-values are reported."
+  },
+  "included_conditions": {
+    "low": "runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low-retry-1",
+    "medium": "runs/experiments/sol-terra-luna-medium-15a-50t-20260717-004547",
+    "high": "runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/high"
+  },
+  "excluded_conditions": {
+    "low": {
+      "path": "runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low",
+      "reason": "One transient selected-model-capacity failure for Sol agent-6 at tick 0; preserved but excluded and replaced by low-retry-1."
+    }
+  },
+  "quality": {
+    "low": {"completed_ticks": 50, "decision_calls": 711, "llm_failures": 0, "usage_coverage_pct": 100.0},
+    "medium": {"completed_ticks": 50, "decision_calls": 685, "llm_failures": 0, "usage_coverage_pct": 100.0},
+    "high": {"completed_ticks": 50, "decision_calls": 709, "llm_failures": 0, "usage_coverage_pct": 100.0}
+  },
+  "aggregate": {
+    "low": {
+      "living": 12,
+      "dead": 3,
+      "survival_damage_events": 160,
+      "invalid_actions": 435,
+      "proposed_actions": 2227,
+      "invalid_action_pct": 19.5,
+      "offers": 22,
+      "completed_trades": 2,
+      "trade_conversion_pct": 9.1,
+      "gifts": 9,
+      "structures": 2,
+      "speech_events": 60,
+      "claimed_tiles": 0,
+      "wealth_gini": 0.1743,
+      "reasoning_tokens": 148939,
+      "visible_output_tokens": 64070,
+      "simulation_credits": 351.568658,
+      "elapsed_minutes": 35.85
+    },
+    "medium": {
+      "living": 8,
+      "dead": 7,
+      "survival_damage_events": 194,
+      "invalid_actions": 433,
+      "proposed_actions": 2158,
+      "invalid_action_pct": 20.1,
+      "offers": 28,
+      "completed_trades": 5,
+      "trade_conversion_pct": 17.9,
+      "gifts": 10,
+      "structures": 2,
+      "speech_events": 135,
+      "claimed_tiles": 0,
+      "wealth_gini": 0.0922,
+      "reasoning_tokens": 203469,
+      "visible_output_tokens": 63259,
+      "simulation_credits": 442.094882,
+      "elapsed_minutes": 36.81
+    },
+    "high": {
+      "living": 11,
+      "dead": 4,
+      "survival_damage_events": 162,
+      "invalid_actions": 403,
+      "proposed_actions": 2270,
+      "invalid_action_pct": 17.8,
+      "offers": 20,
+      "completed_trades": 6,
+      "trade_conversion_pct": 30.0,
+      "gifts": 8,
+      "structures": 1,
+      "speech_events": 67,
+      "claimed_tiles": 1,
+      "wealth_gini": 0.1226,
+      "reasoning_tokens": 379174,
+      "visible_output_tokens": 66348,
+      "simulation_credits": 514.184610,
+      "elapsed_minutes": 60.39
+    }
+  },
+  "living_by_model": {
+    "low": {"sol": 5, "terra": 4, "luna": 3},
+    "medium": {"sol": 5, "terra": 0, "luna": 3},
+    "high": {"sol": 5, "terra": 4, "luna": 2}
+  },
+  "invalid_action_pct_by_model": {
+    "low": {"sol": 17.6, "terra": 22.5, "luna": 18.7},
+    "medium": {"sol": 19.1, "terra": 21.6, "luna": 19.7},
+    "high": {"sol": 17.6, "terra": 19.6, "luna": 16.0}
+  },
+  "reasoning_tokens_per_call_by_model": {
+    "low": {"sol": 192.9, "terra": 153.2, "luna": 282.4},
+    "medium": {"sol": 294.5, "terra": 162.0, "luna": 416.8},
+    "high": {"sol": 414.4, "terra": 288.7, "luna": 916.1}
+  },
+  "findings": [
+    "Survival was not monotonic: low retained 12 agents, medium 8, and high 11.",
+    "The medium run's all-Terra collapse did not replicate: Terra retained four agents in both low and high.",
+    "Trade conversion rose monotonically from 9.1% to 17.9% to 30.0%; high completed six trades from only 20 offers.",
+    "Five of six high-reasoning trades used coin, versus one of five at medium and none of two at low.",
+    "High reduced aggregate invalidity by 1.7 percentage points versus low and 2.3 points versus medium, concentrated in fewer observation-known and unavailable-resource mistakes.",
+    "High did not cause broader society formation: no condition formed a group, contract, cooperative asset, fee policy, or dividend system.",
+    "Higher reasoning mainly purchased hidden reasoning: visible output stayed near 63,000 to 66,000 tokens, while reasoning tokens rose from 148,939 to 379,174.",
+    "High cost 46.3% more simulation credits than low and took 68.5% longer in this concurrent execution environment."
+  ],
+  "decision": "Keep low as the efficiency default. Treat high as a promising experimental setting for trade coordination and currency use, not as a blanket intelligence upgrade. Replicate low versus high across independent paired world seeds before changing defaults.",
+  "next_question": "Does high reasoning's trade-conversion and coin-use advantage replicate across world seeds, and does it eventually produce durable institutions rather than only better emergency barter?"
+}
