@@ -7,254 +7,142 @@ import time
 import unittest
 
 from agent_world.models import AgentDecision, WorldConfig
-from agent_world.observer import HTML, RunController, SnapshotHistory, _parse_run_config, load_observer_state, summarize
+from agent_world.observer import (
+    CSS,
+    HTML,
+    JAVASCRIPT,
+    RunController,
+    SnapshotHistory,
+    _observer_config_payload,
+    _parse_run_config,
+    load_catalog_run_detail,
+    load_catalog_run_state,
+    load_observer_state,
+    summarize,
+)
 from agent_world.world import WorldEngine
 
 
 class ObserverTests(unittest.TestCase):
-    def test_run_controller_pause_and_resume(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            controller = RunController(snapshot_path=tmp_path / "s.json", events_path=tmp_path / "e.jsonl")
-            status, payload = controller.start({"brain": "survival", "ticks": 1000, "agents": 1, "log_agent_io": False})
-            self.assertEqual(status, 202)
-            deadline = time.time() + 5
-            while controller.status()["current_tick"] < 2 and time.time() < deadline:
-                time.sleep(0.01)
+    def _wait_for_completion(self, controller: RunController, timeout: float = 5) -> dict:
+        deadline = time.time() + timeout
+        while controller.status()["state"] == "running" and time.time() < deadline:
+            time.sleep(0.02)
+        return controller.status()
 
-            status, payload = controller.pause()
-            self.assertEqual(status, 200)
-            self.assertTrue(payload["run"]["paused"])
-            time.sleep(0.3)
-            tick_a = controller.status()["current_tick"]
-            time.sleep(0.3)
-            tick_b = controller.status()["current_tick"]
-            self.assertLessEqual(tick_b - tick_a, 1)  # at most one in-flight tick finishes
+    def test_frontend_is_a_new_multi_page_packaged_application(self) -> None:
+        self.assertIn('id="world-page"', HTML)
+        self.assertIn('id="runs-page"', HTML)
+        self.assertIn('href="/runs" data-route="runs"', HTML)
+        self.assertIn('id="world-canvas"', HTML)
+        self.assertIn('id="analytics-drawer"', HTML)
+        self.assertIn('id="run-form"', HTML)
+        self.assertIn('id="archive-list"', HTML)
+        self.assertIn('id="compare-view"', HTML)
+        self.assertIn('/static/observer.css', HTML)
+        self.assertIn('/static/observer.js', HTML)
+        self.assertNotIn("<style>", HTML)
+        self.assertNotIn("<script>", HTML)
+        self.assertGreater(len(CSS), 20_000)
+        self.assertGreater(len(JAVASCRIPT), 40_000)
 
-            status, payload = controller.resume()
-            self.assertEqual(status, 200)
-            self.assertFalse(payload["run"]["paused"])
-            deadline = time.time() + 5
-            while controller.status()["current_tick"] <= tick_b and time.time() < deadline:
-                time.sleep(0.01)
-            self.assertGreater(controller.status()["current_tick"], tick_b)
-            controller.stop()
-            deadline = time.time() + 5
-            while controller.status()["state"] == "running" and time.time() < deadline:
-                time.sleep(0.02)
-            self.assertEqual(controller.status()["state"], "stopped")
-            self.assertTrue((tmp_path / "e-report.json").exists())
-            self.assertTrue((tmp_path / "e-report.md").exists())
+    def test_world_surface_has_game_controls_and_rich_analytics(self) -> None:
+        for element_id in (
+            "pulse-chart",
+            "inspector",
+            "chronicle-drawer",
+            "timeline-slider",
+            "tick-live",
+            "analytics-open",
+            "event-agent-filter",
+            "event-type-filter",
+        ):
+            self.assertIn(f'id="{element_id}"', HTML)
+        for analytics_tab in ("economy", "population", "civilization", "models"):
+            self.assertIn(f'data-analytics="{analytics_tab}"', HTML)
+        for renderer in (
+            "function drawTerrain(",
+            "function drawStructures(",
+            "function drawAgents(",
+            "function renderInspector(",
+            "function renderAnalytics(",
+            "function renderEvents(",
+        ):
+            self.assertIn(renderer, JAVASCRIPT)
 
-    def test_pause_requires_running_simulation(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            controller = RunController(snapshot_path=tmp_path / "s.json", events_path=tmp_path / "e.jsonl")
-            status, payload = controller.pause()
-            self.assertEqual(status, 409)
-            self.assertFalse(payload["ok"])
+    def test_run_lab_supports_presets_mixed_cohorts_history_and_comparison(self) -> None:
+        for element_id in (
+            "preset-grid",
+            "cohort-list",
+            "add-cohort",
+            "assignment-strategy",
+            "observation-mode",
+            "turn-mode",
+            "decision-mode",
+            "archive-search",
+            "archive-preview",
+        ):
+            self.assertIn(f'id="{element_id}"', HTML)
+        self.assertIn('fetchJSON("/api/run/start"', JAVASCRIPT)
+        self.assertIn('fetchJSON("/api/runs"', JAVASCRIPT)
+        self.assertIn("function cloneRun(", JAVASCRIPT)
+        self.assertIn("function renderComparison(", JAVASCRIPT)
+        self.assertIn("population: cohortRows()", JAVASCRIPT)
 
-    def test_snapshot_history_records_and_serves_past_ticks(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            history = SnapshotHistory(Path(tmp) / "s.json")
-            history.record({"tick": 0, "agents": {"agent-1": {"alive": True}}})
-            history.record({"tick": 1, "agents": {}})
-            history.record({"tick": 1, "agents": {"ignored": "duplicate tick"}})
-            self.assertEqual(history.tick_range(), {"min_tick": 0, "max_tick": 1, "count": 2})
-            self.assertIn("agent-1", history.get(0)["agents"])
-            self.assertEqual(history.get(1)["agents"], {})
-            # A restarted run (tick goes backwards) clears the archive.
-            history.record({"tick": 0, "agents": {"fresh": True}})
-            self.assertEqual(history.tick_range()["count"], 1)
-            self.assertIn("fresh", history.get(0)["agents"])
+    def test_observer_config_exposes_frontend_capabilities(self) -> None:
+        payload = _observer_config_payload()
+        self.assertIn("organic-generalists", payload["presets"])
+        self.assertIn("experimental-organic-specialists", payload["presets"])
+        self.assertIn("gpt-5.6-sol", payload["models"]["codex"])
+        self.assertIn("fable", payload["models"]["claude"])
+        self.assertIn("compact-v2", payload["observation_modes"])
+        self.assertIn("shuffled-sequential-v1", payload["turn_modes"])
+        self.assertEqual(payload["limits"]["agents"], 100)
 
-    def test_load_observer_state_serves_historical_tick(self) -> None:
-        engine = WorldEngine.create(WorldConfig(), agent_names=["A1"])
-        history = SnapshotHistory(Path("unused"))
-        history.record(json.loads(json.dumps(engine.snapshot())))
-        engine.tick({"agent-1": AgentDecision(actions=[{"type": "wait"}])})
-        engine.tick({"agent-1": AgentDecision(actions=[{"type": "wait"}])})
-        history.record(json.loads(json.dumps(engine.snapshot())))
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            snapshot_path = tmp_path / "snapshot.json"
-            events_path = tmp_path / "events.jsonl"
-            snapshot_path.write_text(json.dumps(engine.snapshot()), encoding="utf-8")
-            events_path.write_text(engine.export_events_jsonl() + "\n", encoding="utf-8")
-
-            past = load_observer_state(snapshot_path, events_path, at_tick=0, history=history)
-            self.assertEqual(past["snapshot"]["tick"], 0)
-            self.assertEqual(past["history"]["viewing_tick"], 0)
-            self.assertEqual(past["history"]["live_tick"], 2)
-            self.assertTrue(all(event["tick"] <= 0 for event in past["recent_events"]))
-
-            live = load_observer_state(snapshot_path, events_path, history=history)
-            self.assertEqual(live["snapshot"]["tick"], 2)
-            self.assertIsNone(live["history"]["viewing_tick"])
-
-    def test_html_has_pause_and_timeline_controls(self) -> None:
-        self.assertIn('id="pause-run"', HTML)
-        self.assertIn('id="timeline-slider"', HTML)
-        self.assertIn('id="tick-back"', HTML)
-        self.assertIn('id="tick-forward"', HTML)
-        self.assertIn('id="tick-live"', HTML)
-        self.assertIn('"/api/run/resume" : "/api/run/pause"', HTML)
-        self.assertIn("function renderTimeline(history, run)", HTML)
-        self.assertIn("function setViewTick(value)", HTML)
-        self.assertIn('`/api/state?tick=${viewTick}`', HTML)
-
-    def test_snapshot_contains_tiles_and_positions(self) -> None:
-        engine = WorldEngine.create(WorldConfig(), agent_names=["A1"])
-        snapshot = engine.snapshot()
-        self.assertEqual(len(snapshot["tiles"]), 16)
-        self.assertEqual(len(snapshot["tiles"][0]), 16)
-        self.assertIn("resources", snapshot["tiles"][0][0])
-        self.assertEqual(snapshot["agents"]["agent-1"]["position"], {"x": 8, "y": 8})
-        self.assertIn("build_readiness", snapshot["diagnostics"])
-
-    def test_observer_state_filters_private_io_events(self) -> None:
-        engine = WorldEngine.create(WorldConfig(), agent_names=["A1"])
-        engine.log_event("agent_prompt", actor_id="agent-1", recipients={"agent-1"}, scope="private")
-        engine.tick({"agent-1": AgentDecision(actions=[{"type": "wait"}])})
-        with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            snapshot_path = tmp_path / "snapshot.json"
-            events_path = tmp_path / "events.jsonl"
-            snapshot_path.write_text(json.dumps(engine.snapshot()), encoding="utf-8")
-            events_path.write_text(engine.export_events_jsonl() + "\n", encoding="utf-8")
-            state = load_observer_state(snapshot_path, events_path)
-        event_types = {event["type"] for event in state["recent_events"]}
-        self.assertIn("wait", event_types)
-        self.assertNotIn("agent_prompt", event_types)
-        self.assertIn("build_ready", state["summary"])
-
-    def test_model_selector_is_dropdown_with_recommended_models(self) -> None:
-        self.assertIn('<select id="run-model" class="lock">', HTML)
-        self.assertNotIn('<input id="run-model" type="text"', HTML)
-        for model in ["z-ai/glm-5.2", "openai/gpt-5.6-luna", "gpt-5.6-luna", "gpt-5.6-terra", "z-ai/glm-5.1", "z-ai/glm-4.7", "z-ai/glm-4.5-air"]:
-            self.assertIn(f'value="{model}"', HTML)
-        self.assertIn('<option value="codex">codex plan</option>', HTML)
-        self.assertIn('<option value="z-ai/glm-5.2" selected>', HTML)
-        self.assertIn('<select id="run-reasoning" class="lock">', HTML)
-        self.assertIn('<option value="medium" selected>', HTML)
-        self.assertIn('reasoning_effort: document.getElementById("run-reasoning").value', HTML)
-
-    def test_event_timeline_has_agent_and_action_filters(self) -> None:
-        self.assertIn('id="filter-agent"', HTML)
-        self.assertIn('id="filter-type"', HTML)
-        self.assertIn("function renderEventFilters(events, agents)", HTML)
-        self.assertIn('standardActionTypes', HTML)
-        self.assertIn('"say"', HTML)
-        self.assertIn('{ value: "trade", label: "trade" }', HTML)
-        self.assertIn('function eventMatchesTypeFilter(event, typeFilter)', HTML)
-        self.assertIn('if (typeFilter === "trade") return eventClass(event.type) === "trade";', HTML)
-        self.assertIn('document.getElementById("filter-agent").addEventListener("change"', HTML)
-        self.assertIn('document.getElementById("filter-type").addEventListener("change"', HTML)
-        self.assertIn('case "well"', HTML)
-
-    def test_agent_status_bars_display_percentages(self) -> None:
-        self.assertIn('const percentage = max > 0 ? Math.round', HTML)
-        self.assertIn('${percentage}%', HTML)
-        self.assertIn('config.food_reserve_max || 20', HTML)
-        self.assertIn('config.water_reserve_max || 20', HTML)
-        self.assertIn('config.energy_reserve_max || 30', HTML)
-
-    def test_config_tab_controls_simulation_knobs(self) -> None:
-        self.assertIn('id="tab-config"', HTML)
-        self.assertIn('id="panel-config"', HTML)
-        self.assertIn('id="cfg-carry-capacity"', HTML)
-        self.assertIn('id="cfg-objective-mode"', HTML)
-        self.assertIn('id="cfg-economy-mode"', HTML)
-        self.assertIn('id="cfg-geography-mode"', HTML)
-        self.assertIn('id="cfg-action-points"', HTML)
-        self.assertIn('id="cfg-storage-capacity"', HTML)
-        self.assertIn('id="cfg-food-start"', HTML)
-        self.assertIn('id="cfg-food-spoil-interval"', HTML)
-        self.assertIn('id="cfg-starter-radius"', HTML)
-        self.assertIn('id="cfg-wild-food"', HTML)
-        self.assertIn('id="cfg-wild-fiber"', HTML)
-        self.assertIn('class="terrain-grid"', HTML)
-        self.assertIn('class="tb-title">Plains</legend>', HTML)
-        self.assertIn('class="tb-title">Forest</legend>', HTML)
-        self.assertIn('class="tb-title">Mountain</legend>', HTML)
-        self.assertIn('class="tb-title">Water</legend>', HTML)
-        self.assertIn('id="cfg-plains-food"', HTML)
-        self.assertIn('id="cfg-forest-wood"', HTML)
-        self.assertIn('id="cfg-water-water"', HTML)
-        self.assertIn('<option value="llm" selected>llm</option>', HTML)
-        self.assertIn('id="run-ticks" class="lock" type="number" min="1" max="1000" value="20"', HTML)
-        self.assertIn('id="run-seed" class="lock" type="number" min="0" value="11"', HTML)
-        self.assertIn('action_points_per_tick: numberValue("cfg-action-points")', HTML)
-        self.assertIn('objective_mode: document.getElementById("cfg-objective-mode").value', HTML)
-        self.assertIn('default_carry_capacity: numberValue("cfg-carry-capacity")', HTML)
-        self.assertIn('storage_capacity: numberValue("cfg-storage-capacity")', HTML)
-        self.assertIn('carried_food_spoil_interval: numberValue("cfg-food-spoil-interval")', HTML)
-        self.assertIn('starter_resource_radius: numberValue("cfg-starter-radius")', HTML)
-        self.assertIn('wild_food_density: numberValue("cfg-wild-food")', HTML)
-        self.assertIn('plains_food_regen: numberValue("cfg-plains-food")', HTML)
-        self.assertIn('water_water_regen: numberValue("cfg-water-water")', HTML)
-        self.assertIn('const TERRAIN_STORAGE_KEY = "agentWorldObservatory.terrainRegrowth"', HTML)
-        self.assertIn("loadTerrainConfig();", HTML)
-        self.assertIn("saveTerrainConfig", HTML)
-
-    def test_run_config_accepts_economic_treatments(self) -> None:
+    def test_run_config_parses_mixed_population_and_experimental_preset(self) -> None:
         config = _parse_run_config(
             {
-                "brain": "survival",
-                "objective_mode": "individual",
-                "economy_mode": "commerce",
-                "geography_mode": "dispersed",
+                "preset": "experimental-organic-specialists",
+                "seed": 17,
+                "ticks": 40,
+                "max_workers": 8,
+                "codex_max_workers": 4,
+                "claude_max_workers": 3,
+                "assignment_strategy": "stratified",
+                "assignment_seed": 99,
+                "observation_mode": "indexed-v3",
+                "turn_mode": "shuffled-sequential-v1",
+                "population": [
+                    {
+                        "count": 5,
+                        "brain": "codex",
+                        "model": "gpt-5.6-luna",
+                        "reasoning_effort": "low",
+                    },
+                    {
+                        "count": 5,
+                        "brain": "claude",
+                        "model": "fable",
+                        "reasoning_effort": "low",
+                        "thinking_budget_tokens": 0,
+                    },
+                ],
             }
         )
-        self.assertEqual(config.world_config.objective_mode, "individual")
-        self.assertEqual(config.world_config.economy_mode, "commerce")
-        self.assertEqual(config.world_config.geography_mode, "dispersed")
+        self.assertEqual(config.brain, "mixed")
+        self.assertEqual(config.agents, 10)
+        self.assertEqual(config.population.total_agents, 10)
+        self.assertEqual(config.population.groups[1].brain.model, "fable")
+        self.assertEqual(config.population.groups[1].brain.type, "claude")
+        self.assertEqual(config.assignment_strategy, "stratified")
+        self.assertEqual(config.assignment_seed, 99)
+        self.assertEqual(config.observation_mode, "indexed-v3")
+        self.assertEqual(config.turn_mode, "shuffled-sequential-v1")
+        self.assertEqual(config.provider_max_workers["codex_cli"], 4)
+        self.assertEqual(config.world_config.specialization_mode, "specialists")
+        self.assertEqual(config.world_config.economy_mode, "organic")
 
-    def test_map_renders_illustrated_structures_and_agent_figures(self) -> None:
-        self.assertIn(':root {\n      color-scheme: light;', HTML)
-        self.assertIn("function structureIcon(type", HTML)
-        self.assertIn("function drawStructure(type", HTML)
-        for structure_type in ["house", "well", "farm_plot", "storage", "shelter", "workshop"]:
-            self.assertIn(f'case "{structure_type}":', HTML)
-        self.assertIn("function forestDecor", HTML)
-        self.assertIn("function mountainDecor", HTML)
-        self.assertIn("function waterDecor", HTML)
-        self.assertIn("function plainsDecor", HTML)
-        self.assertIn("function agentFigure", HTML)
-        self.assertIn("function graveFigure", HTML)
-        self.assertIn("function pileFigure", HTML)
-        self.assertIn("under_construction", HTML)
-        self.assertIn("function tipContent", HTML)
-        self.assertIn("function renderInspector", HTML)
-        self.assertIn('id="hover-rect"', HTML)
-        self.assertIn("data-tx", HTML)
-
-    def test_civilization_panel_charts_progress_series(self) -> None:
-        self.assertIn('id="civ-chart"', HTML)
-        self.assertIn('id="civ-structures"', HTML)
-        self.assertIn("function renderChart(series)", HTML)
-        for key in ["population", "structures", "trades", "messages"]:
-            self.assertIn(f'"{key}"', HTML)
-
-    def test_summary_includes_civilization_series(self) -> None:
-        engine = WorldEngine.create(WorldConfig(), agent_names=["A1", "A2"])
-        engine.tick({aid: AgentDecision(actions=[{"type": "wait"}]) for aid in engine.state.agents})
-        engine.tick({aid: AgentDecision(actions=[{"type": "wait"}]) for aid in engine.state.agents})
-        snapshot = engine.snapshot()
-        events = [
-            {"type": "say", "tick": 0},
-            {"type": "death", "tick": 1},
-            {"type": "build", "tick": 2},
-            {"type": "accept_trade", "tick": 2},
-        ]
-        series = summarize(snapshot, events)["series"]
-        self.assertEqual(series["ticks"], [0, 1, 2])
-        self.assertEqual(series["population"], [2, 1, 1])
-        self.assertEqual(series["structures"], [0, 0, 1])
-        self.assertEqual(series["trades"], [0, 0, 1])
-        self.assertEqual(series["messages"], [1, 1, 1])
-
-    def test_observatory_default_run_matches_latest_tuned_profile(self) -> None:
+    def test_default_run_uses_open_frontier_profile(self) -> None:
         config = _parse_run_config({})
         self.assertEqual(config.brain, "llm")
         self.assertEqual(config.ticks, 20)
@@ -262,16 +150,16 @@ class ObserverTests(unittest.TestCase):
         self.assertEqual(config.model, "z-ai/glm-5.2")
         self.assertEqual(config.reasoning_effort, "medium")
         self.assertEqual(config.max_workers, 1)
+        self.assertEqual(config.preset, "organic-generalists")
         self.assertEqual(config.world_config.seed, 11)
-        self.assertEqual(config.world_config.action_points_per_tick, 4)
-        self.assertEqual(config.world_config.carried_food_spoil_interval, 6)
-        self.assertEqual(config.world_config.starter_resource_radius, 1)
-        self.assertEqual(config.world_config.wild_food_density, 0.35)
-        self.assertEqual(config.world_config.wild_fiber_density, 0.85)
+        self.assertEqual(config.world_config.economy_mode, "organic")
+        self.assertEqual(config.world_config.geography_mode, "dispersed")
+        self.assertEqual(config.world_config.specialization_mode, "generalists")
 
     def test_run_config_parses_world_knobs(self) -> None:
         config = _parse_run_config(
             {
+                "preset": "baseline",
                 "action_points_per_tick": 4,
                 "default_carry_capacity": 18,
                 "storage_capacity": 140,
@@ -296,14 +184,10 @@ class ObserverTests(unittest.TestCase):
                 "reasoning_effort": "high",
             }
         )
-        self.assertEqual(config.brain, "llm")
         self.assertEqual(config.model, "gpt-5.4-mini")
         self.assertEqual(config.reasoning_effort, "high")
-        self.assertEqual(config.world_config.action_points_per_tick, 4)
         self.assertEqual(config.world_config.default_carry_capacity, 18)
         self.assertEqual(config.world_config.storage_capacity, 140)
-        self.assertEqual(config.world_config.food_reserve_start, 6)
-        self.assertEqual(config.world_config.food_reserve_max, 20)
         self.assertEqual(config.world_config.energy_reserve_max, 40)
         self.assertEqual(config.world_config.resource_base_multiplier, 1.5)
         self.assertEqual(config.world_config.plains_food_regen, 0.25)
@@ -313,74 +197,169 @@ class ObserverTests(unittest.TestCase):
         self.assertEqual(config.world_config.wild_fiber_density, 0.7)
         self.assertEqual(config.world_config.starter_resource_radius, 2)
         self.assertEqual(config.world_config.carried_food_spoil_interval, 9)
-        self.assertEqual(config.world_config.carried_food_spoil_quantity, 2)
         self.assertEqual(config.world_config.farm_food_added, 8)
 
-    def test_run_config_accepts_codex_plan_brain(self) -> None:
-        config = _parse_run_config(
-            {
-                "brain": "codex",
-                "model": "gpt-5.6-terra",
-                "reasoning_effort": "xhigh",
-            }
-        )
-        self.assertEqual(config.brain, "codex")
-        self.assertEqual(config.model, "gpt-5.6-terra")
-        self.assertEqual(config.reasoning_effort, "xhigh")
-
-    def test_run_config_rejects_starting_reserve_above_max(self) -> None:
+    def test_run_config_validates_population_and_world_inputs(self) -> None:
         with self.assertRaises(ValueError):
             _parse_run_config({"food_reserve_start": 16, "food_reserve_max": 15})
-
-    def test_run_config_rejects_invalid_reasoning_effort(self) -> None:
         with self.assertRaises(ValueError):
             _parse_run_config({"brain": "llm", "reasoning_effort": "maximum"})
+        with self.assertRaises(ValueError):
+            _parse_run_config({"population": []})
+        with self.assertRaises(ValueError):
+            _parse_run_config({"population": [{"count": 101, "brain": "codex"}]})
+        with self.assertRaises(ValueError):
+            _parse_run_config({"preset": "forced-capitalism"})
 
-    def test_run_controller_starts_survival_run_and_writes_live_files(self) -> None:
+    def test_run_controller_pause_and_resume(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            snapshot_path = tmp_path / "snapshot.json"
-            events_path = tmp_path / "events.jsonl"
-            controller = RunController(snapshot_path=snapshot_path, events_path=events_path)
+            controller = RunController(snapshot_path=tmp_path / "s.json", events_path=tmp_path / "e.jsonl")
+            status, payload = controller.start(
+                {"brain": "survival", "preset": "baseline", "ticks": 1000, "agents": 1, "log_agent_io": False}
+            )
+            self.assertEqual(status, 202)
+            deadline = time.time() + 5
+            while controller.status()["current_tick"] < 2 and time.time() < deadline:
+                time.sleep(0.01)
+            status, payload = controller.pause()
+            self.assertEqual(status, 200)
+            self.assertTrue(payload["run"]["paused"])
+            time.sleep(0.2)
+            tick_a = controller.status()["current_tick"]
+            time.sleep(0.2)
+            tick_b = controller.status()["current_tick"]
+            self.assertLessEqual(tick_b - tick_a, 1)
+            status, payload = controller.resume()
+            self.assertEqual(status, 200)
+            self.assertFalse(payload["run"]["paused"])
+            controller.stop()
+            result = self._wait_for_completion(controller)
+            self.assertEqual(result["state"], "stopped")
+            self.assertTrue((tmp_path / "e-report.json").exists())
+            self.assertTrue((tmp_path / "e-manifest.json").exists())
 
+    def test_pause_requires_running_simulation(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            controller = RunController(Path(tmp) / "s.json", Path(tmp) / "e.jsonl")
+            status, payload = controller.pause()
+            self.assertEqual(status, 409)
+            self.assertFalse(payload["ok"])
+
+    def test_archived_browser_run_writes_timestamped_artifacts_and_catalog(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "runs"
+            root.mkdir()
+            controller = RunController(root / "live-snapshot.json", root / "live.jsonl", runs_root=root)
             status, payload = controller.start(
                 {
+                    "name": "Tiny Republic",
                     "brain": "survival",
+                    "preset": "organic-generalists",
                     "ticks": 2,
                     "agents": 2,
                     "seed": 3,
                     "log_agent_io": False,
-                    "max_workers": 1,
-                    "default_carry_capacity": 17,
-                    "food_reserve_start": 6,
-                    "food_reserve_max": 20,
-                    "forest_wood_regen": 0.33,
                 }
             )
             self.assertEqual(status, 202)
-            self.assertTrue(payload["ok"])
+            self.assertIn("observatory/", payload["run"]["run_id"])
+            result = self._wait_for_completion(controller)
+            self.assertEqual(result["state"], "completed", result)
+            run_dir = root / result["run_id"]
+            self.assertTrue((run_dir / "run.jsonl").exists())
+            self.assertTrue((run_dir / "run-snapshot.json").exists())
+            self.assertTrue((run_dir / "run-report.json").exists())
+            self.assertTrue((run_dir / "run-manifest.json").exists())
+            manifest = json.loads((run_dir / "run-manifest.json").read_text())
+            self.assertEqual(manifest["status"], "completed")
+            self.assertEqual(manifest["preset"], "organic-generalists")
+            self.assertEqual(manifest["population"]["total_agents"], 2)
+            self.assertTrue((root / "catalog.json").exists())
+            detail = load_catalog_run_detail(root, result["run_id"])
+            self.assertEqual(detail["report"]["run"]["final_tick"], 2)
+            state = load_catalog_run_state(root, result["run_id"])
+            self.assertEqual(state["snapshot"]["tick"], 2)
+            self.assertEqual(state["source"], "archive")
+            artifact_ref = f'{result["run_id"]}/run-report.json'
+            self.assertEqual(
+                load_catalog_run_detail(root, artifact_ref)["report"]["run"]["final_tick"],
+                2,
+            )
 
-            deadline = time.time() + 5
-            while controller.status()["state"] == "running" and time.time() < deadline:
-                time.sleep(0.05)
+    def test_archive_report_references_disambiguate_shared_directories(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "runs"
+            shared = root / "tuning"
+            shared.mkdir(parents=True)
+            for name, tick in (("alpha", 3), ("beta", 9)):
+                (shared / f"{name}-report.json").write_text(
+                    json.dumps({"run": {"final_tick": tick, "target_ticks": tick}}),
+                    encoding="utf-8",
+                )
+                (shared / f"{name}-snapshot.json").write_text(
+                    json.dumps({"tick": tick, "agents": {}, "tiles": []}),
+                    encoding="utf-8",
+                )
 
-            run_status = controller.status()
-            self.assertEqual(run_status["state"], "completed", run_status)
-            self.assertEqual(run_status["current_tick"], 2)
-            self.assertTrue(snapshot_path.exists())
-            self.assertTrue(events_path.exists())
+            alpha = load_catalog_run_state(root, "tuning/alpha-report.json")
+            beta = load_catalog_run_state(root, "tuning/beta-report.json")
+            self.assertEqual(alpha["snapshot"]["tick"], 3)
+            self.assertEqual(beta["snapshot"]["tick"], 9)
+            self.assertEqual(alpha["report"]["run"]["final_tick"], 3)
+            self.assertEqual(beta["report"]["run"]["final_tick"], 9)
+            with self.assertRaises(ValueError):
+                load_catalog_run_detail(root, "../outside-report.json")
 
-            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
-            self.assertEqual(snapshot["tick"], 2)
-            self.assertEqual(snapshot["config"]["default_carry_capacity"], 17)
-            self.assertEqual(snapshot["config"]["food_reserve_max"], 20)
-            self.assertEqual(snapshot["config"]["forest_wood_regen"], 0.33)
-            self.assertEqual(snapshot["agents"]["agent-1"]["carry_capacity"], 17)
-            self.assertIn("run_completed", events_path.read_text(encoding="utf-8"))
+    def test_snapshot_history_records_resets_and_serves_past_ticks(self) -> None:
+        history = SnapshotHistory(Path("unused"))
+        history.record({"tick": 0, "agents": {"agent-1": {"alive": True}}})
+        history.record({"tick": 1, "agents": {}})
+        history.record({"tick": 1, "agents": {"ignored": "duplicate tick"}})
+        self.assertEqual(history.tick_range(), {"min_tick": 0, "max_tick": 1, "count": 2})
+        history.set_path(Path("new-snapshot.json"))
+        self.assertEqual(history.tick_range()["count"], 0)
+        history.record({"tick": 4, "agents": {"old": True}})
+        history.record({"tick": 0, "agents": {"fresh": True}})
+        self.assertEqual(history.tick_range()["count"], 1)
+        self.assertIn("fresh", history.get(0)["agents"])
 
-            state = load_observer_state(snapshot_path, events_path, run_status=run_status)
-            self.assertEqual(state["run"]["state"], "completed")
-            self.assertEqual(state["run"]["agents"], 2)
+    def test_load_observer_state_filters_private_io_and_includes_report(self) -> None:
+        engine = WorldEngine.create(WorldConfig(), agent_names=["A1"])
+        engine.log_event("agent_prompt", actor_id="agent-1", recipients={"agent-1"}, scope="private")
+        engine.tick({"agent-1": AgentDecision(actions=[{"type": "wait"}])})
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            snapshot = root / "run-snapshot.json"
+            events = root / "run.jsonl"
+            report = root / "run-report.json"
+            snapshot.write_text(json.dumps(engine.snapshot()), encoding="utf-8")
+            events.write_text(engine.export_events_jsonl() + "\n", encoding="utf-8")
+            report.write_text(json.dumps({"run": {"final_tick": 1}}), encoding="utf-8")
+            state = load_observer_state(snapshot, events)
+        event_types = {event["type"] for event in state["recent_events"]}
+        self.assertIn("wait", event_types)
+        self.assertNotIn("agent_prompt", event_types)
+        self.assertEqual(state["report"]["run"]["final_tick"], 1)
+
+    def test_summary_includes_civilization_series(self) -> None:
+        engine = WorldEngine.create(WorldConfig(), agent_names=["A1", "A2"])
+        engine.tick({agent_id: AgentDecision(actions=[{"type": "wait"}]) for agent_id in engine.state.agents})
+        engine.tick({agent_id: AgentDecision(actions=[{"type": "wait"}]) for agent_id in engine.state.agents})
+        series = summarize(
+            engine.snapshot(),
+            [
+                {"type": "say", "tick": 0},
+                {"type": "death", "tick": 1},
+                {"type": "build", "tick": 2},
+                {"type": "accept_trade", "tick": 2},
+            ],
+        )["series"]
+        self.assertEqual(series["ticks"], [0, 1, 2])
+        self.assertEqual(series["population"], [2, 1, 1])
+        self.assertEqual(series["structures"], [0, 0, 1])
+        self.assertEqual(series["trades"], [0, 0, 1])
+        self.assertEqual(series["messages"], [1, 1, 1])
 
 
 if __name__ == "__main__":

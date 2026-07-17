@@ -4,22 +4,33 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import os
 from pathlib import Path
+import re
+import subprocess
 import threading
 import time
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from agent_world.brain_factory import BrainSpec
+from agent_world.brain_factory import (
+    ALLOWED_EFFORTS,
+    BrainSpec,
+    PopulationGroup,
+    PopulationSpec,
+    create_population_brains,
+)
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.env import load_dotenv
+from agent_world.interface import OBSERVATION_MODES
+from agent_world.io import atomic_write_json
 from agent_world.metrics import compute_metrics, is_decision_failure_message, is_quota_failure_message
 from agent_world.models import WorldConfig
 from agent_world.persistence import IncrementalRunWriter
-from agent_world.run_catalog import refresh_catalog_for_output
+from agent_world.run_catalog import refresh_catalog_for_output, write_run_catalog
 from agent_world.session import SimulationSession
 from agent_world.world import DEFAULT_TURN_MODE, TURN_MODES, WorldEngine
 
@@ -43,6 +54,40 @@ TUNED_OBSERVATORY_DEFAULTS = {
     "max_workers": 1,
 }
 
+OBSERVATORY_PRESETS = {
+    "baseline": {
+        "label": "Common Ground",
+        "description": "Shared oasis, generalists, and the simplest world rules.",
+        "economy_mode": "baseline",
+        "geography_mode": "shared_oasis",
+        "objective_mode": "neutral",
+        "specialization_mode": "generalists",
+    },
+    "organic-generalists": {
+        "label": "Open Frontier",
+        "description": "Dispersed starts and physical exchange without assigned economic roles.",
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "objective_mode": "neutral",
+        "specialization_mode": "generalists",
+    },
+    "experimental-organic-specialists": {
+        "label": "Specialist Provinces",
+        "description": "Experimental comparative advantages across a dispersed organic world.",
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "objective_mode": "neutral",
+        "specialization_mode": "specialists",
+    },
+}
+
+MODEL_LIBRARY = {
+    "codex": ["gpt-5.6-luna", "gpt-5.6-terra", "gpt-5.6-sol"],
+    "claude": ["claude-sonnet-5", "claude-opus-4-8", "fable"],
+    "llm": ["z-ai/glm-5.2", "gpt-5.4-mini"],
+    "survival": ["survival"],
+}
+
 
 @dataclass(frozen=True)
 class RunConfig:
@@ -54,10 +99,20 @@ class RunConfig:
     log_agent_io: bool = True
     max_workers: int = 1
     turn_mode: str = DEFAULT_TURN_MODE
+    preset: str = "organic-generalists"
+    decision_mode: str = "raw"
+    observation_mode: str = "compact-v2"
+    assignment_strategy: str = "ordered"
+    assignment_seed: int = 0
+    provider_max_workers: dict[str, int] = field(default_factory=dict)
+    population: PopulationSpec | None = None
+    name: str = ""
     world_config: WorldConfig = field(default_factory=WorldConfig)
 
     def public_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        result = asdict(self)
+        result["population"] = self.population.to_dict() if self.population else None
+        return result
 
 
 @dataclass
@@ -78,6 +133,10 @@ class RunStatus:
     stop_requested: bool = False
     paused: bool = False
     error: str = ""
+    run_id: str | None = None
+    output_dir: str | None = None
+    files: dict[str, str] = field(default_factory=dict)
+    population: dict[str, Any] = field(default_factory=dict)
     config: dict[str, Any] = field(default_factory=dict)
     metrics: dict[str, Any] = field(default_factory=dict)
 
@@ -88,10 +147,18 @@ class RunStatus:
 class RunController:
     """Owns one background simulation launched from the observatory UI."""
 
-    def __init__(self, snapshot_path: Path, events_path: Path):
+    def __init__(
+        self,
+        snapshot_path: Path,
+        events_path: Path,
+        *,
+        runs_root: Path | None = None,
+    ):
         self.snapshot_path = snapshot_path
         self.events_path = events_path
         self.checkpoint_path = events_path.with_name(events_path.stem + "-checkpoint.pkl")
+        self.runs_root = runs_root.resolve() if runs_root is not None else None
+        self._path_listener: Any = None
         self._lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._stop_event: threading.Event | None = None
@@ -101,6 +168,13 @@ class RunController:
     def status(self) -> dict[str, Any]:
         with self._lock:
             return self._status.to_dict()
+
+    def paths(self) -> tuple[Path, Path]:
+        with self._lock:
+            return self.snapshot_path, self.events_path
+
+    def set_path_listener(self, listener: Any) -> None:
+        self._path_listener = listener
 
     def start(self, payload: dict[str, Any]) -> tuple[int, dict[str, Any]]:
         load_dotenv()
@@ -112,6 +186,10 @@ class RunController:
         with self._lock:
             if self._thread is not None and self._thread.is_alive():
                 return 409, {"ok": False, "error": "A simulation is already running.", "run": self._status.to_dict()}
+            snapshot_path, events_path, run_id = self._paths_for_new_run(config)
+            self.snapshot_path = snapshot_path
+            self.events_path = events_path
+            self.checkpoint_path = events_path.with_name(events_path.stem + "-checkpoint.pkl")
             self._stop_event = threading.Event()
             self._pause_event.clear()
             self._status = RunStatus(
@@ -127,17 +205,43 @@ class RunController:
                 max_workers=config.max_workers,
                 turn_mode=config.turn_mode,
                 started_at=time.time(),
+                run_id=run_id,
+                output_dir=str(events_path.parent),
+                files={
+                    "events": str(events_path),
+                    "snapshot": str(snapshot_path),
+                    "report": str(events_path.with_name(events_path.stem + "-report.json")),
+                    "manifest": str(events_path.with_name(events_path.stem + "-manifest.json")),
+                },
+                population=config.population.to_dict() if config.population else {},
                 config=config.public_dict(),
             )
             thread = threading.Thread(
                 target=self._run,
-                args=(config, self._stop_event),
+                args=(config, self._stop_event, snapshot_path, events_path),
                 name="agent-world-observer-run",
                 daemon=True,
             )
             self._thread = thread
             thread.start()
-            return 202, {"ok": True, "run": self._status.to_dict()}
+            response = {"ok": True, "run": self._status.to_dict()}
+        if self._path_listener is not None:
+            self._path_listener(snapshot_path)
+        return 202, response
+
+    def _paths_for_new_run(self, config: RunConfig) -> tuple[Path, Path, str | None]:
+        if self.runs_root is None:
+            return self.snapshot_path, self.events_path, None
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+        name = _slug(config.name) or config.preset
+        relative = Path("observatory") / f"{timestamp}-{name}"
+        run_dir = self.runs_root / relative
+        suffix = 1
+        while run_dir.exists():
+            run_dir = self.runs_root / f"{relative}-{suffix}"
+            suffix += 1
+        run_dir.mkdir(parents=True, exist_ok=False)
+        return run_dir / "run-snapshot.json", run_dir / "run.jsonl", str(run_dir.relative_to(self.runs_root))
 
     def stop(self) -> tuple[int, dict[str, Any]]:
         with self._lock:
@@ -163,27 +267,47 @@ class RunController:
             self._status.paused = False
             return 200, {"ok": True, "run": self._status.to_dict()}
 
-    def _run(self, config: RunConfig, stop_event: threading.Event) -> None:
+    def _run(
+        self,
+        config: RunConfig,
+        stop_event: threading.Event,
+        snapshot_path: Path,
+        events_path: Path,
+    ) -> None:
         engine: WorldEngine | None = None
+        manifest_path = events_path.with_name(events_path.stem + "-manifest.json")
+        manifest: dict[str, Any] | None = None
         try:
-            agent_names = [f"Agent {index + 1}" for index in range(config.agents)]
+            population = config.population
+            if population is None:
+                raise RuntimeError("Run population was not resolved.")
+            agent_names = [f"Agent {index + 1}" for index in range(population.total_agents)]
             engine = WorldEngine.create(config=config.world_config, agent_names=agent_names)
+            if not population.assigned_groups:
+                population = population.bind_assignments(
+                    engine,
+                    strategy=config.assignment_strategy,
+                    seed=config.assignment_seed,
+                )
             writer = IncrementalRunWriter(
-                self.events_path,
-                self.snapshot_path,
-                checkpoint_path=self.checkpoint_path,
+                events_path,
+                snapshot_path,
+                checkpoint_path=events_path.with_name(events_path.stem + "-checkpoint.pkl"),
             )
-            brain_spec = BrainSpec.resolve(
-                config.brain,
-                model=config.model,
-                reasoning_effort=config.reasoning_effort,
-                max_workers=config.max_workers,
-            )
-            usage_path = self.events_path.with_name(self.events_path.stem + "-usage.jsonl")
-            if brain_spec.model_backed:
+            brain_spec = population.groups[0].brain
+            usage_path = events_path.with_name(events_path.stem + "-usage.jsonl")
+            if population.model_backed:
                 usage_path.parent.mkdir(parents=True, exist_ok=True)
                 usage_path.write_text("", encoding="utf-8")
-            runtime = BrainRuntime(usage_path if brain_spec.model_backed else None)
+            runtime = BrainRuntime(usage_path if population.model_backed else None)
+            manifest = _observer_manifest(
+                config=config,
+                engine=engine,
+                population=population,
+                events_path=events_path,
+                snapshot_path=snapshot_path,
+            )
+            atomic_write_json(manifest_path, manifest)
 
             def before_tick() -> bool:
                 while self._pause_event.is_set() and not stop_event.is_set():
@@ -197,37 +321,62 @@ class RunController:
                 return {
                     "run": {
                         **config.public_dict(),
+                        "population": population.to_dict(current.engine.state.agents),
                         "target_ticks": config.ticks,
-                        "events_path": str(self.events_path.resolve()),
-                        "snapshot_path": str(self.snapshot_path.resolve()),
+                        "events_path": str(events_path.resolve()),
+                        "snapshot_path": str(snapshot_path.resolve()),
                         "sequential_decisions": config.max_workers <= 1,
                     },
                     "plan_usage_checkpoints": current.plan_usage_checkpoints,
                 }
 
-            stem = self.events_path.with_name(self.events_path.stem)
+            stem = events_path.with_name(events_path.stem)
             session = SimulationSession(
                 engine=engine,
                 brain_spec=brain_spec,
                 runtime=runtime,
                 writer=writer,
                 target_ticks=config.ticks,
+                brains=create_population_brains(engine, population, runtime),
+                population_spec=population,
+                max_workers=config.max_workers,
+                provider_max_workers=config.provider_max_workers,
+                decision_mode=config.decision_mode,
+                observation_mode=config.observation_mode,
                 log_agent_io=config.log_agent_io,
                 concurrent_decisions=config.max_workers > 1,
                 turn_mode=config.turn_mode,
-                lifecycle_metadata={"config": config.public_dict()},
+                lifecycle_metadata={
+                    "config": config.public_dict(),
+                    "preset": config.preset,
+                    "decision_mode": config.decision_mode,
+                    "observation_mode": config.observation_mode,
+                    "turn_mode": config.turn_mode,
+                    "population": population.to_dict(engine.state.agents),
+                },
                 checkpoint_extra=checkpoint_extra,
                 before_tick=before_tick,
                 on_tick=on_tick,
                 report_stem=stem,
                 plan_usage_path=(
-                    self.events_path.with_name(self.events_path.stem + "-plan-usage.json")
-                    if brain_spec.type == "codex"
+                    events_path.with_name(events_path.stem + "-plan-usage.json")
+                    if any(group.brain.type == "codex" for group in population.groups)
                     else None
                 ),
             )
             result = session.run()
-            refresh_catalog_for_output(self.events_path)
+            if manifest is not None:
+                manifest.update(
+                    {
+                        "status": result.status,
+                        "final_tick": result.final_tick,
+                        "stop_reason": result.stop_reason,
+                        "error": result.error,
+                        "ended_at_utc": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+                atomic_write_json(manifest_path, manifest)
+            refresh_catalog_for_output(events_path)
             metrics = compute_metrics(engine.state)
             with self._lock:
                 self._status.state = result.status
@@ -245,6 +394,16 @@ class RunController:
                         data={"error": str(exc)},
                         scope="public",
                     )
+            if manifest is not None:
+                manifest.update(
+                    {
+                        "status": "failed",
+                        "final_tick": engine.state.tick if engine is not None else 0,
+                        "error": str(exc),
+                        "ended_at_utc": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
+                atomic_write_json(manifest_path, manifest)
             with self._lock:
                 self._status.state = "failed"
                 self._status.finished_at = time.time()
@@ -257,7 +416,18 @@ class RunController:
             self._status.current_tick = engine.state.tick
             self._status.metrics = _status_metrics(metrics)
 
+
 def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
+    preset_name = str(payload.get("preset") or "organic-generalists").strip()
+    if preset_name not in OBSERVATORY_PRESETS:
+        raise ValueError(f"preset must be one of: {', '.join(sorted(OBSERVATORY_PRESETS))}.")
+    preset = OBSERVATORY_PRESETS[preset_name]
+    max_workers = _bounded_int(
+        payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]),
+        "max_workers",
+        minimum=1,
+        maximum=100,
+    )
     brain = str(payload.get("brain", TUNED_OBSERVATORY_DEFAULTS["brain"])).strip().lower()
     if brain not in {"survival", "llm", "codex", "claude"}:
         raise ValueError("brain must be survival, llm, codex, or claude.")
@@ -309,31 +479,159 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         farm_food_capacity=_bounded_int(payload.get("farm_food_capacity", 24), "farm_food_capacity", minimum=0, maximum=100),
         farm_passive_food_growth=_bounded_int(payload.get("farm_passive_food_growth", 2), "farm_passive_food_growth", minimum=0, maximum=20),
         geography_mode=_bounded_choice(
-            payload.get("geography_mode", "shared_oasis"), "geography_mode", {"shared_oasis", "dispersed"}
+            payload.get("geography_mode", preset["geography_mode"]),
+            "geography_mode",
+            {"shared_oasis", "dispersed"},
+        ),
+        specialization_mode=_bounded_choice(
+            payload.get("specialization_mode", preset["specialization_mode"]),
+            "specialization_mode",
+            {"generalists", "specialists"},
         ),
         economy_mode=_bounded_choice(
-            payload.get("economy_mode", "baseline"), "economy_mode", {"baseline", "commerce", "organic"}
+            payload.get("economy_mode", preset["economy_mode"]),
+            "economy_mode",
+            {"baseline", "commerce", "organic"},
         ),
         objective_mode=_bounded_choice(
-            payload.get("objective_mode", "neutral"), "objective_mode", {"neutral", "collective", "individual"}
+            payload.get("objective_mode", preset["objective_mode"]),
+            "objective_mode",
+            {"neutral", "collective", "individual"},
         ),
     )
     _validate_reserve_pair("food", world_config.food_reserve_start, world_config.food_reserve_max)
     _validate_reserve_pair("water", world_config.water_reserve_start, world_config.water_reserve_max)
     _validate_reserve_pair("energy", world_config.energy_reserve_start, world_config.energy_reserve_max)
+    agents = _bounded_int(
+        payload.get("agents", TUNED_OBSERVATORY_DEFAULTS["agents"]),
+        "agents",
+        minimum=1,
+        maximum=100,
+    )
+    population = _parse_observer_population(
+        payload.get("population"),
+        fallback_count=agents,
+        fallback_brain=brain,
+        fallback_model=model,
+        fallback_effort=reasoning_effort,
+        max_workers=max_workers,
+    )
+    if population.total_agents > 100:
+        raise ValueError("population cannot exceed 100 agents.")
+    assignment_strategy = str(
+        payload.get("assignment_strategy") or ("stratified" if population.mixed else "ordered")
+    ).strip().lower()
+    if assignment_strategy not in {"ordered", "stratified"}:
+        raise ValueError("assignment_strategy must be ordered or stratified.")
+    assignment_seed = _bounded_int(
+        payload.get("assignment_seed", world_config.seed),
+        "assignment_seed",
+        minimum=0,
+        maximum=2_147_483_647,
+    )
+    population = PopulationSpec(
+        population.groups,
+        assignment_strategy=assignment_strategy,
+        assignment_seed=assignment_seed,
+    )
+    provider_max_workers = {
+        "codex_cli": _bounded_int(
+            payload.get("codex_max_workers", min(max_workers, 4)),
+            "codex_max_workers",
+            1,
+            100,
+        ),
+        "claude_cli": _bounded_int(
+            payload.get("claude_max_workers", min(max_workers, 4)),
+            "claude_max_workers",
+            1,
+            100,
+        ),
+        "openai_compatible": _bounded_int(
+            payload.get("llm_max_workers", min(max_workers, 2)),
+            "llm_max_workers",
+            1,
+            100,
+        ),
+    }
     return RunConfig(
         ticks=_bounded_int(payload.get("ticks", TUNED_OBSERVATORY_DEFAULTS["ticks"]), "ticks", minimum=1, maximum=1000),
-        agents=_bounded_int(payload.get("agents", TUNED_OBSERVATORY_DEFAULTS["agents"]), "agents", minimum=1, maximum=20),
-        brain=brain,
-        model=model if brain in {"llm", "codex", "claude"} else None,
-        reasoning_effort=reasoning_effort if brain in {"llm", "codex", "claude"} else None,
+        agents=population.total_agents,
+        brain=population.run_type,
+        model=(population.groups[0].brain.model if not population.mixed else None),
+        reasoning_effort=(population.groups[0].brain.reasoning_effort if not population.mixed else None),
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
-        max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=20),
+        max_workers=max_workers,
         turn_mode=_bounded_choice(
             payload.get("turn_mode", DEFAULT_TURN_MODE), "turn_mode", set(TURN_MODES)
         ),
+        preset=preset_name,
+        decision_mode=_bounded_choice(
+            payload.get("decision_mode", "raw"), "decision_mode", {"raw", "validated"}
+        ),
+        observation_mode=_bounded_choice(
+            payload.get("observation_mode", "compact-v2"),
+            "observation_mode",
+            set(OBSERVATION_MODES),
+        ),
+        assignment_strategy=assignment_strategy,
+        assignment_seed=assignment_seed,
+        provider_max_workers=provider_max_workers,
+        population=population,
+        name=str(payload.get("name") or "").strip()[:80],
         world_config=world_config,
     )
+
+
+def _parse_observer_population(
+    value: Any,
+    *,
+    fallback_count: int,
+    fallback_brain: str,
+    fallback_model: str | None,
+    fallback_effort: str | None,
+    max_workers: int,
+) -> PopulationSpec:
+    raw_groups = value.get("groups") if isinstance(value, dict) else value
+    if raw_groups is None or raw_groups == "":
+        spec = BrainSpec.resolve(
+            fallback_brain,
+            model=fallback_model,
+            reasoning_effort=fallback_effort,
+            max_workers=max_workers,
+        )
+        return PopulationSpec.uniform(fallback_count, spec)
+    if not isinstance(raw_groups, list) or not raw_groups:
+        raise ValueError("population must be a non-empty list of cohort objects.")
+    groups: list[PopulationGroup] = []
+    for index, raw in enumerate(raw_groups, start=1):
+        if not isinstance(raw, dict):
+            raise ValueError("each population cohort must be an object.")
+        brain_type = str(raw.get("brain") or raw.get("type") or "").strip().lower()
+        if brain_type not in {"survival", "llm", "codex", "claude"}:
+            raise ValueError(f"population cohort {index} has an unsupported brain.")
+        count = _bounded_int(raw.get("count", 0), f"population[{index}].count", 1, 100)
+        effort = None
+        if brain_type != "survival":
+            effort = _parse_reasoning_effort(raw.get("reasoning_effort") or fallback_effort or "low")
+        thinking_budget = None
+        if brain_type == "claude":
+            thinking_budget = _bounded_int(
+                raw.get("thinking_budget_tokens", 0),
+                f"population[{index}].thinking_budget_tokens",
+                0,
+                200000,
+            )
+        model = str(raw.get("model") or "").strip() or None
+        spec = BrainSpec.resolve(
+            brain_type,
+            model=None if brain_type == "survival" else model,
+            reasoning_effort=effort,
+            thinking_budget_tokens=thinking_budget,
+            max_workers=max_workers,
+        )
+        groups.append(PopulationGroup(count=count, brain=spec, id=f"cohort-{index}"))
+    return PopulationSpec(tuple(groups))
 
 
 def _bounded_int(value: Any, name: str, minimum: int, maximum: int) -> int:
@@ -390,6 +688,71 @@ def _status_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _slug(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")[:48]
+
+
+def _observer_manifest(
+    *,
+    config: RunConfig,
+    engine: WorldEngine,
+    population: PopulationSpec,
+    events_path: Path,
+    snapshot_path: Path,
+) -> dict[str, Any]:
+    try:
+        git_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+        dirty = bool(
+            subprocess.run(
+                ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+            ).stdout.strip()
+        )
+    except (OSError, subprocess.CalledProcessError):
+        git_sha, dirty = None, None
+    checkpoint_path = events_path.with_name(events_path.stem + "-checkpoint.pkl")
+    report_stem = events_path.with_name(events_path.stem)
+    return {
+        "schema_version": 1,
+        "status": "running",
+        "started_at_utc": datetime.now(timezone.utc).isoformat(),
+        "target_ticks": config.ticks,
+        "final_tick": engine.state.tick,
+        "preset": config.preset,
+        "decision_mode": config.decision_mode,
+        "observation_mode": config.observation_mode,
+        "turn_mode": config.turn_mode,
+        "command": ["agent-world", "view", "browser-launched-run"],
+        "config": asdict(engine.state.config),
+        "population": population.to_dict(engine.state.agents),
+        "assignment_source_manifest": None,
+        "concurrency": {
+            "global": config.max_workers,
+            "providers": config.provider_max_workers,
+        },
+        "provider_settings": {
+            "claude_cli": {
+                "thinking_budget_tokens": sorted(
+                    {
+                        int(group.brain.thinking_budget_tokens or 0)
+                        for group in population.groups
+                        if group.brain.type == "claude"
+                    }
+                )
+            }
+        },
+        "provenance": {"git_sha": git_sha, "dirty_worktree": dirty, "surface": "observatory"},
+        "outputs": {
+            "events": str(events_path),
+            "snapshot": str(snapshot_path),
+            "checkpoint": str(checkpoint_path),
+            "report_json": f"{report_stem}-report.json",
+            "report_markdown": f"{report_stem}-report.md",
+        },
+    }
+
+
 class SnapshotHistory:
     """Per-tick snapshot archive so the UI can scrub back through a run.
 
@@ -404,6 +767,12 @@ class SnapshotHistory:
         self._lock = threading.Lock()
         self._snapshots: dict[int, dict[str, Any]] = {}
         self._last_mtime: float = 0.0
+
+    def set_path(self, snapshot_path: Path) -> None:
+        with self._lock:
+            self.snapshot_path = snapshot_path
+            self._snapshots.clear()
+            self._last_mtime = 0.0
 
     def record(self, snapshot: dict[str, Any]) -> None:
         tick = snapshot.get("tick")
@@ -447,17 +816,179 @@ class SnapshotHistory:
         threading.Thread(target=_watch, name="agent-world-snapshot-history", daemon=True).start()
 
 
+def _find_runs_root(path: Path) -> Path | None:
+    resolved = path.expanduser().resolve()
+    for candidate in (resolved.parent, *resolved.parents):
+        if candidate.name == "runs":
+            return candidate
+    return None
+
+
+def _observer_config_payload() -> dict[str, Any]:
+    return {
+        "presets": OBSERVATORY_PRESETS,
+        "models": MODEL_LIBRARY,
+        "reasoning_efforts": sorted(ALLOWED_EFFORTS),
+        "observation_modes": list(OBSERVATION_MODES),
+        "turn_modes": sorted(TURN_MODES),
+        "decision_modes": ["raw", "validated"],
+        "limits": {"agents": 100, "ticks": 1000, "workers": 100},
+        "defaults": {
+            **TUNED_OBSERVATORY_DEFAULTS,
+            "preset": "organic-generalists",
+            "observation_mode": "compact-v2",
+            "turn_mode": DEFAULT_TURN_MODE,
+            "decision_mode": "raw",
+        },
+    }
+
+
+def _load_catalog(runs_root: Path | None, active_run: dict[str, Any]) -> dict[str, Any]:
+    if runs_root is None:
+        return {"ok": True, "run_count": 0, "runs": [], "active_run": active_run}
+    catalog_path = runs_root / "catalog.json"
+    catalog = _read_json(catalog_path)
+    if not catalog:
+        catalog = write_run_catalog(runs_root)
+    return {"ok": True, **catalog, "active_run": active_run}
+
+
+def _resolve_catalog_ref(runs_root: Path | None, run_ref: str) -> tuple[Path, Path | None]:
+    if runs_root is None or not run_ref.strip():
+        raise ValueError("A run reference is required.")
+    candidate = (runs_root / run_ref).resolve()
+    root = runs_root.resolve()
+    if candidate == root or root not in candidate.parents:
+        raise ValueError("Run reference is outside the run catalog.")
+    if candidate.is_file():
+        if not candidate.name.endswith("-report.json"):
+            raise ValueError("Run reference must identify a report or run directory.")
+        return candidate.parent, candidate
+    if candidate.is_dir():
+        return candidate, None
+    raise FileNotFoundError(f"Run not found: {run_ref}")
+
+
+def _first_path(directory: Path, preferred: list[str], pattern: str) -> Path | None:
+    for name in preferred:
+        candidate = directory / name
+        if candidate.exists():
+            return candidate
+    return next(iter(sorted(directory.glob(pattern))), None)
+
+
+def _catalog_run_paths(runs_root: Path | None, run_ref: str) -> dict[str, Path | None]:
+    run_dir, exact_report = _resolve_catalog_ref(runs_root, run_ref)
+    report_stem = (
+        exact_report.name[: -len("-report.json")]
+        if exact_report is not None
+        else "run"
+    )
+    exact_artifact = exact_report is not None
+    event_names = [f"{report_stem}.jsonl"]
+    snapshot_names = [f"{report_stem}-snapshot.json"]
+    manifest_names = [f"{report_stem}-manifest.json"]
+    if report_stem == "run":
+        manifest_names.append("manifest.json")
+    events = _first_path(run_dir, event_names, "__no_fallback__" if exact_artifact else "*.jsonl")
+    if events is not None and ("usage" in events.name or "plan" in events.name):
+        events = next(
+            (
+                path
+                for path in sorted(run_dir.glob("*.jsonl"))
+                if "usage" not in path.name and "plan" not in path.name
+            ),
+            None,
+        )
+    return {
+        "directory": run_dir,
+        "events": events,
+        "snapshot": _first_path(
+            run_dir,
+            snapshot_names,
+            "__no_fallback__" if exact_artifact else "*-snapshot.json",
+        ),
+        "report": exact_report
+        or _first_path(run_dir, ["run-report.json"], "*-report.json"),
+        "manifest": _first_path(
+            run_dir,
+            manifest_names,
+            "__no_fallback__" if exact_artifact else "*-manifest.json",
+        ),
+    }
+
+
+def load_catalog_run_state(runs_root: Path | None, run_id: str) -> dict[str, Any]:
+    paths = _catalog_run_paths(runs_root, run_id)
+    snapshot_path = paths["snapshot"]
+    events_path = paths["events"]
+    report = _read_json(paths["report"]) if paths["report"] else {}
+    manifest = _read_json(paths["manifest"]) if paths["manifest"] else {}
+    if snapshot_path is None and not report:
+        raise FileNotFoundError(f"Run has no readable snapshot or report: {run_id}")
+    state = load_observer_state(
+        snapshot_path or Path("/nonexistent"),
+        events_path or Path("/nonexistent"),
+        run_status={
+            "state": manifest.get("status") or (report.get("run") or {}).get("status") or "archived",
+            "current_tick": (report.get("run") or {}).get("final_tick") or 0,
+            "target_ticks": (report.get("run") or {}).get("target_ticks") or 0,
+            "run_id": run_id,
+            "paused": False,
+            "stop_requested": False,
+            "error": manifest.get("error") or "",
+            "config": manifest.get("config") or report.get("config") or {},
+            "population": manifest.get("population") or report.get("population") or {},
+        },
+        report_path=paths["report"],
+        manifest_path=paths["manifest"],
+    )
+    state["source"] = "archive"
+    state["selected_run"] = run_id
+    state["available"] = {
+        key: bool(path and path.exists()) for key, path in paths.items() if key != "directory"
+    }
+    return state
+
+
+def load_catalog_run_detail(runs_root: Path | None, run_id: str) -> dict[str, Any]:
+    paths = _catalog_run_paths(runs_root, run_id)
+    return {
+        "ok": True,
+        "id": run_id,
+        "report": _read_json(paths["report"]) if paths["report"] else {},
+        "manifest": _read_json(paths["manifest"]) if paths["manifest"] else {},
+        "available": {
+            key: bool(path and path.exists()) for key, path in paths.items() if key != "directory"
+        },
+    }
+
+
 def serve_observer(
     snapshot_path: Path,
     events_path: Path,
     host: str = "127.0.0.1",
     port: int = 8765,
 ) -> None:
-    controller = RunController(snapshot_path=snapshot_path, events_path=events_path)
+    runs_root = _find_runs_root(events_path)
+    controller = RunController(
+        snapshot_path=snapshot_path,
+        events_path=events_path,
+        runs_root=runs_root,
+    )
     history = SnapshotHistory(snapshot_path)
+    controller.set_path_listener(history.set_path)
     history.poll_file()
     history.start_watcher()
-    handler = _handler(snapshot_path=snapshot_path, events_path=events_path, controller=controller, history=history)
+    if runs_root is not None:
+        write_run_catalog(runs_root)
+    handler = _handler(
+        snapshot_path=snapshot_path,
+        events_path=events_path,
+        controller=controller,
+        history=history,
+        runs_root=runs_root,
+    )
     server = ThreadingHTTPServer((host, port), handler)
     print(f"Agent World observatory: http://{host}:{port}")
     print(f"Watching snapshot: {snapshot_path}")
@@ -470,19 +1001,42 @@ def _handler(
     events_path: Path,
     controller: RunController,
     history: SnapshotHistory | None = None,
+    runs_root: Path | None = None,
 ) -> type[BaseHTTPRequestHandler]:
     class ObserverHandler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
             parsed = urlparse(self.path)
             path = parsed.path
-            if path == "/":
+            query = parse_qs(parsed.query)
+            if path in {"/", "/runs"}:
                 self._send_text(HTML, "text/html; charset=utf-8")
+            elif path == "/static/observer.css":
+                self._send_text(CSS, "text/css; charset=utf-8")
+            elif path == "/static/observer.js":
+                self._send_text(JAVASCRIPT, "text/javascript; charset=utf-8")
+            elif path == "/api/config":
+                self._send_json(_observer_config_payload())
+            elif path == "/api/runs":
+                self._send_json(_load_catalog(runs_root, controller.status()))
+            elif path == "/api/runs/state":
+                run_id = (query.get("id") or [""])[0]
+                try:
+                    self._send_json(load_catalog_run_state(runs_root, run_id))
+                except (ValueError, FileNotFoundError) as exc:
+                    self._send_json({"ok": False, "error": str(exc)}, status=404)
+            elif path == "/api/runs/detail":
+                run_id = (query.get("id") or [""])[0]
+                try:
+                    self._send_json(load_catalog_run_detail(runs_root, run_id))
+                except (ValueError, FileNotFoundError) as exc:
+                    self._send_json({"ok": False, "error": str(exc)}, status=404)
             elif path == "/api/state":
-                at_tick = _parse_tick_param(parse_qs(parsed.query))
+                at_tick = _parse_tick_param(query)
+                active_snapshot, active_events = controller.paths()
                 self._send_json(
                     load_observer_state(
-                        snapshot_path,
-                        events_path,
+                        active_snapshot,
+                        active_events,
                         run_status=controller.status(),
                         at_tick=at_tick,
                         history=history,
@@ -537,7 +1091,7 @@ def _handler(
             self.end_headers()
             self.wfile.write(data)
 
-        def _send_json(self, payload: dict[str, Any], status: int = 200) -> None:
+        def _send_json(self, payload: Any, status: int = 200) -> None:
             data = json.dumps(payload, sort_keys=True).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json")
@@ -566,6 +1120,8 @@ def load_observer_state(
     run_status: dict[str, Any] | None = None,
     at_tick: int | None = None,
     history: SnapshotHistory | None = None,
+    report_path: Path | None = None,
+    manifest_path: Path | None = None,
 ) -> dict[str, Any]:
     snapshot = _read_json(snapshot_path)
     events = _read_events(events_path)
@@ -578,10 +1134,14 @@ def load_observer_state(
             events = [event for event in events if event.get("tick", 0) <= at_tick]
             viewing_tick = at_tick
     visible_events = [event for event in events if event.get("type") not in AGENT_IO_EVENT_TYPES]
+    resolved_report = report_path or events_path.with_name(events_path.stem + "-report.json")
+    resolved_manifest = manifest_path or events_path.with_name(events_path.stem + "-manifest.json")
     return {
         "snapshot": snapshot,
         "recent_events": visible_events[-recent_limit:],
         "summary": summarize(snapshot, visible_events),
+        "report": _read_json(resolved_report) if resolved_report else {},
+        "manifest": _read_json(resolved_manifest) if resolved_manifest else {},
         "run": run_status or RunStatus().to_dict(),
         "history": (history.tick_range() if history else {"min_tick": None, "max_tick": None, "count": 0})
         | {"live_tick": live_tick, "viewing_tick": viewing_tick},
@@ -713,4 +1273,7 @@ def _read_events(path: Path) -> list[dict[str, Any]]:
     return events
 
 
-HTML = (Path(__file__).with_name("static") / "observer.html").read_text(encoding="utf-8")
+STATIC_DIR = Path(__file__).with_name("static")
+HTML = (STATIC_DIR / "observer.html").read_text(encoding="utf-8")
+CSS = (STATIC_DIR / "observer.css").read_text(encoding="utf-8")
+JAVASCRIPT = (STATIC_DIR / "observer.js").read_text(encoding="utf-8")
