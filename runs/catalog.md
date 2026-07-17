@@ -2,10 +2,16 @@
 
 Derived index only. Event JSONL, snapshots, manifests, reports, usage logs, and checkpoints in each run directory are the canonical evidence.
 
-Indexed runs: 105
+Indexed runs: 111
 
 | Run | Status | Ticks | Turn mode | Observation | Models | Quality | Invalid | Credits |
 |---|---:|---:|---|---|---|---:|---:|---:|
+| experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/high-retry-1 | interrupted | 42/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 16.7 | 453.798088 |
+| experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/medium-retry-1 | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 19.2 | 445.323308 |
+| experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/low-retry-1 | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 21.1 | 327.289812 |
+| experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/medium | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 27.9 | 474.359462 |
+| experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/low | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 20.3 | 409.300525 |
+| experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/high | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 12.6 | 519.847412 |
 | experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low-retry-1 | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 19.5 | 351.568658 |
 | experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/high | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | clean | 17.8 | 514.18461 |
 | experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low | completed | 50/50 | simultaneous-v1 | compact-v2 | gpt-5.6-luna, gpt-5.6-sol, gpt-5.6-terra | degraded | 19.3 | 421.234605 |

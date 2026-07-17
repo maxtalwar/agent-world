@@ -298,3 +298,40 @@ Does high reasoning's trade-conversion, meeting-success, and coin-use advantage 
 across independent paired world seeds? Preregister trade conversion, meeting failures,
 coin-denominated completed trades, invalidity, survival, and productive asset value,
 then use world-seed pairs as the statistical units.
+
+## 2026-07-17 — Seed-23 reasoning replication aborted for Sol service incident
+
+### Question and design
+
+Can a second matched 50-tick comparison distinguish low, medium, and high reasoning
+for five Sol, five Terra, and five Luna agents? The batch used world seed 23,
+assignment seed 117, `organic-generalists`, `compact-v2`, raw decisions, and
+`simultaneous-v1`. Exact batch record:
+
+`runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/reasoning-effort-replication-incident-summary.{json,md}`
+
+The six preserved attempt directories are listed in that summary. Their raw event
+streams, snapshots, checkpoints, manifests, reports, usage logs, and run logs remain
+in place.
+
+### Findings and uncertainty
+
+The user-provided OpenAI status screenshot reported increased server-overload errors
+for Codex 5.6-sol. The first concurrent low/medium/high attempts had 6/10/10 LLM
+failures. Sequential low and medium retries still had 1 and 5 failures. The high
+retry was stopped at tick 42/50 and had 3 failures. All completed attempts were
+therefore degraded, and the interrupted attempt had no terminal event. Total exact
+simulation credits across all six attempts were 2629.918607. These are operational
+facts, not a reasoning result; failure-driven differences are confounded with the
+provider incident.
+
+### Decision
+
+Exclude the entire seed-23 batch from reasoning-effort analysis. Do not pool its
+outcomes with the clean seed-11 comparison. Preserve the artifacts and rerun after
+the Sol service incident clears.
+
+### Next question
+
+On a fresh matched seed with zero provider failures and complete usage coverage, does
+the low/medium/high reasoning ordering replicate?
