@@ -314,12 +314,7 @@ Open the local observatory:
 python3 -m agent_world.cli view --events runs/live.jsonl --snapshot runs/live-snapshot.json
 ```
 
-Then visit `http://127.0.0.1:8765`. The observatory has two purpose-built pages:
-
-- **World** is the watch surface: an animated overhead map, agent/tile/structure inspector, searchable chronicle, replay timeline, map layers, and economy, population, civilization, and model analytics.
-- **Run Lab** at `/runs` is the control surface: compose mixed Codex, Claude, API, and deterministic populations; choose a world preset and harness settings; launch a timestamped run; browse preserved runs; clone configurations; and compare up to four reports.
-
-Browser-launched runs are archived under `runs/observatory/<timestamp>-<name>/` with their events, snapshot, checkpoint, manifest, usage, and reports. The active world switches to the new run automatically. The archive reads the local run catalog, including older CLI and experiment runs whose durable evidence is available.
+Then visit `http://127.0.0.1:8765`. The observatory can now launch runs directly from the browser. Choose the brain type, agent count, tick count, seed, model, max workers, and whether to log private agent IO, then press Start. The server writes the selected run into the same live event log and snapshot files.
 
 You can still run simulations from the terminal if you want a scriptable batch run:
 
@@ -327,7 +322,7 @@ You can still run simulations from the terminal if you want a scriptable batch r
 python3 -m agent_world.cli run --brain llm --ticks 25 --agents 3 --progress --out runs/live.jsonl --snapshot runs/live-snapshot.json
 ```
 
-The world renders terrain, resources, claims, structures, agents, and item piles directly from the snapshot. Hovering surveys a tile; clicking opens an agent dossier, civil-asset view, or terrain survey. The intelligence drawer shows market funnels and holdings, survival and health distributions, civilization milestones, cohort outcomes, provider usage, and reliability. All visuals are derived from preserved state, events, manifests, or reports.
+The observatory renders the world as an illustrated overhead map — drawn terrain (forests visibly thin out as wood is depleted), hand-drawn structures (houses, farms, wells, storage, shelters, workshops, dashed construction sites), agent figures with per-agent colors, and gravestones where agents died. Hovering a tile shows its resources and occupants; clicking opens a tile inspector with structure status, remaining build inputs, and stored goods. A civilization panel charts population, completed structures, accepted trades, and speech over ticks, alongside structure counts and a filterable event chronicle.
 
 ## Agent Response Shape
 

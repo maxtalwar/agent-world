@@ -10,16 +10,18 @@ Open the observatory:
 python3 -m agent_world.cli view --events runs/live.jsonl --snapshot runs/live-snapshot.json
 ```
 
-Start runs from the browser at `http://127.0.0.1:8765/runs`. Run Lab accepts:
+Start runs from the browser at `http://127.0.0.1:8765`. The Run panel accepts:
 
-- one or more population cohorts, mixing Codex-plan, Claude-plan, API-backed, and deterministic brains
-- model, reasoning effort, and agent count per cohort
-- run name, target ticks, world seed, assignment strategy, and assignment seed
-- named world presets plus optional economy, geography, specialization, objective, abundance, survival, and carrying-capacity controls
-- observation boundary, decision boundary, turn structure, global concurrency, and provider-specific concurrency
-- optional private agent IO preservation
+- brain: `survival` for deterministic infrastructure tests, `llm` for API-backed agents, or `codex` for ChatGPT-plan-backed Luna/Terra agents
+- agents: number of spawned agents
+- ticks: target ticks to run
+- seed: deterministic world/run seed
+- objective/economy/geography treatment modes
+- model: model used for provider-backed runs; `llm` defaults to `z-ai/glm-5.2`, while `codex` defaults to `gpt-5.6-luna`
+- max workers: same-tick brain call concurrency; keep this at `1` for LLM runs unless rate limits allow more
+- agent IO log: whether to keep private observations and prompts in the JSONL audit log
 
-Every browser launch receives a new timestamped directory under `runs/observatory/`; it never overwrites the run currently on screen. The directory receives the same raw events, snapshot, checkpoint, manifest, usage, and terminal reports as the CLI infrastructure. The active World page follows the new run automatically, while the Run Archive remains available for old evidence.
+The observatory writes each launched run to the watched `runs/live.jsonl` and `runs/live-snapshot.json` files and refreshes the map, agent panels, metrics, and event feed as the run progresses. At terminal state it emits the same `runs/live-report.json` and `runs/live-report.md` artifacts as a CLI run.
 
 Run a simulation from the terminal:
 
@@ -71,28 +73,17 @@ Checkpoints preserve the complete engine and random-number-generator state. They
 
 ## Observatory UI
 
-### World
+The observatory at `http://127.0.0.1:8765` is a full-screen illustrated map with floating panels (Rebel Inc-style): the world fills the viewport, and dock buttons on the right open windows over it.
 
-The World page is a full-screen simulation watch surface:
+- illustrated overhead map: drawn terrain, structures, agent figures, gravestones, claims, and item piles
+- forest tree density tracks remaining wood, so depletion is visible on the map
+- tile hover tooltips and a click-to-open tile inspector window (resources, structure status, remaining build inputs, stored goods, occupants)
+- dock windows: Run (transport controls — Start/Pause/Stop plus the tick scrubber with back/forward/Live for replaying history), Civilization (per-tick trends chart of population/structures/trades/speech plus structure counts), Agents (roster with reserves/inventory; clicking a card highlights the agent on the map and filters the chronicle), Chronicle (filterable event feed), and Legend
+- the Run window floats over the map with no backdrop, so the map stays visible while you scrub between ticks
+- slim top strip with run vitals (tick, living, builds, co-op builds, trades, LLM errors, invalid actions)
+- a "Configure Run" slide-out drawer with all world-config knobs (used for pre-run setup; also has a Start button)
 
-- animated overhead map with terrain textures, visible resources, structures, claims, item piles, living agents, and deaths
-- layer controls, fit/zoom controls, hover surveys, and click-to-open agent, structure, and terrain inspectors
-- a World Pulse panel for living population, trade, assets, society, recent warnings, and population/civilization trends
-- a searchable and filterable event chronicle
-- a replay timeline for the watcher history retained by the running observer
-- an intelligence drawer with Economy, Population, Civilization, and Models sections
-
-Economy covers inventories, asset value, gifts, trade conversion, and institutional state. Population covers survival reserves, health distribution, and the roster. Civilization covers buildings, groups, milestones, and longitudinal series. Models covers cohort outcomes, decision reliability, token usage, and Codex-plan simulation credits.
-
-### Run Lab
-
-The Run Lab at `/runs` separates operations from observation:
-
-- Create Expedition builds a mixed population and controls world and harness settings without a terminal command.
-- Run Archive searches and filters the derived run catalog, previews reports, opens final worlds when snapshots are local, clones prior configurations, and opens analytics directly.
-- Compare holds up to four preserved reports in a side-by-side metric table.
-
-The archive can show compact tracked reports even when heavyweight raw files are not available in the checkout. In that case analytics remain usable but map playback is explicitly marked unavailable. All displayed numbers come from snapshots, public events, manifests, reports, or the run catalog; private agent prompt and response events are never exposed in the browser feed.
+It is a watchable overhead view of the simulated world, but the purpose is observability: every visual is backed by state or event data.
 
 ## Rate Limits
 

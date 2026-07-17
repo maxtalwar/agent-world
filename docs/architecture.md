@@ -29,7 +29,7 @@ PopulationSpec -> BrainRuntime -> SimulationSession -> SimulationRunner -> World
 
 CLI, experiment, and observatory callers retain their presentation-specific responsibilities. Experiments update provenance manifests through session callbacks; the observatory updates live status and pause/stop controls through callbacks. They do not implement separate simulation loops.
 
-The observatory server/controller and its frontend are separate artifacts: Python behavior and the local JSON API live in `observer.py`, while the packaged multi-page HTML/CSS/JavaScript application lives under `agent_world/static/`. The World page consumes live or archived state; Run Lab consumes configuration metadata and the derived run catalog, and creates isolated timestamped run directories through the same session infrastructure as CLI runs.
+The observatory server/controller and its frontend are separate artifacts: Python behavior lives in `observer.py`, while the packaged HTML/CSS/JavaScript application lives in `agent_world/static/observer.html`.
 
 ## Persistence
 
