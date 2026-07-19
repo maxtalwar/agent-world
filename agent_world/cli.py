@@ -106,6 +106,12 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--assignment-strategy", choices=["ordered", "stratified"], default=None)
     run_parser.add_argument("--assignment-seed", type=int, default=None)
     run_parser.add_argument("--decision-mode", choices=["raw", "validated"], default=None)
+    run_parser.add_argument(
+        "--action-feedback-mode",
+        choices=["baseline", "none"],
+        default=None,
+        help="Agent-facing failed-action feedback treatment. Defaults to baseline.",
+    )
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
 
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
@@ -259,6 +265,11 @@ def _run(args: argparse.Namespace) -> None:
         for name in ("codex_max_workers", "claude_max_workers", "llm_max_workers", "decision_mode"):
             if getattr(args, name, None) is None and saved.get(name) is not None:
                 setattr(args, name, saved[name])
+        saved_feedback_mode = getattr(engine.state.config, "action_feedback_mode", "baseline")
+        requested_feedback_mode = getattr(args, "action_feedback_mode", None)
+        if requested_feedback_mode is not None and requested_feedback_mode != saved_feedback_mode:
+            raise ValueError("A checkpoint must be resumed with its original action feedback mode.")
+        args.action_feedback_mode = saved_feedback_mode
     else:
         args.ticks = args.ticks if args.ticks is not None else 25
         preset_name = getattr(args, "preset", None) or "baseline"
@@ -292,6 +303,7 @@ def _run(args: argparse.Namespace) -> None:
             economy_mode=getattr(args, "economy_mode", "baseline"),
             geography_mode=getattr(args, "geography_mode", "shared_oasis"),
             specialization_mode=getattr(args, "specialization_mode", "generalists"),
+            action_feedback_mode=getattr(args, "action_feedback_mode", None) or "baseline",
         )
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
@@ -368,6 +380,7 @@ def _run(args: argparse.Namespace) -> None:
         "geography_mode": engine.state.config.geography_mode,
         "specialization_mode": engine.state.config.specialization_mode,
         "decision_mode": decision_mode,
+        "action_feedback_mode": getattr(engine.state.config, "action_feedback_mode", "baseline"),
         "provider_max_workers": provider_max_workers,
     }
 

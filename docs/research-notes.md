@@ -51,11 +51,12 @@ Emergence requires pressure gradients:
 
 ## Near-Term Next Steps
 
-1. Run matched GLM-5.2 cells across several seeds with `agent_world.cli experiment`.
-2. Compare gift value and purpose, market conversion/value, specialization, asset-adjusted wealth, fee/dividend income, contracts, survival, and invalid actions.
-3. Only after replicated results, vary one mechanism at a time: geography without commerce, market access without private objectives, or coordination cost without specialization.
-4. Scale to multiple settlements and more agents once the five-agent treatment demonstrates reliable interaction.
-5. Add richer order matching, wages/equity issuance, transport capital, and population turnover only where observed behavior exposes a missing primitive.
+1. Complete and analyze the paired baseline-versus-no-action-feedback study described in [action-feedback-experiment.md](action-feedback-experiment.md).
+2. Separate invalid proposals from causally proven same-tick contention failures in all new analyses.
+3. Compare gift value and purpose, market conversion/value, specialization, asset-adjusted wealth, fee/dividend income, contracts, survival, and both failure classes.
+4. Only after replicated results, vary one mechanism at a time: minimal feedback, causal feedback, geography without commerce, market access without private objectives, or coordination cost without specialization.
+5. Scale to multiple settlements and more agents once smaller treatments demonstrate reliable interaction.
+6. Add richer order matching, wages/equity issuance, transport capital, and population turnover only where observed behavior exposes a missing primitive.
 
 ## Currency Direction
 

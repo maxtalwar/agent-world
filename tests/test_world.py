@@ -78,6 +78,47 @@ class WorldEngineTests(unittest.TestCase):
         self.assertEqual(agent.inventory["food"], before + 1)
         self.assertLessEqual(tile.resources["food"], resource_before)
 
+    def test_same_tick_resource_contention_is_not_counted_as_an_invalid_proposal(self) -> None:
+        engine = WorldEngine.create(
+            config=WorldConfig(seed=3, plains_food_regen=0, forest_food_regen=0),
+            agent_names=["A1", "A2"],
+        )
+        first = engine.state.agents["agent-1"]
+        second = engine.state.agents["agent-2"]
+        second.position = first.position
+        tile = engine.state.tile_at(first.position)
+        tile.resources["food"] = 1
+
+        engine.tick(
+            {
+                first.id: AgentDecision(actions=[{"type": "gather", "resource": "food"}]),
+                second.id: AgentDecision(actions=[{"type": "gather", "resource": "food"}]),
+            }
+        )
+
+        failures = [event for event in engine.state.events if event.type == "contention_failure"]
+        self.assertEqual(len(failures), 1)
+        self.assertEqual(failures[0].actor_id, second.id)
+        self.assertEqual(failures[0].data["failure_type"], "contention_failure")
+        self.assertEqual(failures[0].data["contention_cause"], "resource_taken_earlier_this_tick")
+        self.assertFalse(
+            any(event.type == "invalid_action" and event.actor_id == second.id for event in engine.state.events)
+        )
+        metrics = compute_metrics(engine.state)
+        self.assertEqual(metrics["action_failures"]["invalid_proposals"], 0)
+        self.assertEqual(metrics["action_failures"]["contention_failures"], 1)
+
+    def test_resource_absent_without_same_tick_competitor_remains_invalid(self) -> None:
+        engine = self.make_engine(1)
+        agent = engine.state.agents["agent-1"]
+        engine.state.tile_at(agent.position).resources["food"] = 0
+
+        engine.tick({agent.id: AgentDecision(actions=[{"type": "gather", "resource": "food"}])})
+
+        failure = next(event for event in engine.state.events if event.type == "invalid_action")
+        self.assertEqual(failure.data["failure_type"], "invalid_proposal")
+        self.assertFalse(any(event.type == "contention_failure" for event in engine.state.events))
+
     def test_harvest_requires_farm_plot_and_collects_more_from_improved_land(self) -> None:
         config = WorldConfig(seed=3, farm_passive_food_growth=0)
         engine = WorldEngine.create(config=config, agent_names=["A1"])

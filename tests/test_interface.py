@@ -9,6 +9,41 @@ from agent_world.world import WorldEngine
 
 
 class EconomicInterfaceTests(unittest.TestCase):
+    def test_no_feedback_treatment_removes_failure_payload_and_prompt_instruction(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(action_feedback_mode="none"),
+            agent_names=["A1"],
+        )
+        engine.tick(
+            {"agent-1": AgentDecision(actions=[{"type": "move", "direction": "sideways"}])}
+        )
+
+        observation = build_observation(engine.state, "agent-1")
+        dynamic = build_dynamic_observation(observation)
+        static = build_static_context(observation["world"])
+
+        self.assertEqual(observation["recent_action_feedback"], [])
+        self.assertNotIn("recent_action_feedback", dynamic)
+        self.assertFalse(
+            any(event["type"] in {"invalid_action", "contention_failure"} for event in observation["recent_events"])
+        )
+        self.assertNotIn("Use recent_action_feedback", static)
+
+    def test_baseline_feedback_treatment_preserves_current_payload_and_instruction(self) -> None:
+        engine = WorldEngine.create(WorldConfig(), agent_names=["A1"])
+        engine.tick(
+            {"agent-1": AgentDecision(actions=[{"type": "move", "direction": "sideways"}])}
+        )
+
+        observation = build_observation(engine.state, "agent-1")
+        static = build_static_context(observation["world"])
+
+        self.assertEqual(
+            observation["recent_action_feedback"][0]["reason"],
+            "Move requires direction north, south, east, or west.",
+        )
+        self.assertIn("Use recent_action_feedback", static)
+
     def test_twenty_agent_organic_prompt_stays_within_infrastructure_budgets(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(economy_mode="organic", geography_mode="dispersed"),

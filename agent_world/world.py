@@ -365,7 +365,18 @@ class WorldEngine:
             self._invalid(agent, action, f"Moving into {terrain} requires {cost} action points.")
             return 0
         if not self._can_occupy(destination):
-            self._invalid(agent, action, "Destination occupancy limit is full or terrain is impassable.")
+            contention = TERRAIN_RULES[terrain].passable and self._same_tick_event(
+                {"move"},
+                agent.id,
+                lambda event: event.position == destination,
+            )
+            self._invalid(
+                agent,
+                action,
+                "Destination occupancy limit is full or terrain is impassable.",
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="destination_filled_earlier_this_tick" if contention else None,
+            )
             return action_points - cost
         if agent.needs.energy < cost:
             self._invalid(agent, action, "Not enough energy to move.")
@@ -439,7 +450,14 @@ class WorldEngine:
             resource = "food"
             water_source = self._nearby_water_source(agent.position, resource)
             if water_source is None:
-                self._invalid(agent, action, "Fishing requires fishable food in current or adjacent water.")
+                contention = self._nearby_resource_was_consumed(agent, resource)
+                self._invalid(
+                    agent,
+                    action,
+                    "Fishing requires fishable food in current or adjacent water.",
+                    failure_type="contention_failure" if contention else "invalid_proposal",
+                    contention_cause="resource_taken_earlier_this_tick" if contention else None,
+                )
                 return action_points - cost
             source_position, source_tile = water_source
             source_kind = "open_water"
@@ -452,7 +470,14 @@ class WorldEngine:
             else:
                 water_source = self._nearby_water_source(agent.position, "water")
                 if water_source is None:
-                    self._invalid(agent, action, "No water is available on this tile, from an accessible well, or adjacent water.")
+                    contention = self._nearby_resource_was_consumed(agent, "water")
+                    self._invalid(
+                        agent,
+                        action,
+                        "No water is available on this tile, from an accessible well, or adjacent water.",
+                        failure_type="contention_failure" if contention else "invalid_proposal",
+                        contention_cause="resource_taken_earlier_this_tick" if contention else None,
+                    )
                     self._notify_denied_structure_access(agent, "well")
                     return action_points - cost
                 source_position, source_tile = water_source
@@ -487,10 +512,18 @@ class WorldEngine:
             self._invalid(agent, action, "Resource extraction on this claimed tile requires access.")
             return action_points - cost
         if source_kind != "well" and source_tile.resources.get(resource, 0) <= 0:
+            contention = self._resource_was_consumed(agent, source_position, resource)
             if source_position == agent.position:
-                self._invalid(agent, action, f"No {resource} is available on this tile.")
+                reason = f"No {resource} is available on this tile."
             else:
-                self._invalid(agent, action, f"No {resource} is available from adjacent water.")
+                reason = f"No {resource} is available from adjacent water."
+            self._invalid(
+                agent,
+                action,
+                reason,
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="resource_taken_earlier_this_tick" if contention else None,
+            )
             return action_points - cost
         max_quantity = int(rule.get("max_quantity", 2))
         requested = self._bounded_quantity(action.get("quantity"), default=1, maximum=max_quantity)
@@ -505,7 +538,18 @@ class WorldEngine:
                 self._invalid(agent, action, f"No {resource} is available.")
             return action_points - cost
         if quantity < requested:
-            self._invalid(agent, action, "Not enough source material or carrying capacity for the requested quantity.")
+            resource_contention = (
+                source_kind != "well"
+                and self._carry_room(agent, resource) >= requested
+                and self._resource_was_consumed(agent, source_position, resource)
+            )
+            self._invalid(
+                agent,
+                action,
+                "Not enough source material or carrying capacity for the requested quantity.",
+                failure_type="contention_failure" if resource_contention else "invalid_proposal",
+                contention_cause="resource_taken_earlier_this_tick" if resource_contention else None,
+            )
             return action_points - cost
         if productive_structure is not None and not self._use_productive_structure(agent, productive_structure, action):
             return action_points - cost
@@ -702,7 +746,28 @@ class WorldEngine:
     def _action_pick_up(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         pile = self._find_pile_on_tile(agent.position, action)
         if pile is None:
-            self._invalid(agent, action, "No matching item pile on this tile.")
+            pile_id = str(action.get("pile_id", ""))
+            item = str(action.get("item", ""))
+            contention = self._same_tick_event(
+                {"pick_up", "claimed_item_taken"},
+                agent.id,
+                lambda event: (
+                    (bool(pile_id) and event.data.get("pile_id") == pile_id)
+                    or (
+                        not pile_id
+                        and bool(item)
+                        and event.position == agent.position
+                        and event.data.get("item") == item
+                    )
+                ),
+            )
+            self._invalid(
+                agent,
+                action,
+                "No matching item pile on this tile.",
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="item_taken_earlier_this_tick" if contention else None,
+            )
             return action_points - 1
         quantity = self._bounded_quantity(action.get("quantity"), default=pile.quantity, maximum=pile.quantity)
         if not agent.can_carry(pile.item, quantity):
@@ -1005,7 +1070,14 @@ class WorldEngine:
     def _action_accept_trade(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         trade = self.state.trades.get(str(action.get("trade_id", "")))
         if trade is None or trade.status != "open":
-            self._invalid(agent, action, "Trade is not open.")
+            contention = self._trade_was_resolved(agent, str(action.get("trade_id", "")))
+            self._invalid(
+                agent,
+                action,
+                "Trade is not open.",
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="trade_resolved_earlier_this_tick" if contention else None,
+            )
             return action_points
         if trade.from_agent == agent.id:
             self._invalid(agent, action, "Agent cannot accept their own trade offer.")
@@ -1080,7 +1152,14 @@ class WorldEngine:
     def _action_reject_trade(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         trade = self.state.trades.get(str(action.get("trade_id", "")))
         if trade is None or trade.status != "open":
-            self._invalid(agent, action, "Trade is not open.")
+            contention = self._trade_was_resolved(agent, str(action.get("trade_id", "")))
+            self._invalid(
+                agent,
+                action,
+                "Trade is not open.",
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="trade_resolved_earlier_this_tick" if contention else None,
+            )
             return action_points
         if trade.from_agent == agent.id:
             pass
@@ -1241,7 +1320,16 @@ class WorldEngine:
             self._invalid(agent, action, "Agent is not a member of that group.")
             return action_points - 1
         if tile.claimed_by and tile.claimed_by != owner_id and not self._controls_owner(agent, tile.claimed_by):
-            self._invalid(agent, action, f"Tile already claimed by {tile.claimed_by}.")
+            contention = self._same_tick_event(
+                {"claim_tile"}, agent.id, lambda event: event.position == agent.position
+            )
+            self._invalid(
+                agent,
+                action,
+                f"Tile already claimed by {tile.claimed_by}.",
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="tile_claimed_earlier_this_tick" if contention else None,
+            )
             return action_points - 1
         tile.claimed_by = owner_id
         self.log_event(
@@ -1292,16 +1380,37 @@ class WorldEngine:
             self._invalid(agent, action, f"Building {structure_type} requires terrain: {', '.join(recipe.required_terrain)}.")
             return action_points - recipe.action_points
         if structure_type == "farm_plot" and any(self.state.structures[sid].type == "farm_plot" for sid in tile.structure_ids):
-            self._invalid(agent, action, "This tile already has a farm plot.")
+            contention = self._structure_started_this_tick(agent, agent.position, "farm_plot")
+            self._invalid(
+                agent,
+                action,
+                "This tile already has a farm plot.",
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="structure_started_earlier_this_tick" if contention else None,
+            )
             return action_points - recipe.action_points
         if structure_type == "well" and any(self.state.structures[sid].type == "well" for sid in tile.structure_ids):
-            self._invalid(agent, action, "This tile already has a well.")
+            contention = self._structure_started_this_tick(agent, agent.position, "well")
+            self._invalid(
+                agent,
+                action,
+                "This tile already has a well.",
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="structure_started_earlier_this_tick" if contention else None,
+            )
             return action_points - recipe.action_points
         if any(
             self.state.structures[sid].type == structure_type and not self.state.structures[sid].is_complete
             for sid in tile.structure_ids
         ):
-            self._invalid(agent, action, f"A {structure_type} is already under construction here; contribute to it instead.")
+            contention = self._structure_started_this_tick(agent, agent.position, structure_type)
+            self._invalid(
+                agent,
+                action,
+                f"A {structure_type} is already under construction here; contribute to it instead.",
+                failure_type="contention_failure" if contention else "invalid_proposal",
+                contention_cause="structure_started_earlier_this_tick" if contention else None,
+            )
             return action_points - recipe.action_points
         if tile.claimed_by and not self._controls_owner(agent, tile.claimed_by) and not self._has_access_grant(agent, tile.access):
             self._invalid(agent, action, "Cannot build on another agent's claimed tile without access.")
@@ -1702,15 +1811,82 @@ class WorldEngine:
         )
         return action_points
 
-    def _invalid(self, agent: Agent, action: dict[str, Any], reason: str) -> None:
+    def _invalid(
+        self,
+        agent: Agent,
+        action: dict[str, Any],
+        reason: str,
+        *,
+        failure_type: str = "invalid_proposal",
+        contention_cause: str | None = None,
+    ) -> None:
+        if failure_type not in {"invalid_proposal", "contention_failure"}:
+            raise ValueError(f"Unknown action failure type: {failure_type}")
+        data: dict[str, Any] = {"action": action, "failure_type": failure_type}
+        if contention_cause is not None:
+            data["contention_cause"] = contention_cause
         self.log_event(
-            "invalid_action",
+            "contention_failure" if failure_type == "contention_failure" else "invalid_action",
             actor_id=agent.id,
             position=agent.position,
             message=reason,
-            data={"action": action},
+            data=data,
             scope="private",
             recipients={agent.id},
+        )
+
+    def _same_tick_event(
+        self,
+        event_types: set[str],
+        actor_id: str,
+        predicate: Any,
+    ) -> bool:
+        return any(
+            event.tick == self.state.tick
+            and event.type in event_types
+            and event.actor_id not in {None, actor_id}
+            and predicate(event)
+            for event in reversed(self.state.events)
+        )
+
+    def _resource_was_consumed(self, agent: Agent, position: Position, resource: str) -> bool:
+        source = asdict(position)
+        return self._same_tick_event(
+            set(WORK_ACTIONS),
+            agent.id,
+            lambda event: event.data.get("resource") == resource
+            and event.data.get("source_position") == source,
+        )
+
+    def _nearby_resource_was_consumed(self, agent: Agent, resource: str) -> bool:
+        return self._same_tick_event(
+            set(WORK_ACTIONS),
+            agent.id,
+            lambda event: event.data.get("resource") == resource
+            and isinstance(event.data.get("source_position"), dict)
+            and agent.position.distance_to(Position(**event.data["source_position"])) <= 1,
+        )
+
+    def _trade_was_resolved(self, agent: Agent, trade_id: str) -> bool:
+        return self._same_tick_event(
+            {"accept_trade", "reject_trade"},
+            agent.id,
+            lambda event: isinstance(event.data.get("trade"), dict)
+            and event.data["trade"].get("id") == trade_id,
+        )
+
+    def _structure_started_this_tick(
+        self,
+        agent: Agent,
+        position: Position,
+        structure_type: str,
+    ) -> bool:
+        return self._same_tick_event(
+            {"build", "build_started"},
+            agent.id,
+            lambda event: event.position == position
+            and isinstance(event.data.get("structure"), dict)
+            and event.data["structure"].get("type") == structure_type,
         )
 
     def _apply_survival(self) -> None:

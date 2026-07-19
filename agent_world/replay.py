@@ -22,6 +22,13 @@ def format_event(event: dict[str, Any]) -> str:
     message = event.get("message") or ""
     data = event.get("data") or {}
     suffix = ""
-    if event.get("type") in {"invalid_action", "offer_trade", "accept_trade", "build", "claim_tile"}:
+    if event.get("type") in {
+        "invalid_action",
+        "contention_failure",
+        "offer_trade",
+        "accept_trade",
+        "build",
+        "claim_tile",
+    }:
         suffix = f" {json.dumps(data, sort_keys=True)}"
     return f"[tick {event.get('tick')}] {event.get('type')} {actor}: {message}{suffix}"

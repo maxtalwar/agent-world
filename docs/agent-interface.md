@@ -39,6 +39,8 @@ Agents know their own:
 
 Agents see only local map tiles within visibility radius. They do not see the full map, hidden private memories, or private prompts/observations from other agents.
 
+The default `baseline` feedback treatment supplies up to five recent failed actions and their existing engine explanations. The `none` treatment removes that payload, its prompt instruction, and private failure events from the agent's recent-event stream while retaining them in researcher logs. Researcher reports distinguish invalid proposals from same-tick contention failures; this classification does not repair actions or alter outcomes.
+
 The `world` object includes treatment modes, coordination costs, terrain passability, recipes, and required terrain/tools/structures. It does not include exact terrain yield, regeneration probabilities, spoilage cadence, or current build recommendations.
 
 Agents also receive visible standing offers, completed market-price history, and contracts to which they are a party. In organic mode, public offers and price history are local, trade summaries include a physical `escrow_position`, and engine-enforced contract actions are absent. Public structures expose access fees, capacity, upkeep state, treasury, and contributor shares.

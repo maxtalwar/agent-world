@@ -370,6 +370,7 @@ def _status_metrics(metrics: dict[str, Any]) -> dict[str, Any]:
         "productive_assets": metrics.get("productive_assets", {}),
         "infrastructure": metrics.get("infrastructure", {}),
         "invalid_actions": metrics.get("invalid_actions", {}),
+        "action_failures": metrics.get("action_failures", {}),
         "llm": metrics.get("llm", {}),
         "wealth_gini": metrics.get("wealth_gini", 0),
     }

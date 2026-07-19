@@ -17,6 +17,7 @@ from agent_world.rules import (
 
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
+ACTION_FAILURE_EVENT_TYPES = {"invalid_action", "contention_failure"}
 
 
 def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
@@ -79,6 +80,14 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         else set()
     )
     valid_actions = [action for action in ACTION_SCHEMA if action.get("type") not in disabled_actions]
+    feedback_mode = getattr(state.config, "action_feedback_mode", "baseline")
+    recent_events = _recent_visible_events(state, agent, radius)
+    if feedback_mode == "none":
+        recent_events = [
+            event
+            for event in recent_events
+            if not (event.get("actor_id") == agent.id and event.get("type") in ACTION_FAILURE_EVENT_TYPES)
+        ]
     return {
         "tick": state.tick,
         "world": {
@@ -90,6 +99,10 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "economy_mode": getattr(state.config, "economy_mode", "baseline"),
             "geography_mode": getattr(state.config, "geography_mode", "shared_oasis"),
             "specialization_mode": getattr(state.config, "specialization_mode", "generalists"),
+            # Used only to construct the treatment-specific prompt. The compact
+            # dynamic observation strips the whole world block, so this value is
+            # not itself described to model-backed agents.
+            "action_feedback_mode": feedback_mode,
             "communication_action_cost": getattr(state.config, "communication_cost", lambda: 0)(),
             "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
             "trade_settlement": (
@@ -156,8 +169,10 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             nearby_agents[agent_id]
             for agent_id in sorted(nearby_agents, key=lambda item: (nearby_agents[item]["distance"], item))
         ],
-        "recent_events": _recent_visible_events(state, agent, radius),
-        "recent_action_feedback": _recent_action_feedback(state, agent),
+        "recent_events": recent_events,
+        "recent_action_feedback": (
+            _recent_action_feedback(state, agent) if feedback_mode == "baseline" else []
+        ),
         "memory": list(agent.memory[-state.config.max_memory :]),
         "open_trades": open_trades,
         "market_history": _visible_market_history(state, agent, radius)[-12:],
@@ -193,6 +208,12 @@ PROMPT_RULES = [
     "self.reserves are food/water/energy: higher is better, 0 is danger.",
     "Use recent_action_feedback to avoid repeating invalid actions.",
 ]
+
+
+def _prompt_rules(world: dict[str, Any]) -> list[str]:
+    if world.get("action_feedback_mode", "baseline") == "none":
+        return [rule for rule in PROMPT_RULES if "recent_action_feedback" not in rule]
+    return list(PROMPT_RULES)
 
 
 OBJECTIVE_INSTRUCTIONS = {
@@ -272,7 +293,7 @@ def build_static_context(world: dict[str, Any]) -> str:
 
     reserve_max = world.get("reserve_scale", {}).get("maximum", {})
     lines: list[str] = []
-    lines.extend(PROMPT_RULES)
+    lines.extend(_prompt_rules(world))
     lines.append(objective_instruction(world))
     lines.append("")
     lines.append(
@@ -397,7 +418,11 @@ def build_dynamic_observation(observation: dict[str, Any]) -> dict[str, Any]:
     dynamic["recent_events"] = [
         _slim_event(event)
         for event in observation.get("recent_events", [])[-12:]
-        if not (event.get("type") == "invalid_action" and event.get("actor_id") == own_id and feedback)
+        if not (
+            event.get("type") in ACTION_FAILURE_EVENT_TYPES
+            and event.get("actor_id") == own_id
+            and feedback
+        )
     ]
     dynamic["recent_action_feedback"] = [_slim_feedback(item) for item in feedback]
     dynamic["memory"] = list(observation.get("memory", []))[-16:]
@@ -513,7 +538,7 @@ def build_agent_prompt(observation: dict[str, Any], compact: bool = False) -> st
         )
     return "\n".join(
         [
-            *PROMPT_RULES,
+            *_prompt_rules(observation.get("world", {})),
             objective_instruction(observation.get("world", {})),
             "The observation follows as JSON:",
             json.dumps(observation, indent=2, sort_keys=True),
@@ -681,7 +706,7 @@ def _controls_owner(agent: Agent, owner_id: str | None) -> bool:
 def _recent_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, Any]]:
     feedback = []
     for event in reversed(state.events):
-        if event.actor_id != agent.id or event.type != "invalid_action":
+        if event.actor_id != agent.id or event.type not in ACTION_FAILURE_EVENT_TYPES:
             continue
         action = event.data.get("action", {})
         item = {

@@ -87,6 +87,9 @@ def build_report(
     invalid_reasons = Counter(
         event["message"] for event in sim_events if event["type"] == "invalid_action"
     )
+    contention_reasons = Counter(
+        event["message"] for event in sim_events if event["type"] == "contention_failure"
+    )
     llm_failures = [
         event
         for event in events
@@ -193,6 +196,11 @@ def build_report(
             },
             "invalid_total": action_counts.get("invalid_action", 0),
             "invalid_reasons": dict(invalid_reasons.most_common()),
+            "failure_total": action_counts.get("invalid_action", 0)
+            + action_counts.get("contention_failure", 0),
+            "invalid_proposals": action_counts.get("invalid_action", 0),
+            "contention_failures": action_counts.get("contention_failure", 0),
+            "contention_reasons": dict(contention_reasons.most_common()),
         },
         "structures": {
             "complete": dict(Counter(structure["type"] for structure in complete)),
@@ -239,6 +247,21 @@ def build_report(
             ),
             "invalid_action_rate_pct": (
                 round(100 * action_counts.get("invalid_action", 0) / len(sim_events), 1) if sim_events else 0.0
+            ),
+            "contention_failure_rate_pct": (
+                round(100 * action_counts.get("contention_failure", 0) / len(sim_events), 1)
+                if sim_events
+                else 0.0
+            ),
+            "action_failure_rate_pct": (
+                round(
+                    100
+                    * (action_counts.get("invalid_action", 0) + action_counts.get("contention_failure", 0))
+                    / len(sim_events),
+                    1,
+                )
+                if sim_events
+                else 0.0
             ),
         },
         "usage": usage,
@@ -304,6 +327,7 @@ def _summarize_population(
             "trades_offered": action_counts.get("offer_trade", 0),
             "trades_accepted": action_counts.get("accept_trade", 0),
             "invalid_actions": action_counts.get("invalid_action", 0),
+            "contention_failures": action_counts.get("contention_failure", 0),
             "invalid_actions_per_decision": round(
                 action_counts.get("invalid_action", 0) / decision_count, 3
             ) if decision_count else None,
@@ -617,7 +641,7 @@ def _summarize_trades(
     invalid_accept_events = [
         event
         for event in events
-        if event.get("type") == "invalid_action"
+        if event.get("type") in {"invalid_action", "contention_failure"}
         and ((event.get("data") or {}).get("action") or {}).get("type") == "accept_trade"
     ]
     invalid_accept_reasons = Counter(event.get("message") or "unknown" for event in invalid_accept_events)
@@ -1222,8 +1246,10 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines += [
         "",
         "## Reliability",
-        f"- Invalid actions: {report['actions']['invalid_total']}"
+        f"- Invalid proposals: {report['actions']['invalid_proposals']}"
         f" ({report['reliability']['invalid_action_rate_pct']}% of events)",
+        f"- Contention failures: {report['actions']['contention_failures']}"
+        f" ({report['reliability']['contention_failure_rate_pct']}% of events)",
         f"- LLM failure events: {report['reliability']['llm_failure_events']}",
         f"- Decision quality: {report['reliability']['quality_status']}"
         f" | failure rate {report['reliability']['decision_failure_rate_pct']}%"

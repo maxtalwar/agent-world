@@ -55,6 +55,7 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
     in_progress_structures = [structure for structure in state.structures.values() if not structure.is_complete]
     structure_counts = Counter(structure.type for structure in complete_structures)
     invalid_reasons = Counter(event.message for event in state.events if event.type == "invalid_action")
+    contention_reasons = Counter(event.message for event in state.events if event.type == "contention_failure")
     llm_failures = [event for event in state.events if is_decision_failure_message(event.type, event.message)]
     build_readiness = _build_readiness(state)
     death_ticks = {event.actor_id: event.tick for event in state.events if event.type == "death"}
@@ -156,6 +157,19 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
         "invalid_actions": {
             "total": event_counts.get("invalid_action", 0),
             "reasons": dict(invalid_reasons.most_common()),
+        },
+        "action_failures": {
+            "total": event_counts.get("invalid_action", 0) + event_counts.get("contention_failure", 0),
+            "invalid_proposals": event_counts.get("invalid_action", 0),
+            "contention_failures": event_counts.get("contention_failure", 0),
+            "contention_reasons": dict(contention_reasons.most_common()),
+            "contention_causes": dict(
+                Counter(
+                    event.data.get("contention_cause", "unspecified")
+                    for event in state.events
+                    if event.type == "contention_failure"
+                ).most_common()
+            ),
         },
         "llm": {
             "decision_failures": len(llm_failures),
@@ -267,7 +281,7 @@ def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:
     ) // 2
     offers = sum(event.type == "offer_trade" for event in state.events)
     invalid_accepts = sum(
-        event.type == "invalid_action"
+        event.type in {"invalid_action", "contention_failure"}
         and isinstance(event.data.get("action"), dict)
         and event.data["action"].get("type") == "accept_trade"
         for event in state.events

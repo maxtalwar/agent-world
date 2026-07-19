@@ -1657,6 +1657,7 @@
         ["Trades", summary.accepted_trades ?? 0],
         ["LLM errors", summary.llm_failures ?? 0],
         ["Invalid", events.invalid_action ?? 0],
+        ["Contention", events.contention_failure ?? 0],
       ];
       document.getElementById("ticker").innerHTML = values.map(([label, value]) =>
         `<div class="stat"><span class="v">${escapeHtml(value)}</span><span class="k">${escapeHtml(label)}</span></div>`
@@ -1800,7 +1801,7 @@
     }
 
     function eventClass(type) {
-      if (type === "invalid_action") return "invalid";
+      if (type === "invalid_action" || type === "contention_failure") return "invalid";
       if (type === "move") return "move";
       if (["gather", "chop", "mine", "harvest", "fish", "farm", "craft", "build", "build_started", "contribute", "maintain_structure", "claim_dividend"].includes(type)) return "resource";
       if (["say", "whisper", "broadcast", "create_group", "invite_member", "join_group", "publish_rule"].includes(type)) return "social";
