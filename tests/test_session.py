@@ -87,10 +87,11 @@ class SimulationSessionTests(unittest.TestCase):
 
         result = session.run()
 
-        self.assertEqual(result.status, "stopped")
+        self.assertEqual(result.status, "paused_checkpoint")
         self.assertEqual(result.stop_reason, "insufficient_quota")
-        self.assertEqual(result.final_tick, 1)
-        self.assertEqual([event.type for event in engine.state.events].count("run_stopped"), 1)
+        self.assertEqual(result.final_tick, 0)
+        self.assertEqual([event.type for event in engine.state.events].count("run_paused"), 1)
+        self.assertNotIn("agent_response", [event.type for event in engine.state.events])
 
     def test_session_preflight_stops_before_any_provider_decision(self) -> None:
         class LoggedOutBrain:

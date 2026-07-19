@@ -129,6 +129,22 @@ class ClaudeBrainTests(unittest.TestCase):
         self.assertEqual(second.intent, first.intent)
         self.assertEqual(first.actions, [{"type": "wait"}])
 
+    def test_session_limit_message_opens_circuit(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude"],
+            1,
+            stdout="",
+            stderr="You've hit your session limit · resets 12:40am (America/New_York)",
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+            brain = ClaudeBrain(executable="claude")
+            first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(run.call_count, 1)
+        self.assertTrue(first.intent.startswith("Claude quota unavailable:"))
+        self.assertEqual(second.intent, first.intent)
+
     def test_auth_failure_opens_circuit(self) -> None:
         completed = subprocess.CompletedProcess(
             ["claude"], 1, stdout="", stderr="Not logged in. Please run /login."

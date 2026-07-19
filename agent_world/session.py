@@ -15,7 +15,7 @@ from agent_world.io import atomic_write_json
 from agent_world.metrics import is_provider_failure_message, is_quota_failure_message
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.run_report import write_report
-from agent_world.runner import SimulationRunner
+from agent_world.runner import ModelQuotaUnavailableError, SimulationRunner
 from agent_world.world import WorldEngine
 
 
@@ -128,7 +128,34 @@ class SimulationSession:
                     status = "stopped"
                     stop_reason = "stop_requested"
                     break
-                events = self.runner.step()
+                usage_checkpoint = self.runtime.usage_checkpoint()
+                try:
+                    events = self.runner.step()
+                except ModelQuotaUnavailableError as exc:
+                    partial_usage_path = self.runtime.rollback_usage(
+                        usage_checkpoint, attempted_tick=self.engine.state.tick
+                    )
+                    status = "paused_checkpoint"
+                    stop_reason = "insufficient_quota"
+                    self.engine.log_event(
+                        "run_paused",
+                        message=(
+                            "Model quota became unavailable during decision collection; "
+                            "the incomplete tick was discarded and this completed-tick checkpoint can be resumed."
+                        ),
+                        data={
+                            "reason": stop_reason,
+                            "target_ticks": self.target_ticks,
+                            "completed_tick": self.engine.state.tick,
+                            "provider_messages": exc.messages,
+                            "partial_usage_path": (
+                                str(partial_usage_path.resolve()) if partial_usage_path else None
+                            ),
+                        },
+                        scope="public",
+                    )
+                    self.flush()
+                    break
                 if any(
                     is_quota_failure_message(
                         getattr(event, "type", None), getattr(event, "message", None)

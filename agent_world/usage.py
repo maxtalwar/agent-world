@@ -10,7 +10,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 import json
+import os
 from pathlib import Path
+import tempfile
 import threading
 from typing import Any
 
@@ -51,6 +53,49 @@ def append_usage_record(record: dict[str, Any], usage_path: Path | None) -> bool
         return True
     except OSError:
         return False
+
+
+def append_usage_records(records: list[dict[str, Any]], usage_path: Path | None) -> bool:
+    """Append complete records as one locked batch."""
+
+    if usage_path is None or not records:
+        return False
+    try:
+        with _USAGE_LOG_LOCK:
+            usage_path.parent.mkdir(parents=True, exist_ok=True)
+            with usage_path.open("a", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record, sort_keys=True) + "\n")
+        return True
+    except OSError:
+        return False
+
+
+def replace_usage_records(records: list[dict[str, Any]], usage_path: Path | None) -> bool:
+    """Atomically replace a run's active usage ledger."""
+
+    if usage_path is None:
+        return False
+    temp_path: Path | None = None
+    try:
+        with _USAGE_LOG_LOCK:
+            usage_path.parent.mkdir(parents=True, exist_ok=True)
+            fd, temp_name = tempfile.mkstemp(
+                prefix=usage_path.name + ".", suffix=".tmp", dir=usage_path.parent
+            )
+            temp_path = Path(temp_name)
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                for record in records:
+                    handle.write(json.dumps(record, sort_keys=True) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(temp_path, usage_path)
+        return True
+    except OSError:
+        return False
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
 
 
 def summarize_codex_simulation_credits(records: list[dict[str, Any]]) -> dict[str, Any] | None:

@@ -154,9 +154,12 @@ servers, and skills disabled so nothing outside the observation leaks into the
 decision. Models: `claude-haiku-4-5` (cheapest against plan limits),
 `claude-sonnet-5` (default), `claude-opus-4-8`. Unlike Codex, the Claude CLI
 has no headless plan-limit endpoint, so no `*-plan-usage.json` is produced;
-per-call token usage is still recorded. When plan limits are hit the run stops
-early with `Claude quota unavailable` so the log is not mistaken for agent
-behavior. Run startup also checks `claude auth status` without spending a model
+per-call token usage is still recorded. When Claude or Codex plan/rate limits
+are hit, the incomplete tick is discarded and the run is marked
+`paused_checkpoint`; successful calls from that partial tick are preserved in a
+separate `*-usage-partial-tick-N.jsonl` audit ledger. Resume the normal checkpoint
+after the provider resets without introducing an all-wait tick into the world.
+Run startup also checks `claude auth status` without spending a model
 turn and stops at tick zero if the saved Claude-plan login is unavailable.
 Extended thinking is disabled by default (it costs thousands of plan
 tokens and ~a minute per decision); set `CLAUDE_MAX_THINKING_TOKENS` to a

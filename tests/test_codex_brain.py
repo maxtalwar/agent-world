@@ -96,6 +96,19 @@ class CodexBrainTests(unittest.TestCase):
         self.assertEqual(second.intent, first.intent)
         self.assertEqual(first.actions, [{"type": "wait"}])
 
+    def test_rate_limit_message_opens_circuit(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["codex"], 1, stdout="", stderr="Rate limit reached. Try again later."
+        )
+        with patch("agent_world.codex_brain.subprocess.run", return_value=completed) as run:
+            brain = CodexBrain(executable="codex")
+            first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(run.call_count, 1)
+        self.assertTrue(first.intent.startswith("Codex quota unavailable:"))
+        self.assertEqual(second.intent, first.intent)
+
     def test_missing_final_message_is_reported(self) -> None:
         with self.assertRaisesRegex(ValueError, "no final agent message"):
             parse_codex_jsonl(json.dumps({"type": "turn.completed", "usage": {}}))

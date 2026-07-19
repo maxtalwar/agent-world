@@ -41,11 +41,19 @@ All other controls are fixed:
 
 The paired analysis should compare survival, action-failure composition, repeated-error behavior, communication, trade offers and acceptances, gifts, movement/exploration, construction, institutions, specialization, and per-model cohort differences. Provider or quota failures invalidate an affected run rather than being interpreted as treatment effects.
 
-## Planned follow-up treatments
+## Phase 2: minimal feedback
+
+The paired seed-11/seed-41 follow-up uses `action_feedback_mode=minimal` with all
+Phase 1 controls unchanged. An agent receives at most five compact records from
+the immediately preceding tick, each containing only the tick and failed action
+type. It receives no failure reason, attempted arguments, format correction, or
+private failure event. This isolates a terse outcome signal from the explanatory
+baseline history without changing world resolution or repairing a plan.
+
+## Planned follow-up treatment
 
 After Phase 1, two additional matched treatments can isolate feedback content:
 
-- minimal feedback: a terse failure signal without the current explanation history
 - causal feedback: concise explanations for proven contention failures
 
-Those runs are intentionally deferred to avoid provider-plan quota pressure. They should reuse the same paired seeds, roster, assignments, world configuration, reasoning effort, and concurrency.
+The causal runs remain deferred to avoid provider-plan quota pressure. They should reuse the same paired seeds, roster, assignments, world configuration, reasoning effort, and concurrency.

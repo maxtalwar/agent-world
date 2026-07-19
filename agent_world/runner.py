@@ -15,6 +15,7 @@ from agent_world.interface import (
     build_static_context,
     parse_agent_response,
 )
+from agent_world.metrics import is_quota_failure_message
 from agent_world.models import AgentDecision
 from agent_world.world import WorldEngine
 
@@ -62,9 +63,18 @@ class SimulationRunner:
             if self.engine.state.agents[agent_id].alive and agent_id in self.brains
         ]
         observations = {agent_id: build_observation(self.engine.state, agent_id) for agent_id in agent_ids}
+        decisions = self._collect_decisions(agent_ids, observations)
+        quota_messages = sorted(
+            {
+                decision.intent
+                for decision in decisions.values()
+                if is_quota_failure_message("agent_response", decision.intent)
+            }
+        )
+        if quota_messages:
+            raise ModelQuotaUnavailableError(quota_messages)
         for agent_id, observation in observations.items():
             self._log_agent_input(agent_id, observation)
-        decisions = self._collect_decisions(agent_ids, observations)
         return self.engine.tick(decisions)
 
     def _collect_decisions(
@@ -157,6 +167,14 @@ class SimulationRunner:
             scope="private",
             recipients={agent_id},
         )
+
+
+class ModelQuotaUnavailableError(RuntimeError):
+    """Raised before world resolution when a provider exhausts its quota."""
+
+    def __init__(self, messages: list[str]):
+        super().__init__(messages[0] if messages else "Model quota unavailable")
+        self.messages = list(messages)
 
 
 def _truncate_to_declared_action_budget(

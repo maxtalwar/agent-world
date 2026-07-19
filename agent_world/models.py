@@ -93,8 +93,8 @@ class WorldConfig:
             raise ValueError("economy_mode must be baseline, commerce, or organic")
         if self.objective_mode not in {"neutral", "collective", "individual"}:
             raise ValueError("objective_mode must be neutral, collective, or individual")
-        if self.action_feedback_mode not in {"baseline", "none"}:
-            raise ValueError("action_feedback_mode must be baseline or none")
+        if self.action_feedback_mode not in {"baseline", "minimal", "none"}:
+            raise ValueError("action_feedback_mode must be baseline, minimal, or none")
         for name in ("communication_action_cost", "group_admin_action_cost"):
             value = getattr(self, name)
             if value is not None and value < 0:

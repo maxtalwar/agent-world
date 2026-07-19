@@ -108,7 +108,7 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--decision-mode", choices=["raw", "validated"], default=None)
     run_parser.add_argument(
         "--action-feedback-mode",
-        choices=["baseline", "none"],
+        choices=["baseline", "minimal", "none"],
         default=None,
         help="Agent-facing failed-action feedback treatment. Defaults to baseline.",
     )

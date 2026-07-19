@@ -7,7 +7,7 @@ import threading
 import time
 from typing import Any
 
-from agent_world.usage import append_usage_record
+from agent_world.usage import append_usage_record, append_usage_records, replace_usage_records
 
 
 class BrainRuntime:
@@ -38,6 +38,30 @@ class BrainRuntime:
     def usage_records(self) -> list[dict[str, Any]]:
         with self._lock:
             return [dict(record) for record in self._usage_records]
+
+    def usage_checkpoint(self) -> int:
+        """Return a rollback marker for the current completed-tick ledger."""
+
+        with self._lock:
+            return len(self._usage_records)
+
+    def rollback_usage(self, checkpoint: int, *, attempted_tick: int) -> Path | None:
+        """Exclude partial-tick calls while preserving them in an audit ledger."""
+
+        with self._lock:
+            if checkpoint < 0 or checkpoint > len(self._usage_records):
+                raise ValueError("Invalid usage rollback checkpoint.")
+            kept = [dict(record) for record in self._usage_records[:checkpoint]]
+            partial = [dict(record) for record in self._usage_records[checkpoint:]]
+            self._usage_records = kept
+        if self.usage_path is None or not partial:
+            return None
+        partial_path = self.usage_path.with_name(
+            f"{self.usage_path.stem}-partial-tick-{attempted_tick}{self.usage_path.suffix}"
+        )
+        append_usage_records(partial, partial_path)
+        replace_usage_records(kept, self.usage_path)
+        return partial_path
 
     def quota_message(self, scope: str = "default") -> str | None:
         with self._lock:

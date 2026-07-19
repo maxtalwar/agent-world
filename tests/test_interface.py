@@ -44,6 +44,36 @@ class EconomicInterfaceTests(unittest.TestCase):
         )
         self.assertIn("Use recent_action_feedback", static)
 
+    def test_minimal_feedback_names_only_last_ticks_failed_action(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(action_feedback_mode="minimal"),
+            agent_names=["A1"],
+        )
+        engine.tick(
+            {"agent-1": AgentDecision(actions=[{"type": "move", "direction": "sideways"}])}
+        )
+
+        observation = build_observation(engine.state, "agent-1")
+        dynamic = build_dynamic_observation(observation)
+        static = build_static_context(observation["world"])
+
+        self.assertEqual(
+            dynamic["recent_action_feedback"],
+            [{"tick": 0, "failed_action": "move"}],
+        )
+        self.assertFalse(
+            any(
+                event["type"] in {"invalid_action", "contention_failure"}
+                for event in dynamic.get("recent_events", [])
+            )
+        )
+        self.assertIn("names actions that failed last tick", static)
+        self.assertNotIn("avoid repeating invalid actions", static)
+
+        engine.tick({"agent-1": AgentDecision(actions=[{"type": "wait"}])})
+        next_dynamic = build_dynamic_observation(build_observation(engine.state, "agent-1"))
+        self.assertNotIn("recent_action_feedback", next_dynamic)
+
     def test_twenty_agent_organic_prompt_stays_within_infrastructure_budgets(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(economy_mode="organic", geography_mode="dispersed"),

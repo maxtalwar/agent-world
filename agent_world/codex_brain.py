@@ -545,10 +545,13 @@ def _is_quota_error(detail: str) -> bool:
         marker in lowered
         for marker in (
             "usage limit",
-            "rate limit exceeded",
+            "session limit",
+            "rate limit",
             "insufficient_quota",
             "quota unavailable",
             "credits exhausted",
+            "credit balance is too low",
+            "limit reached",
         )
     )
 

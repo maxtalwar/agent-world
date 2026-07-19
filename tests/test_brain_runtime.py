@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -44,6 +45,24 @@ class BrainRuntimeTests(unittest.TestCase):
             self.assertIn('"call": 1', first_path.read_text())
             self.assertNotIn('"call": 2', first_path.read_text())
             self.assertIn('"call": 2', second_path.read_text())
+
+    def test_partial_tick_usage_is_moved_out_of_the_resumable_ledger(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            usage_path = Path(temp_dir) / "run-usage.jsonl"
+            runtime = BrainRuntime(usage_path)
+            runtime.record_usage({"call": 1, "tick": 0})
+            checkpoint = runtime.usage_checkpoint()
+            runtime.record_usage({"call": 2, "tick": 1})
+
+            partial_path = runtime.rollback_usage(checkpoint, attempted_tick=1)
+
+            self.assertEqual(runtime.usage_records(), [{"call": 1, "tick": 0}])
+            self.assertEqual(
+                [json.loads(line) for line in usage_path.read_text().splitlines()],
+                [{"call": 1, "tick": 0}],
+            )
+            self.assertIsNotNone(partial_path)
+            self.assertIn('"call": 2', partial_path.read_text())
 
     def test_factory_shares_one_provider_scoped_runtime_across_all_run_agents(self) -> None:
         class FakeCodexBrain:

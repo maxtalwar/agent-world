@@ -82,7 +82,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
     valid_actions = [action for action in ACTION_SCHEMA if action.get("type") not in disabled_actions]
     feedback_mode = getattr(state.config, "action_feedback_mode", "baseline")
     recent_events = _recent_visible_events(state, agent, radius)
-    if feedback_mode == "none":
+    if feedback_mode in {"minimal", "none"}:
         recent_events = [
             event
             for event in recent_events
@@ -171,7 +171,11 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         ],
         "recent_events": recent_events,
         "recent_action_feedback": (
-            _recent_action_feedback(state, agent) if feedback_mode == "baseline" else []
+            _recent_action_feedback(state, agent)
+            if feedback_mode == "baseline"
+            else _minimal_action_feedback(state, agent)
+            if feedback_mode == "minimal"
+            else []
         ),
         "memory": list(agent.memory[-state.config.max_memory :]),
         "open_trades": open_trades,
@@ -211,8 +215,16 @@ PROMPT_RULES = [
 
 
 def _prompt_rules(world: dict[str, Any]) -> list[str]:
-    if world.get("action_feedback_mode", "baseline") == "none":
+    feedback_mode = world.get("action_feedback_mode", "baseline")
+    if feedback_mode == "none":
         return [rule for rule in PROMPT_RULES if "recent_action_feedback" not in rule]
+    if feedback_mode == "minimal":
+        return [
+            "recent_action_feedback names actions that failed last tick."
+            if "recent_action_feedback" in rule
+            else rule
+            for rule in PROMPT_RULES
+        ]
     return list(PROMPT_RULES)
 
 
@@ -500,6 +512,8 @@ def _slim_nearby_agent(agent: dict[str, Any]) -> dict[str, Any]:
 
 
 def _slim_feedback(item: dict[str, Any]) -> dict[str, Any]:
+    if item.get("failed_action"):
+        return {"tick": item.get("tick"), "failed_action": item["failed_action"]}
     slim = {
         "tick": item.get("tick"),
         "error": item.get("reason"),
@@ -723,3 +737,23 @@ def _recent_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, A
         if len(feedback) >= 5:
             break
     return list(reversed(feedback))
+
+
+def _minimal_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, Any]]:
+    """Name only action types that failed in the immediately preceding tick."""
+
+    previous_tick = state.tick - 1
+    feedback: list[dict[str, Any]] = []
+    for event in state.events:
+        if (
+            event.tick != previous_tick
+            or event.actor_id != agent.id
+            or event.type not in ACTION_FAILURE_EVENT_TYPES
+        ):
+            continue
+        action = event.data.get("action")
+        action_type = action.get("type") if isinstance(action, dict) else None
+        feedback.append(
+            {"tick": event.tick, "failed_action": str(action_type or "unknown")}
+        )
+    return feedback[-5:]
