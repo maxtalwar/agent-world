@@ -43,6 +43,10 @@ The paired analysis should compare survival, action-failure composition, repeate
 
 ## Phase 2: minimal feedback
 
+Experiment root:
+
+`runs/experiments/action-feedback-minimal-30a-50t-seeds11-41-20260719-003342`
+
 The paired seed-11/seed-41 follow-up uses `action_feedback_mode=minimal` with all
 Phase 1 controls unchanged. An agent receives at most five compact records from
 the immediately preceding tick, each containing only the tick and failed action
