@@ -113,6 +113,10 @@ replication, not enough to establish small civilization-level effects.
 
 ## Phase 3: causal contention feedback
 
+Experiment root:
+
+`runs/experiments/action-feedback-causal-30a-50t-seeds11-41-20260719-145321`
+
 The causal treatment keeps baseline explanations for invalid proposals and adds
 a neutral, cause-specific explanation only for proven same-tick contention. It
 states that another agent obtained the remaining resource, occupied the
