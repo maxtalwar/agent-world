@@ -51,7 +51,7 @@ Emergence requires pressure gradients:
 
 ## Near-Term Next Steps
 
-1. Complete and analyze the paired baseline-versus-no-action-feedback study described in [action-feedback-experiment.md](action-feedback-experiment.md).
+1. Run the causal-feedback follow-up described in [action-feedback-experiment.md](action-feedback-experiment.md); the none/minimal/baseline comparison is complete through the shared clean tick-28 window.
 2. Separate invalid proposals from causally proven same-tick contention failures in all new analyses.
 3. Compare gift value and purpose, market conversion/value, specialization, asset-adjusted wealth, fee/dividend income, contracts, survival, and both failure classes.
 4. Only after replicated results, vary one mechanism at a time: minimal feedback, causal feedback, geography without commerce, market access without private objectives, or coordination cost without specialization.

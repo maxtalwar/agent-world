@@ -54,9 +54,66 @@ type. It receives no failure reason, attempted arguments, format correction, or
 private failure event. This isolates a terse outcome signal from the explanatory
 baseline history without changing world resolution or repairing a plan.
 
+## Results
+
+Both minimal-feedback cells completed 50 ticks. Seed 11 had one Codex response
+format failure and seed 41 had one Claude structured-output failure; neither had
+a quota failure. The Phase 1 cells are clean only through tick 28: the old
+Claude adapter failed to classify a session-limit response beginning at tick
+29-32, so later Phase 1 behavior must not be compared with Phase 2.
+
+Across the shared clean window (ticks 0-28), both seeds produced the same
+ordering:
+
+| Feedback | Failed proposed actions | Re-attempted failed action type next tick | Repeated same failure next tick | Survivors at tick 29 |
+|---|---:|---:|---:|---:|
+| none | 40.8% | 83.1% | 59.4% | 27/30 |
+| minimal | 32.6% | 65.9% | 36.5% | 29/30 |
+| baseline | 25.3% | 66.5% | 24.7% | 29/30 |
+
+Minimal feedback therefore captured roughly half of baseline's overall failure
+reduction and nearly all of its effect on whether an agent immediately tried the
+same failed action type again. The remaining baseline advantage came from
+causal correction: terse feedback changed what agents tried, while explanations
+more often prevented the replacement plan from failing for the same reason.
+Minimal feedback averaged about 44 characters per observation versus about 494
+for baseline feedback.
+
+The effect varied materially by model. Clean-window failure rates for
+none/minimal/baseline were Sol 35.8/14.5/11.9%, Fable 23.1/15.8/14.9%, Terra
+33.8/32.3/23.3%, Opus 58.1/42.1/35.9%, Luna 26.9/20.6/18.0%, and Sonnet
+57.9/57.3/39.3%. Minimal feedback was nearly sufficient for Sol, Fable, and
+Luna, while Terra, Opus, and especially Sonnet benefited from the explanatory
+baseline.
+
+Feedback also prevented agents from getting behaviorally stuck. Over the clean
+window, average successful movement events were 412 with none, 558 with
+minimal, and 595 with baseline. Both feedback treatments had two fewer deaths
+per seed than no feedback by tick 29. Civilization-level effects were less
+stable: baseline generated more trade offers but not more accepted trades, no
+feedback generated more successful gifts, and construction did not have a
+consistent treatment ordering across seeds.
+
+The two complete minimal civilizations remained informal but economically
+active. Seed 11 ended with 22 survivors, five completed structures, nine
+accepted trades, eleven gifts, and a fee-charging farm that received fifteen
+payments. Seed 41 ended with 21 survivors, eight completed structures, fourteen
+accepted trades, thirteen gifts, and a three-agent cooperative storage build.
+Neither formed a formal group. Across both seeds all Sol and Fable agents
+survived; deaths were concentrated in Luna (7/12) and Sonnet (8/12). Fable was
+the strongest builder/trader cohort, while Sonnet combined heavy communication
+with a 60.8% full-run failed-action rate and produced no completed build,
+accepted trade, or gift.
+
+The supported conclusion is that feedback content is an experimental mechanism,
+not merely interface polish. A tiny outcome signal substantially improves
+planning and early survival at about one-tenth the feedback payload, but causal
+explanations add real value for some models. Two seeds are directional
+replication, not enough to establish small civilization-level effects.
+
 ## Planned follow-up treatment
 
-After Phase 1, two additional matched treatments can isolate feedback content:
+One additional matched treatment can isolate feedback content:
 
 - causal feedback: concise explanations for proven contention failures
 
