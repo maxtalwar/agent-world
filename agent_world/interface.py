@@ -171,8 +171,8 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         ],
         "recent_events": recent_events,
         "recent_action_feedback": (
-            _recent_action_feedback(state, agent)
-            if feedback_mode == "baseline"
+            _recent_action_feedback(state, agent, causal=feedback_mode == "causal")
+            if feedback_mode in {"baseline", "causal"}
             else _minimal_action_feedback(state, agent)
             if feedback_mode == "minimal"
             else []
@@ -521,6 +521,8 @@ def _slim_feedback(item: dict[str, Any]) -> dict[str, Any]:
     }
     if item.get("format_note"):
         slim["note"] = item["format_note"]
+    if item.get("contention_cause"):
+        slim["cause"] = item["contention_cause"]
     return slim
 
 
@@ -717,7 +719,9 @@ def _controls_owner(agent: Agent, owner_id: str | None) -> bool:
     return owner_id == agent.id or (owner_id is not None and owner_id in agent.groups)
 
 
-def _recent_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, Any]]:
+def _recent_action_feedback(
+    state: WorldState, agent: Agent, *, causal: bool = False
+) -> list[dict[str, Any]]:
     feedback = []
     for event in reversed(state.events):
         if event.actor_id != agent.id or event.type not in ACTION_FAILURE_EVENT_TYPES:
@@ -728,6 +732,10 @@ def _recent_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, A
             "reason": event.message,
             "attempted_action": action,
         }
+        if causal and event.type == "contention_failure":
+            item["contention_cause"] = _contention_feedback_message(
+                str(event.data.get("contention_cause") or "")
+            )
         if isinstance(action, dict) and isinstance(action.get("fields"), dict):
             item["format_note"] = (
                 "Do not put arguments inside fields. Move each field to the top level, "
@@ -737,6 +745,33 @@ def _recent_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, A
         if len(feedback) >= 5:
             break
     return list(reversed(feedback))
+
+
+def _contention_feedback_message(cause: str) -> str:
+    messages = {
+        "resource_taken_earlier_this_tick": (
+            "Another agent obtained the remaining resource before this action resolved."
+        ),
+        "destination_filled_earlier_this_tick": (
+            "Another agent occupied the destination before this action resolved."
+        ),
+        "item_taken_earlier_this_tick": (
+            "Another agent took the item before this action resolved."
+        ),
+        "trade_resolved_earlier_this_tick": (
+            "Another agent resolved the trade before this action resolved."
+        ),
+        "tile_claimed_earlier_this_tick": (
+            "Another agent claimed the tile before this action resolved."
+        ),
+        "structure_started_earlier_this_tick": (
+            "Another agent started construction here before this action resolved."
+        ),
+    }
+    return messages.get(
+        cause,
+        "Another agent changed the relevant shared state before this action resolved.",
+    )
 
 
 def _minimal_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, Any]]:

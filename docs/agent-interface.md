@@ -39,7 +39,7 @@ Agents know their own:
 
 Agents see only local map tiles within visibility radius. They do not see the full map, hidden private memories, or private prompts/observations from other agents.
 
-The default `baseline` feedback treatment supplies up to five recent failed actions and their existing engine explanations. The `none` treatment removes that payload, its prompt instruction, and private failure events from the agent's recent-event stream while retaining them in researcher logs. Researcher reports distinguish invalid proposals from same-tick contention failures; this classification does not repair actions or alter outcomes.
+The default `baseline` feedback treatment supplies up to five recent failed actions and their existing engine explanations. `causal` preserves that payload and adds a neutral explanation when structured evidence proves another agent changed the relevant shared state earlier in the tick; it never names the competing agent. `minimal` reports only failed action types from the immediately preceding tick. `none` removes the payload, prompt instruction, and private failure events from the agent's recent-event stream while retaining them in researcher logs. Researcher reports distinguish invalid proposals from same-tick contention failures; this classification does not repair actions or alter outcomes.
 
 The `world` object includes treatment modes, coordination costs, terrain passability, recipes, and required terrain/tools/structures. It does not include exact terrain yield, regeneration probabilities, spoilage cadence, or current build recommendations.
 

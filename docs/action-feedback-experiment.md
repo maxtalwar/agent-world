@@ -111,10 +111,13 @@ planning and early survival at about one-tenth the feedback payload, but causal
 explanations add real value for some models. Two seeds are directional
 replication, not enough to establish small civilization-level effects.
 
-## Planned follow-up treatment
+## Phase 3: causal contention feedback
 
-One additional matched treatment can isolate feedback content:
+The causal treatment keeps baseline explanations for invalid proposals and adds
+a neutral, cause-specific explanation only for proven same-tick contention. It
+states that another agent obtained the remaining resource, occupied the
+destination, took the item, resolved the trade, claimed the tile, or started
+construction before resolution. It does not identify that agent or change the
+submitted action, AP cost, priority, or outcome.
 
-- causal feedback: concise explanations for proven contention failures
-
-The causal runs remain deferred to avoid provider-plan quota pressure. They should reuse the same paired seeds, roster, assignments, world configuration, reasoning effort, and concurrency.
+The paired causal runs reuse seeds 11 and 41 and all Phase 1 controls.

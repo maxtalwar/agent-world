@@ -74,6 +74,63 @@ class EconomicInterfaceTests(unittest.TestCase):
         next_dynamic = build_dynamic_observation(build_observation(engine.state, "agent-1"))
         self.assertNotIn("recent_action_feedback", next_dynamic)
 
+    def test_causal_feedback_explains_proven_contention_without_identifying_agent(self) -> None:
+        engine = WorldEngine.create(
+            WorldConfig(
+                action_feedback_mode="causal",
+                plains_food_regen=0,
+                forest_food_regen=0,
+            ),
+            agent_names=["A1", "A2"],
+        )
+        first = engine.state.agents["agent-1"]
+        second = engine.state.agents["agent-2"]
+        second.position = first.position
+        engine.state.tile_at(first.position).resources["food"] = 1
+        engine.tick(
+            {
+                first.id: AgentDecision(
+                    actions=[{"type": "gather", "resource": "food"}]
+                ),
+                second.id: AgentDecision(
+                    actions=[{"type": "gather", "resource": "food"}]
+                ),
+            }
+        )
+
+        dynamic = build_dynamic_observation(build_observation(engine.state, second.id))
+        feedback = dynamic["recent_action_feedback"][0]
+
+        self.assertEqual(
+            feedback["cause"],
+            "Another agent obtained the remaining resource before this action resolved.",
+        )
+        self.assertNotIn(first.id, json.dumps(feedback))
+        self.assertIn("error", feedback)
+        self.assertIn("action", feedback)
+
+    def test_causal_feedback_leaves_invalid_proposal_payload_at_baseline(self) -> None:
+        baseline = WorldEngine.create(WorldConfig(), agent_names=["A1"])
+        causal = WorldEngine.create(
+            WorldConfig(action_feedback_mode="causal"), agent_names=["A1"]
+        )
+        decision = {
+            "agent-1": AgentDecision(
+                actions=[{"type": "move", "direction": "sideways"}]
+            )
+        }
+        baseline.tick(decision)
+        causal.tick(decision)
+
+        baseline_feedback = build_dynamic_observation(
+            build_observation(baseline.state, "agent-1")
+        )["recent_action_feedback"]
+        causal_feedback = build_dynamic_observation(
+            build_observation(causal.state, "agent-1")
+        )["recent_action_feedback"]
+
+        self.assertEqual(causal_feedback, baseline_feedback)
+
     def test_twenty_agent_organic_prompt_stays_within_infrastructure_budgets(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(economy_mode="organic", geography_mode="dispersed"),
