@@ -21,6 +21,7 @@ from agent_world.brain_factory import (
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.claude_brain import ClaudeBrain
 from agent_world.codex_brain import CodexBrain
+from agent_world.cursor_brain import CursorBrain
 from agent_world.env import load_dotenv
 from agent_world.experiments import run_factorial_experiment
 from agent_world.interface import build_agent_prompt, build_observation
@@ -75,8 +76,8 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default=None)
     run_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default=None)
     run_parser.add_argument("--specialization-mode", choices=["generalists", "specialists"], default=None)
-    run_parser.add_argument("--brain", choices=["survival", "llm", "codex", "claude"], default=None)
-    run_parser.add_argument("--model", default=None, help="Model for --brain llm/codex/claude. Uses the selected brain's environment default.")
+    run_parser.add_argument("--brain", choices=["survival", "llm", "codex", "claude", "cursor"], default=None)
+    run_parser.add_argument("--model", default=None, help="Model for --brain llm/codex/claude/cursor. Uses the selected brain's environment default.")
     run_parser.add_argument(
         "--population",
         action="append",
@@ -84,14 +85,15 @@ def main(argv: list[str] | None = None) -> None:
         metavar="COUNT@MODEL",
         help=(
             "Repeat for mixed populations, e.g. --population 10@claude-sonnet-5 "
-            "--population 10@gpt-5.6-luna. Explicit COUNT@BRAIN:MODEL is also accepted."
+            "--population 10@gpt-5.6-luna. Explicit COUNT@BRAIN:MODEL is also accepted, "
+            "including cursor models such as 5@cursor:cursor-grok-4.5."
         ),
     )
     run_parser.add_argument(
         "--reasoning-effort",
         choices=["minimal", "low", "medium", "high", "xhigh", "max"],
         default=None,
-        help="Reasoning effort for --brain llm/codex/claude. Uses the selected brain's environment default.",
+        help="Reasoning effort for --brain llm/codex/claude/cursor. Uses the selected brain's environment default.",
     )
     run_parser.add_argument("--out", type=Path, default=None)
     run_parser.add_argument("--snapshot", type=Path, default=None)
@@ -102,6 +104,7 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. Provider-backed brains default to one worker.")
     run_parser.add_argument("--codex-max-workers", type=int, default=None)
     run_parser.add_argument("--claude-max-workers", type=int, default=None)
+    run_parser.add_argument("--cursor-max-workers", type=int, default=None)
     run_parser.add_argument("--llm-max-workers", type=int, default=None)
     run_parser.add_argument("--assignment-strategy", choices=["ordered", "stratified"], default=None)
     run_parser.add_argument("--assignment-seed", type=int, default=None)
@@ -145,7 +148,7 @@ def main(argv: list[str] | None = None) -> None:
     ablate_parser.add_argument("--agents", type=int, default=4)
     ablate_parser.add_argument("--ticks", type=int, default=30, help="Baseline tick count (horizon variants scale this).")
     ablate_parser.add_argument("--seed", type=int, default=11)
-    ablate_parser.add_argument("--brain", choices=["survival", "llm", "codex", "claude"], default="survival")
+    ablate_parser.add_argument("--brain", choices=["survival", "llm", "codex", "claude", "cursor"], default="survival")
     ablate_parser.add_argument("--model", default=None)
     ablate_parser.add_argument("--reasoning-effort", choices=["minimal", "low", "medium", "high", "xhigh", "max"], default=None)
     ablate_parser.add_argument("--out", type=Path, default=None, help="Optional JSON output path for the rows.")
@@ -165,7 +168,7 @@ def main(argv: list[str] | None = None) -> None:
     experiment_parser.add_argument("--seeds", type=int, nargs="+", default=[11])
     experiment_parser.add_argument(
         "--brain",
-        choices=["survival", "llm", "codex", "claude"],
+        choices=["survival", "llm", "codex", "claude", "cursor"],
         default="survival",
         help="Defaults to the free local scripted brain. LLM calls occur only when explicitly selected.",
     )
@@ -262,7 +265,13 @@ def _run(args: argparse.Namespace) -> None:
             args.no_agent_io_log = not bool(saved.get("log_agent_io", True))
         if not args.sequential_decisions:
             args.sequential_decisions = bool(saved.get("sequential_decisions", False))
-        for name in ("codex_max_workers", "claude_max_workers", "llm_max_workers", "decision_mode"):
+        for name in (
+            "codex_max_workers",
+            "claude_max_workers",
+            "cursor_max_workers",
+            "llm_max_workers",
+            "decision_mode",
+        ):
             if getattr(args, name, None) is None and saved.get(name) is not None:
                 setattr(args, name, saved[name])
         saved_feedback_mode = getattr(engine.state.config, "action_feedback_mode", "baseline")
@@ -342,6 +351,7 @@ def _run(args: argparse.Namespace) -> None:
     provider_max_workers = {
         "codex_cli": int(getattr(args, "codex_max_workers", None) or min(max_workers, 4)),
         "claude_cli": int(getattr(args, "claude_max_workers", None) or min(max_workers, 4)),
+        "cursor_cli": int(getattr(args, "cursor_max_workers", None) or min(max_workers, 4)),
         "openai_compatible": int(getattr(args, "llm_max_workers", None) or min(max_workers, 2)),
     }
     decision_mode = args.decision_mode or "raw"
@@ -413,6 +423,7 @@ def _run(args: argparse.Namespace) -> None:
                 "max_workers": max_workers,
                 "codex_max_workers": provider_max_workers["codex_cli"],
                 "claude_max_workers": provider_max_workers["claude_cli"],
+                "cursor_max_workers": provider_max_workers["cursor_cli"],
                 "llm_max_workers": provider_max_workers["openai_compatible"],
                 "decision_mode": decision_mode,
                 "log_agent_io": not args.no_agent_io_log,
@@ -684,6 +695,8 @@ def _ablate(args: argparse.Namespace) -> None:
             return CodexBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         if args.brain == "claude":
             return ClaudeBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
+        if args.brain == "cursor":
+            return CursorBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         return SurvivalBrain()
 
     results = run_ablation(

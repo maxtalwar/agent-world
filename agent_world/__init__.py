@@ -5,6 +5,7 @@ from agent_world.brain_factory import BrainSpec, PopulationGroup, PopulationSpec
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.claude_brain import ClaudeBrain
 from agent_world.codex_brain import CodexBrain
+from agent_world.cursor_brain import CursorBrain
 from agent_world.interface import build_agent_prompt, build_observation, parse_agent_response
 from agent_world.metrics import compute_metrics
 from agent_world.models import Agent, AgentDecision, Position, WorldConfig
@@ -23,6 +24,7 @@ __all__ = [
     "PopulationSpec",
     "ClaudeBrain",
     "CodexBrain",
+    "CursorBrain",
     "NullBrain",
     "OpenAIBrain",
     "Position",

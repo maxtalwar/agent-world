@@ -2,7 +2,7 @@
 
 The experiment runner deliberately defaults to the local ``SurvivalBrain``. An
 LLM is only contacted when the caller explicitly selects ``brain="llm"``,
-``brain="codex"``, or ``brain="claude"``.
+``brain="codex"``, ``brain="claude"``, or ``brain="cursor"``.
 Every cell gets its own directory, usage log, provenance manifest, report, and
 raw outputs so interrupted or mixed-provider batches remain auditable.
 """
@@ -25,6 +25,7 @@ from agent_world.brain_factory import BrainSpec, create_brains
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.claude_brain import ClaudeBrain, build_claude_prompts
 from agent_world.codex_brain import CodexBrain, build_codex_prompt, summarize_plan_usage
+from agent_world.cursor_brain import CursorBrain, build_cursor_prompt
 from agent_world.interface import build_dynamic_observation, build_observation, build_static_context
 from agent_world.io import atomic_write_json as _atomic_write_json
 from agent_world.io import atomic_write_text as _atomic_write_text
@@ -155,8 +156,8 @@ def run_factorial_experiment(
         raise ValueError("ticks must be at least 1.")
     if agents < 1:
         raise ValueError("agents must be at least 1.")
-    if brain not in {"survival", "llm", "codex", "claude"}:
-        raise ValueError("brain must be 'survival', 'llm', 'codex', or 'claude'.")
+    if brain not in {"survival", "llm", "codex", "claude", "cursor"}:
+        raise ValueError("brain must be 'survival', 'llm', 'codex', 'claude', or 'cursor'.")
     if max_workers is not None and max_workers < 1:
         raise ValueError("max_workers must be at least 1.")
 
@@ -347,7 +348,7 @@ def _run_single(
             "directory": str(run_dir),
             "events": str(events_path),
             "snapshot": str(snapshot_path),
-            "usage": str(usage_path) if brain in {"llm", "codex", "claude"} else None,
+            "usage": str(usage_path) if brain in {"llm", "codex", "claude", "cursor"} else None,
             "plan_usage": str(plan_usage_path) if brain == "codex" else None,
             "checkpoint": str(checkpoint_path),
             "report_json": str(report_json_path),
@@ -380,7 +381,7 @@ def _run_single(
         )
         brains = create_brains(engine, brain_spec, runtime)
         first_brain = next(iter(brains.values()), None)
-        if isinstance(first_brain, (OpenAIBrain, CodexBrain, ClaudeBrain)):
+        if isinstance(first_brain, (OpenAIBrain, CodexBrain, ClaudeBrain, CursorBrain)):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
             )
@@ -432,6 +433,10 @@ def _run_single(
             plan_usage_path=plan_usage_path if brain_spec.type == "codex" else None,
         )
         session.start()
+        if isinstance(first_brain, (OpenAIBrain, CodexBrain, ClaudeBrain, CursorBrain)):
+            run_manifest["brain"] = _brain_runtime_settings(
+                first_brain, brain_spec.max_workers or 1
+            )
         run_manifest["hashes"].update(_initial_prompt_hashes(engine, brain_spec.type))
         _atomic_write_json(manifest_path, run_manifest)
         result = session.run()
@@ -633,6 +638,10 @@ def _initial_prompt_hashes(engine: WorldEngine, brain: str) -> dict[str, str]:
         claude_system, claude_user = build_claude_prompts(static_context, dynamic_json)
         hashes["initial_claude_system_prompt_sha256"] = _sha256_text(claude_system)
         hashes["initial_claude_user_prompt_sha256"] = _sha256_text(claude_user)
+    if brain == "cursor":
+        hashes["initial_cursor_prompt_sha256"] = _sha256_text(
+            build_cursor_prompt(static_context, dynamic_json)
+        )
     return hashes
 
 
@@ -648,6 +657,7 @@ def _source_hashes() -> dict[str, str]:
         "openai_brain_source_sha256": _sha256_file(module_dir / "openai_brain.py"),
         "codex_brain_source_sha256": _sha256_file(module_dir / "codex_brain.py"),
         "claude_brain_source_sha256": _sha256_file(module_dir / "claude_brain.py"),
+        "cursor_brain_source_sha256": _sha256_file(module_dir / "cursor_brain.py"),
         "runner_source_sha256": _sha256_file(module_dir / "runner.py"),
     }
 
@@ -710,6 +720,16 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
             "billing_mode": "claude_plan",
             "timeout_seconds": int(os.environ.get("CLAUDE_TIMEOUT_SECONDS", "300")),
         }
+    if brain == "cursor":
+        return {
+            "provider": "cursor_cli",
+            "model": model or os.environ.get("CURSOR_MODEL", "cursor-grok-4.5"),
+            "reasoning_effort": reasoning_effort or os.environ.get("CURSOR_REASONING_EFFORT", "low"),
+            "api_style": "cursor_agent_print",
+            "base_url": None,
+            "billing_mode": "cursor_subscription",
+            "timeout_seconds": int(os.environ.get("CURSOR_TIMEOUT_SECONDS", "300")),
+        }
     base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
     return {
         "provider": _provider_name(base_url),
@@ -726,7 +746,9 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
     }
 
 
-def _brain_runtime_settings(brain: OpenAIBrain | CodexBrain | ClaudeBrain, max_workers: int) -> dict[str, Any]:
+def _brain_runtime_settings(
+    brain: OpenAIBrain | CodexBrain | ClaudeBrain | CursorBrain, max_workers: int
+) -> dict[str, Any]:
     if isinstance(brain, CodexBrain):
         return {
             "type": "codex",
@@ -749,6 +771,20 @@ def _brain_runtime_settings(brain: OpenAIBrain | CodexBrain | ClaudeBrain, max_w
             "api_style": "claude_print",
             "base_url": None,
             "billing_mode": "claude_plan",
+            "executable": brain.executable,
+            "timeout_seconds": brain.timeout_seconds,
+            "max_workers": max_workers,
+        }
+    if isinstance(brain, CursorBrain):
+        return {
+            "type": "cursor",
+            "provider": "cursor_cli",
+            "model": brain.model,
+            "resolved_model": brain.resolved_model,
+            "reasoning_effort": brain.reasoning_effort,
+            "api_style": "cursor_agent_print",
+            "base_url": None,
+            "billing_mode": "cursor_subscription",
             "executable": brain.executable,
             "timeout_seconds": brain.timeout_seconds,
             "max_workers": max_workers,

@@ -97,6 +97,25 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(population.groups[0].brain.model, "claude-fable-future")
         self.assertEqual(population.groups[0].brain.reasoning_effort, "high")
 
+    def test_population_parser_infers_grok_and_accepts_explicit_cursor_models(self) -> None:
+        population = PopulationSpec.parse_many(
+            ["2@cursor-grok-4.5", "3@cursor:gemini-3.1-pro:medium"]
+        )
+
+        self.assertEqual(population.total_agents, 5)
+        self.assertEqual(population.groups[0].brain.type, "cursor")
+        self.assertEqual(population.groups[0].brain.model, "cursor-grok-4.5")
+        self.assertEqual(population.groups[1].brain.type, "cursor")
+        self.assertEqual(population.groups[1].brain.model, "gemini-3.1-pro")
+        self.assertEqual(population.groups[1].brain.reasoning_effort, "medium")
+
+    def test_cursor_brain_spec_records_subscription_provenance(self) -> None:
+        spec = BrainSpec.resolve("cursor", model="cursor-grok-4.5", reasoning_effort="low")
+
+        self.assertEqual(spec.provider, "cursor_cli")
+        self.assertEqual(spec.billing_mode, "cursor_subscription")
+        self.assertTrue(spec.model_backed)
+
     def test_stratified_assignments_balance_each_specialty_and_survive_round_trip(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(
@@ -159,6 +178,26 @@ class BrainRuntimeTests(unittest.TestCase):
         claude_runtime.mark_quota_unavailable("claude exhausted")
         self.assertEqual(brains["agent-2"].runtime.quota_message(), "claude exhausted")
         self.assertIsNone(codex_runtime.quota_message())
+
+    def test_cursor_factory_shares_cursor_scope_without_leaking_to_codex(self) -> None:
+        class FakeBrain:
+            def __init__(self, model=None, reasoning_effort=None, runtime=None):
+                self.model = model
+                self.reasoning_effort = reasoning_effort
+                self.runtime = runtime
+
+        engine = WorldEngine.create(WorldConfig(seed=3), agent_names=["A1", "A2"])
+        population = PopulationSpec.parse_many(
+            ["1@cursor:cursor-grok-4.5:low", "1@codex:gpt-5.6-luna:low"]
+        )
+        runtime = BrainRuntime()
+        with patch("agent_world.brain_factory.CursorBrain", FakeBrain), patch(
+            "agent_world.brain_factory.CodexBrain", FakeBrain
+        ):
+            brains = create_population_brains(engine, population, runtime)
+
+        self.assertEqual(brains["agent-1"].runtime.scope, "cursor_cli")
+        self.assertEqual(brains["agent-2"].runtime.scope, "codex_cli")
 
 
 if __name__ == "__main__":

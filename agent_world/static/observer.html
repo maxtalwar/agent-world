@@ -851,6 +851,7 @@
             <option value="llm" selected>llm</option>
             <option value="codex">codex plan</option>
             <option value="claude">claude plan</option>
+            <option value="cursor">cursor subscription</option>
           </select>
         </label>
         <label class="field">
@@ -875,6 +876,9 @@
             <option value="claude-haiku-4-5">Claude Haiku 4.5 (Claude plan)</option>
             <option value="claude-sonnet-5">Claude Sonnet 5 (Claude plan)</option>
             <option value="claude-opus-4-8">Claude Opus 4.8 (Claude plan)</option>
+            <option value="cursor-grok-4.5">Grok 4.5 (Cursor subscription)</option>
+            <option value="composer-2.5">Composer 2.5 (Cursor subscription)</option>
+            <option value="gemini-3.1-pro">Gemini 3.1 Pro (Cursor subscription)</option>
             <option value="z-ai/glm-5.1">GLM-5.1</option>
             <option value="z-ai/glm-4.7">GLM-4.7</option>
             <option value="z-ai/glm-4.5-air">GLM-4.5 Air</option>
@@ -1905,7 +1909,10 @@
       } else if (!forceDisabled && brain === "claude" && !model.value.startsWith("claude-")) {
         model.value = "claude-sonnet-5";
         reasoning.value = "low";
-      } else if (!forceDisabled && brain === "llm" && (["gpt-5.6-luna", "gpt-5.6-terra"].includes(model.value) || model.value.startsWith("claude-"))) {
+      } else if (!forceDisabled && brain === "cursor" && !["cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro"].includes(model.value)) {
+        model.value = "cursor-grok-4.5";
+        reasoning.value = "low";
+      } else if (!forceDisabled && brain === "llm" && (["gpt-5.6-luna", "gpt-5.6-terra", "cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro"].includes(model.value) || model.value.startsWith("claude-"))) {
         model.value = "z-ai/glm-5.2";
         reasoning.value = "medium";
       }

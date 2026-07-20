@@ -103,7 +103,7 @@ To connect a different provider or local agent policy, implement the `AgentBrain
 saved ChatGPT login. It does not use `OPENAI_API_KEY` or `CODEX_API_KEY`, and it
 records each call with `provider=codex_cli`, `billing_mode=chatgpt_plan`, token
 usage, prompt hashes, and zero marginal API cost. Codex runs also sample the
-account's plan limits before the first decision and after every tick. The
+account's plan limits before the first decision and at the terminal state. The
 `*-plan-usage.json` artifact preserves the raw 5-hour/weekly utilization and
 credit-balance checkpoints; reports show the observed before/after drawdown.
 These are account-level readings, so concurrent Codex work may contribute to a
@@ -167,11 +167,48 @@ positive budget to re-enable it. Other environment knobs: `CLAUDE_MODEL`,
 `CLAUDE_REASONING_EFFORT`, `CLAUDE_TIMEOUT_SECONDS`, `CLAUDE_EXECUTABLE`,
 `CLAUDE_MAX_PARALLEL_AGENTS`.
 
+### Cursor subscription agents
+
+`CursorBrain` runs Grok and other models exposed by the installed Cursor Agent
+CLI using the saved Cursor subscription login, not a metered API key. The
+adapter removes `CURSOR_API_KEY` and related overrides from every child process,
+runs each decision in an empty read-only workspace with Ask mode, and records
+the CLI's per-call tokens with `provider=cursor_cli`,
+`billing_mode=cursor_subscription`, prompt hashes, and zero marginal API cost.
+
+Install Cursor Agent, authenticate once in a browser, and inspect the exact
+models currently available to the account:
+
+```bash
+cursor agent --help
+cursor-agent login
+cursor-agent status
+cursor-agent --list-models
+```
+
+Then run Grok through the subscription:
+
+```bash
+python3 -m agent_world.cli run \
+  --brain cursor --model cursor-grok-4.5 --reasoning-effort low \
+  --ticks 10 --agents 3 --progress \
+  --out runs/cursor-grok.jsonl --snapshot runs/cursor-grok-snapshot.json
+```
+
+For model families with separate effort variants, the adapter resolves a base
+name plus `--reasoning-effort` against the live account model list (for example,
+`cursor-grok-4.5` plus `low` becomes `cursor-grok-4.5-low`). An exact model ID
+always remains exact. Availability is checked before tick zero, because Cursor's
+catalog can vary by account and over time. Cursor does not currently expose a
+headless subscription-limit endpoint, so the simulation records decision-token
+usage but cannot calculate a 5-hour or weekly percentage drawdown.
+
 ### Mixed-model populations
 
 A run can assign deterministic cohorts to different providers and models. Repeat
-`--population COUNT@MODEL`; familiar Claude and GPT-5.6 model names infer the
-`claude` and `codex` brains automatically:
+`--population COUNT@MODEL`; familiar Claude, GPT-5.6, and Cursor/Grok model
+names infer their native brains automatically. Use an explicit `cursor:` brain
+for overlapping model families that should consume Cursor capacity:
 
 ```bash
 python3 -m agent_world.cli run \
@@ -204,13 +241,23 @@ is larger:
 --max-workers 8 --claude-max-workers 4 --codex-max-workers 4
 ```
 
+For a mixed native/Cursor run, for example:
+
+```bash
+--population 5@cursor:cursor-grok-4.5:low \
+--population 5@cursor:gemini-3.1-pro:medium \
+--population 5@codex:gpt-5.6-luna:low \
+--cursor-max-workers 3 --codex-max-workers 3
+```
+
 `--decision-mode raw` preserves every model-proposed action for unassisted
 research. `--decision-mode validated` is an explicit assisted condition that
 truncates only the portion of an action list exceeding the declared AP budget.
 Never mix these conditions in one comparison.
 
 Use `COUNT@BRAIN:MODEL` when inference is ambiguous or for a newly released
-model, for example `10@claude:claude-fable-model-id`. An optional effort suffix
+model, for example `10@claude:claude-fable-model-id` or
+`10@cursor:cursor-grok-4.5:high`. An optional effort suffix
 is accepted as `COUNT@BRAIN:MODEL:EFFORT`. Cohorts are assigned in command-line
 order (`agent-1` onward), saved with the checkpoint, and restored unchanged on
 resume. Do not repeat the population flags when resuming:

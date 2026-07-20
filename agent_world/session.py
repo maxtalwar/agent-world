@@ -304,13 +304,18 @@ class SimulationSession:
         self._started = True
 
     def _provider_preflight_error(self) -> str | None:
-        checked: set[tuple[type[Any], str]] = set()
+        checked: set[tuple[type[Any], str, str, str]] = set()
         for brain in self.brains.values():
             preflight = getattr(brain, "preflight", None)
             if not callable(preflight):
                 continue
             scope = str(getattr(getattr(brain, "runtime", None), "scope", "default"))
-            key = (type(brain), scope)
+            key = (
+                type(brain),
+                scope,
+                str(getattr(brain, "model", "")),
+                str(getattr(brain, "reasoning_effort", "")),
+            )
             if key in checked:
                 continue
             checked.add(key)

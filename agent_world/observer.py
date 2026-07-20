@@ -247,14 +247,17 @@ class RunController:
 
 def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
     brain = str(payload.get("brain", TUNED_OBSERVATORY_DEFAULTS["brain"])).strip().lower()
-    if brain not in {"survival", "llm", "codex", "claude"}:
-        raise ValueError("brain must be survival, llm, codex, or claude.")
+    if brain not in {"survival", "llm", "codex", "claude", "cursor"}:
+        raise ValueError("brain must be survival, llm, codex, claude, or cursor.")
     if brain == "codex":
         model = str(payload.get("model") or os.environ.get("CODEX_MODEL") or "gpt-5.6-luna").strip()
         default_effort = os.environ.get("CODEX_REASONING_EFFORT", "low")
     elif brain == "claude":
         model = str(payload.get("model") or os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5").strip()
         default_effort = os.environ.get("CLAUDE_REASONING_EFFORT", "low")
+    elif brain == "cursor":
+        model = str(payload.get("model") or os.environ.get("CURSOR_MODEL") or "cursor-grok-4.5").strip()
+        default_effort = os.environ.get("CURSOR_REASONING_EFFORT", "low")
     else:
         model = str(payload.get("model") or os.environ.get("OPENAI_MODEL") or TUNED_OBSERVATORY_DEFAULTS["model"]).strip()
         default_effort = os.environ.get("OPENAI_REASONING_EFFORT", TUNED_OBSERVATORY_DEFAULTS["reasoning_effort"])
@@ -313,8 +316,8 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         ticks=_bounded_int(payload.get("ticks", TUNED_OBSERVATORY_DEFAULTS["ticks"]), "ticks", minimum=1, maximum=1000),
         agents=_bounded_int(payload.get("agents", TUNED_OBSERVATORY_DEFAULTS["agents"]), "agents", minimum=1, maximum=20),
         brain=brain,
-        model=model if brain in {"llm", "codex", "claude"} else None,
-        reasoning_effort=reasoning_effort if brain in {"llm", "codex", "claude"} else None,
+        model=model if brain in {"llm", "codex", "claude", "cursor"} else None,
+        reasoning_effort=reasoning_effort if brain in {"llm", "codex", "claude", "cursor"} else None,
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
         max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=20),
         world_config=world_config,

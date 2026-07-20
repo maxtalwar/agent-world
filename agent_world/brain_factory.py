@@ -11,12 +11,13 @@ from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.claude_brain import ClaudeBrain
 from agent_world.codex_brain import CodexBrain
+from agent_world.cursor_brain import CursorBrain
 from agent_world.openai_brain import OpenAIBrain
 from agent_world.world import WorldEngine
 
 
 ALLOWED_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max"})
-SUPPORTED_BRAIN_TYPES = frozenset({"survival", "llm", "codex", "claude"})
+SUPPORTED_BRAIN_TYPES = frozenset({"survival", "llm", "codex", "claude", "cursor"})
 
 
 @dataclass(frozen=True)
@@ -36,7 +37,7 @@ class BrainSpec:
         max_workers: int | None = None,
     ) -> "BrainSpec":
         if brain_type not in SUPPORTED_BRAIN_TYPES:
-            raise ValueError("brain type must be survival, llm, codex, or claude")
+            raise ValueError("brain type must be survival, llm, codex, claude, or cursor")
         if max_workers is not None and max_workers < 1:
             raise ValueError("max_workers must be at least 1")
         if reasoning_effort is not None and reasoning_effort not in ALLOWED_EFFORTS:
@@ -45,6 +46,7 @@ class BrainSpec:
             "llm": ("OPENAI_MODEL", "z-ai/glm-5.2", "OPENAI_REASONING_EFFORT", "medium"),
             "codex": ("CODEX_MODEL", "gpt-5.6-luna", "CODEX_REASONING_EFFORT", "low"),
             "claude": ("CLAUDE_MODEL", "claude-sonnet-5", "CLAUDE_REASONING_EFFORT", "low"),
+            "cursor": ("CURSOR_MODEL", "cursor-grok-4.5", "CURSOR_REASONING_EFFORT", "low"),
         }
         if brain_type == "survival":
             return cls(type=brain_type, max_workers=max_workers or 1)
@@ -53,6 +55,7 @@ class BrainSpec:
             "llm": "OPENAI_MAX_PARALLEL_AGENTS",
             "codex": "CODEX_MAX_PARALLEL_AGENTS",
             "claude": "CLAUDE_MAX_PARALLEL_AGENTS",
+            "cursor": "CURSOR_MAX_PARALLEL_AGENTS",
         }[brain_type]
         workers = max_workers if max_workers is not None else int(os.environ.get(worker_env, "1"))
         resolved_effort = reasoning_effort or os.environ.get(effort_env, effort_default)
@@ -67,15 +70,25 @@ class BrainSpec:
 
     @property
     def model_backed(self) -> bool:
-        return self.type in {"llm", "codex", "claude"}
+        return self.type in {"llm", "codex", "claude", "cursor"}
 
     @property
     def provider(self) -> str | None:
-        return {"llm": "openai_compatible", "codex": "codex_cli", "claude": "claude_cli"}.get(self.type)
+        return {
+            "llm": "openai_compatible",
+            "codex": "codex_cli",
+            "claude": "claude_cli",
+            "cursor": "cursor_cli",
+        }.get(self.type)
 
     @property
     def billing_mode(self) -> str | None:
-        return {"llm": "api", "codex": "chatgpt_plan", "claude": "claude_plan"}.get(self.type)
+        return {
+            "llm": "api",
+            "codex": "chatgpt_plan",
+            "claude": "claude_plan",
+            "cursor": "cursor_subscription",
+        }.get(self.type)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -340,6 +353,8 @@ def _parse_population_group(
 
 def _infer_brain_type(model: str) -> str:
     normalized = model.lower()
+    if normalized.startswith("cursor-") or normalized.startswith("composer-"):
+        return "cursor"
     if normalized.startswith("claude-"):
         return "claude"
     if normalized.startswith("gpt-5.6-"):
@@ -370,6 +385,7 @@ def create_population_brains(
         "llm": OpenAIBrain,
         "codex": CodexBrain,
         "claude": ClaudeBrain,
+        "cursor": CursorBrain,
     }
     brains: dict[str, AgentBrain] = {}
     scoped_runtimes: dict[str, Any] = {}

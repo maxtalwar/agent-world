@@ -192,9 +192,13 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
             "OpenAI quota unavailable:",
             "Codex decision failed:",
             "Codex quota unavailable:",
+            "Codex provider unavailable:",
             "Claude decision failed:",
             "Claude quota unavailable:",
             "Claude provider unavailable:",
+            "Cursor decision failed:",
+            "Cursor quota unavailable:",
+            "Cursor provider unavailable:",
             "Invalid JSON response:",
             "Agent brain failed:",
         )
@@ -205,7 +209,14 @@ def is_quota_failure_message(event_type: str | None, message: str | None) -> boo
     if event_type != "agent_response" or not message:
         return False
     return (
-        message.startswith(("OpenAI quota unavailable:", "Codex quota unavailable:", "Claude quota unavailable:"))
+        message.startswith(
+            (
+                "OpenAI quota unavailable:",
+                "Codex quota unavailable:",
+                "Claude quota unavailable:",
+                "Cursor quota unavailable:",
+            )
+        )
         or "insufficient_quota" in message
     )
 
@@ -213,7 +224,14 @@ def is_quota_failure_message(event_type: str | None, message: str | None) -> boo
 def is_provider_failure_message(event_type: str | None, message: str | None) -> bool:
     if event_type != "agent_response" or not message:
         return False
-    return message.startswith(("Claude provider unavailable:", "Codex provider unavailable:", "OpenAI provider unavailable:"))
+    return message.startswith(
+        (
+            "Claude provider unavailable:",
+            "Codex provider unavailable:",
+            "Cursor provider unavailable:",
+            "OpenAI provider unavailable:",
+        )
+    )
 
 
 def _median(values: list[int]) -> float:
