@@ -125,3 +125,24 @@ construction before resolution. It does not identify that agent or change the
 submitted action, AP cost, priority, or outcome.
 
 The paired causal runs reuse seeds 11 and 41 and all Phase 1 controls.
+
+### Phase 3 outcome: excluded
+
+Both causal cells reached tick 50, but neither is valid for treatment
+comparison. A shared provider/network incident produced 47 failed decisions in
+seed 11 and 46 in seed 41 during ticks 0-2. The engine advanced those ticks as
+fallback waits, permanently changing survival reserves and subsequent world
+history. Seed 11 also recorded 21 unclassified Fable usage-credit failures at
+ticks 44-49; the quota detector recognized `credits exhausted` but not the
+actual phrase `out of usage credits`. Additional isolated timeouts and closed
+responses occurred in both cells. Preserve the artifacts, but do not include
+their survival, economy, or failure rates in feedback-treatment conclusions.
+
+The causal payload itself was exercised: seed 11 had 55 proven contention
+failures and seed 41 had 43, producing 310 and 241 model-facing causal-feedback
+records as recent history persisted. Exploratorily, agents re-attempted the
+same contended action type on the next tick about 75% of the time, versus 65%
+under baseline. This could mean explicit attribution makes an action seem
+temporarily unlucky rather than invalid, but the contaminated starting state
+prevents a causal claim. A replacement run requires broader quota-string
+recognition and pre-resolution handling for batch-level transport failures.
