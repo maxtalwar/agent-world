@@ -146,3 +146,16 @@ under baseline. This could mean explicit attribution makes an action seem
 temporarily unlucky rather than invalid, but the contaminated starting state
 prevents a causal claim. A replacement run requires broader quota-string
 recognition and pre-resolution handling for batch-level transport failures.
+
+## Phase 4: matched no-Fable baseline versus causal
+
+Experiment root:
+
+`runs/experiments/action-feedback-baseline-v-causal-no-fable-28a-50t-seeds11-41-20260719-205858`
+
+This new internally controlled block uses baseline and causal feedback on seeds
+11 and 41. Every cell has the user-specified 28-agent roster: 4 Sol, 5 Terra,
+5 Luna, 5 Opus, 5 Sonnet, and 4 Haiku. All other Phase 1 controls remain fixed.
+Because both population size and composition differ, analyze only within-block
+paired contrasts; do not combine its aggregate civilization metrics with the
+earlier 30-agent studies.
