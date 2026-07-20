@@ -124,6 +124,38 @@ class SimulationSessionTests(unittest.TestCase):
         self.assertEqual(brain.decisions, 0)
         self.assertEqual([event.type for event in engine.state.events].count("run_stopped"), 1)
 
+    def test_session_discards_tick_when_provider_becomes_unavailable(self) -> None:
+        class ProviderFailureBrain:
+            def decide(self, _observation):
+                return AgentDecision(
+                    intent="Codex provider unavailable: stream disconnected",
+                    actions=[{"type": "wait"}],
+                )
+
+        engine = WorldEngine.create(WorldConfig(seed=9), agent_names=["A1"])
+        session = SimulationSession(
+            engine=engine,
+            brain_spec=BrainSpec(
+                type="codex",
+                model="gpt-5.6-luna",
+                reasoning_effort="low",
+                max_workers=1,
+            ),
+            runtime=BrainRuntime(),
+            writer=IncrementalRunWriter(None, None, fsync=False),
+            target_ticks=10,
+            brains={"agent-1": ProviderFailureBrain()},
+            log_agent_io=False,
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "paused_checkpoint")
+        self.assertEqual(result.stop_reason, "provider_unavailable")
+        self.assertEqual(result.final_tick, 0)
+        self.assertEqual([event.type for event in engine.state.events].count("run_paused"), 1)
+        self.assertNotIn("agent_response", [event.type for event in engine.state.events])
+
     def test_session_records_mixed_population_and_report_cohorts(self) -> None:
         class WaitBrain:
             def decide(self, _observation):

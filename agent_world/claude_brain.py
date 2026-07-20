@@ -123,13 +123,19 @@ class ClaudeBrain:
                     message = f"Claude provider unavailable: {detail}"
                     self._mark_quota_unavailable(message)
                     return _failure_decision(message)
+                if _is_provider_error(detail):
+                    message = f"Claude provider unavailable: {detail}"
+                    self._mark_quota_unavailable(message)
+                    return _failure_decision(message)
                 raise ValueError(f"claude -p exited {completed.returncode}: {detail}")
 
             decision, usage, response_model = extract_claude_result(result)
             self._record_usage(usage, response_model, request_meta | {"duration_seconds": round(elapsed, 3)})
             return parse_agent_response(decision)
         except subprocess.TimeoutExpired:
-            return _failure_decision(f"Claude decision failed: exceeded {self.timeout_seconds}s timeout")
+            message = f"Claude provider unavailable: exceeded {self.timeout_seconds}s timeout"
+            self._mark_quota_unavailable(message)
+            return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             return _failure_decision(f"Claude decision failed: {exc}")
 
@@ -296,6 +302,7 @@ def _is_quota_error(detail: str) -> bool:
             "session limit",
             "rate limit",
             "out of extra usage",
+            "out of usage credits",
             "insufficient_quota",
             "quota unavailable",
             "credit balance is too low",
@@ -308,6 +315,21 @@ def _is_quota_error(detail: str) -> bool:
 def _is_auth_error(detail: str) -> bool:
     lowered = detail.lower()
     return any(marker in lowered for marker in ("not logged in", "please run /login", "authentication required"))
+
+
+def _is_provider_error(detail: str) -> bool:
+    lowered = detail.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "unable to connect to api",
+            "connection refused",
+            "connection closed mid-response",
+            "connection reset",
+            "network error",
+            "service unavailable",
+        )
+    )
 
 
 @lru_cache(maxsize=1)

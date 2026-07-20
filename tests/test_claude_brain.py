@@ -145,6 +145,35 @@ class ClaudeBrainTests(unittest.TestCase):
         self.assertTrue(first.intent.startswith("Claude quota unavailable:"))
         self.assertEqual(second.intent, first.intent)
 
+    def test_usage_credit_message_opens_quota_circuit(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude"],
+            1,
+            stdout="",
+            stderr="You're out of usage credits. Run /usage-credits to keep using Haiku.",
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+            brain = ClaudeBrain(executable="claude")
+            first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(run.call_count, 1)
+        self.assertTrue(first.intent.startswith("Claude quota unavailable:"))
+        self.assertEqual(second.intent, first.intent)
+
+    def test_connection_failure_opens_provider_circuit(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude"], 1, stdout="", stderr="API Error: Unable to connect to API (ConnectionRefused)"
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+            brain = ClaudeBrain(executable="claude")
+            first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(run.call_count, 1)
+        self.assertTrue(first.intent.startswith("Claude provider unavailable:"))
+        self.assertEqual(second.intent, first.intent)
+
     def test_auth_failure_opens_circuit(self) -> None:
         completed = subprocess.CompletedProcess(
             ["claude"], 1, stdout="", stderr="Not logged in. Please run /login."

@@ -171,13 +171,19 @@ class CodexBrain:
                     message = f"Codex quota unavailable: {detail}"
                     self._mark_quota_unavailable(message)
                     return _failure_decision(message)
+                if _is_provider_error(detail):
+                    message = f"Codex provider unavailable: {detail}"
+                    self._mark_quota_unavailable(message)
+                    return _failure_decision(message)
                 raise ValueError(f"codex exec exited {completed.returncode}: {detail}")
 
             response_text, usage = parse_codex_jsonl(completed.stdout)
             self._record_usage(usage, request_meta | {"duration_seconds": round(elapsed, 3)})
             return parse_agent_response(normalize_codex_response(response_text))
         except subprocess.TimeoutExpired:
-            return _failure_decision(f"Codex decision failed: exceeded {self.timeout_seconds}s timeout")
+            message = f"Codex provider unavailable: exceeded {self.timeout_seconds}s timeout"
+            self._mark_quota_unavailable(message)
+            return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             return _failure_decision(f"Codex decision failed: {exc}")
 
@@ -547,11 +553,27 @@ def _is_quota_error(detail: str) -> bool:
             "usage limit",
             "session limit",
             "rate limit",
+            "out of usage credits",
             "insufficient_quota",
             "quota unavailable",
             "credits exhausted",
             "credit balance is too low",
             "limit reached",
+        )
+    )
+
+
+def _is_provider_error(detail: str) -> bool:
+    lowered = detail.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "stream disconnected before completion",
+            "error sending request",
+            "connection refused",
+            "connection reset",
+            "network error",
+            "service unavailable",
         )
     )
 

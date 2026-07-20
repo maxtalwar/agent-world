@@ -15,7 +15,7 @@ from agent_world.interface import (
     build_static_context,
     parse_agent_response,
 )
-from agent_world.metrics import is_quota_failure_message
+from agent_world.metrics import is_provider_failure_message, is_quota_failure_message
 from agent_world.models import AgentDecision
 from agent_world.world import WorldEngine
 
@@ -73,6 +73,15 @@ class SimulationRunner:
         )
         if quota_messages:
             raise ModelQuotaUnavailableError(quota_messages)
+        provider_messages = sorted(
+            {
+                decision.intent
+                for decision in decisions.values()
+                if is_provider_failure_message("agent_response", decision.intent)
+            }
+        )
+        if provider_messages:
+            raise ModelProviderUnavailableError(provider_messages)
         for agent_id, observation in observations.items():
             self._log_agent_input(agent_id, observation)
         return self.engine.tick(decisions)
@@ -174,6 +183,14 @@ class ModelQuotaUnavailableError(RuntimeError):
 
     def __init__(self, messages: list[str]):
         super().__init__(messages[0] if messages else "Model quota unavailable")
+        self.messages = list(messages)
+
+
+class ModelProviderUnavailableError(RuntimeError):
+    """Raised before world resolution when a model provider is unavailable."""
+
+    def __init__(self, messages: list[str]):
+        super().__init__(messages[0] if messages else "Model provider unavailable")
         self.messages = list(messages)
 
 
