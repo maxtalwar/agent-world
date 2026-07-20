@@ -159,3 +159,92 @@ This new internally controlled block uses baseline and causal feedback on seeds
 Because both population size and composition differ, analyze only within-block
 paired contrasts; do not combine its aggregate civilization metrics with the
 earlier 30-agent studies.
+
+### Phase 4 results
+
+All four cells completed 50/50 ticks with no quota or rate-limit failures. The
+runs had six isolated model-output failures in 5,059 decisions (0.12%); none was
+a batch provider incident, so the four cells remain usable. Assignment maps
+match within each seed. Causal explanations appeared in 85/1,203 observations
+(7.1%) for seed 11 and 122/1,257 (9.7%) for seed 41.
+
+The direct behavioral result is narrow. Causal feedback reduced literal
+repetition of the exact contended action in both seeds: 15/29 to 11/24 in seed
+11 and 25/41 to 7/17 in seed 41, or 57.1% to 43.9% pooled. Agents were about as
+likely to try the same action *type* again (74.3% baseline, 73.2% causal), so
+the added explanation changed parameters or targets more often than it changed
+the broad strategy. Proven contention counts also fell in both seeds, from 29
+to 25 and from 41 to 17, although contention is an endogenous world outcome,
+not a pure planning-quality measure.
+
+Planning-error improvement was not robust. Among submitted actions, the paired
+invalid-proposal rates were 33.0% baseline versus 30.8% causal for seed 11 and
+31.0% versus 30.9% for seed 41. The report's resolver-wide total failure rates
+similarly changed from 25.2% to 23.8% and from 23.7% to 24.2%. Causal feedback
+therefore produced one meaningful improvement and one essentially flat or
+slightly worse pair, not evidence of a general error-rate reduction. Repetition
+of the exact invalid proposal on the next tick rose from 38.8% to 42.5% pooled;
+that spillover is consistent across the two pairs but could reflect diverged
+world histories rather than attention competition.
+
+| Seed | Mode | Submitted actions | Invalid proposals | Contention | Exact contention retry | Survivors | Offers / accepts | Gifts | Complete structures |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|---|
+| 11 | baseline | 4,070 | 1,341 (33.0%) | 29 | 15/29 | 20 | 89 / 5 | 11 | 3 farms |
+| 11 | causal | 3,763 | 1,158 (30.8%) | 25 | 11/24 | 14 | 54 / 3 | 15 | 4 farms, 1 storage |
+| 41 | baseline | 3,961 | 1,227 (31.0%) | 41 | 25/41 | 15 | 73 / 4 | 18 | 3 farms |
+| 41 | causal | 3,898 | 1,206 (30.9%) | 17 | 7/17 | 18 | 72 / 3 | 16 | 2 farms, 1 storage |
+
+The civilization effects split private capital formation from market
+coordination. Across the two baseline worlds, agents built six farms with 60
+book value. The causal worlds built six farms plus two storages with 92 book
+value and stored 46 value in those storages. They made seven access grants
+versus one, and paid seven upkeep cycles while missing eight, versus two paid
+and fifteen missed under baseline. This was individual rather than cooperative
+entrepreneurship: causal had no co-op build, group, contract, access-fee policy,
+fee payment, or dividend. Seven of its eight structures were owned by Sol
+agents; baseline ownership was spread across Sol, Luna, Opus, and Sonnet.
+
+The extra capital did not create a stronger market. Causal worlds made 126
+offers and completed six trades, versus 162 and nine under baseline. Invalid
+acceptances fell from 98 to 70 only because acceptance attempts fell from 107
+to 76; success per attempt was essentially unchanged (8.4% versus 7.9%). By
+contrast, informal aid became slightly larger: gifts rose from 29 events / 31
+units / 44 value to 31 events / 38 units / 56 value. Food spoilage rose from
+106 to 128 events despite the new storage capital, suggesting that production,
+storage, and distribution never became an integrated economy.
+
+Communication also fell in both matched pairs, from 472 to 393 messages in
+seed 11 and 472 to 399 in seed 41. Adjusting for the number of decisions, that
+is about 0.363 to 0.322 messages per decision. Trade offers also fell in both
+pairs. Because causal explanations appeared in only 7-10% of observations and
+their total feedback payload was not larger on average, this is not simply a
+token-count result. It is consistent with the semantic feedback redirecting
+some attention from social coordination toward local plan correction and
+private asset management, but two seeds cannot distinguish that mechanism from
+path-dependent divergence.
+
+Survival did not have a stable treatment direction. Seed 11 causal suffered a
+large collapse from ticks 26-39 and ended 14 versus 20; seed 41 causal lost more
+agents early but only two in the last ten ticks, ending 18 versus 15. Across
+both seeds, Sol improved from 7/8 to 8/8 survivors, Opus stayed 9/10, Sonnet
+stayed 4/10, Terra fell 5/10 to 4/10, Luna fell 8/10 to 7/10, and Haiku fell
+from 2/8 to 0/8. Haiku's replicated loss is worth retesting, but its per-action
+error change was inconsistent across seeds, so the current data do not identify
+why it occurred.
+
+Per submitted action, Sol's invalid-proposal rate improved in both seeds and
+pooled from 15.7% to 14.2%. Terra worsened in both (23.8% to 27.2%) and Luna
+worsened in both (20.8% to 23.5%). Opus, Sonnet, and Haiku had mixed seed-level
+directions; their pooled rates are confounded by different death timing. The
+intervention may therefore interact with model style rather than supplying a
+uniform planning benefit.
+
+The supported conclusion is that causal contention feedback helps agents avoid
+copying the identical action after an unlucky simultaneous resolution, but it
+does not yet justify claiming lower planning-error rates or a healthier
+civilization. The most interesting directional signal is a shift toward
+Sol-led private capital, storage, access grants, and upkeep alongside less
+communication and trade. More matched seeds are needed before adopting causal
+feedback as the default; the next replication should pre-register exact retry,
+invalid-proposal rate, messages per decision, trade attempts, asset ownership,
+and Haiku survival as its primary outcomes.
