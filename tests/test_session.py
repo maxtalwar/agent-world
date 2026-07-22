@@ -124,6 +124,112 @@ class SimulationSessionTests(unittest.TestCase):
         self.assertEqual(brain.decisions, 0)
         self.assertEqual([event.type for event in engine.state.events].count("run_stopped"), 1)
 
+    def test_session_shares_preflight_state_across_matching_brains(self) -> None:
+        class ResolvingBrain:
+            preflight_calls = 0
+
+            def __init__(self):
+                self.model = "cursor-grok-4.5"
+                self.reasoning_effort = "medium"
+                self.resolved_model = self.model
+                self.runtime = BrainRuntime()
+
+            def preflight(self):
+                type(self).preflight_calls += 1
+                self.resolved_model = "cursor-grok-4.5-medium"
+                return None
+
+            def copy_preflight_state_from(self, other):
+                self.resolved_model = other.resolved_model
+
+            def decide(self, _observation):
+                return AgentDecision(intent=self.resolved_model, actions=[{"type": "wait"}])
+
+        ResolvingBrain.preflight_calls = 0
+        first = ResolvingBrain()
+        second = ResolvingBrain()
+        engine = WorldEngine.create(WorldConfig(seed=71), agent_names=["A1", "A2"])
+        cursor = BrainSpec(type="cursor", model="cursor-grok-4.5", reasoning_effort="medium")
+        session = SimulationSession(
+            engine=engine,
+            brain_spec=cursor,
+            runtime=BrainRuntime(),
+            writer=IncrementalRunWriter(None, None, fsync=False),
+            target_ticks=1,
+            brains={"agent-1": first, "agent-2": second},
+            log_agent_io=False,
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "completed")
+        self.assertEqual(ResolvingBrain.preflight_calls, 1)
+        self.assertEqual(first.resolved_model, "cursor-grok-4.5-medium")
+        self.assertEqual(second.resolved_model, "cursor-grok-4.5-medium")
+
+    def test_session_stops_systematically_unhealthy_cohort_at_health_gate(self) -> None:
+        class FailedBrain:
+            def decide(self, _observation):
+                return AgentDecision(
+                    intent="Cursor decision failed: bad model alias",
+                    actions=[{"type": "wait"}],
+                )
+
+        engine = WorldEngine.create(WorldConfig(seed=72), agent_names=["A1", "A2"])
+        cursor = BrainSpec(type="cursor", model="cursor-grok-4.5", reasoning_effort="medium")
+        session = SimulationSession(
+            engine=engine,
+            brain_spec=cursor,
+            runtime=BrainRuntime(),
+            writer=IncrementalRunWriter(None, None, fsync=False),
+            target_ticks=10,
+            brains={"agent-1": FailedBrain(), "agent-2": FailedBrain()},
+            log_agent_io=False,
+            startup_health_check_tick=2,
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "stopped")
+        self.assertEqual(result.stop_reason, "startup_health_check_failed")
+        self.assertEqual(result.final_tick, 2)
+        health = next(event for event in engine.state.events if event.type == "run_health_check")
+        self.assertEqual(health.data["status"], "failed")
+        self.assertEqual(health.data["cohorts"][0]["decision_failures"], 4)
+
+    def test_session_health_gate_ignores_isolated_response_failure(self) -> None:
+        class OneFailureBrain:
+            def __init__(self):
+                self.calls = 0
+
+            def decide(self, _observation):
+                self.calls += 1
+                intent = "Invalid JSON response: test" if self.calls == 1 else "wait"
+                return AgentDecision(intent=intent, actions=[{"type": "wait"}])
+
+        class HealthyBrain:
+            def decide(self, _observation):
+                return AgentDecision(intent="wait", actions=[{"type": "wait"}])
+
+        engine = WorldEngine.create(WorldConfig(seed=73), agent_names=["A1", "A2"])
+        cursor = BrainSpec(type="cursor", model="cursor-grok-4.5", reasoning_effort="medium")
+        session = SimulationSession(
+            engine=engine,
+            brain_spec=cursor,
+            runtime=BrainRuntime(),
+            writer=IncrementalRunWriter(None, None, fsync=False),
+            target_ticks=3,
+            brains={"agent-1": OneFailureBrain(), "agent-2": HealthyBrain()},
+            log_agent_io=False,
+            startup_health_check_tick=2,
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "completed")
+        health = next(event for event in engine.state.events if event.type == "run_health_check")
+        self.assertEqual(health.data["status"], "passed")
+
     def test_session_discards_tick_when_provider_becomes_unavailable(self) -> None:
         class ProviderFailureBrain:
             def decide(self, _observation):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -12,7 +13,11 @@ from agent_world.brain_factory import BrainSpec, PopulationSpec, create_populati
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.codex_brain import summarize_plan_usage
 from agent_world.io import atomic_write_json
-from agent_world.metrics import is_provider_failure_message, is_quota_failure_message
+from agent_world.metrics import (
+    is_decision_failure_message,
+    is_provider_failure_message,
+    is_quota_failure_message,
+)
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.run_report import write_report
 from agent_world.runner import (
@@ -62,6 +67,8 @@ class SimulationSession:
         report_stem: Path | None = None,
         plan_usage_path: Path | None = None,
         plan_usage_checkpoints: list[dict[str, Any]] | None = None,
+        startup_health_check_tick: int | None = 5,
+        startup_health_max_failure_rate: float = 0.2,
     ):
         if target_ticks < engine.state.tick:
             raise ValueError(
@@ -98,6 +105,12 @@ class SimulationSession:
         self.report_stem = report_stem
         self.plan_usage_path = plan_usage_path
         self.plan_usage_checkpoints = list(plan_usage_checkpoints or [])
+        if startup_health_check_tick is not None and startup_health_check_tick < 1:
+            raise ValueError("startup health-check tick must be positive or None")
+        if not 0 <= startup_health_max_failure_rate <= 1:
+            raise ValueError("startup health failure rate must be between 0 and 1")
+        self.startup_health_check_tick = startup_health_check_tick
+        self.startup_health_max_failure_rate = startup_health_max_failure_rate
         self.runner = SimulationRunner(
             engine,
             self.brains,
@@ -213,6 +226,30 @@ class SimulationSession:
                         data={"reason": stop_reason, "target_ticks": self.target_ticks},
                         scope="public",
                     )
+                elif self._should_run_startup_health_check():
+                    health = self._startup_health_report()
+                    unhealthy = [
+                        cohort for cohort in health["cohorts"] if cohort["unhealthy"]
+                    ]
+                    if unhealthy:
+                        status = "stopped"
+                        stop_reason = "startup_health_check_failed"
+                        self.engine.log_event(
+                            "run_health_check",
+                            message=(
+                                "Startup model-health check found systematic decision failures; "
+                                "stopped early so the run is not mistaken for agent behavior."
+                            ),
+                            data={**health, "status": "failed", "reason": stop_reason},
+                            scope="public",
+                        )
+                    else:
+                        self.engine.log_event(
+                            "run_health_check",
+                            message="Startup model-health check passed.",
+                            data={**health, "status": "passed"},
+                            scope="public",
+                        )
                 if self._should_capture_plan_usage(self.engine.state.tick, bool(stop_reason)):
                     self._capture_plan_usage(self.engine.state.tick)
                 if self.on_tick is not None:
@@ -304,7 +341,7 @@ class SimulationSession:
         self._started = True
 
     def _provider_preflight_error(self) -> str | None:
-        checked: set[tuple[type[Any], str, str, str]] = set()
+        checked: dict[tuple[type[Any], str, str, str], Any] = {}
         for brain in self.brains.values():
             preflight = getattr(brain, "preflight", None)
             if not callable(preflight):
@@ -316,13 +353,75 @@ class SimulationSession:
                 str(getattr(brain, "model", "")),
                 str(getattr(brain, "reasoning_effort", "")),
             )
-            if key in checked:
+            representative = checked.get(key)
+            if representative is not None:
+                copy_state = getattr(brain, "copy_preflight_state_from", None)
+                if callable(copy_state):
+                    copy_state(representative)
                 continue
-            checked.add(key)
             error = preflight()
             if error:
                 return str(error)
+            checked[key] = brain
         return None
+
+    def _should_run_startup_health_check(self) -> bool:
+        return (
+            not self.resumed
+            and self.startup_health_check_tick is not None
+            and self.engine.state.tick == self.startup_health_check_tick
+        )
+
+    def _startup_health_report(self) -> dict[str, Any]:
+        """Summarize harness/provider response failures without judging actions."""
+
+        check_tick = int(self.startup_health_check_tick or self.engine.state.tick)
+        assignments = self.population_spec.assignments(self.engine.state.agents)
+        attempts: Counter[str] = Counter()
+        failures: Counter[str] = Counter()
+        for event in self.engine.state.events:
+            if (
+                event.type != "agent_response"
+                or event.actor_id not in assignments
+                or not 0 <= event.tick < check_tick
+            ):
+                continue
+            cohort_id = assignments[event.actor_id].id
+            attempts[cohort_id] += 1
+            if is_decision_failure_message(event.type, event.message):
+                failures[cohort_id] += 1
+
+        cohorts: list[dict[str, Any]] = []
+        for group in self.population_spec.groups:
+            if not group.brain.model_backed:
+                continue
+            attempt_count = attempts[group.id]
+            failure_count = failures[group.id]
+            failure_rate = failure_count / attempt_count if attempt_count else 1.0
+            cohorts.append(
+                {
+                    "cohort": group.id,
+                    "brain": group.brain.type,
+                    "model": group.brain.model,
+                    "reasoning_effort": group.brain.reasoning_effort,
+                    "attempts": attempt_count,
+                    "decision_failures": failure_count,
+                    "failure_rate": round(failure_rate, 4),
+                    "unhealthy": (
+                        attempt_count == 0
+                        or (
+                            failure_count >= 2
+                            and failure_rate > self.startup_health_max_failure_rate
+                        )
+                    ),
+                }
+            )
+        return {
+            "check_tick": check_tick,
+            "max_failure_rate": self.startup_health_max_failure_rate,
+            "minimum_failures": 2,
+            "cohorts": cohorts,
+        }
 
     def flush(self) -> None:
         extra = self.checkpoint_extra_factory(self) if self.checkpoint_extra_factory else None

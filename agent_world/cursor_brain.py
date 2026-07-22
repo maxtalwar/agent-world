@@ -99,6 +99,15 @@ class CursorBrain:
         self.resolved_model = resolved
         return None
 
+    def copy_preflight_state_from(self, other: Any) -> None:
+        """Reuse account/model resolution from an equivalent checked brain."""
+
+        if not isinstance(other, CursorBrain):
+            raise TypeError("Cursor preflight state must come from another CursorBrain")
+        if (self.model, self.reasoning_effort) != (other.model, other.reasoning_effort):
+            raise ValueError("Cursor preflight state requires matching model and effort")
+        self.resolved_model = other.resolved_model
+
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
         quota_message = self.runtime.quota_message()
         if quota_message is not None:

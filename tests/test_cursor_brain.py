@@ -79,6 +79,23 @@ class CursorBrainTests(unittest.TestCase):
             ).preflight()
         self.assertIn("not available on this account", error or "")
 
+    def test_preflight_state_can_be_copied_to_an_equivalent_brain(self) -> None:
+        checked = CursorBrain(
+            executable="cursor-agent",
+            model="cursor-grok-4.5",
+            reasoning_effort="medium",
+        )
+        duplicate = CursorBrain(
+            executable="cursor-agent",
+            model="cursor-grok-4.5",
+            reasoning_effort="medium",
+        )
+        checked.resolved_model = "cursor-grok-4.5-medium"
+
+        duplicate.copy_preflight_state_from(checked)
+
+        self.assertEqual(duplicate.resolved_model, "cursor-grok-4.5-medium")
+
     def test_model_list_and_resolution_are_account_driven(self) -> None:
         available = parse_cursor_model_list(
             "Available models\ncursor-grok-4.5-low - Grok Low\ncomposer-2.5 - Composer\n"

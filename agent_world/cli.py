@@ -116,6 +116,18 @@ def main(argv: list[str] | None = None) -> None:
         help="Agent-facing failed-action feedback treatment. Defaults to baseline.",
     )
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
+    run_parser.add_argument(
+        "--startup-health-check-tick",
+        type=int,
+        default=5,
+        help="Audit model-response failures after this many completed ticks; 0 disables the gate.",
+    )
+    run_parser.add_argument(
+        "--startup-health-max-failure-rate",
+        type=float,
+        default=0.2,
+        help="Stop when a model cohort exceeds this decision-failure rate at the startup check.",
+    )
 
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
     replay_parser.add_argument("path", type=Path)
@@ -355,6 +367,10 @@ def _run(args: argparse.Namespace) -> None:
         "openai_compatible": int(getattr(args, "llm_max_workers", None) or min(max_workers, 2)),
     }
     decision_mode = args.decision_mode or "raw"
+    startup_health_check_tick = getattr(args, "startup_health_check_tick", 5) or None
+    startup_health_max_failure_rate = getattr(
+        args, "startup_health_max_failure_rate", 0.2
+    )
     usage_path: Path | None = None
     initial_usage: list[dict[str, Any]] = []
     if population_spec.model_backed and args.out:
@@ -392,6 +408,8 @@ def _run(args: argparse.Namespace) -> None:
         "decision_mode": decision_mode,
         "action_feedback_mode": getattr(engine.state.config, "action_feedback_mode", "baseline"),
         "provider_max_workers": provider_max_workers,
+        "startup_health_check_tick": startup_health_check_tick,
+        "startup_health_max_failure_rate": startup_health_max_failure_rate,
     }
 
     if not resumed:
@@ -428,6 +446,8 @@ def _run(args: argparse.Namespace) -> None:
                 "decision_mode": decision_mode,
                 "log_agent_io": not args.no_agent_io_log,
                 "sequential_decisions": args.sequential_decisions,
+                "startup_health_check_tick": startup_health_check_tick,
+                "startup_health_max_failure_rate": startup_health_max_failure_rate,
             },
             "plan_usage_checkpoints": current.plan_usage_checkpoints,
         }
@@ -476,6 +496,8 @@ def _run(args: argparse.Namespace) -> None:
         report_stem=report_stem,
         plan_usage_path=plan_usage_path,
         plan_usage_checkpoints=list(checkpoint_extra.get("plan_usage_checkpoints") or []),
+        startup_health_check_tick=startup_health_check_tick,
+        startup_health_max_failure_rate=startup_health_max_failure_rate,
     )
     result = session.run()
 
