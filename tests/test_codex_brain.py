@@ -100,6 +100,22 @@ class CodexBrainTests(unittest.TestCase):
             run.call_args_list[1].kwargs["cwd"],
         )
 
+    def test_stateless_v2_uses_the_newest_model_compatible_cli(self) -> None:
+        with patch(
+            "agent_world.codex_brain._resolve_codex_executable",
+            return_value="/Applications/ChatGPT.app/Contents/Resources/codex",
+        ) as resolve, patch(
+            "agent_world.codex_brain._codex_version_text",
+            return_value="codex-cli 0.145.0-alpha.30",
+        ):
+            brain = CodexBrain(connector_profile="stateless-v2")
+
+        resolve.assert_called_once_with()
+        self.assertEqual(
+            brain.executable,
+            "/Applications/ChatGPT.app/Contents/Resources/codex",
+        )
+
     def test_bounded_session_resumes_with_only_dynamic_context(self) -> None:
         completed = subprocess.CompletedProcess(
             ["codex"], 0, stdout=_successful_stdout(), stderr=""

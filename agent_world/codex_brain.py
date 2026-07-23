@@ -120,7 +120,7 @@ class CodexBrain:
         self.executable = (
             executable
             or os.environ.get("CODEX_EXECUTABLE")
-            or _resolve_codex_executable(prefer_stable=connector_profile == "stateless-v2")
+            or _resolve_codex_executable()
         )
         if not self.executable:
             raise ValueError("Codex CLI is required for CodexBrain, but 'codex' was not found on PATH.")
@@ -750,9 +750,9 @@ def _disabled_codex_skills_config() -> str:
     return f"skills.config=[{entries}]"
 
 
-@lru_cache(maxsize=2)
-def _resolve_codex_executable(*, prefer_stable: bool = False) -> str:
-    """Choose the newest installed binary, preferring tested stable builds for v2."""
+@lru_cache(maxsize=1)
+def _resolve_codex_executable() -> str:
+    """Choose the newest installed binary so requested models remain supported."""
 
     candidates = [
         shutil.which("codex"),
@@ -762,14 +762,6 @@ def _resolve_codex_executable(*, prefer_stable: bool = False) -> str:
     available = [candidate for candidate in candidates if candidate and Path(candidate).is_file()]
     if not available:
         return ""
-    if prefer_stable:
-        stable = [
-            candidate
-            for candidate in available
-            if "-" not in _codex_version_text(candidate).split()[-1]
-        ]
-        if stable:
-            return max(stable, key=_codex_version)
     return max(available, key=_codex_version)
 
 

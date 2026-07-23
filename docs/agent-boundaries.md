@@ -21,7 +21,8 @@ This keeps the agent experience stateless while removing avoidable connector ove
 
 - Codex and Cursor reuse a stable empty workspace, improving the chance that
   provider prompt caches see a stable prefix.
-- Codex prefers an installed stable CLI release over a newer prerelease build.
+- Codex uses the newest installed CLI, matching the control so model support and
+  CLI version do not confound the connector-profile comparison.
 - Codex explicitly disables bundled skills that are irrelevant to simulation decisions.
 - Usage records identify the connector profile and whether full context was sent.
 - Claude keeps its existing lean path: its coding system prompt is already replaced,
