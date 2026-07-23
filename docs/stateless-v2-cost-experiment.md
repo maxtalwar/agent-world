@@ -81,3 +81,8 @@ schema, observation, feedback, and memory unchanged, and a single 10-tick pair
 diverges rapidly through stochastic outputs and simultaneous world resolution.
 Treat the civilization result only as evidence that v3 remains functional and
 does not obviously degrade survival or action validity.
+
+The subsequent two-seed, 40-tick replication found higher v3 credit usage and a
+repeated shift toward movement and extraction rather than trade and settled
+capital. See
+[stateless-v1-v3-civilization-experiment.md](stateless-v1-v3-civilization-experiment.md).
