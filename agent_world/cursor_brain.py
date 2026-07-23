@@ -1,13 +1,15 @@
 """Cursor-subscription-backed AgentBrain implemented with ``cursor-agent -p``.
 
-Each decision is an independent, read-only Cursor Agent run authenticated by
-the user's saved Cursor login.  It never uses a Cursor API key, so calls spend
-subscription capacity rather than metered API credits.
+Decisions are read-only and authenticated by the user's saved Cursor login.
+They are stateless by default; the optional bounded-session boundary keeps one
+short, private conversation per simulated agent. Calls spend subscription
+capacity rather than metered API credits.
 """
 
 from __future__ import annotations
 
 import hashlib
+from functools import lru_cache
 import json
 import os
 from pathlib import Path
@@ -18,6 +20,11 @@ import tempfile
 import time
 from typing import Any
 
+from agent_world.brain_boundary import (
+    DEFAULT_SESSION_MAX_TURNS,
+    ConversationBoundary,
+    ConversationInvocation,
+)
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
@@ -43,8 +50,21 @@ class CursorBrain:
         timeout_seconds: int | None = None,
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
+        agent_id: str | None = None,
+        connector_profile: str = "stateless-v1",
+        conversation_mode: str = "stateless",
+        session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ):
         self.runtime = runtime or BrainRuntime()
+        self.boundary = ConversationBoundary(
+            agent_id=agent_id,
+            connector_profile=connector_profile,
+            conversation_mode=conversation_mode,
+            max_turns=session_max_turns,
+        )
+        self.connector_profile = connector_profile
+        self.conversation_mode = conversation_mode
+        self.session_max_turns = session_max_turns
         self.model = model or os.environ.get("CURSOR_MODEL", "cursor-grok-4.5")
         self.reasoning_effort = reasoning_effort or os.environ.get("CURSOR_REASONING_EFFORT", "low")
         self.timeout_seconds = timeout_seconds or int(os.environ.get("CURSOR_TIMEOUT_SECONDS", "300"))
@@ -56,6 +76,11 @@ class CursorBrain:
                 "Cursor Agent CLI is required for CursorBrain, but 'cursor-agent' was not found. "
                 "Install it with `cursor agent --help` or Cursor's official installer."
             )
+        self._stable_work_dir = (
+            _cursor_decision_working_directory()
+            if connector_profile == "stateless-v2" or conversation_mode != "stateless"
+            else None
+        )
 
     def preflight(self) -> str | None:
         """Verify subscription login and resolve the requested account model."""
@@ -115,74 +140,133 @@ class CursorBrain:
 
         static_context = build_static_context(observation.get("world", {}))
         dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
-        prompt = build_cursor_prompt(static_context, dynamic_json)
-        request_meta = {
-            "agent_id": observation.get("self", {}).get("id"),
-            "tick": observation.get("tick"),
-            "agent_static_context_chars": len(static_context),
-            "agent_dynamic_observation_chars": len(dynamic_json),
-            "request_payload_bytes": len(prompt.encode("utf-8")),
-            "static_prompt_sha256": hashlib.sha256(
-                f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
-            ).hexdigest(),
-            "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
-        }
+        full_prompt = build_cursor_prompt(static_context, dynamic_json)
+        invocation = self.boundary.prepare()
+        prompt = (
+            full_prompt
+            if invocation.full_context
+            else build_cursor_continuation_prompt(dynamic_json)
+        )
 
         started_at = time.monotonic()
         try:
             completed = None
             for attempt in range(self.timeout_retries + 1):
                 try:
-                    completed = self._execute(prompt)
+                    completed = self._execute(prompt, invocation)
                     break
                 except subprocess.TimeoutExpired:
                     if attempt >= self.timeout_retries:
                         raise
+                    if self.conversation_mode != "stateless":
+                        # A timed-out turn may already have mutated the saved
+                        # chat. Retry in a new chat from Agent World state.
+                        self.boundary.reset("timeout_retry")
+                        invocation = self.boundary.prepare()
+                        prompt = full_prompt
             assert completed is not None
             elapsed = time.monotonic() - started_at
             result = _parse_result_json(completed.stdout)
             if completed.returncode != 0 or (isinstance(result, dict) and result.get("is_error")):
                 detail = _failure_detail(result, completed.stdout, completed.stderr)
-                if _is_quota_error(detail):
-                    message = f"Cursor quota unavailable: {detail}"
-                    self.runtime.mark_quota_unavailable(message)
-                    return _failure_decision(message)
-                if _is_auth_error(detail) or _is_provider_error(detail):
-                    message = f"Cursor provider unavailable: {detail}"
-                    self.runtime.mark_quota_unavailable(message)
-                    return _failure_decision(message)
-                raise ValueError(f"cursor-agent -p exited {completed.returncode}: {detail}")
+                if invocation.resumed and not (
+                    _is_quota_error(detail)
+                    or _is_auth_error(detail)
+                    or _is_provider_error(detail)
+                ):
+                    self.boundary.reset("resume_failure")
+                    invocation = self.boundary.prepare()
+                    prompt = full_prompt
+                    completed = self._execute(prompt, invocation)
+                    elapsed = time.monotonic() - started_at
+                    result = _parse_result_json(completed.stdout)
+                    detail = _failure_detail(result, completed.stdout, completed.stderr)
+                still_error = completed.returncode != 0 or (
+                    isinstance(result, dict) and result.get("is_error")
+                )
+                if still_error:
+                    if _is_quota_error(detail):
+                        message = f"Cursor quota unavailable: {detail}"
+                        self.runtime.mark_quota_unavailable(message)
+                        return _failure_decision(message)
+                    if _is_auth_error(detail) or _is_provider_error(detail):
+                        message = f"Cursor provider unavailable: {detail}"
+                        self.runtime.mark_quota_unavailable(message)
+                        return _failure_decision(message)
+                    raise ValueError(f"cursor-agent -p exited {completed.returncode}: {detail}")
 
             decision, usage, response_model = extract_cursor_result(result)
+            session_id = (
+                result.get("session_id")
+                if isinstance(result, dict) and isinstance(result.get("session_id"), str)
+                else invocation.resume_session_id
+            )
+            request_meta = {
+                "agent_id": observation.get("self", {}).get("id"),
+                "tick": observation.get("tick"),
+                "agent_static_context_chars": len(static_context),
+                "agent_dynamic_observation_chars": len(dynamic_json),
+                "request_payload_bytes": len(prompt.encode("utf-8")),
+                "static_prompt_sha256": hashlib.sha256(
+                    f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
+                ).hexdigest(),
+                "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+                "duration_seconds": round(elapsed, 3),
+                **self.boundary.usage_metadata(invocation),
+            }
             self._record_usage(
                 usage,
                 response_model or self.resolved_model,
                 result,
-                request_meta | {"duration_seconds": round(elapsed, 3)},
+                request_meta,
             )
-            return parse_agent_response(decision)
+            parsed_decision = parse_agent_response(decision)
+            self.boundary.commit(invocation, session_id)
+            return parsed_decision
         except subprocess.TimeoutExpired:
             message = f"Cursor provider unavailable: exceeded {self.timeout_seconds}s timeout"
             self.runtime.mark_quota_unavailable(message)
             return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
+            if self.conversation_mode != "stateless":
+                self.boundary.reset("decision_failure")
             return _failure_decision(f"Cursor decision failed: {exc}")
 
-    def _execute(self, prompt: str) -> subprocess.CompletedProcess[str]:
+    def _execute(
+        self,
+        prompt: str,
+        invocation: ConversationInvocation | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        invocation = invocation or ConversationInvocation(None, True, 0, 1)
+        if self._stable_work_dir is not None:
+            return self._run_command(prompt, invocation, self._stable_work_dir)
         with tempfile.TemporaryDirectory(prefix="agent-world-cursor-") as temp_dir:
-            return subprocess.run(
-                self._command(temp_dir),
-                cwd=temp_dir,
-                input=prompt,
-                text=True,
-                capture_output=True,
-                timeout=self.timeout_seconds,
-                env=_subscription_environment(),
-                check=False,
-            )
+            return self._run_command(prompt, invocation, temp_dir)
 
-    def _command(self, workspace: str) -> list[str]:
-        return [
+    def _run_command(
+        self,
+        prompt: str,
+        invocation: ConversationInvocation,
+        workspace: str,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            self._command(workspace, invocation),
+            cwd=workspace,
+            input=prompt,
+            text=True,
+            capture_output=True,
+            timeout=self.timeout_seconds,
+            env=_subscription_environment(),
+            check=False,
+        )
+
+    def _command(
+        self,
+        workspace: str,
+        invocation: ConversationInvocation | None = None,
+    ) -> list[str]:
+        invocation = invocation or ConversationInvocation(None, True, 0, 1)
+        command = [
             self.executable,
             "--print",
             "--trust",
@@ -197,6 +281,26 @@ class CursorBrain:
             "--model",
             self.resolved_model,
         ]
+        if invocation.resume_session_id:
+            command.extend(["--resume", invocation.resume_session_id])
+        return command
+
+    def export_checkpoint_state(self) -> dict[str, Any]:
+        return self.boundary.export_state() | {
+            "provider": "cursor_cli",
+            "model": self.model,
+            "resolved_model": self.resolved_model,
+        }
+
+    def restore_checkpoint_state(self, state: dict[str, Any]) -> None:
+        if state.get("provider") not in {None, "cursor_cli"}:
+            raise ValueError("checkpoint brain state is not for Cursor")
+        if state.get("model") not in {None, self.model}:
+            raise ValueError("checkpoint Cursor model does not match")
+        self.boundary.restore_checkpoint_metadata(state)
+
+    def reset_conversation(self, reason: str) -> None:
+        self.boundary.reset(reason)
 
     def _record_usage(
         self,
@@ -238,6 +342,14 @@ def build_cursor_prompt(static_context: str, dynamic_json: str) -> str:
         f"{static_context}\n\n"
         f"Output JSON schema:\n{schema}\n\n"
         f"The current private observation follows as JSON:\n{dynamic_json}"
+    )
+
+
+def build_cursor_continuation_prompt(dynamic_json: str) -> str:
+    return (
+        "Continue the same simulated agent. Choose exactly one tick from this new "
+        "private observation and return only the previously established decision JSON:\n"
+        f"{dynamic_json}"
     )
 
 
@@ -343,6 +455,11 @@ def _is_provider_error(detail: str) -> bool:
             "internal server error",
         )
     )
+
+
+@lru_cache(maxsize=1)
+def _cursor_decision_working_directory() -> str:
+    return tempfile.mkdtemp(prefix="agent-world-cursor-stable-")
 
 
 def _resolve_cursor_executable() -> str:

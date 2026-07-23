@@ -46,6 +46,9 @@ class RunConfig:
     reasoning_effort: str | None = None
     log_agent_io: bool = True
     max_workers: int = 1
+    connector_profile: str = "stateless-v1"
+    conversation_mode: str = "stateless"
+    session_max_turns: int = 10
     world_config: WorldConfig = field(default_factory=WorldConfig)
 
     def public_dict(self) -> dict[str, Any]:
@@ -168,6 +171,9 @@ class RunController:
                 model=config.model,
                 reasoning_effort=config.reasoning_effort,
                 max_workers=config.max_workers,
+                connector_profile=config.connector_profile,
+                conversation_mode=config.conversation_mode,
+                session_max_turns=config.session_max_turns,
             )
             usage_path = self.events_path.with_name(self.events_path.stem + "-usage.jsonl")
             if brain_spec.model_backed:
@@ -193,6 +199,7 @@ class RunController:
                         "sequential_decisions": config.max_workers <= 1,
                     },
                     "plan_usage_checkpoints": current.plan_usage_checkpoints,
+                    "brain_states": current.export_brain_states(),
                 }
 
             stem = self.events_path.with_name(self.events_path.stem)
@@ -320,6 +327,22 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         reasoning_effort=reasoning_effort if brain in {"llm", "codex", "claude", "cursor"} else None,
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
         max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=20),
+        connector_profile=_bounded_choice(
+            payload.get("connector_profile", "stateless-v1"),
+            "connector_profile",
+            {"stateless-v1", "stateless-v2"},
+        ),
+        conversation_mode=_bounded_choice(
+            payload.get("conversation_mode", "stateless"),
+            "conversation_mode",
+            {"stateless", "bounded-session-v1"},
+        ),
+        session_max_turns=_bounded_int(
+            payload.get("session_max_turns", 10),
+            "session_max_turns",
+            minimum=1,
+            maximum=100,
+        ),
         world_config=world_config,
     )
 

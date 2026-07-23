@@ -22,6 +22,28 @@ class BrainRuntimeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "max_workers"):
             BrainSpec.resolve("codex", max_workers=0)
 
+    def test_brain_spec_round_trips_versioned_boundaries(self) -> None:
+        population = PopulationSpec.uniform(
+            2,
+            BrainSpec.resolve(
+                "codex",
+                connector_profile="stateless-v2",
+                conversation_mode="bounded-session-v1",
+                session_max_turns=7,
+            ),
+        )
+
+        restored = PopulationSpec.from_dict(population.to_dict(["agent-1", "agent-2"]))
+
+        brain = restored.groups[0].brain
+        self.assertEqual(brain.connector_profile, "stateless-v2")
+        self.assertEqual(brain.conversation_mode, "bounded-session-v1")
+        self.assertEqual(brain.session_max_turns, 7)
+
+    def test_bounded_sessions_reject_brains_without_cli_session_support(self) -> None:
+        with self.assertRaisesRegex(ValueError, "supported only"):
+            BrainSpec.resolve("llm", conversation_mode="bounded-session-v1")
+
     def test_usage_and_quota_are_isolated_between_runs(self) -> None:
         first = BrainRuntime()
         second = BrainRuntime()

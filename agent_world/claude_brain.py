@@ -1,10 +1,9 @@
 """Claude-plan-backed AgentBrain implemented with headless ``claude -p``.
 
-Each decision is an independent, non-interactive Claude Code run billed against
-the account's saved claude.ai subscription (Pro/Max usage limits) instead of
-the metered Anthropic API.  The simulation remains the source of agent memory
-and world state; Claude only receives the current private observation and
-returns one schema-constrained decision.
+Decisions use the account's saved claude.ai subscription (Pro/Max usage limits)
+instead of the metered Anthropic API. They are session-less by default; the
+optional bounded-session boundary keeps one short, private conversation per
+simulated agent. Agent World remains the canonical source of memory and state.
 
 Unlike Codex, the Claude CLI has no stable headless endpoint for reading the
 plan's rate-limit windows, so there is no ``capture_plan_usage``; per-call
@@ -23,7 +22,13 @@ import subprocess
 import tempfile
 import time
 from typing import Any
+import uuid
 
+from agent_world.brain_boundary import (
+    DEFAULT_SESSION_MAX_TURNS,
+    ConversationBoundary,
+    ConversationInvocation,
+)
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
@@ -53,8 +58,21 @@ class ClaudeBrain:
         timeout_seconds: int | None = None,
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
+        agent_id: str | None = None,
+        connector_profile: str = "stateless-v1",
+        conversation_mode: str = "stateless",
+        session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ):
         self.runtime = runtime or BrainRuntime()
+        self.boundary = ConversationBoundary(
+            agent_id=agent_id,
+            connector_profile=connector_profile,
+            conversation_mode=conversation_mode,
+            max_turns=session_max_turns,
+        )
+        self.connector_profile = connector_profile
+        self.conversation_mode = conversation_mode
+        self.session_max_turns = session_max_turns
         self.model = model or os.environ.get("CLAUDE_MODEL", "claude-sonnet-5")
         self.reasoning_effort = reasoning_effort or os.environ.get("CLAUDE_REASONING_EFFORT", "low")
         self.timeout_seconds = timeout_seconds or int(os.environ.get("CLAUDE_TIMEOUT_SECONDS", "300"))
@@ -89,62 +107,126 @@ class ClaudeBrain:
 
         static_context = build_static_context(observation.get("world", {}))
         dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
-        system_prompt, user_prompt = build_claude_prompts(static_context, dynamic_json)
-        request_meta = {
-            "agent_id": observation.get("self", {}).get("id"),
-            "tick": observation.get("tick"),
-            "agent_static_context_chars": len(static_context),
-            "agent_dynamic_observation_chars": len(dynamic_json),
-            "request_payload_bytes": len(f"{system_prompt}\n\n{user_prompt}".encode("utf-8")),
-            "static_prompt_sha256": hashlib.sha256(system_prompt.encode("utf-8")).hexdigest(),
-            "request_sha256": hashlib.sha256(f"{system_prompt}\n\n{user_prompt}".encode("utf-8")).hexdigest(),
-        }
+        system_prompt, full_user_prompt = build_claude_prompts(static_context, dynamic_json)
+        invocation = self.boundary.prepare()
+        user_prompt = (
+            full_user_prompt
+            if invocation.full_context
+            else build_claude_continuation_prompt(dynamic_json)
+        )
+        fresh_session_id = str(uuid.uuid4()) if self.conversation_mode != "stateless" else None
 
         started_at = time.monotonic()
         try:
             completed = None
             for attempt in range(self.timeout_retries + 1):
                 try:
-                    completed = self._execute(system_prompt, user_prompt)
+                    completed = self._execute(
+                        system_prompt,
+                        user_prompt,
+                        invocation,
+                        fresh_session_id,
+                    )
                     break
                 except subprocess.TimeoutExpired:
                     if attempt >= self.timeout_retries:
                         raise
+                    if self.conversation_mode != "stateless":
+                        # A timed-out turn may already exist in the provider
+                        # session, so retry from canonical simulation state.
+                        self.boundary.reset("timeout_retry")
+                        invocation = self.boundary.prepare()
+                        user_prompt = full_user_prompt
+                        fresh_session_id = str(uuid.uuid4())
             assert completed is not None
             elapsed = time.monotonic() - started_at
             result = _parse_result_json(completed.stdout)
             if completed.returncode != 0 or (isinstance(result, dict) and result.get("is_error")):
                 detail = _failure_detail(result, completed.stdout, completed.stderr)
-                if _is_quota_error(detail):
-                    message = f"Claude quota unavailable: {detail}"
-                    self._mark_quota_unavailable(message)
-                    return _failure_decision(message)
-                if _is_auth_error(detail):
-                    message = f"Claude provider unavailable: {detail}"
-                    self._mark_quota_unavailable(message)
-                    return _failure_decision(message)
-                if _is_provider_error(detail):
-                    message = f"Claude provider unavailable: {detail}"
-                    self._mark_quota_unavailable(message)
-                    return _failure_decision(message)
-                raise ValueError(f"claude -p exited {completed.returncode}: {detail}")
+                if invocation.resumed and not (
+                    _is_quota_error(detail)
+                    or _is_auth_error(detail)
+                    or _is_provider_error(detail)
+                ):
+                    self.boundary.reset("resume_failure")
+                    invocation = self.boundary.prepare()
+                    user_prompt = full_user_prompt
+                    fresh_session_id = str(uuid.uuid4())
+                    completed = self._execute(
+                        system_prompt,
+                        user_prompt,
+                        invocation,
+                        fresh_session_id,
+                    )
+                    elapsed = time.monotonic() - started_at
+                    result = _parse_result_json(completed.stdout)
+                    detail = _failure_detail(result, completed.stdout, completed.stderr)
+                still_error = completed.returncode != 0 or (
+                    isinstance(result, dict) and result.get("is_error")
+                )
+                if still_error:
+                    if _is_quota_error(detail):
+                        message = f"Claude quota unavailable: {detail}"
+                        self._mark_quota_unavailable(message)
+                        return _failure_decision(message)
+                    if _is_auth_error(detail):
+                        message = f"Claude provider unavailable: {detail}"
+                        self._mark_quota_unavailable(message)
+                        return _failure_decision(message)
+                    if _is_provider_error(detail):
+                        message = f"Claude provider unavailable: {detail}"
+                        self._mark_quota_unavailable(message)
+                        return _failure_decision(message)
+                    raise ValueError(f"claude -p exited {completed.returncode}: {detail}")
 
             decision, usage, response_model = extract_claude_result(result)
-            self._record_usage(usage, response_model, request_meta | {"duration_seconds": round(elapsed, 3)})
-            return parse_agent_response(decision)
+            session_id = (
+                result.get("session_id")
+                if isinstance(result, dict) and isinstance(result.get("session_id"), str)
+                else invocation.resume_session_id or fresh_session_id
+            )
+            request_payload = (
+                f"{system_prompt}\n\n{user_prompt}"
+                if invocation.full_context
+                else user_prompt
+            )
+            request_meta = {
+                "agent_id": observation.get("self", {}).get("id"),
+                "tick": observation.get("tick"),
+                "agent_static_context_chars": len(static_context),
+                "agent_dynamic_observation_chars": len(dynamic_json),
+                "request_payload_bytes": len(request_payload.encode("utf-8")),
+                "static_prompt_sha256": hashlib.sha256(system_prompt.encode("utf-8")).hexdigest(),
+                "request_sha256": hashlib.sha256(request_payload.encode("utf-8")).hexdigest(),
+                "claude_session_id": session_id,
+                "duration_seconds": round(elapsed, 3),
+                **self.boundary.usage_metadata(invocation),
+            }
+            self._record_usage(usage, response_model, request_meta)
+            parsed_decision = parse_agent_response(decision)
+            self.boundary.commit(invocation, session_id)
+            return parsed_decision
         except subprocess.TimeoutExpired:
             message = f"Claude provider unavailable: exceeded {self.timeout_seconds}s timeout"
             self._mark_quota_unavailable(message)
             return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
+            if self.conversation_mode != "stateless":
+                self.boundary.reset("decision_failure")
             return _failure_decision(f"Claude decision failed: {exc}")
 
-    def _execute(self, system_prompt: str, user_prompt: str) -> subprocess.CompletedProcess[str]:
+    def _execute(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        invocation: ConversationInvocation | None = None,
+        fresh_session_id: str | None = None,
+    ) -> subprocess.CompletedProcess[str]:
         # Run in an empty cwd so no project CLAUDE.md, settings, or git state
         # can leak into the decision context. One stable directory per process
         # keeps the request prefix identical across calls.
         return subprocess.run(
-            self._command(system_prompt),
+            self._command(system_prompt, invocation, fresh_session_id),
             cwd=_decision_working_directory(),
             input=user_prompt,
             text=True,
@@ -154,8 +236,14 @@ class ClaudeBrain:
             check=False,
         )
 
-    def _command(self, system_prompt: str) -> list[str]:
-        return [
+    def _command(
+        self,
+        system_prompt: str,
+        invocation: ConversationInvocation | None = None,
+        fresh_session_id: str | None = None,
+    ) -> list[str]:
+        invocation = invocation or ConversationInvocation(None, True, 0, 1)
+        command = [
             self.executable,
             "--print",
             "--output-format",
@@ -168,14 +256,36 @@ class ClaudeBrain:
             "",
             "--strict-mcp-config",
             "--disable-slash-commands",
-            "--no-session-persistence",
             "--setting-sources",
             "",
-            "--system-prompt",
-            system_prompt,
             "--json-schema",
             json.dumps(CLAUDE_AGENT_DECISION_SCHEMA, sort_keys=True),
         ]
+        if self.conversation_mode == "stateless":
+            command.append("--no-session-persistence")
+        elif invocation.resume_session_id:
+            command.extend(["--resume", invocation.resume_session_id])
+        elif fresh_session_id:
+            command.extend(["--session-id", fresh_session_id])
+        if invocation.full_context:
+            command.extend(["--system-prompt", system_prompt])
+        return command
+
+    def export_checkpoint_state(self) -> dict[str, Any]:
+        return self.boundary.export_state() | {
+            "provider": "claude_cli",
+            "model": self.model,
+        }
+
+    def restore_checkpoint_state(self, state: dict[str, Any]) -> None:
+        if state.get("provider") not in {None, "claude_cli"}:
+            raise ValueError("checkpoint brain state is not for Claude")
+        if state.get("model") not in {None, self.model}:
+            raise ValueError("checkpoint Claude model does not match")
+        self.boundary.restore_checkpoint_metadata(state)
+
+    def reset_conversation(self, reason: str) -> None:
+        self.boundary.reset(reason)
 
     def _record_usage(self, usage: dict[str, Any], response_model: str | None, request_meta: dict[str, Any]) -> None:
         input_tokens = int(usage.get("input_tokens") or 0)
@@ -216,6 +326,14 @@ def build_claude_prompts(static_context: str, dynamic_json: str) -> tuple[str, s
     system_prompt = f"{CLAUDE_HARNESS_INSTRUCTIONS}\n\n{SYSTEM_INSTRUCTIONS}\n\n{static_context}"
     user_prompt = f"The current private observation follows as JSON:\n{dynamic_json}"
     return system_prompt, user_prompt
+
+
+def build_claude_continuation_prompt(dynamic_json: str) -> str:
+    return (
+        "Continue the same simulated agent. Choose exactly one tick from this new "
+        "private observation and return only the previously established decision JSON:\n"
+        f"{dynamic_json}"
+    )
 
 
 def extract_claude_result(result: dict[str, Any]) -> tuple[dict[str, Any] | str, dict[str, Any], str | None]:

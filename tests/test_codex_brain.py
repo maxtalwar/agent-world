@@ -79,6 +79,53 @@ class CodexBrainTests(unittest.TestCase):
         self.assertEqual(records[0]["tick"], 2)
         self.assertEqual(records[0]["cost"], 0)
 
+    def test_stateless_v2_reuses_workspace_and_disables_irrelevant_skills(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["codex"], 0, stdout=_successful_stdout(), stderr=""
+        )
+        with patch("agent_world.codex_brain._codex_version_text", return_value="codex-cli 0.142.5"), patch(
+            "agent_world.codex_brain.subprocess.run", return_value=completed
+        ) as run:
+            brain = CodexBrain(executable="codex", connector_profile="stateless-v2")
+            brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        first_command = run.call_args_list[0].args[0]
+        self.assertIn("--ephemeral", first_command)
+        self.assertTrue(
+            any("skills.config=" in value for value in first_command)
+        )
+        self.assertEqual(
+            run.call_args_list[0].kwargs["cwd"],
+            run.call_args_list[1].kwargs["cwd"],
+        )
+
+    def test_bounded_session_resumes_with_only_dynamic_context(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["codex"], 0, stdout=_successful_stdout(), stderr=""
+        )
+        with patch("agent_world.codex_brain._codex_version_text", return_value="codex-cli 0.142.5"), patch(
+            "agent_world.codex_brain.subprocess.run", return_value=completed
+        ) as run:
+            brain = CodexBrain(
+                executable="codex",
+                connector_profile="stateless-v2",
+                conversation_mode="bounded-session-v1",
+            )
+            brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        first_command = run.call_args_list[0].args[0]
+        second_command = run.call_args_list[1].args[0]
+        self.assertNotIn("--ephemeral", first_command)
+        self.assertNotIn("resume", first_command)
+        self.assertIn("resume", second_command)
+        self.assertIn("thread-1", second_command)
+        self.assertIn("Continue the same simulated agent", run.call_args_list[1].kwargs["input"])
+        records = brain.runtime.usage_records()
+        self.assertFalse(records[0]["conversation_resumed"])
+        self.assertTrue(records[1]["conversation_resumed"])
+
     def test_quota_failure_opens_circuit(self) -> None:
         completed = subprocess.CompletedProcess(
             ["codex"],

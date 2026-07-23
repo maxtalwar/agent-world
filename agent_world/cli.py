@@ -95,6 +95,24 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Reasoning effort for --brain llm/codex/claude/cursor. Uses the selected brain's environment default.",
     )
+    run_parser.add_argument(
+        "--connector-profile",
+        choices=["stateless-v1", "stateless-v2"],
+        default=None,
+        help="Provider invocation profile. stateless-v1 preserves the historical connector; stateless-v2 removes avoidable wrapper/cache overhead.",
+    )
+    run_parser.add_argument(
+        "--conversation-mode",
+        choices=["stateless", "bounded-session-v1"],
+        default=None,
+        help="Agent conversation memory. bounded-session-v1 keeps one private, rotating provider session per agent.",
+    )
+    run_parser.add_argument(
+        "--session-max-turns",
+        type=int,
+        default=None,
+        help="Successful decisions retained before a bounded provider session rotates. Defaults to 10.",
+    )
     run_parser.add_argument("--out", type=Path, default=None)
     run_parser.add_argument("--snapshot", type=Path, default=None)
     run_parser.add_argument("--checkpoint", type=Path, default=None, help="Crash-resume checkpoint path. Derived from --out when omitted.")
@@ -191,6 +209,17 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
     )
     experiment_parser.add_argument(
+        "--connector-profile",
+        choices=["stateless-v1", "stateless-v2"],
+        default="stateless-v1",
+    )
+    experiment_parser.add_argument(
+        "--conversation-mode",
+        choices=["stateless", "bounded-session-v1"],
+        default="stateless",
+    )
+    experiment_parser.add_argument("--session-max-turns", type=int, default=10)
+    experiment_parser.add_argument(
         "--environment",
         choices=["all", "baseline", "commerce", "organic"],
         default="all",
@@ -244,10 +273,13 @@ def _run(args: argparse.Namespace) -> None:
                 or args.brain
                 or args.model
                 or args.reasoning_effort
+                or getattr(args, "connector_profile", None)
+                or getattr(args, "conversation_mode", None)
+                or getattr(args, "session_max_turns", None)
             ):
                 raise ValueError(
                     "A population-aware checkpoint must be resumed with its saved population; "
-                    "omit --population, --brain, --model, and --reasoning-effort."
+                    "omit population, brain, model, effort, connector, and conversation overrides."
                 )
             population_spec = PopulationSpec.from_dict(saved_population)
         else:
@@ -265,6 +297,18 @@ def _run(args: argparse.Namespace) -> None:
             if args.reasoning_effort is not None and saved_effort is not None and args.reasoning_effort != saved_effort:
                 raise ValueError("A checkpoint must be resumed with its original reasoning effort.")
             args.reasoning_effort = saved_effort if saved_effort is not None else args.reasoning_effort
+            for name, default in (
+                ("connector_profile", "stateless-v1"),
+                ("conversation_mode", "stateless"),
+                ("session_max_turns", 10),
+            ):
+                requested = getattr(args, name, None)
+                saved_value = saved.get(name, default)
+                if requested is not None and requested != saved_value:
+                    raise ValueError(
+                        f"A checkpoint must be resumed with its original {name.replace('_', ' ')}."
+                    )
+                setattr(args, name, saved_value)
         args.ticks = args.ticks if args.ticks is not None else int(saved.get("target_ticks") or engine.state.tick)
         args.agents = len(engine.state.agents)
         if args.out is None and saved.get("events_path"):
@@ -300,6 +344,11 @@ def _run(args: argparse.Namespace) -> None:
         args.geography_mode = getattr(args, "geography_mode", None) or preset["geography_mode"]
         args.specialization_mode = getattr(args, "specialization_mode", None) or preset["specialization_mode"]
         args.decision_mode = getattr(args, "decision_mode", None) or "raw"
+        args.connector_profile = getattr(args, "connector_profile", None) or "stateless-v1"
+        args.conversation_mode = getattr(args, "conversation_mode", None) or "stateless"
+        args.session_max_turns = getattr(args, "session_max_turns", None) or 10
+        if args.session_max_turns < 1:
+            raise ValueError("--session-max-turns must be at least 1")
         if getattr(args, "population", None):
             if args.brain is not None or args.model is not None:
                 raise ValueError("Use either --population or --brain/--model, not both.")
@@ -307,6 +356,9 @@ def _run(args: argparse.Namespace) -> None:
                 args.population,
                 reasoning_effort=args.reasoning_effort,
                 max_workers=args.max_workers,
+                connector_profile=args.connector_profile,
+                conversation_mode=args.conversation_mode,
+                session_max_turns=args.session_max_turns,
             )
             if args.agents is not None and args.agents != population_spec.total_agents:
                 raise ValueError(
@@ -341,10 +393,20 @@ def _run(args: argparse.Namespace) -> None:
             model=args.model,
             reasoning_effort=args.reasoning_effort,
             max_workers=args.max_workers,
+            connector_profile=(
+                getattr(args, "connector_profile", None) or "stateless-v1"
+            ),
+            conversation_mode=(
+                getattr(args, "conversation_mode", None) or "stateless"
+            ),
+            session_max_turns=getattr(args, "session_max_turns", None) or 10,
         )
         population_spec = PopulationSpec.uniform(len(engine.state.agents), brain_spec)
     else:
         brain_spec = population_spec.groups[0].brain
+    args.connector_profile = brain_spec.connector_profile
+    args.conversation_mode = brain_spec.conversation_mode
+    args.session_max_turns = brain_spec.session_max_turns
     if not population_spec.assigned_groups:
         assignment_strategy = getattr(args, "assignment_strategy", None) or (
             "stratified" if population_spec.mixed else "ordered"
@@ -410,6 +472,9 @@ def _run(args: argparse.Namespace) -> None:
         "provider_max_workers": provider_max_workers,
         "startup_health_check_tick": startup_health_check_tick,
         "startup_health_max_failure_rate": startup_health_max_failure_rate,
+        "connector_profile": args.connector_profile,
+        "conversation_mode": args.conversation_mode,
+        "session_max_turns": args.session_max_turns,
     }
 
     if not resumed:
@@ -422,7 +487,8 @@ def _run(args: argparse.Namespace) -> None:
             f"world={engine.state.config.economy_mode}/{engine.state.config.geography_mode}/"
             f"{engine.state.config.specialization_mode}/{engine.state.config.objective_mode} | population={cohort_text} | "
             f"ticks={args.ticks} | assignment={population_spec.assignment_strategy}:"
-            f"{population_spec.assignment_seed} | harness={decision_mode}",
+            f"{population_spec.assignment_seed} | harness={decision_mode} | "
+            f"connector={args.connector_profile} | conversation={args.conversation_mode}",
             flush=True,
         )
 
@@ -448,8 +514,12 @@ def _run(args: argparse.Namespace) -> None:
                 "sequential_decisions": args.sequential_decisions,
                 "startup_health_check_tick": startup_health_check_tick,
                 "startup_health_max_failure_rate": startup_health_max_failure_rate,
+                "connector_profile": args.connector_profile,
+                "conversation_mode": args.conversation_mode,
+                "session_max_turns": args.session_max_turns,
             },
             "plan_usage_checkpoints": current.plan_usage_checkpoints,
+            "brain_states": current.export_brain_states(),
         }
 
     def on_tick(current: SimulationSession, _events: list[Any]) -> None:
@@ -482,7 +552,16 @@ def _run(args: argparse.Namespace) -> None:
         runtime=runtime,
         writer=run_writer,
         target_ticks=args.ticks,
-        brains=create_population_brains(engine, population_spec, runtime),
+        brains=create_population_brains(
+            engine,
+            population_spec,
+            runtime,
+            checkpoint_brain_states=(
+                checkpoint_extra.get("brain_states")
+                if isinstance(checkpoint_extra.get("brain_states"), dict)
+                else None
+            ),
+        ),
         population_spec=population_spec,
         max_workers=max_workers,
         provider_max_workers=provider_max_workers,
@@ -580,6 +659,11 @@ def _ordinary_run_manifest(
         "final_tick": engine.state.tick,
         "preset": getattr(args, "preset", None) or "baseline",
         "decision_mode": decision_mode,
+        "agent_boundary": {
+            "connector_profile": args.connector_profile,
+            "conversation_mode": args.conversation_mode,
+            "session_max_turns": args.session_max_turns,
+        },
         "command": ["python3", "-m", "agent_world.cli", *sys.argv[1:]],
         "config": asdict(engine.state.config),
         "population": population.to_dict(engine.state.agents),
@@ -656,6 +740,9 @@ def _experiment(args: argparse.Namespace) -> None:
         brain=args.brain,
         model=args.model,
         reasoning_effort=args.reasoning_effort,
+        connector_profile=getattr(args, "connector_profile", "stateless-v1"),
+        conversation_mode=getattr(args, "conversation_mode", "stateless"),
+        session_max_turns=getattr(args, "session_max_turns", 10),
         environments=environments,
         objectives=objectives,
         width=args.width,

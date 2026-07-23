@@ -1,8 +1,8 @@
 """ChatGPT-plan-backed AgentBrain implemented with ``codex exec``.
 
-Each decision is an independent, non-interactive Codex run.  The simulation
-remains the source of agent memory and world state; Codex only receives the
-current private observation and returns one schema-constrained decision.
+Decisions are stateless by default. The optional bounded-session boundary keeps
+one short, private Codex conversation per simulated agent. Agent World remains
+the canonical source of memory and world state in either mode.
 """
 
 from __future__ import annotations
@@ -21,6 +21,11 @@ import tempfile
 import time
 from typing import Any
 
+from agent_world.brain_boundary import (
+    DEFAULT_SESSION_MAX_TURNS,
+    ConversationBoundary,
+    ConversationInvocation,
+)
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
@@ -93,15 +98,42 @@ class CodexBrain:
         timeout_seconds: int | None = None,
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
+        agent_id: str | None = None,
+        connector_profile: str = "stateless-v1",
+        conversation_mode: str = "stateless",
+        session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ):
         self.runtime = runtime or BrainRuntime()
+        self.boundary = ConversationBoundary(
+            agent_id=agent_id,
+            connector_profile=connector_profile,
+            conversation_mode=conversation_mode,
+            max_turns=session_max_turns,
+        )
+        self.connector_profile = connector_profile
+        self.conversation_mode = conversation_mode
+        self.session_max_turns = session_max_turns
         self.model = model or os.environ.get("CODEX_MODEL", "gpt-5.6-luna")
         self.reasoning_effort = reasoning_effort or os.environ.get("CODEX_REASONING_EFFORT", "low")
         self.timeout_seconds = timeout_seconds or int(os.environ.get("CODEX_TIMEOUT_SECONDS", "300"))
         self.timeout_retries = max(0, int(os.environ.get("CODEX_TIMEOUT_RETRIES", "1")))
-        self.executable = executable or os.environ.get("CODEX_EXECUTABLE") or _resolve_codex_executable()
+        self.executable = (
+            executable
+            or os.environ.get("CODEX_EXECUTABLE")
+            or _resolve_codex_executable(prefer_stable=connector_profile == "stateless-v2")
+        )
         if not self.executable:
             raise ValueError("Codex CLI is required for CodexBrain, but 'codex' was not found on PATH.")
+        self.cli_version = (
+            _codex_version_text(self.executable)
+            if connector_profile == "stateless-v2"
+            else "unrecorded"
+        )
+        self._stable_work_dir: str | None = None
+        self._stable_schema_path: Path | None = None
+        if connector_profile == "stateless-v2" or conversation_mode != "stateless":
+            self._stable_work_dir = _codex_decision_working_directory()
+            self._stable_schema_path = _write_codex_schema(Path(self._stable_work_dir))
 
     def capture_plan_usage(self) -> dict[str, Any]:
         """Read the account's current Codex plan limits without spending a model turn.
@@ -140,76 +172,138 @@ class CodexBrain:
 
         static_context = build_static_context(observation.get("world", {}))
         dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
-        prompt = build_codex_prompt(static_context, dynamic_json)
-        request_meta = {
-            "agent_id": observation.get("self", {}).get("id"),
-            "tick": observation.get("tick"),
-            "agent_static_context_chars": len(static_context),
-            "agent_dynamic_observation_chars": len(dynamic_json),
-            "request_payload_bytes": len(prompt.encode("utf-8")),
-            "static_prompt_sha256": hashlib.sha256(
-                f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
-            ).hexdigest(),
-            "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
-        }
+        full_prompt = build_codex_prompt(static_context, dynamic_json)
+        invocation = self.boundary.prepare()
+        prompt = (
+            full_prompt
+            if invocation.full_context
+            else build_codex_continuation_prompt(dynamic_json)
+        )
 
         started_at = time.monotonic()
         try:
             completed = None
             for attempt in range(self.timeout_retries + 1):
                 try:
-                    completed = self._execute(prompt)
+                    completed = self._execute(prompt, invocation)
                     break
                 except subprocess.TimeoutExpired:
                     if attempt >= self.timeout_retries:
                         raise
+                    if self.conversation_mode != "stateless":
+                        # The provider may have accepted the timed-out turn.
+                        # Never submit it twice into the same saved conversation.
+                        self.boundary.reset("timeout_retry")
+                        invocation = self.boundary.prepare()
+                        prompt = full_prompt
             assert completed is not None
             elapsed = time.monotonic() - started_at
             if completed.returncode != 0:
                 detail = _failure_detail(completed.stdout, completed.stderr)
-                if _is_quota_error(detail):
-                    message = f"Codex quota unavailable: {detail}"
-                    self._mark_quota_unavailable(message)
-                    return _failure_decision(message)
-                if _is_provider_error(detail):
-                    message = f"Codex provider unavailable: {detail}"
-                    self._mark_quota_unavailable(message)
-                    return _failure_decision(message)
-                raise ValueError(f"codex exec exited {completed.returncode}: {detail}")
+                if invocation.resumed and not (
+                    _is_quota_error(detail) or _is_provider_error(detail)
+                ):
+                    self.boundary.reset("resume_failure")
+                    invocation = self.boundary.prepare()
+                    prompt = full_prompt
+                    completed = self._execute(prompt, invocation)
+                    elapsed = time.monotonic() - started_at
+                    detail = _failure_detail(completed.stdout, completed.stderr)
+                if completed.returncode != 0:
+                    if _is_quota_error(detail):
+                        message = f"Codex quota unavailable: {detail}"
+                        self._mark_quota_unavailable(message)
+                        return _failure_decision(message)
+                    if _is_provider_error(detail):
+                        message = f"Codex provider unavailable: {detail}"
+                        self._mark_quota_unavailable(message)
+                        return _failure_decision(message)
+                    raise ValueError(f"codex exec exited {completed.returncode}: {detail}")
 
             response_text, usage = parse_codex_jsonl(completed.stdout)
-            self._record_usage(usage, request_meta | {"duration_seconds": round(elapsed, 3)})
-            return parse_agent_response(normalize_codex_response(response_text))
+            session_id = parse_codex_session_id(completed.stdout) or invocation.resume_session_id
+            request_meta = {
+                "agent_id": observation.get("self", {}).get("id"),
+                "tick": observation.get("tick"),
+                "agent_static_context_chars": len(static_context),
+                "agent_dynamic_observation_chars": len(dynamic_json),
+                "request_payload_bytes": len(prompt.encode("utf-8")),
+                "static_prompt_sha256": hashlib.sha256(
+                    f"{SYSTEM_INSTRUCTIONS}\n\n{static_context}".encode("utf-8")
+                ).hexdigest(),
+                "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+                "codex_session_id": session_id,
+                "cli_version": self.cli_version,
+                "duration_seconds": round(elapsed, 3),
+                **self.boundary.usage_metadata(invocation),
+            }
+            self._record_usage(usage, request_meta)
+            decision = parse_agent_response(normalize_codex_response(response_text))
+            self.boundary.commit(invocation, session_id)
+            return decision
         except subprocess.TimeoutExpired:
             message = f"Codex provider unavailable: exceeded {self.timeout_seconds}s timeout"
             self._mark_quota_unavailable(message)
             return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
+            if self.conversation_mode != "stateless":
+                self.boundary.reset("decision_failure")
             return _failure_decision(f"Codex decision failed: {exc}")
 
-    def _execute(self, prompt: str) -> subprocess.CompletedProcess[str]:
-        with tempfile.TemporaryDirectory(prefix="agent-world-codex-") as temp_dir:
-            schema_path = Path(temp_dir) / "agent-decision.schema.json"
-            schema_path.write_text(json.dumps(CODEX_AGENT_DECISION_SCHEMA, sort_keys=True), encoding="utf-8")
-            command = self._command(schema_path)
-            return subprocess.run(
-                command,
-                cwd=temp_dir,
-                input=prompt,
-                text=True,
-                capture_output=True,
-                timeout=self.timeout_seconds,
-                env=_plan_auth_environment(),
-                check=False,
-            )
+    def _execute(
+        self,
+        prompt: str,
+        invocation: ConversationInvocation,
+    ) -> subprocess.CompletedProcess[str]:
+        if self.connector_profile == "stateless-v1" and self.conversation_mode == "stateless":
+            with tempfile.TemporaryDirectory(prefix="agent-world-codex-") as temp_dir:
+                schema_path = _write_codex_schema(Path(temp_dir))
+                return self._run_command(prompt, invocation, temp_dir, schema_path)
+        work_dir = self._stable_work_dir or _codex_decision_working_directory()
+        schema_path = self._stable_schema_path or _write_codex_schema(Path(work_dir))
+        return self._run_command(prompt, invocation, work_dir, schema_path)
 
-    def _command(self, schema_path: Path) -> list[str]:
-        return [
+    def _run_command(
+        self,
+        prompt: str,
+        invocation: ConversationInvocation,
+        work_dir: str,
+        schema_path: Path,
+    ) -> subprocess.CompletedProcess[str]:
+        return subprocess.run(
+            self._command(schema_path, invocation),
+            cwd=work_dir,
+            input=prompt,
+            text=True,
+            capture_output=True,
+            timeout=self.timeout_seconds,
+            env=_plan_auth_environment(),
+            check=False,
+        )
+
+    def _command(
+        self,
+        schema_path: Path,
+        invocation: ConversationInvocation | None = None,
+    ) -> list[str]:
+        invocation = invocation or ConversationInvocation(None, True, 0, 1)
+        command = [
             self.executable,
             "exec",
-            "--ephemeral",
-            "--sandbox",
-            "read-only",
+        ]
+        if invocation.resumed:
+            command.append("resume")
+        elif self.conversation_mode == "stateless":
+            command.append("--ephemeral")
+        command.extend(
+            [
+                "--sandbox",
+                "read-only",
+            ]
+            if not invocation.resumed
+            else []
+        )
+        command.extend([
             "--ignore-user-config",
             "--ignore-rules",
             "--skip-git-repo-check",
@@ -225,11 +319,35 @@ class CodexBrain:
             f'model_reasoning_effort="{self.reasoning_effort}"',
             "--config",
             'approval_policy="never"',
+        ])
+        if self.connector_profile == "stateless-v2":
+            command.extend(["--config", _disabled_codex_skills_config()])
+        command.extend([
             "--output-schema",
             str(schema_path),
             "--json",
-            "-",
-        ]
+        ])
+        if invocation.resume_session_id:
+            command.append(invocation.resume_session_id)
+        command.append("-")
+        return command
+
+    def export_checkpoint_state(self) -> dict[str, Any]:
+        return self.boundary.export_state() | {
+            "provider": "codex_cli",
+            "model": self.model,
+            "cli_version": self.cli_version,
+        }
+
+    def restore_checkpoint_state(self, state: dict[str, Any]) -> None:
+        if state.get("provider") not in {None, "codex_cli"}:
+            raise ValueError("checkpoint brain state is not for Codex")
+        if state.get("model") not in {None, self.model}:
+            raise ValueError("checkpoint Codex model does not match")
+        self.boundary.restore_checkpoint_metadata(state)
+
+    def reset_conversation(self, reason: str) -> None:
+        self.boundary.reset(reason)
 
     def _record_usage(self, usage: dict[str, Any], request_meta: dict[str, Any]) -> None:
         record = {
@@ -266,6 +384,14 @@ def build_codex_prompt(static_context: str, dynamic_json: str) -> str:
     )
 
 
+def build_codex_continuation_prompt(dynamic_json: str) -> str:
+    return (
+        "Continue the same simulated agent. Choose exactly one tick from this new "
+        "private observation and return only the previously established decision JSON:\n"
+        f"{dynamic_json}"
+    )
+
+
 def parse_codex_jsonl(text: str) -> tuple[str, dict[str, Any]]:
     """Extract the final agent message and usage record from ``codex exec --json``."""
 
@@ -291,6 +417,21 @@ def parse_codex_jsonl(text: str) -> tuple[str, dict[str, Any]]:
         suffix = f": {'; '.join(errors)}" if errors else ""
         raise ValueError(f"codex exec returned no final agent message{suffix}")
     return final_message, usage
+
+
+def parse_codex_session_id(text: str) -> str | None:
+    for raw_line in text.splitlines():
+        if not raw_line.strip():
+            continue
+        try:
+            event = json.loads(raw_line)
+        except json.JSONDecodeError:
+            continue
+        if event.get("type") == "thread.started":
+            session_id = event.get("thread_id")
+            if isinstance(session_id, str) and session_id:
+                return session_id
+    return None
 
 
 def summarize_plan_usage(checkpoints: list[dict[str, Any]]) -> dict[str, Any]:
@@ -579,8 +720,39 @@ def _is_provider_error(detail: str) -> bool:
 
 
 @lru_cache(maxsize=1)
-def _resolve_codex_executable() -> str:
-    """Prefer the newest locally installed Codex binary (CLI or desktop bundle)."""
+def _codex_decision_working_directory() -> str:
+    return tempfile.mkdtemp(prefix="agent-world-codex-stable-")
+
+
+def _write_codex_schema(directory: Path) -> Path:
+    schema_path = directory / "agent-decision.schema.json"
+    if not schema_path.exists():
+        schema_path.write_text(
+            json.dumps(CODEX_AGENT_DECISION_SCHEMA, sort_keys=True),
+            encoding="utf-8",
+        )
+    return schema_path
+
+
+def _disabled_codex_skills_config() -> str:
+    codex_home = Path(os.environ.get("CODEX_HOME") or (Path.home() / ".codex"))
+    names = (
+        "imagegen",
+        "openai-docs",
+        "plugin-creator",
+        "skill-creator",
+        "skill-installer",
+    )
+    entries = ",".join(
+        "{path=" + json.dumps(str(codex_home / "skills" / ".system" / name / "SKILL.md")) + ",enabled=false}"
+        for name in names
+    )
+    return f"skills.config=[{entries}]"
+
+
+@lru_cache(maxsize=2)
+def _resolve_codex_executable(*, prefer_stable: bool = False) -> str:
+    """Choose the newest installed binary, preferring tested stable builds for v2."""
 
     candidates = [
         shutil.which("codex"),
@@ -590,10 +762,19 @@ def _resolve_codex_executable() -> str:
     available = [candidate for candidate in candidates if candidate and Path(candidate).is_file()]
     if not available:
         return ""
+    if prefer_stable:
+        stable = [
+            candidate
+            for candidate in available
+            if "-" not in _codex_version_text(candidate).split()[-1]
+        ]
+        if stable:
+            return max(stable, key=_codex_version)
     return max(available, key=_codex_version)
 
 
-def _codex_version(executable: str) -> tuple[int, ...]:
+@lru_cache(maxsize=8)
+def _codex_version_text(executable: str) -> str:
     try:
         completed = subprocess.run(
             [executable, "--version"],
@@ -603,8 +784,13 @@ def _codex_version(executable: str) -> tuple[int, ...]:
             check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
-        return ()
-    version_text = completed.stdout.strip().split()[-1] if completed.stdout.strip() else ""
+        return "unknown"
+    return completed.stdout.strip() or completed.stderr.strip() or "unknown"
+
+
+def _codex_version(executable: str) -> tuple[int, ...]:
+    raw = _codex_version_text(executable)
+    version_text = raw.split()[-1] if raw else ""
     numeric = version_text.split("-", 1)[0]
     try:
         return tuple(int(part) for part in numeric.split("."))

@@ -133,6 +133,9 @@ def run_factorial_experiment(
     brain: str = "survival",
     model: str | None = None,
     reasoning_effort: str | None = None,
+    connector_profile: str = "stateless-v1",
+    conversation_mode: str = "stateless",
+    session_max_turns: int = 10,
     environments: Iterable[str] = ("baseline", "commerce"),
     objectives: Iterable[str] = ("collective", "individual"),
     width: int = 16,
@@ -175,6 +178,9 @@ def run_factorial_experiment(
         model=model,
         reasoning_effort=reasoning_effort,
         max_workers=max_workers,
+        connector_profile=connector_profile,
+        conversation_mode=conversation_mode,
+        session_max_turns=session_max_turns,
     )
     effective_workers = experiment_brain_spec.max_workers or 1
     created_at = _utc_now()
@@ -210,6 +216,9 @@ def run_factorial_experiment(
             "height": height,
             "log_agent_io": log_agent_io,
             "max_workers": effective_workers,
+            "connector_profile": connector_profile,
+            "conversation_mode": conversation_mode,
+            "session_max_turns": session_max_turns,
             **_declared_brain_settings(
                 brain,
                 experiment_brain_spec.model,
@@ -391,7 +400,9 @@ def _run_single(
 
         def checkpoint_extra(current: SimulationSession) -> dict[str, Any]:
             return _experiment_checkpoint_extra(
-                run_manifest, current.plan_usage_checkpoints
+                run_manifest,
+                current.plan_usage_checkpoints,
+                current.export_brain_states(),
             )
 
         def on_tick(current: SimulationSession, _events: list[Any]) -> None:
@@ -487,6 +498,7 @@ def _run_single(
                     checkpoint_extra=_experiment_checkpoint_extra(
                         run_manifest,
                         session.plan_usage_checkpoints if session is not None else [],
+                        session.export_brain_states() if session is not None else {},
                     ),
                 )
     finally:
@@ -761,6 +773,9 @@ def _brain_runtime_settings(
             "executable": brain.executable,
             "timeout_seconds": brain.timeout_seconds,
             "max_workers": max_workers,
+            "connector_profile": brain.connector_profile,
+            "conversation_mode": brain.conversation_mode,
+            "session_max_turns": brain.session_max_turns,
         }
     if isinstance(brain, ClaudeBrain):
         return {
@@ -774,6 +789,9 @@ def _brain_runtime_settings(
             "executable": brain.executable,
             "timeout_seconds": brain.timeout_seconds,
             "max_workers": max_workers,
+            "connector_profile": brain.connector_profile,
+            "conversation_mode": brain.conversation_mode,
+            "session_max_turns": brain.session_max_turns,
         }
     if isinstance(brain, CursorBrain):
         return {
@@ -788,6 +806,9 @@ def _brain_runtime_settings(
             "executable": brain.executable,
             "timeout_seconds": brain.timeout_seconds,
             "max_workers": max_workers,
+            "connector_profile": brain.connector_profile,
+            "conversation_mode": brain.conversation_mode,
+            "session_max_turns": brain.session_max_turns,
         }
     return {
         "type": "llm",
@@ -992,7 +1013,9 @@ def _run_index_entry(run_manifest: dict[str, Any]) -> dict[str, Any]:
 
 
 def _experiment_checkpoint_extra(
-    run_manifest: dict[str, Any], checkpoints: list[dict[str, Any]]
+    run_manifest: dict[str, Any],
+    checkpoints: list[dict[str, Any]],
+    brain_states: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     brain = run_manifest["brain"]
     outputs = run_manifest["outputs"]
@@ -1012,8 +1035,12 @@ def _experiment_checkpoint_extra(
             "max_workers": brain.get("max_workers", 1),
             "log_agent_io": bool(run_manifest.get("log_agent_io", True)),
             "sequential_decisions": brain.get("max_workers", 1) <= 1,
+            "connector_profile": brain.get("connector_profile", "stateless-v1"),
+            "conversation_mode": brain.get("conversation_mode", "stateless"),
+            "session_max_turns": brain.get("session_max_turns", 10),
         },
         "plan_usage_checkpoints": list(checkpoints),
+        "brain_states": dict(brain_states or {}),
     }
 
 

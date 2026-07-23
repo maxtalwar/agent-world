@@ -899,6 +899,24 @@
           <label for="run-workers">Max workers</label>
           <input id="run-workers" class="lock" type="number" min="1" max="20" value="1">
         </label>
+        <label class="field">
+          <label for="run-connector-profile">Connector profile</label>
+          <select id="run-connector-profile" class="lock">
+            <option value="stateless-v1">stateless-v1 (historical)</option>
+            <option value="stateless-v2" selected>stateless-v2 (lean)</option>
+          </select>
+        </label>
+        <label class="field">
+          <label for="run-conversation-mode">Conversation memory</label>
+          <select id="run-conversation-mode" class="lock">
+            <option value="stateless" selected>stateless</option>
+            <option value="bounded-session-v1">bounded session</option>
+          </select>
+        </label>
+        <label class="field">
+          <label for="run-session-turns">Session turns</label>
+          <input id="run-session-turns" class="lock" type="number" min="1" max="100" value="10">
+        </label>
         <label class="field check">
           <input id="run-io" class="lock" type="checkbox" checked>
           <label for="run-io">Log agent IO</label>
@@ -1835,6 +1853,9 @@
         reasoning_effort: document.getElementById("run-reasoning").value,
         log_agent_io: document.getElementById("run-io").checked,
         max_workers: numberValue("run-workers"),
+        connector_profile: document.getElementById("run-connector-profile").value,
+        conversation_mode: document.getElementById("run-conversation-mode").value,
+        session_max_turns: numberValue("run-session-turns"),
         objective_mode: document.getElementById("cfg-objective-mode").value,
         economy_mode: document.getElementById("cfg-economy-mode").value,
         geography_mode: document.getElementById("cfg-geography-mode").value,

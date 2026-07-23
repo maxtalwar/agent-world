@@ -152,6 +152,7 @@ class SimulationSession:
                     partial_usage_path = self.runtime.rollback_usage(
                         usage_checkpoint, attempted_tick=self.engine.state.tick
                     )
+                    self.reset_brain_conversations("discarded_partial_tick")
                     status = "paused_checkpoint"
                     stop_reason = "insufficient_quota"
                     self.engine.log_event(
@@ -177,6 +178,7 @@ class SimulationSession:
                     partial_usage_path = self.runtime.rollback_usage(
                         usage_checkpoint, attempted_tick=self.engine.state.tick
                     )
+                    self.reset_brain_conversations("discarded_partial_tick")
                     status = "paused_checkpoint"
                     stop_reason = "provider_unavailable"
                     self.engine.log_event(
@@ -275,6 +277,7 @@ class SimulationSession:
                     scope="public",
                 )
         except Exception as exc:  # Preserve a replayable failure artifact.
+            self.reset_brain_conversations("run_failure")
             status = "failed"
             stop_reason = "run_failed"
             error = f"{type(exc).__name__}: {exc}"
@@ -341,7 +344,7 @@ class SimulationSession:
         self._started = True
 
     def _provider_preflight_error(self) -> str | None:
-        checked: dict[tuple[type[Any], str, str, str], Any] = {}
+        checked: dict[tuple[type[Any], str, str, str, str, str], Any] = {}
         for brain in self.brains.values():
             preflight = getattr(brain, "preflight", None)
             if not callable(preflight):
@@ -352,6 +355,8 @@ class SimulationSession:
                 scope,
                 str(getattr(brain, "model", "")),
                 str(getattr(brain, "reasoning_effort", "")),
+                str(getattr(brain, "connector_profile", "")),
+                str(getattr(brain, "conversation_mode", "")),
             )
             representative = checked.get(key)
             if representative is not None:
@@ -426,6 +431,20 @@ class SimulationSession:
     def flush(self) -> None:
         extra = self.checkpoint_extra_factory(self) if self.checkpoint_extra_factory else None
         self.writer.flush(self.engine, checkpoint_extra=extra)
+
+    def export_brain_states(self) -> dict[str, Any]:
+        states: dict[str, Any] = {}
+        for agent_id, brain in self.brains.items():
+            export = getattr(brain, "export_checkpoint_state", None)
+            if callable(export):
+                states[agent_id] = export()
+        return states
+
+    def reset_brain_conversations(self, reason: str) -> None:
+        for brain in self.brains.values():
+            reset = getattr(brain, "reset_conversation", None)
+            if callable(reset):
+                reset(reason)
 
     def _log_start(self) -> None:
         population = self.population_spec.to_dict(self.engine.state.agents)

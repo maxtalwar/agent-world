@@ -14,12 +14,16 @@ PopulationSpec -> BrainRuntime -> SimulationSession -> SimulationRunner -> World
                                       +-> terminal run report
 ```
 
-- `BrainSpec` resolves the selected brain, model, reasoning effort, and concurrency once.
+- `BrainSpec` resolves the selected brain, model, reasoning effort, concurrency,
+  connector profile, and conversation mode once.
 - `PopulationSpec` expands ordered model cohorts into stable agent assignments. Uniform runs are represented as one-cohort populations, keeping the lifecycle path identical.
 - `BrainRuntime` owns mutable usage, quota, and throttling state for exactly one run. It is shared by that run's agent brains and never stored on a provider class or routed through process environment variables.
 - Provider-scoped runtime views share the run ledger while isolating Claude, Codex, and API quota/throttle state from one another in mixed populations.
 - Mixed runs freeze model assignments before tick zero and persist the exact mapping in lifecycle events, manifests, and checkpoints. Stratified assignment balances provider cohorts within preset specialties so model comparisons do not inherit role differences. Provider semaphores enforce independent concurrency ceilings inside the global decision pool.
 - `SimulationSession` owns lifecycle events, the target-tick loop, quota and external-stop handling, progress hooks, checkpoint flushes, plan snapshots, and terminal reports.
+- Provider brains expose conversation provenance to checkpoints. Mutable provider
+  chats are abandoned on checkpoint restore so an uncommitted provider turn
+  cannot contaminate canonical completed-tick state.
 - `SimulationRunner` remains the thin observe-decide-resolve bridge for one tick.
 - `WorldEngine` owns all deterministic state transitions and validation.
 

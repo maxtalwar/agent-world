@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import inspect
 import os
 import random
 from typing import Any, Iterable
 
 from agent_world.agents import AgentBrain, SurvivalBrain
+from agent_world.brain_boundary import (
+    CONNECTOR_PROFILES,
+    CONVERSATION_MODES,
+    DEFAULT_SESSION_MAX_TURNS,
+)
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.claude_brain import ClaudeBrain
 from agent_world.codex_brain import CodexBrain
@@ -26,6 +32,9 @@ class BrainSpec:
     model: str | None = None
     reasoning_effort: str | None = None
     max_workers: int | None = None
+    connector_profile: str = "stateless-v1"
+    conversation_mode: str = "stateless"
+    session_max_turns: int = DEFAULT_SESSION_MAX_TURNS
 
     @classmethod
     def resolve(
@@ -35,6 +44,9 @@ class BrainSpec:
         model: str | None = None,
         reasoning_effort: str | None = None,
         max_workers: int | None = None,
+        connector_profile: str = "stateless-v1",
+        conversation_mode: str = "stateless",
+        session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ) -> "BrainSpec":
         if brain_type not in SUPPORTED_BRAIN_TYPES:
             raise ValueError("brain type must be survival, llm, codex, claude, or cursor")
@@ -42,6 +54,20 @@ class BrainSpec:
             raise ValueError("max_workers must be at least 1")
         if reasoning_effort is not None and reasoning_effort not in ALLOWED_EFFORTS:
             raise ValueError("unsupported reasoning effort")
+        if connector_profile not in CONNECTOR_PROFILES:
+            raise ValueError("connector profile must be stateless-v1 or stateless-v2")
+        if conversation_mode not in CONVERSATION_MODES:
+            raise ValueError("conversation mode must be stateless or bounded-session-v1")
+        if session_max_turns < 1:
+            raise ValueError("session_max_turns must be at least 1")
+        if conversation_mode != "stateless" and brain_type not in {
+            "codex",
+            "claude",
+            "cursor",
+        }:
+            raise ValueError(
+                "bounded-session-v1 is supported only by codex, claude, and cursor brains"
+            )
         defaults = {
             "llm": ("OPENAI_MODEL", "z-ai/glm-5.2", "OPENAI_REASONING_EFFORT", "medium"),
             "codex": ("CODEX_MODEL", "gpt-5.6-luna", "CODEX_REASONING_EFFORT", "low"),
@@ -49,7 +75,13 @@ class BrainSpec:
             "cursor": ("CURSOR_MODEL", "cursor-grok-4.5", "CURSOR_REASONING_EFFORT", "low"),
         }
         if brain_type == "survival":
-            return cls(type=brain_type, max_workers=max_workers or 1)
+            return cls(
+                type=brain_type,
+                max_workers=max_workers or 1,
+                connector_profile=connector_profile,
+                conversation_mode=conversation_mode,
+                session_max_turns=session_max_turns,
+            )
         model_env, model_default, effort_env, effort_default = defaults[brain_type]
         worker_env = {
             "llm": "OPENAI_MAX_PARALLEL_AGENTS",
@@ -66,6 +98,9 @@ class BrainSpec:
             model=model or os.environ.get(model_env, model_default),
             reasoning_effort=resolved_effort,
             max_workers=max(1, workers),
+            connector_profile=connector_profile,
+            conversation_mode=conversation_mode,
+            session_max_turns=session_max_turns,
         )
 
     @property
@@ -96,6 +131,9 @@ class BrainSpec:
             "model": self.model,
             "reasoning_effort": self.reasoning_effort,
             "max_workers": self.max_workers,
+            "connector_profile": self.connector_profile,
+            "conversation_mode": self.conversation_mode,
+            "session_max_turns": self.session_max_turns,
             "provider": self.provider,
             "billing_mode": self.billing_mode,
         }
@@ -162,6 +200,9 @@ class PopulationSpec:
         *,
         reasoning_effort: str | None = None,
         max_workers: int | None = None,
+        connector_profile: str = "stateless-v1",
+        conversation_mode: str = "stateless",
+        session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ) -> "PopulationSpec":
         groups = tuple(
             _parse_population_group(
@@ -169,6 +210,9 @@ class PopulationSpec:
                 index=index,
                 default_effort=reasoning_effort,
                 max_workers=max_workers,
+                connector_profile=connector_profile,
+                conversation_mode=conversation_mode,
+                session_max_turns=session_max_turns,
             )
             for index, value in enumerate(values, start=1)
         )
@@ -188,6 +232,11 @@ class PopulationSpec:
                 model=raw.get("model"),
                 reasoning_effort=raw.get("reasoning_effort"),
                 max_workers=raw.get("max_workers"),
+                connector_profile=str(raw.get("connector_profile") or "stateless-v1"),
+                conversation_mode=str(raw.get("conversation_mode") or "stateless"),
+                session_max_turns=int(
+                    raw.get("session_max_turns") or DEFAULT_SESSION_MAX_TURNS
+                ),
             )
             groups.append(
                 PopulationGroup(
@@ -321,6 +370,9 @@ def _parse_population_group(
     index: int,
     default_effort: str | None,
     max_workers: int | None,
+    connector_profile: str,
+    conversation_mode: str,
+    session_max_turns: int,
 ) -> PopulationGroup:
     try:
         raw_count, raw_target = value.split("@", 1)
@@ -347,6 +399,9 @@ def _parse_population_group(
         model=None if brain_type == "survival" else model,
         reasoning_effort=effort,
         max_workers=max_workers,
+        connector_profile=connector_profile,
+        conversation_mode=conversation_mode,
+        session_max_turns=session_max_turns,
     )
     return PopulationGroup(count=count, brain=brain, id=f"cohort-{index}")
 
@@ -380,6 +435,8 @@ def create_population_brains(
     engine: WorldEngine,
     population: PopulationSpec,
     runtime: BrainRuntime,
+    *,
+    checkpoint_brain_states: dict[str, Any] | None = None,
 ) -> dict[str, AgentBrain]:
     constructors = {
         "llm": OpenAIBrain,
@@ -397,9 +454,30 @@ def create_population_brains(
         brain_class = constructors[spec.type]
         scope = spec.provider or spec.type
         scoped_runtime = scoped_runtimes.setdefault(scope, runtime.scoped(scope))
-        brains[agent_id] = brain_class(
-            model=spec.model,
-            reasoning_effort=spec.reasoning_effort,
-            runtime=scoped_runtime,
-        )
+        kwargs: dict[str, Any] = {
+            "model": spec.model,
+            "reasoning_effort": spec.reasoning_effort,
+            "runtime": scoped_runtime,
+        }
+        if spec.type in {"codex", "claude", "cursor"}:
+            boundary_kwargs = {
+                "agent_id": agent_id,
+                "connector_profile": spec.connector_profile,
+                "conversation_mode": spec.conversation_mode,
+                "session_max_turns": spec.session_max_turns,
+            }
+            accepted = inspect.signature(brain_class).parameters
+            kwargs.update(
+                {
+                    key: value
+                    for key, value in boundary_kwargs.items()
+                    if key in accepted
+                }
+            )
+        brain = brain_class(**kwargs)
+        saved_state = (checkpoint_brain_states or {}).get(agent_id)
+        restore = getattr(brain, "restore_checkpoint_state", None)
+        if isinstance(saved_state, dict) and callable(restore):
+            restore(saved_state)
+        brains[agent_id] = brain
     return brains

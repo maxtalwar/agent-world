@@ -118,11 +118,13 @@ python3 -m agent_world.cli run \
   --out runs/codex-luna.jsonl --snapshot runs/codex-luna-snapshot.json
 ```
 
-Use `gpt-5.6-terra` for a stronger Codex-plan condition. Each living agent gets
-an independent, ephemeral, read-only Codex invocation per tick. The adapter
-disables shell tools, apps, and subagent delegation, runs outside the repository,
-and constrains the final response to an equivalent strict decision contract that
-the adapter normalizes back to Agent World's flat action shape.
+Use `gpt-5.6-terra` for a stronger Codex-plan condition. By default, each living
+agent gets an independent, ephemeral, read-only Codex invocation per tick.
+Bounded-session mode instead resumes a short private conversation for that
+agent. The adapter disables shell tools, apps, and subagent delegation, runs
+outside the repository, and constrains the final response to an equivalent
+strict decision contract that the adapter normalizes back to Agent World's flat
+action shape.
 Codex-plan results should be labeled separately from raw API results because the
 Codex harness adds its own runtime instructions. Runs default to one concurrent
 Codex decision; raise `CODEX_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
@@ -146,10 +148,11 @@ python3 -m agent_world.cli run \
   --out runs/claude-sonnet.jsonl --snapshot runs/claude-sonnet-snapshot.json
 ```
 
-Each living agent gets an independent, tool-less, session-less `claude -p`
-invocation per tick with the run's rulebook as a stable system prompt (so the
+Each living agent gets a tool-less `claude -p` invocation per tick. The default
+is session-less; `bounded-session-v1` can instead retain a private rotating
+conversation per agent. The run's rulebook is a stable system prompt (so the
 provider prompt cache is reused) and a `--json-schema` constrained decision. The
-adapter runs in an empty temporary directory with user/project settings, MCP
+adapter runs in a stable empty directory with user/project settings, MCP
 servers, and skills disabled so nothing outside the observation leaks into the
 decision. Models: `claude-haiku-4-5` (cheapest against plan limits),
 `claude-sonnet-5` (default), `claude-opus-4-8`. Unlike Codex, the Claude CLI
@@ -267,6 +270,27 @@ python3 -m agent_world.cli run \
   --resume-checkpoint runs/sonnet-luna-checkpoint.pkl \
   --ticks 75 --progress
 ```
+
+### Connector efficiency and conversation memory
+
+Provider invocation overhead and provider conversation memory are independent,
+versioned controls:
+
+```bash
+--connector-profile stateless-v2 \
+--conversation-mode bounded-session-v1 \
+--session-max-turns 10
+```
+
+`stateless-v2` keeps decisions stateless while giving Codex and Cursor stable
+empty workspaces and removing irrelevant Codex skill instructions. Claude's
+already-lean stateless invocation is unchanged. `bounded-session-v1` is an
+optional behavioral treatment: it keeps one private provider conversation per
+agent, sends compact continuation observations, and rotates after the configured
+number of successful decisions. Checkpoint resume starts a fresh provider
+conversation from canonical simulation state so a partially submitted provider
+turn cannot leak across the completed-tick boundary. See
+[docs/agent-boundaries.md](docs/agent-boundaries.md).
 
 The run report includes each cohort's model, membership, survival, action mix,
 gifts, trades, token use, API cost, and Codex plan credits. A shared usage JSONL

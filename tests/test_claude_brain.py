@@ -41,6 +41,7 @@ def _successful_stdout(intent: str = "wait", actions: list[dict] | None = None) 
             },
             "modelUsage": {"claude-sonnet-5-20250929": {"inputTokens": 1200, "outputTokens": 90}},
             "total_cost_usd": 0.01,
+            "session_id": "claude-session",
         }
     )
 
@@ -111,6 +112,31 @@ class ClaudeBrainTests(unittest.TestCase):
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
         command = run.call_args.args[0]
         self.assertEqual(command[command.index("--effort") + 1], "low")
+
+    def test_bounded_session_resumes_without_repeating_system_prompt(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude"], 0, stdout=_successful_stdout(), stderr=""
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+            brain = ClaudeBrain(
+                executable="claude",
+                connector_profile="stateless-v2",
+                conversation_mode="bounded-session-v1",
+            )
+            brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        first_command = run.call_args_list[0].args[0]
+        second_command = run.call_args_list[1].args[0]
+        self.assertIn("--session-id", first_command)
+        self.assertNotIn("--no-session-persistence", first_command)
+        self.assertIn("--system-prompt", first_command)
+        self.assertEqual(
+            second_command[second_command.index("--resume") + 1],
+            "claude-session",
+        )
+        self.assertNotIn("--system-prompt", second_command)
+        self.assertIn("Continue the same simulated agent", run.call_args_list[1].kwargs["input"])
 
     def test_quota_failure_opens_circuit(self) -> None:
         completed = subprocess.CompletedProcess(

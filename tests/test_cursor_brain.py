@@ -151,6 +151,45 @@ class CursorBrainTests(unittest.TestCase):
         self.assertEqual(usage["outputTokens"], 90)
         self.assertIsNone(model)
 
+    def test_stateless_v2_reuses_one_empty_workspace(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["cursor-agent"], 0, stdout=_successful_stdout(), stderr=""
+        )
+        with patch("agent_world.cursor_brain.subprocess.run", return_value=completed) as run:
+            brain = CursorBrain(
+                executable="cursor-agent",
+                connector_profile="stateless-v2",
+            )
+            brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(
+            run.call_args_list[0].kwargs["cwd"],
+            run.call_args_list[1].kwargs["cwd"],
+        )
+        self.assertNotIn("--resume", run.call_args_list[1].args[0])
+
+    def test_bounded_session_resumes_with_compact_continuation(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["cursor-agent"], 0, stdout=_successful_stdout(), stderr=""
+        )
+        with patch("agent_world.cursor_brain.subprocess.run", return_value=completed) as run:
+            brain = CursorBrain(
+                executable="cursor-agent",
+                connector_profile="stateless-v2",
+                conversation_mode="bounded-session-v1",
+            )
+            brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertNotIn("--resume", run.call_args_list[0].args[0])
+        second_command = run.call_args_list[1].args[0]
+        self.assertEqual(
+            second_command[second_command.index("--resume") + 1],
+            "cursor-session",
+        )
+        self.assertIn("Continue the same simulated agent", run.call_args_list[1].kwargs["input"])
+
     def test_quota_failure_opens_provider_scope_circuit(self) -> None:
         completed = subprocess.CompletedProcess(
             ["cursor-agent"], 1, stdout="", stderr="Usage limit reached; try again later"
