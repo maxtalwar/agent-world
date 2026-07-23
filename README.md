@@ -277,13 +277,14 @@ Provider invocation overhead and provider conversation memory are independent,
 versioned controls:
 
 ```bash
---connector-profile stateless-v2 \
+--connector-profile stateless-v3 \
 --conversation-mode bounded-session-v1 \
 --session-max-turns 10
 ```
 
-`stateless-v2` keeps decisions stateless while giving Codex and Cursor stable
-empty workspaces and removing irrelevant Codex skill instructions. Claude's
+`stateless-v3` keeps decisions stateless while giving Codex and Cursor
+cross-process stable empty workspaces and removing irrelevant Codex tool,
+plugin, discovery, and skill instructions. Claude's
 already-lean stateless invocation is unchanged. `bounded-session-v1` is an
 optional behavioral treatment: it keeps one private provider conversation per
 agent, sends compact continuation observations, and rotates after the configured

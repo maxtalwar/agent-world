@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 
-CONNECTOR_PROFILES = frozenset({"stateless-v1", "stateless-v2"})
+CONNECTOR_PROFILES = frozenset({"stateless-v1", "stateless-v2", "stateless-v3"})
 CONVERSATION_MODES = frozenset({"stateless", "bounded-session-v1"})
 DEFAULT_SESSION_MAX_TURNS = 10
 

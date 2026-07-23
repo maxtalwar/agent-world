@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import tempfile
 import unittest
 from unittest.mock import patch
 
 from agent_world.codex_brain import (
     CodexBrain,
+    _codex_decision_working_directory,
     normalize_codex_response,
     parse_codex_jsonl,
     summarize_plan_usage,
@@ -115,6 +117,52 @@ class CodexBrainTests(unittest.TestCase):
             brain.executable,
             "/Applications/ChatGPT.app/Contents/Resources/codex",
         )
+
+    def test_stateless_v3_disables_all_irrelevant_harness_features(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["codex"], 0, stdout=_successful_stdout(), stderr=""
+        )
+        with patch(
+            "agent_world.codex_brain._codex_version_text",
+            return_value="codex-cli 0.145.0-alpha.30",
+        ), patch("agent_world.codex_brain.subprocess.run", return_value=completed) as run:
+            brain = CodexBrain(executable="codex", connector_profile="stateless-v3")
+            brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+
+        command = run.call_args.args[0]
+        disabled = {
+            command[index + 1]
+            for index, value in enumerate(command[:-1])
+            if value == "--disable"
+        }
+        self.assertEqual(
+            disabled,
+            {
+                "multi_agent",
+                "multi_agent_v2",
+                "shell_tool",
+                "apps",
+                "plugins",
+                "plugin_sharing",
+                "skill_search",
+                "skill_mcp_dependency_install",
+                "remote_plugin",
+            },
+        )
+        self.assertTrue(any("skills.config=" in value for value in command))
+
+    def test_stateless_v3_workspace_survives_process_local_cache_reset(self) -> None:
+        with tempfile.TemporaryDirectory() as root, patch.dict(
+            os.environ,
+            {"AGENT_WORLD_PROVIDER_WORKSPACE_ROOT": root},
+        ):
+            _codex_decision_working_directory.cache_clear()
+            first = _codex_decision_working_directory("stateless-v3")
+            _codex_decision_working_directory.cache_clear()
+            second = _codex_decision_working_directory("stateless-v3")
+
+        self.assertEqual(first, second)
+        self.assertTrue(first.endswith("codex-stateless-v3"))
 
     def test_bounded_session_resumes_with_only_dynamic_context(self) -> None:
         completed = subprocess.CompletedProcess(

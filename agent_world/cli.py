@@ -97,9 +97,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     run_parser.add_argument(
         "--connector-profile",
-        choices=["stateless-v1", "stateless-v2"],
+        choices=["stateless-v1", "stateless-v2", "stateless-v3"],
         default=None,
-        help="Provider invocation profile. stateless-v1 preserves the historical connector; stateless-v2 removes avoidable wrapper/cache overhead.",
+        help=(
+            "Provider invocation profile. stateless-v1 preserves the historical connector; "
+            "stateless-v2 preserves the first lean experiment; stateless-v3 removes the "
+            "remaining avoidable Codex harness and uses cross-process stable workspaces."
+        ),
     )
     run_parser.add_argument(
         "--conversation-mode",
@@ -210,7 +214,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     experiment_parser.add_argument(
         "--connector-profile",
-        choices=["stateless-v1", "stateless-v2"],
+        choices=["stateless-v1", "stateless-v2", "stateless-v3"],
         default="stateless-v1",
     )
     experiment_parser.add_argument(

@@ -77,8 +77,9 @@ class CursorBrain:
                 "Install it with `cursor agent --help` or Cursor's official installer."
             )
         self._stable_work_dir = (
-            _cursor_decision_working_directory()
-            if connector_profile == "stateless-v2" or conversation_mode != "stateless"
+            _cursor_decision_working_directory(connector_profile)
+            if connector_profile in {"stateless-v2", "stateless-v3"}
+            or conversation_mode != "stateless"
             else None
         )
 
@@ -457,8 +458,17 @@ def _is_provider_error(detail: str) -> bool:
     )
 
 
-@lru_cache(maxsize=1)
-def _cursor_decision_working_directory() -> str:
+@lru_cache(maxsize=None)
+def _cursor_decision_working_directory(connector_profile: str = "stateless-v2") -> str:
+    if connector_profile == "stateless-v3":
+        configured = os.environ.get("AGENT_WORLD_PROVIDER_WORKSPACE_ROOT")
+        if configured:
+            root = Path(configured).expanduser()
+        else:
+            root = Path(tempfile.gettempdir()) / "agent-world-provider-workspaces"
+        directory = root / "cursor-stateless-v3"
+        directory.mkdir(parents=True, exist_ok=True)
+        return str(directory)
     return tempfile.mkdtemp(prefix="agent-world-cursor-stable-")
 
 

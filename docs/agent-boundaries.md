@@ -17,10 +17,11 @@ the numerically newest local executable, including prerelease builds.
 
 ### `stateless-v2`
 
-This keeps the agent experience stateless while removing avoidable connector overhead:
+This preserves the first lean-connector experiment. It keeps the agent experience
+stateless while:
 
 - Codex and Cursor reuse a stable empty workspace, improving the chance that
-  provider prompt caches see a stable prefix.
+  provider prompt caches see a stable prefix within one Agent World process.
 - Codex uses the newest installed CLI, matching the control so model support and
   CLI version do not confound the connector-profile comparison.
 - Codex explicitly disables bundled skills that are irrelevant to simulation decisions.
@@ -29,6 +30,24 @@ This keeps the agent experience stateless while removing avoidable connector ove
   tools and settings are disabled, and its empty workspace is already stable.
 
 `stateless-v2` does not change the rulebook, observation, schema, or agent memory.
+Its workspace path is randomly created at process start, and it does not disable
+the CLI's plugin and skill-discovery features. Keep this profile available only
+to reproduce the original experiment.
+
+### `stateless-v3`
+
+This is the corrected lean stateless connector:
+
+- Codex and Cursor use deterministic provider-specific workspaces that remain the
+  same across Agent World processes and checkpoint resumes.
+- Codex disables multi-agent, shell, app, plugin, remote-plugin, plugin-sharing,
+  skill-search, and skill-dependency-installation features that are irrelevant
+  to a simulation decision.
+- Bundled Codex skills remain explicitly disabled.
+- The rulebook, observation, output schema, action feedback, and agent memory are
+  unchanged. The static rulebook is still supplied on every stateless request so
+  a fresh model invocation has the rules, but its byte-stable prefix can qualify
+  for provider prompt caching.
 
 ## Conversation modes
 
@@ -60,16 +79,16 @@ resume/full-context flags, rotation limit, and provider session ID where availab
 
 Behavioral effect of provider conversation memory:
 
-- Control: `stateless-v2` + `stateless`
-- Treatment: `stateless-v2` + `bounded-session-v1`
+- Control: `stateless-v3` + `stateless`
+- Treatment: `stateless-v3` + `bounded-session-v1`
 
 Infrastructure token effect:
 
 - Control: `stateless-v1` + `stateless`
-- Treatment: `stateless-v2` + `stateless`
+- Treatment: `stateless-v3` + `stateless`
 
 Use only matched Codex and Cursor cohorts for the infrastructure comparison. Claude is
-intentionally unchanged by the stateless-v2 optimization and would dilute the treatment.
+intentionally unchanged by the stateless-v3 optimization and would dilute the treatment.
 Compare successful decision coverage, prompt and cached tokens, plan drawdown, latency,
 and provider failures before comparing world outcomes.
 
@@ -80,7 +99,7 @@ Lean stateless run:
 ```bash
 python3 -m agent_world.cli run \
   --brain codex --model gpt-5.6-luna \
-  --connector-profile stateless-v2 \
+  --connector-profile stateless-v3 \
   --conversation-mode stateless \
   --ticks 20 --agents 5
 ```
@@ -90,7 +109,7 @@ The same connector with bounded conversation memory:
 ```bash
 python3 -m agent_world.cli run \
   --brain codex --model gpt-5.6-luna \
-  --connector-profile stateless-v2 \
+  --connector-profile stateless-v3 \
   --conversation-mode bounded-session-v1 \
   --session-max-turns 10 \
   --ticks 20 --agents 5

@@ -43,6 +43,24 @@ CODEX_HARNESS_INSTRUCTIONS = (
     "Return only the JSON object required by the output schema."
 )
 
+_BASE_DISABLED_CODEX_FEATURES = (
+    "multi_agent",
+    "shell_tool",
+    "apps",
+)
+
+# These capabilities are unrelated to choosing a simulation action, but their
+# enabled state causes the Codex CLI to inject tool, plugin, and discovery
+# instructions into every fresh model request.
+_STATELESS_V3_DISABLED_CODEX_FEATURES = (
+    "multi_agent_v2",
+    "plugins",
+    "plugin_sharing",
+    "skill_search",
+    "skill_mcp_dependency_install",
+    "remote_plugin",
+)
+
 
 CODEX_AGENT_DECISION_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -126,13 +144,13 @@ class CodexBrain:
             raise ValueError("Codex CLI is required for CodexBrain, but 'codex' was not found on PATH.")
         self.cli_version = (
             _codex_version_text(self.executable)
-            if connector_profile == "stateless-v2"
+            if connector_profile in {"stateless-v2", "stateless-v3"}
             else "unrecorded"
         )
         self._stable_work_dir: str | None = None
         self._stable_schema_path: Path | None = None
-        if connector_profile == "stateless-v2" or conversation_mode != "stateless":
-            self._stable_work_dir = _codex_decision_working_directory()
+        if connector_profile in {"stateless-v2", "stateless-v3"} or conversation_mode != "stateless":
+            self._stable_work_dir = _codex_decision_working_directory(connector_profile)
             self._stable_schema_path = _write_codex_schema(Path(self._stable_work_dir))
 
     def capture_plan_usage(self) -> dict[str, Any]:
@@ -259,7 +277,9 @@ class CodexBrain:
             with tempfile.TemporaryDirectory(prefix="agent-world-codex-") as temp_dir:
                 schema_path = _write_codex_schema(Path(temp_dir))
                 return self._run_command(prompt, invocation, temp_dir, schema_path)
-        work_dir = self._stable_work_dir or _codex_decision_working_directory()
+        work_dir = self._stable_work_dir or _codex_decision_working_directory(
+            self.connector_profile
+        )
         schema_path = self._stable_schema_path or _write_codex_schema(Path(work_dir))
         return self._run_command(prompt, invocation, work_dir, schema_path)
 
@@ -307,12 +327,6 @@ class CodexBrain:
             "--ignore-user-config",
             "--ignore-rules",
             "--skip-git-repo-check",
-            "--disable",
-            "multi_agent",
-            "--disable",
-            "shell_tool",
-            "--disable",
-            "apps",
             "--model",
             self.model,
             "--config",
@@ -320,7 +334,12 @@ class CodexBrain:
             "--config",
             'approval_policy="never"',
         ])
-        if self.connector_profile == "stateless-v2":
+        disabled_features = list(_BASE_DISABLED_CODEX_FEATURES)
+        if self.connector_profile == "stateless-v3":
+            disabled_features.extend(_STATELESS_V3_DISABLED_CODEX_FEATURES)
+        for feature in disabled_features:
+            command.extend(["--disable", feature])
+        if self.connector_profile in {"stateless-v2", "stateless-v3"}:
             command.extend(["--config", _disabled_codex_skills_config()])
         command.extend([
             "--output-schema",
@@ -719,9 +738,23 @@ def _is_provider_error(detail: str) -> bool:
     )
 
 
-@lru_cache(maxsize=1)
-def _codex_decision_working_directory() -> str:
+@lru_cache(maxsize=None)
+def _codex_decision_working_directory(connector_profile: str = "stateless-v2") -> str:
+    if connector_profile == "stateless-v3":
+        directory = _provider_workspace_root() / "codex-stateless-v3"
+        directory.mkdir(parents=True, exist_ok=True)
+        return str(directory)
     return tempfile.mkdtemp(prefix="agent-world-codex-stable-")
+
+
+def _provider_workspace_root() -> Path:
+    configured = os.environ.get("AGENT_WORLD_PROVIDER_WORKSPACE_ROOT")
+    if configured:
+        root = Path(configured).expanduser()
+    else:
+        root = Path(tempfile.gettempdir()) / "agent-world-provider-workspaces"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
 
 
 def _write_codex_schema(directory: Path) -> Path:

@@ -3,11 +3,13 @@ from __future__ import annotations
 import json
 import os
 import subprocess
+import tempfile
 import unittest
 from unittest.mock import patch
 
 from agent_world.cursor_brain import (
     CursorBrain,
+    _cursor_decision_working_directory,
     build_cursor_prompt,
     cursor_model_candidates,
     extract_cursor_result,
@@ -168,6 +170,19 @@ class CursorBrainTests(unittest.TestCase):
             run.call_args_list[1].kwargs["cwd"],
         )
         self.assertNotIn("--resume", run.call_args_list[1].args[0])
+
+    def test_stateless_v3_workspace_survives_process_local_cache_reset(self) -> None:
+        with tempfile.TemporaryDirectory() as root, patch.dict(
+            os.environ,
+            {"AGENT_WORLD_PROVIDER_WORKSPACE_ROOT": root},
+        ):
+            _cursor_decision_working_directory.cache_clear()
+            first = _cursor_decision_working_directory("stateless-v3")
+            _cursor_decision_working_directory.cache_clear()
+            second = _cursor_decision_working_directory("stateless-v3")
+
+        self.assertEqual(first, second)
+        self.assertTrue(first.endswith("cursor-stateless-v3"))
 
     def test_bounded_session_resumes_with_compact_continuation(self) -> None:
         completed = subprocess.CompletedProcess(

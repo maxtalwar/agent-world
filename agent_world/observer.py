@@ -330,7 +330,7 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         connector_profile=_bounded_choice(
             payload.get("connector_profile", "stateless-v1"),
             "connector_profile",
-            {"stateless-v1", "stateless-v2"},
+            {"stateless-v1", "stateless-v2", "stateless-v3"},
         ),
         conversation_mode=_bounded_choice(
             payload.get("conversation_mode", "stateless"),

@@ -55,7 +55,9 @@ class BrainSpec:
         if reasoning_effort is not None and reasoning_effort not in ALLOWED_EFFORTS:
             raise ValueError("unsupported reasoning effort")
         if connector_profile not in CONNECTOR_PROFILES:
-            raise ValueError("connector profile must be stateless-v1 or stateless-v2")
+            raise ValueError(
+                "connector profile must be stateless-v1, stateless-v2, or stateless-v3"
+            )
         if conversation_mode not in CONVERSATION_MODES:
             raise ValueError("conversation mode must be stateless or bounded-session-v1")
         if session_max_turns < 1:
