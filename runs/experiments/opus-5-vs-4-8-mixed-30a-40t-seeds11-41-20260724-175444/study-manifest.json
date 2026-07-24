@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "study_id": "opus-5-vs-4-8-mixed-30a-40t-seeds11-41-20260724-175444",
+  "status": "running",
+  "created_at_utc": "2026-07-24T17:54:44Z",
+  "hypothesis": "Replacing Opus 4.8 with Opus 5 changes model reliability and contribution to a mixed civilization while all other experimental controls remain fixed.",
+  "design": {
+    "factor": "opus_model",
+    "control_condition": "claude-opus-4-8",
+    "treatment_condition": "claude-opus-5",
+    "replication_seeds": [
+      11,
+      41
+    ],
+    "ticks": 40,
+    "agents_per_cell": 30,
+    "preset": "organic-generalists",
+    "reasoning_effort": "medium",
+    "action_feedback_mode": "baseline",
+    "decision_mode": "raw",
+    "connector_profile": "stateless-v1",
+    "conversation_mode": "stateless",
+    "assignment_strategy": "stratified",
+    "assignment_seed": 117,
+    "max_workers": 8,
+    "codex_max_workers": 4,
+    "claude_max_workers": 4,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "control_population": [
+      "6@codex:gpt-5.6-sol",
+      "6@codex:gpt-5.6-terra",
+      "6@codex:gpt-5.6-luna",
+      "6@claude:claude-opus-4-8",
+      "6@claude:claude-sonnet-5"
+    ],
+    "treatment_population": [
+      "6@codex:gpt-5.6-sol",
+      "6@codex:gpt-5.6-terra",
+      "6@codex:gpt-5.6-luna",
+      "6@claude:claude-opus-5",
+      "6@claude:claude-sonnet-5"
+    ],
+    "treatment_cells": {
+      "seed11-opus-5": {
+        "seed": 11
+      },
+      "seed41-opus-5": {
+        "seed": 41
+      }
+    }
+  },
+  "controls": {
+    "existing_study": "stateless-v1-v3-civilization-30a-40t-seeds11-41-20260723-174150",
+    "existing_cells": {
+      "seed11-opus-4-8": "runs/experiments/stateless-v1-v3-civilization-30a-40t-seeds11-41-20260723-174150/seed11-stateless-v1",
+      "seed41-opus-4-8": "runs/experiments/stateless-v1-v3-civilization-30a-40t-seeds11-41-20260723-174150/seed41-stateless-v1"
+    },
+    "control_completion": "Both existing cells completed tick 40 and passed the startup health gate. Seed 41 recorded one isolated Sonnet decision failure; Opus 4.8 recorded no provider failures.",
+    "code_equivalence": "The control cells ran at 0a05b0f. From 0a05b0f through treatment launch commit cf99d93, changes are documentation-only; agent_world and tests are identical.",
+    "matched_within_seed": [
+      "world generation",
+      "population counts and cohort order",
+      "stratified cohort assignment",
+      "reasoning effort",
+      "feedback",
+      "decision validation",
+      "turn simultaneity",
+      "provider concurrency",
+      "connector profile",
+      "conversation mode",
+      "simulation implementation"
+    ],
+    "treatment_scope": "Only the explicit Claude model identifier for the six Opus agents changes from claude-opus-4-8 to claude-opus-5.",
+    "quota_policy": "Any incomplete provider-failure or quota-failure tick is discarded, preserved in a separate partial-usage ledger, and resumed only from the last completed-tick checkpoint."
+  },
+  "analysis_policy": {
+    "primary_model_outcomes": [
+      "provider reliability and latency",
+      "invalid proposals per submitted action",
+      "contention failures separately",
+      "survival and death timing",
+      "resource production and consumption",
+      "construction, ownership, storage, and upkeep",
+      "trade offers, acceptances, gifts, and communication"
+    ],
+    "civilization_outcomes": [
+      "total survival and damage",
+      "wealth and inequality",
+      "resource reserves and flows",
+      "structures and entrepreneurship",
+      "commerce and transfer networks",
+      "communication, cooperation, groups, and institutions",
+      "cross-cohort interaction matrices"
+    ],
+    "interpretation": "Use paired-seed differences and require directional replication before attributing effects to Opus 5. Normalize failures by submitted actions or decisions and economic activity by successful calls or starting population as appropriate. Treat the unchanged cohorts as indicators of systemic spillovers and background stochastic variation."
+  },
+  "provenance": {
+    "git_branch": "codex/action-feedback-experiment",
+    "git_sha_at_launch": "cf99d93",
+    "model_preflight": {
+      "requested_model": "claude-opus-5",
+      "response_model": "claude-opus-5",
+      "verified_at_utc": "2026-07-24T17:53:00Z"
+    }
+  }
+}
