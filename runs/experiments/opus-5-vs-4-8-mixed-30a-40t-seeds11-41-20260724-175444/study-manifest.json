@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "opus-5-vs-4-8-mixed-30a-40t-seeds11-41-20260724-175444",
-  "status": "running",
+  "status": "completed",
   "created_at_utc": "2026-07-24T17:54:44Z",
   "hypothesis": "Replacing Opus 4.8 with Opus 5 changes model reliability and contribution to a mixed civilization while all other experimental controls remain fixed.",
   "design": {
@@ -103,5 +103,111 @@
       "response_model": "claude-opus-5",
       "verified_at_utc": "2026-07-24T17:53:00Z"
     }
+  },
+  "completion": {
+    "completed_at_utc": "2026-07-24T18:44:19.129786+00:00",
+    "treatment_cells_completed": 2,
+    "treatment_cells_target": 2,
+    "final_tick_per_cell": 40,
+    "health_gates_passed": 2,
+    "treatment_llm_failures": 0,
+    "treatment_quota_failures": 0,
+    "usage_coverage_percent": 100.0,
+    "control_quality_note": "Both controls passed their health gates. Seed 41 had one isolated Sonnet failure; neither Opus 4.8 control cohort had a provider failure."
+  },
+  "results": {
+    "opus_pooled": {
+      "opus_4_8": {
+        "calls": 475,
+        "survivors": 10,
+        "starting_agents": 12,
+        "submitted_actions": 1567,
+        "invalid_proposals": 571,
+        "invalid_proposal_rate_percent": 36.44,
+        "contention_failures": 8,
+        "contention_rate_percent": 0.51,
+        "ap_exhaustion_invalids": 90,
+        "communications": 428,
+        "trade_offers": 69,
+        "trade_accepts": 6,
+        "gifts": 0,
+        "owned_assets": 1,
+        "owned_asset_value": 30,
+        "prompt_tokens_per_call": 6944.33,
+        "output_tokens_per_call": 577.44,
+        "mean_latency_seconds": 10.02,
+        "cached_share_percent": 60.33
+      },
+      "opus_5": {
+        "calls": 480,
+        "survivors": 12,
+        "starting_agents": 12,
+        "submitted_actions": 1653,
+        "invalid_proposals": 210,
+        "invalid_proposal_rate_percent": 12.7,
+        "contention_failures": 18,
+        "contention_rate_percent": 1.09,
+        "ap_exhaustion_invalids": 4,
+        "communications": 816,
+        "trade_offers": 107,
+        "trade_accepts": 18,
+        "gifts": 20,
+        "owned_assets": 9,
+        "owned_asset_value": 146,
+        "prompt_tokens_per_call": 7312.73,
+        "output_tokens_per_call": 1173.68,
+        "mean_latency_seconds": 17.99,
+        "cached_share_percent": 56.82
+      }
+    },
+    "civilization_pooled": {
+      "opus_4_8_controls": {
+        "survivors": 49,
+        "starting_agents": 60,
+        "submitted_actions": 7496,
+        "invalid_proposal_rate_percent": 29.5,
+        "contention_rate_percent": 0.67,
+        "survival_damage_events": 630,
+        "complete_structures": 11,
+        "asset_value": 154,
+        "stored_inventory_value": 118,
+        "trade_offers": 180,
+        "accepted_trades": 21,
+        "accepted_trade_value": 113,
+        "gifts": 21,
+        "gift_value": 42,
+        "communications": 1258,
+        "liquid_wealth": 791,
+        "upkeep_paid_cycles": 11,
+        "upkeep_missed_cycles": 10
+      },
+      "opus_5_treatments": {
+        "survivors": 50,
+        "starting_agents": 60,
+        "submitted_actions": 7595,
+        "invalid_proposal_rate_percent": 22.04,
+        "contention_rate_percent": 1.21,
+        "survival_damage_events": 566,
+        "complete_structures": 14,
+        "asset_value": 266,
+        "stored_inventory_value": 52,
+        "trade_offers": 250,
+        "accepted_trades": 33,
+        "accepted_trade_value": 203,
+        "gifts": 43,
+        "gift_value": 82,
+        "communications": 1740,
+        "liquid_wealth": 722,
+        "upkeep_paid_cycles": 2,
+        "upkeep_missed_cycles": 20
+      }
+    },
+    "replicated_directions": [
+      "Opus 5 had a lower invalid-proposal rate, fewer action-point exhaustion errors, more survivors or equal survival, more communication, more trade participation, more gifts, and more owned assets in both seeds.",
+      "Opus 5 had higher contention, output tokens, and latency in both seeds.",
+      "The Opus 5 civilizations had fewer invalid proposals, fewer damage events, more fixed capital, more trade offers, greater accepted trade value, more gifts, more communication, less stored inventory, and worse upkeep completion in both seeds."
+    ],
+    "important_spillover": "Sonnet survival fell from 10/12 in the Opus 4.8 controls to 4/12 in the Opus 5 worlds, with a decline in both seeds, even though Sonnet invalid-proposal rates improved. Overall survival therefore changed only from 49/60 to 50/60.",
+    "conclusion": "Opus 5 is a substantially stronger raw planner and a much more active entrepreneur and coordinator than Opus 4.8 in this benchmark. It also consumes roughly twice the output tokens and is about 80 percent slower per call. The resulting civilizations form more capital and exchange more value but do not show a comparably large survival or aggregate-wealth gain, and the replicated Sonnet survival loss requires a dedicated follow-up before interpreting the ecosystem effect as uniformly beneficial."
   }
 }
