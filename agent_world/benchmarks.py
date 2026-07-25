@@ -12,8 +12,8 @@ from agent_world.metrics import is_decision_failure_message
 from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 
 
-BENCHMARK_SUITE_ID = "agent-world-participant-v1"
-BENCHMARK_PROTOCOL_ID = "participant-v1"
+BENCHMARK_SUITE_ID = "agent-world-participant-v2"
+BENCHMARK_PROTOCOL_ID = "participant-v2"
 BENCHMARK_SEEDS = frozenset({11, 41})
 
 # These are mechanics-anchored "excellent" targets, not population percentiles.
@@ -48,7 +48,7 @@ def benchmark_code_fingerprint() -> str:
 
 
 def benchmark_protocol() -> dict[str, Any]:
-    """Return the frozen participant-v1 trial and scoring specification."""
+    """Return the frozen participant-v2 trial and scoring specification."""
 
     return {
         "id": BENCHMARK_PROTOCOL_ID,
@@ -112,6 +112,7 @@ def build_benchmark_results(
             config=config,
             member_ids=member_ids,
             final_tick=int(run.get("final_tick") or 0),
+            target_ticks=int(run.get("target_ticks") or 0),
         )
         cohort_flags = list(trial_flags)
         if raw["submitted_actions_excluding_contention"] <= 0:
@@ -159,7 +160,7 @@ def build_benchmark_results(
 
 
 def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
-    """Apply the frozen participant-v1 formulas to pooled or per-run counts."""
+    """Apply the frozen participant-v2 formulas to pooled or per-run counts."""
 
     planning_denominator = float(raw.get("submitted_actions_excluding_contention") or 0)
     invalid = float(raw.get("invalid_proposals") or 0)
@@ -175,15 +176,30 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
         if possible_ticks > 0
         else None
     )
+    endpoint_health_capacity = float(raw.get("endpoint_health_capacity") or 0)
+    endpoint_population_health = (
+        _clamp_score(
+            100.0
+            * float(raw.get("endpoint_health_points") or 0)
+            / endpoint_health_capacity
+        )
+        if endpoint_health_capacity > 0
+        else None
+    )
+    survival_continuity = _geometric_mean(
+        (survival_exposure, endpoint_population_health)
+    )
     initial_endowment = float(raw.get("initial_endowment_value") or 0)
-    terminal_value = float(raw.get("terminal_economic_value") or 0)
+    living_terminal_value = float(
+        raw.get("living_terminal_economic_value") or 0
+    )
     material_target = initial_endowment * TERMINAL_ENDOWMENT_MULTIPLE_TARGET
     material = (
-        _clamp_score(100.0 * terminal_value / material_target)
+        _clamp_score(100.0 * living_terminal_value / material_target)
         if material_target > 0
         else None
     )
-    competence = _geometric_mean((planning, survival_exposure, material))
+    competence = _geometric_mean((planning, survival_continuity, material))
 
     initiative_rate = (
         100.0 * float(raw.get("venture_initiatives") or 0) / possible_ticks
@@ -227,14 +243,23 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
             "components": {
                 "planning_execution": planning,
                 "survival_exposure_pct": survival_exposure,
+                "endpoint_population_health_pct": endpoint_population_health,
+                "survival_continuity_pct": survival_continuity,
+                "living_agents": raw.get("living_agents", 0),
+                "initial_agents": raw.get("initial_agents", 0),
                 "material_outcome_pct": material,
-                "terminal_economic_value": terminal_value,
+                "living_terminal_economic_value": living_terminal_value,
+                "total_terminal_economic_value": raw.get(
+                    "terminal_economic_value", 0
+                ),
                 "initial_endowment_value": initial_endowment,
                 "material_target_value": material_target,
             },
             "formula": (
-                "geometric_mean(planning execution, survival exposure, "
-                "terminal value relative to 3x starting endowment)"
+                "geometric_mean(planning execution, "
+                "geometric_mean(target-horizon survival exposure, "
+                "endpoint population health), living-accessible terminal value "
+                "relative to 3x starting endowment)"
             ),
         },
         "entrepreneurial_agency": {
@@ -387,6 +412,7 @@ def _cohort_raw_metrics(
     config: dict[str, Any],
     member_ids: list[str],
     final_tick: int,
+    target_ticks: int,
 ) -> dict[str, Any]:
     members = set(member_ids)
     responses = [
@@ -408,9 +434,32 @@ def _cohort_raw_metrics(
         for event in events
         if event.get("type") == "contention_failure" and event.get("actor_id") in members
     ]
-    possible_ticks = len(member_ids) * final_tick
+    benchmark_horizon = target_ticks if target_ticks > 0 else final_tick
+    possible_ticks = len(member_ids) * benchmark_horizon
+    observed_ticks = len(member_ids) * final_tick
     initial_per_agent = _initial_endowment_value(config)
     terminal_value = _terminal_economic_value(snapshot, config, members)
+    snapshot_agents = snapshot.get("agents") or {}
+    living_members = {
+        agent_id
+        for agent_id in members
+        if bool((snapshot_agents.get(agent_id) or {}).get("alive"))
+    }
+    living_terminal_value = _terminal_economic_value(
+        snapshot,
+        config,
+        living_members,
+    )
+    endpoint_health_points = sum(
+        max(
+            0.0,
+            min(
+                100.0,
+                float((snapshot_agents.get(agent_id) or {}).get("health") or 0),
+            ),
+        )
+        for agent_id in members
+    )
     initiative_counts = Counter(
         str(event.get("type"))
         for event in events
@@ -425,6 +474,7 @@ def _cohort_raw_metrics(
     return {
         "initial_agents": len(member_ids),
         "possible_agent_ticks": possible_ticks,
+        "observed_agent_ticks": observed_ticks,
         "decisions": len(responses),
         "decision_failures": decision_failures,
         "submitted_actions": submitted,
@@ -439,6 +489,10 @@ def _cohort_raw_metrics(
         ),
         "initial_endowment_value": initial_per_agent * len(member_ids),
         "terminal_economic_value": _rounded(terminal_value),
+        "living_agents": len(living_members),
+        "endpoint_health_points": _rounded(endpoint_health_points),
+        "endpoint_health_capacity": 100 * len(member_ids),
+        "living_terminal_economic_value": _rounded(living_terminal_value),
         "venture_initiatives": sum(initiative_counts.values()),
         "venture_initiatives_by_type": dict(sorted(initiative_counts.items())),
         "realized_venture_value": _rounded(realized["total"]),

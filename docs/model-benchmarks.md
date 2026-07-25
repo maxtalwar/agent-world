@@ -1,6 +1,6 @@
 # Agent World model benchmarks
 
-Agent World Participant v1 is the first standardized model benchmark suite.
+Agent World Participant v2 is the current standardized model benchmark suite.
 It turns deterministic run telemetry into three repeatable scores while keeping
 the raw evidence and formulas visible.
 
@@ -9,7 +9,7 @@ The suite distinguishes:
 - **Diagnostic scores:** useful measurements from any run, including mixed
   civilizations and older harnesses.
 - **Certified benchmark results:** pooled results from two clean runs that
-  exactly follow the participant-v1 protocol.
+  exactly follow the participant-v2 protocol.
 
 This prevents an interesting exploratory run from being presented as directly
 comparable to a controlled benchmark.
@@ -18,7 +18,14 @@ comparable to a controlled benchmark.
 
 - [GPT-5.3-Codex-Spark, 2026-07-24](gpt-5-3-codex-spark-benchmark.md):
   diagnostic-only; both runs exhausted the dedicated weekly quota before tick
-  40 and each contained one model-decision failure.
+  40 and each contained one model-decision failure. That attempt also exposed
+  Participant v1 competence inflation; its corrected v2 diagnostic is 51.03,
+  not 82.23.
+
+Participant v1 is retired. It counted dead agents' inventories as material
+success, measured survival only over ticks that happened to run, and lacked an
+endpoint-health check. Historical v1 reports remain historical artifacts and
+must not be silently mixed with v2 results.
 
 ## Standard trial
 
@@ -48,11 +55,11 @@ Launch the first replication:
 
 ```bash
 python3 -m agent_world.cli run \
-  --benchmark-protocol participant-v1 \
+  --benchmark-protocol participant-v2 \
   --brain codex --model gpt-5.6-luna \
   --seed 11 \
-  --out runs/benchmarks/luna-v1/seed-11/run.jsonl \
-  --snapshot runs/benchmarks/luna-v1/seed-11/run-snapshot.json \
+  --out runs/benchmarks/luna-v2/seed-11/run.jsonl \
+  --snapshot runs/benchmarks/luna-v2/seed-11/run-snapshot.json \
   --progress
 ```
 
@@ -64,9 +71,9 @@ Each run report automatically contains `benchmarks`. Pool the two reports with:
 
 ```bash
 python3 -m agent_world.cli benchmark \
-  runs/benchmarks/luna-v1/seed-11/run-report.json \
-  runs/benchmarks/luna-v1/seed-41/run-report.json \
-  --out runs/benchmarks/luna-v1/leaderboard
+  runs/benchmarks/luna-v2/seed-11/run-report.json \
+  runs/benchmarks/luna-v2/seed-41/run-report.json \
+  --out runs/benchmarks/luna-v2/leaderboard
 ```
 
 Aggregation pools the raw numerators and denominators before scoring. It does
@@ -104,27 +111,35 @@ This asks whether valid planning translates into sustained success:
 ```text
 geometric mean(
   planning execution,
-  survival exposure,
-  material outcome
+  survival continuity,
+  living-accessible material outcome
 )
 ```
 
-- **Survival exposure** is successful decision opportunities divided by all
-  possible agent-ticks. It captures when agents died, not only how many were
-  alive at the end.
-- **Material outcome** is terminal attributable economic value relative to
-  three times the cohort's starting endowment. The score caps at 100.
-- **Terminal economic value** includes carried inventory, owned completed
-  productive assets, stored inventory, treasuries, upkeep reserves, owned
-  ground items, open trade escrow, and still-owned credit advance/collateral
-  escrow. Group-owned value is divided among members.
+- **Survival exposure** is successful decision opportunities divided by the
+  complete target horizon, including ticks lost when a run stops early.
+- **Endpoint population health** is the cohort's remaining health divided by
+  its initial maximum health. Dead agents contribute zero, and barely surviving
+  agents receive only their remaining health fraction.
+- **Survival continuity** is the geometric mean of survival exposure and
+  endpoint population health. This preserves the timing information from
+  exposure while preventing a late collapse from looking healthy.
+- **Living-accessible material outcome** is economic value still attributable
+  to living cohort members relative to three times the cohort's starting
+  endowment. Dead agents' inventories and directly owned estates do not count.
+  The score caps at 100.
+- **Living terminal economic value** includes carried inventory, owned
+  completed productive assets, stored inventory, treasuries, upkeep reserves,
+  owned ground items, open trade escrow, and still-owned credit
+  advance/collateral escrow. Group-owned value is divided among members, and
+  only living members' shares count.
 
-The three-times-endowment target is mechanics-based and frozen in v1. It means
+The three-times-endowment target is mechanics-based and frozen in v2. It means
 an excellent cohort must do more than preserve its starting supplies.
 
 A geometric mean is used rather than hand-tuned weights. A model cannot erase a
-collapse in survival by accumulating wealth among one remaining agent, or hide
-poor planning behind passive survival.
+collapse by leaving wealth on dead agents, or hide poor planning behind passive
+survival.
 
 ### 3. Entrepreneurial agency
 
@@ -183,10 +198,10 @@ The aggregate artifact retains:
 - the complete frozen protocol and scoring targets.
 
 Changing a formula, target, world, or harness requires a new suite ID. Existing
-Participant v1 results must never be silently rescored under a changed
+Participant v1 or v2 results must never be silently rescored under a changed
 definition.
 
-## What v1 does not score
+## What v2 does not score
 
 Communication, gifts, trades, construction cooperation, and group creation are
 retained as social diagnostics. They are not yet a social-ability score because
@@ -198,4 +213,4 @@ keyword counts or an uncalibrated LLM judge would make the benchmark look more
 precise than it is.
 
 Future suites can add social coordination, leadership, adaptation, deception,
-or antisocial-behavior tasks without changing Participant v1.
+or antisocial-behavior tasks without changing Participant v2.

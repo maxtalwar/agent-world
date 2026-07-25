@@ -304,7 +304,7 @@ command, git provenance, resolved response-model versions, and output paths.
 
 ## Standardized model benchmarks
 
-Agent World Participant v1 provides three versioned 0-100 scores: planning
+Agent World Participant v2 provides three versioned 0-100 scores: planning
 execution, sustained competence, and entrepreneurial agency. Any run receives
 diagnostic cohort scores, while certified model results require two clean
 pure-model trials under the locked seeds 11/41 protocol.
@@ -313,11 +313,11 @@ Start a standardized trial with:
 
 ```bash
 python3 -m agent_world.cli run \
-  --benchmark-protocol participant-v1 \
+  --benchmark-protocol participant-v2 \
   --brain codex --model gpt-5.6-luna \
   --seed 11 \
-  --out runs/benchmarks/luna-v1/seed-11/run.jsonl \
-  --snapshot runs/benchmarks/luna-v1/seed-11/run-snapshot.json
+  --out runs/benchmarks/luna-v2/seed-11/run.jsonl \
+  --snapshot runs/benchmarks/luna-v2/seed-11/run-snapshot.json
 ```
 
 Repeat with seed 41, then pool the two generated reports using

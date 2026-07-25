@@ -13,10 +13,12 @@ leaderboard result.
 Run root:
 `runs/benchmarks/gpt-5-3-codex-spark-participant-v1-20260724-220724`
 
-## Objective diagnostic results
+## Corrected objective diagnostic results
 
 These are incomplete-run diagnostics, not official or directly comparable
-participant-v1 scores.
+Participant v2 scores. They were recomputed from the preserved v1 raw telemetry
+after this run exposed three competence-formula defects: missing target-horizon
+penalty, no endpoint-health component, and dead-estate wealth attribution.
 
 | Metric | Seed 11 | Seed 41 | Pooled diagnostic |
 |---|---:|---:|---:|
@@ -27,9 +29,11 @@ participant-v1 scores.
 | Invalid proposals | 299 | 347 | 646 |
 | Action-point overruns | 32 | 44 | 76 |
 | Planning execution | 68.79 | 64.95 | 66.84 |
-| Survival exposure | 92.35 | 98.44 | 95.30 |
-| Material outcome | 86.67 | 87.92 | 87.29 |
-| Sustained competence | 81.96 | 82.53 | 82.23 |
+| Target-horizon survival exposure | 78.50 | 78.75 | 78.62 |
+| Endpoint population health | 23.90 | 12.90 | 18.40 |
+| Survival continuity | 43.31 | 31.87 | 38.03 |
+| Living-accessible material outcome | 35.83 | 68.75 | 52.29 |
+| Sustained competence | 47.44 | 52.21 | 51.03 |
 | Venture initiatives | 7 | 3 | 10 |
 | Realized venture value | 0 | 0 | 0 |
 | Entrepreneurial agency | 0 | 0 | 0 |
@@ -37,9 +41,11 @@ participant-v1 scores.
 | Structures / gifts / groups | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
 | Trades offered / accepted | 7 / 0 | 3 / 0 | 10 / 0 |
 
-The pooled scores apply the frozen formulas to pooled numerators and
-denominators. They are descriptive only because the runs ended at different
-ticks and failed quality certification.
+The original Participant v1 reports displayed pooled competence of 82.23. That
+number is retired, not an alternative interpretation. The pooled v2 score
+applies the corrected formula to pooled numerators and denominators. It remains
+descriptive only because the runs ended at different ticks and failed quality
+certification.
 
 ## Civilization shape
 
@@ -115,20 +121,15 @@ early-abort threshold; the final quality gate correctly rejected them.
 The attempt supports a diagnostic characterization: Spark was energetic and
 productive at basic foraging, but weak at grounded multi-action planning,
 resource security, and conversion of goods into civilization-scale
-coordination or capital. Its apparent sustained-competence score is held up by
-high early survival exposure and accumulated inventories despite the lack of
-enterprise and late mortality.
-
-One scoring caveat deserves attention before treating that diagnostic
-competence value substantively: terminal economic value includes inventory
-still attached to dead agents. Death currently marks an agent dead without
-dropping or clearing inventory. That behavior is consistent across benchmark
-participants, but it means material outcome can include inaccessible estates
-and partly mask civilizational collapse.
+coordination or capital. Participant v1 incorrectly turned that into competence
+of 82.23 because it treated the interrupted horizon as complete, lacked an
+endpoint-health check, and counted inventory still attached to dead agents.
+Participant v2 corrects all three problems. Its 51.03 diagnostic matches the
+observed fragile foraging society much more closely.
 
 A certified result requires two fresh clean 40-tick runs. Resuming these
 checkpoints cannot make them official because their decision failures remain
 in the audit trail. At the observed output rate, the two-run protocol also
 appears larger than one weekly Spark allowance. The rate-safe route is one
 fresh seed per allowance window (or an explicitly authorized alternative
-billing/reset mechanism), followed by normal participant-v1 aggregation.
+billing/reset mechanism), followed by normal participant-v2 aggregation.

@@ -28,7 +28,7 @@ PopulationSpec -> BrainRuntime -> SimulationSession -> SimulationRunner -> World
 - `WorldEngine` owns all deterministic state transitions and validation.
 - `benchmarks.py` converts report evidence into versioned cohort scores.
   Ordinary runs receive diagnostic scores; only runs satisfying the declared
-  participant-v1 protocol can enter a pooled certified leaderboard.
+  participant-v2 protocol can enter a pooled certified leaderboard.
 
 CLI, experiment, and observatory callers retain their presentation-specific responsibilities. Experiments update provenance manifests through session callbacks; the observatory updates live status and pause/stop controls through callbacks. They do not implement separate simulation loops.
 

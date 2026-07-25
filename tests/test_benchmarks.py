@@ -81,6 +81,7 @@ def _protocol_report(seed: int, source: str) -> dict:
         "agents": {
             agent_id: {
                 "alive": True,
+                "health": 100,
                 "inventory": {"food": 1, "water": 2, "coin": 4},
             }
             for agent_id in agents
@@ -141,8 +142,11 @@ class BenchmarkTests(unittest.TestCase):
                 "action_point_overruns": 3,
                 "possible_agent_ticks": 100,
                 "decisions": 90,
+                "endpoint_health_points": 600,
+                "endpoint_health_capacity": 1000,
                 "initial_endowment_value": 80,
                 "terminal_economic_value": 120,
+                "living_terminal_economic_value": 120,
                 "venture_initiatives": 10,
                 "realized_venture_value": 20,
             }
@@ -151,10 +155,132 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(scores["planning_execution"]["score"], 80.0)
         self.assertAlmostEqual(
             scores["sustained_competence"]["score"],
-            (80 * 90 * 50) ** (1 / 3),
+            (80 * ((90 * 60) ** 0.5) * 50) ** (1 / 3),
             places=2,
         )
         self.assertEqual(scores["entrepreneurial_agency"]["score"], 50.0)
+
+    def test_competence_penalizes_dead_estates_and_endpoint_collapse(self) -> None:
+        scores = score_benchmark_counts(
+            {
+                "submitted_actions": 100,
+                "contention_failures": 0,
+                "submitted_actions_excluding_contention": 100,
+                "invalid_proposals": 30,
+                "action_point_overruns": 0,
+                "possible_agent_ticks": 100,
+                "decisions": 100,
+                "initial_agents": 10,
+                "living_agents": 2,
+                "endpoint_health_points": 100,
+                "endpoint_health_capacity": 1000,
+                "initial_endowment_value": 80,
+                "terminal_economic_value": 800,
+                "living_terminal_economic_value": 40,
+                "venture_initiatives": 0,
+                "realized_venture_value": 0,
+            }
+        )
+
+        competence = scores["sustained_competence"]
+        self.assertAlmostEqual(
+            competence["score"],
+            (70 * (100 * 10) ** 0.5 * (100 * 40 / 240)) ** (1 / 3),
+            places=2,
+        )
+        self.assertEqual(
+            competence["components"]["total_terminal_economic_value"],
+            800,
+        )
+        self.assertEqual(
+            competence["components"]["living_terminal_economic_value"],
+            40.0,
+        )
+
+    def test_spark_collapse_regression_is_not_scored_as_high_competence(self) -> None:
+        scores = score_benchmark_counts(
+            {
+                "submitted_actions": 1959,
+                "contention_failures": 11,
+                "submitted_actions_excluding_contention": 1948,
+                "invalid_proposals": 646,
+                "action_point_overruns": 76,
+                "possible_agent_ticks": 800,
+                "observed_agent_ticks": 660,
+                "decisions": 629,
+                "initial_agents": 20,
+                "living_agents": 12,
+                "endpoint_health_points": 368,
+                "endpoint_health_capacity": 2000,
+                "initial_endowment_value": 160,
+                "terminal_economic_value": 419,
+                "living_terminal_economic_value": 251,
+                "venture_initiatives": 10,
+                "realized_venture_value": 0,
+            }
+        )
+
+        competence = scores["sustained_competence"]
+        self.assertEqual(competence["score"], 51.03)
+        self.assertEqual(
+            competence["components"]["survival_exposure_pct"],
+            78.62,
+        )
+        self.assertEqual(
+            competence["components"]["endpoint_population_health_pct"],
+            18.4,
+        )
+
+    def test_incomplete_run_uses_target_horizon_for_survival_exposure(self) -> None:
+        report = _protocol_report(11, "seed-11")
+        report["run"]["completed"] = False
+        report["run"]["final_tick"] = 20
+        report["population"]["cohorts"]["cohort-1"]["agents"] = [
+            f"agent-{index}" for index in range(1, 11)
+        ]
+        snapshot = {
+            "tick": 20,
+            "agents": {
+                f"agent-{index}": {
+                    "alive": True,
+                    "health": 100,
+                    "inventory": {"coin": 4},
+                }
+                for index in range(1, 11)
+            },
+            "groups": {},
+            "structures": {},
+            "items": {},
+            "trades": {},
+            "contracts": {},
+        }
+        events = [
+            {
+                "type": "run_started",
+                "tick": 0,
+                "actor_id": None,
+                "message": "started",
+                "data": {},
+            },
+            *[
+                {
+                    "type": "agent_response",
+                    "tick": tick,
+                    "actor_id": f"agent-{index}",
+                    "message": "wait",
+                    "data": {"actions": [{"type": "wait"}]},
+                }
+                for tick in range(20)
+                for index in range(1, 11)
+            ],
+        ]
+
+        benchmark = build_benchmark_results(events, snapshot, report)
+        components = benchmark["cohorts"]["cohort-1"]["scores"][
+            "sustained_competence"
+        ]["components"]
+
+        self.assertEqual(components["survival_exposure_pct"], 50.0)
 
     def test_declared_standard_trial_is_protocol_compliant(self) -> None:
         report = _protocol_report(11, "seed-11")

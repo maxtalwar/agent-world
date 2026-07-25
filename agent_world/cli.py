@@ -161,7 +161,7 @@ def main(argv: list[str] | None = None) -> None:
         choices=[BENCHMARK_PROTOCOL_ID],
         default=None,
         help=(
-            "Lock this run to the standardized participant-v1 benchmark trial. "
+            f"Lock this run to the standardized {BENCHMARK_PROTOCOL_ID} benchmark trial. "
             "Run once with seed 11 and once with seed 41."
         ),
     )
@@ -210,7 +210,10 @@ def main(argv: list[str] | None = None) -> None:
 
     benchmark_parser = subparsers.add_parser(
         "benchmark",
-        help="Pool participant-v1 benchmark scores from completed run-report.json files.",
+        help=(
+            f"Pool {BENCHMARK_PROTOCOL_ID} benchmark scores from completed "
+            "run-report.json files."
+        ),
     )
     benchmark_parser.add_argument(
         "paths",
@@ -368,7 +371,7 @@ def _run(args: argparse.Namespace) -> None:
         ):
             raise ValueError(
                 "The benchmark-defining code changed after this checkpoint; "
-                "resume would not be a valid participant-v1 replication."
+                f"resume would not be a valid {BENCHMARK_PROTOCOL_ID} replication."
             )
         args.ticks = args.ticks if args.ticks is not None else int(saved.get("target_ticks") or engine.state.tick)
         args.agents = len(engine.state.agents)
@@ -828,14 +831,16 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         return
     if getattr(args, "population", None):
         raise ValueError(
-            "participant-v1 uses one uniform model cohort; omit --population."
+            f"{BENCHMARK_PROTOCOL_ID} uses one uniform model cohort; omit --population."
         )
     if args.brain not in {"llm", "codex", "claude", "cursor"}:
         raise ValueError(
-            "participant-v1 requires an explicit model-backed --brain."
+            f"{BENCHMARK_PROTOCOL_ID} requires an explicit model-backed --brain."
         )
     if getattr(args, "sequential_decisions", False):
-        raise ValueError("participant-v1 requires simultaneous decision collection.")
+        raise ValueError(
+            f"{BENCHMARK_PROTOCOL_ID} requires simultaneous decision collection."
+        )
 
     locked = {
         "ticks": 40,
@@ -867,16 +872,19 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         current = getattr(args, name, None)
         if current is not None and current != required:
             raise ValueError(
-                f"participant-v1 requires --{name.replace('_', '-')}={required}; "
+                f"{BENCHMARK_PROTOCOL_ID} requires "
+                f"--{name.replace('_', '-')}={required}; "
                 f"received {current!r}."
             )
         setattr(args, name, required)
     if args.seed is None:
         args.seed = 11
     if args.seed not in {11, 41}:
-        raise ValueError("participant-v1 requires seed 11 or 41.")
+        raise ValueError(f"{BENCHMARK_PROTOCOL_ID} requires seed 11 or 41.")
     if getattr(args, "no_agent_io_log", False):
-        raise ValueError("participant-v1 requires private agent I/O logging.")
+        raise ValueError(
+            f"{BENCHMARK_PROTOCOL_ID} requires private agent I/O logging."
+        )
     args.benchmark_code_fingerprint = benchmark_code_fingerprint()
 
 
