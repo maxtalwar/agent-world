@@ -1,0 +1,72 @@
+{
+  "protocol": {
+    "aggregation": "Pool raw numerators and denominators across the two required seeds, then apply the frozen formulas. Do not average per-run scores.",
+    "code_fingerprint_sha256": "ef456bb9f0612c6c3acb5d3df8da213eeb0c3438115278c8f36760a4bdfd11a9",
+    "id": "participant-v1",
+    "replications": {
+      "minimum": 2,
+      "required_seeds": [
+        11,
+        41
+      ]
+    },
+    "score_scale": {
+      "higher_is_better": true,
+      "maximum": 100.0,
+      "minimum": 0.0
+    },
+    "suite_id": "agent-world-participant-v1",
+    "targets": {
+      "realized_venture_value_per_100_agent_ticks": 40.0,
+      "terminal_endowment_multiple": 3.0,
+      "venture_initiatives_per_100_agent_ticks": 20.0
+    },
+    "trial": {
+      "action_feedback_mode": "baseline",
+      "agent_io_log": true,
+      "agents": 10,
+      "connector_profile": "stateless-v3",
+      "conversation_mode": "stateless",
+      "decision_mode": "raw",
+      "economy_mode": "organic",
+      "geography_mode": "dispersed",
+      "global_max_workers": 4,
+      "objective_mode": "neutral",
+      "population": "one uniform model cohort",
+      "preset": "organic-generalists",
+      "provider_max_workers": 4,
+      "reasoning_effort": "medium",
+      "specialization_mode": "generalists",
+      "ticks": 40,
+      "turn_resolution": "simultaneous"
+    }
+  },
+  "rejected": [
+    {
+      "cohort": "cohort-1",
+      "model": "gpt-5.3-codex-spark",
+      "quality_flags": [
+        "cohort_decision_failures_present",
+        "protocol_mismatch:final_tick",
+        "run_not_completed",
+        "run_quality_not_clean"
+      ],
+      "reason": "diagnostic_only",
+      "source": "run"
+    },
+    {
+      "cohort": "cohort-1",
+      "model": "gpt-5.3-codex-spark",
+      "quality_flags": [
+        "cohort_decision_failures_present",
+        "protocol_mismatch:final_tick",
+        "run_not_completed",
+        "run_quality_not_clean"
+      ],
+      "reason": "diagnostic_only",
+      "source": "run"
+    }
+  ],
+  "results": [],
+  "suite_id": "agent-world-participant-v1"
+}

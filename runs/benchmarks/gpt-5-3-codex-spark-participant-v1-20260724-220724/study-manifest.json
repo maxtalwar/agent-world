@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "gpt-5-3-codex-spark-participant-v1-20260724-220724",
-  "status": "running",
+  "status": "diagnostic_incomplete",
   "created_at_utc": "2026-07-25T02:07:16Z",
   "suite_id": "agent-world-participant-v1",
   "benchmark_protocol": "participant-v1",
@@ -19,13 +19,19 @@
     "cells": {
       "seed-11": {
         "seed": 11,
-        "status": "running",
-        "screen": "aw-bench-spark-s11"
+        "status": "paused_quota",
+        "screen": "aw-bench-spark-s11",
+        "final_tick": 34,
+        "decision_failures": 1,
+        "quality_status": "degraded"
       },
       "seed-41": {
         "seed": 41,
-        "status": "running",
-        "screen": "aw-bench-spark-s41"
+        "status": "paused_quota",
+        "screen": "aw-bench-spark-s41",
+        "final_tick": 32,
+        "decision_failures": 1,
+        "quality_status": "degraded"
       }
     }
   },
@@ -64,5 +70,27 @@
     "git_sha_at_launch": "6eb2952",
     "codex_executable": "/Applications/ChatGPT.app/Contents/Resources/codex",
     "codex_cli_version": "0.146.0-alpha.3.1"
+  },
+  "outcome": {
+    "certification": "rejected_diagnostic_only",
+    "reason": "Both replications stopped at clean completed-tick checkpoints after the dedicated GPT-5.3-Codex-Spark weekly quota reached 100 percent. Each replication also contained one structured-output decision failure, independently disqualifying it under participant-v1.",
+    "quota_reset_at_epoch": 1785550120,
+    "leaderboard_results": 0,
+    "leaderboard_rejected_runs": 2,
+    "diagnostic_pooled": {
+      "decisions": 629,
+      "submitted_actions": 1959,
+      "contention_failures": 11,
+      "invalid_proposals": 646,
+      "planning_execution": 66.84,
+      "survival_exposure": 95.3,
+      "material_outcome": 87.29,
+      "sustained_competence": 82.23,
+      "entrepreneurial_agency": 0.0,
+      "prompt_tokens": 6974324,
+      "output_tokens": 3255380,
+      "reasoning_tokens": 3190997
+    },
+    "analysis": "docs/gpt-5-3-codex-spark-benchmark.md"
   }
 }

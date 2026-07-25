@@ -14,6 +14,12 @@ The suite distinguishes:
 This prevents an interesting exploratory run from being presented as directly
 comparable to a controlled benchmark.
 
+## Recorded attempts
+
+- [GPT-5.3-Codex-Spark, 2026-07-24](gpt-5-3-codex-spark-benchmark.md):
+  diagnostic-only; both runs exhausted the dedicated weekly quota before tick
+  40 and each contained one model-decision failure.
+
 ## Standard trial
 
 A certified result requires two pure-model replications:
