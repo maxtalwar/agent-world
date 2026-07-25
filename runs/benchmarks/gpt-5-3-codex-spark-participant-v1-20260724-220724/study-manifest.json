@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "study_id": "gpt-5-3-codex-spark-participant-v1-20260724-220724",
+  "status": "running",
+  "created_at_utc": "2026-07-25T02:07:16Z",
+  "suite_id": "agent-world-participant-v1",
+  "benchmark_protocol": "participant-v1",
+  "benchmark_code_fingerprint_sha256": "ef456bb9f0612c6c3acb5d3df8da213eeb0c3438115278c8f36760a4bdfd11a9",
+  "target": {
+    "brain": "codex",
+    "model": "gpt-5.3-codex-spark",
+    "reasoning_effort": "medium"
+  },
+  "replications": {
+    "required_seeds": [
+      11,
+      41
+    ],
+    "cells": {
+      "seed-11": {
+        "seed": 11,
+        "status": "running",
+        "screen": "aw-bench-spark-s11"
+      },
+      "seed-41": {
+        "seed": 41,
+        "status": "running",
+        "screen": "aw-bench-spark-s41"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 40,
+    "preset": "organic-generalists",
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  },
+  "certification_policy": {
+    "required": "Both seeds must complete tick 40 with clean quality, complete usage coverage, one uniform cohort, matching benchmark fingerprint, and no model-decision failures.",
+    "aggregation": "Pool raw numerators and denominators across seeds 11 and 41 before applying the frozen participant-v1 formulas."
+  },
+  "scores": {
+    "planning_execution": "Valid proposed actions after excluding same-tick contention.",
+    "sustained_competence": "Geometric mean of planning execution, survival exposure, and terminal material outcome.",
+    "entrepreneurial_agency": "Geometric mean of successful venture initiative and realized venture value rates."
+  },
+  "provenance": {
+    "git_branch": "codex/action-feedback-experiment",
+    "git_sha_at_launch": "6eb2952",
+    "codex_executable": "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "codex_cli_version": "0.146.0-alpha.3.1"
+  }
+}
