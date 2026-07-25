@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "study_id": "gpt-5-4-participant-v2-provisional-seed11-20260725-041235",
+  "status": "running",
+  "created_at_utc": "2026-07-25T04:12:35Z",
+  "suite_id": "agent-world-participant-v2",
+  "benchmark_protocol": "participant-v2",
+  "benchmark_code_fingerprint_sha256": "a991cc300a160428884ecd31303020e6fbd68233ffa737feeb8d7dcfebcf9661",
+  "target": {
+    "brain": "codex",
+    "model": "gpt-5.4",
+    "reasoning_effort": "medium"
+  },
+  "result_tier": {
+    "requested": "provisional",
+    "required_seed": 11,
+    "promotion_seed": 41,
+    "policy": "One clean complete seed-11 run earns provisional status. A later clean seed-41 run promotes it to replicated certification."
+  },
+  "replications": {
+    "cells": {
+      "seed-11": {
+        "seed": 11,
+        "status": "running",
+        "screen": "aw-bench-gpt54-s11"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 40,
+    "preset": "organic-generalists",
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  },
+  "quality_policy": {
+    "provisional": "The run must complete tick 40 with clean quality, complete usage coverage, the matching benchmark fingerprint, and no model-decision failures.",
+    "diagnostic": "An early stop, decision failure, provider failure, protocol mismatch, or incomplete usage prevents provisional status but remains reportable."
+  },
+  "provenance": {
+    "git_branch": "codex/action-feedback-experiment",
+    "git_sha_at_launch": "485d5e8",
+    "codex_executable": "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "codex_cli_version": "0.146.0-alpha.3.1"
+  },
+  "command": [
+    "python3",
+    "-m",
+    "agent_world.cli",
+    "run",
+    "--benchmark-protocol",
+    "participant-v2",
+    "--brain",
+    "codex",
+    "--model",
+    "gpt-5.4",
+    "--seed",
+    "11",
+    "--out",
+    "runs/benchmarks/gpt-5-4-participant-v2-provisional-seed11-20260725-041235/seed-11/run.jsonl",
+    "--snapshot",
+    "runs/benchmarks/gpt-5-4-participant-v2-provisional-seed11-20260725-041235/seed-11/run-snapshot.json",
+    "--progress"
+  ]
+}

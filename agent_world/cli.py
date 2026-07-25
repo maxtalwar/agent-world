@@ -162,7 +162,8 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help=(
             f"Lock this run to the standardized {BENCHMARK_PROTOCOL_ID} benchmark trial. "
-            "Run once with seed 11 and once with seed 41."
+            "Seed 11 alone can earn provisional status; add seed 41 for "
+            "replicated certification."
         ),
     )
 
