@@ -13,6 +13,12 @@ from typing import Any
 
 from agent_world.ablation import format_table, run_ablation
 from agent_world.agents import AgentBrain, SurvivalBrain
+from agent_world.benchmarks import (
+    BENCHMARK_PROTOCOL_ID,
+    aggregate_benchmark_reports,
+    benchmark_code_fingerprint,
+    format_benchmark_leaderboard,
+)
 from agent_world.brain_factory import (
     BrainSpec,
     PopulationSpec,
@@ -68,7 +74,7 @@ def main(argv: list[str] | None = None) -> None:
     run_parser = subparsers.add_parser("run", help="Run a deterministic simulation.")
     run_parser.add_argument("--ticks", type=int, default=None, help="Total target tick. Defaults to 25, or the saved target when resuming.")
     run_parser.add_argument("--agents", type=int, default=None)
-    run_parser.add_argument("--seed", type=int, default=1)
+    run_parser.add_argument("--seed", type=int, default=None)
     run_parser.add_argument("--width", type=int, default=16)
     run_parser.add_argument("--height", type=int, default=16)
     run_parser.add_argument("--preset", choices=sorted(RUN_PRESETS), default=None)
@@ -150,6 +156,15 @@ def main(argv: list[str] | None = None) -> None:
         default=0.2,
         help="Stop when a model cohort exceeds this decision-failure rate at the startup check.",
     )
+    run_parser.add_argument(
+        "--benchmark-protocol",
+        choices=[BENCHMARK_PROTOCOL_ID],
+        default=None,
+        help=(
+            "Lock this run to the standardized participant-v1 benchmark trial. "
+            "Run once with seed 11 and once with seed 41."
+        ),
+    )
 
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
     replay_parser.add_argument("path", type=Path)
@@ -192,6 +207,23 @@ def main(argv: list[str] | None = None) -> None:
         help="Export structured -report.json/-report.md summaries for run logs; compares runs when given several.",
     )
     report_parser.add_argument("paths", type=Path, nargs="+", help="Run event logs (.jsonl) with matching -snapshot.json files.")
+
+    benchmark_parser = subparsers.add_parser(
+        "benchmark",
+        help="Pool participant-v1 benchmark scores from completed run-report.json files.",
+    )
+    benchmark_parser.add_argument(
+        "paths",
+        type=Path,
+        nargs="+",
+        help="Benchmark-aware run-report.json files, normally the seed 11 and 41 replications.",
+    )
+    benchmark_parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="Optional output stem for <stem>.json and <stem>.md.",
+    )
 
     experiment_parser = subparsers.add_parser(
         "experiment",
@@ -257,6 +289,8 @@ def main(argv: list[str] | None = None) -> None:
         _ablate(args)
     elif args.command == "report":
         _report(args)
+    elif args.command == "benchmark":
+        _benchmark(args)
     elif args.command == "experiment":
         _experiment(args)
 
@@ -265,6 +299,8 @@ def _run(args: argparse.Namespace) -> None:
     load_dotenv()
     resume_checkpoint = getattr(args, "resume_checkpoint", None)
     resumed = resume_checkpoint is not None
+    if not resumed:
+        _apply_benchmark_protocol(args)
     checkpoint_extra: dict[str, Any] = {}
     population_spec: PopulationSpec | None = None
     if resumed:
@@ -313,6 +349,27 @@ def _run(args: argparse.Namespace) -> None:
                         f"A checkpoint must be resumed with its original {name.replace('_', ' ')}."
                     )
                 setattr(args, name, saved_value)
+        requested_benchmark = getattr(args, "benchmark_protocol", None)
+        saved_benchmark = saved.get("benchmark_protocol")
+        if (
+            requested_benchmark is not None
+            and requested_benchmark != saved_benchmark
+        ):
+            raise ValueError(
+                "A checkpoint must be resumed with its original benchmark protocol."
+            )
+        args.benchmark_protocol = saved_benchmark
+        args.benchmark_code_fingerprint = saved.get(
+            "benchmark_code_fingerprint"
+        )
+        if (
+            saved_benchmark is not None
+            and args.benchmark_code_fingerprint != benchmark_code_fingerprint()
+        ):
+            raise ValueError(
+                "The benchmark-defining code changed after this checkpoint; "
+                "resume would not be a valid participant-v1 replication."
+            )
         args.ticks = args.ticks if args.ticks is not None else int(saved.get("target_ticks") or engine.state.tick)
         args.agents = len(engine.state.agents)
         if args.out is None and saved.get("events_path"):
@@ -341,6 +398,7 @@ def _run(args: argparse.Namespace) -> None:
         args.action_feedback_mode = saved_feedback_mode
     else:
         args.ticks = args.ticks if args.ticks is not None else 25
+        args.seed = args.seed if args.seed is not None else 1
         preset_name = getattr(args, "preset", None) or "baseline"
         preset = RUN_PRESETS[preset_name]
         args.objective_mode = getattr(args, "objective_mode", None) or preset["objective_mode"]
@@ -472,13 +530,22 @@ def _run(args: argparse.Namespace) -> None:
         "geography_mode": engine.state.config.geography_mode,
         "specialization_mode": engine.state.config.specialization_mode,
         "decision_mode": decision_mode,
+        "turn_resolution": (
+            "sequential" if args.sequential_decisions else "simultaneous"
+        ),
         "action_feedback_mode": getattr(engine.state.config, "action_feedback_mode", "baseline"),
         "provider_max_workers": provider_max_workers,
+        "global_max_workers": max_workers,
+        "agent_io_log": not args.no_agent_io_log,
         "startup_health_check_tick": startup_health_check_tick,
         "startup_health_max_failure_rate": startup_health_max_failure_rate,
         "connector_profile": args.connector_profile,
         "conversation_mode": args.conversation_mode,
         "session_max_turns": args.session_max_turns,
+        "benchmark_protocol": getattr(args, "benchmark_protocol", None),
+        "benchmark_code_fingerprint": getattr(
+            args, "benchmark_code_fingerprint", None
+        ),
     }
 
     if not resumed:
@@ -516,11 +583,18 @@ def _run(args: argparse.Namespace) -> None:
                 "decision_mode": decision_mode,
                 "log_agent_io": not args.no_agent_io_log,
                 "sequential_decisions": args.sequential_decisions,
+                "turn_resolution": (
+                    "sequential" if args.sequential_decisions else "simultaneous"
+                ),
                 "startup_health_check_tick": startup_health_check_tick,
                 "startup_health_max_failure_rate": startup_health_max_failure_rate,
                 "connector_profile": args.connector_profile,
                 "conversation_mode": args.conversation_mode,
                 "session_max_turns": args.session_max_turns,
+                "benchmark_protocol": getattr(args, "benchmark_protocol", None),
+                "benchmark_code_fingerprint": getattr(
+                    args, "benchmark_code_fingerprint", None
+                ),
             },
             "plan_usage_checkpoints": current.plan_usage_checkpoints,
             "brain_states": current.export_brain_states(),
@@ -663,6 +737,13 @@ def _ordinary_run_manifest(
         "final_tick": engine.state.tick,
         "preset": getattr(args, "preset", None) or "baseline",
         "decision_mode": decision_mode,
+        "turn_resolution": (
+            "sequential" if args.sequential_decisions else "simultaneous"
+        ),
+        "benchmark_protocol": getattr(args, "benchmark_protocol", None),
+        "benchmark_code_fingerprint": getattr(
+            args, "benchmark_code_fingerprint", None
+        ),
         "agent_boundary": {
             "connector_profile": args.connector_profile,
             "conversation_mode": args.conversation_mode,
@@ -721,6 +802,82 @@ def _report(args: argparse.Namespace) -> None:
     if len(reports) > 1:
         print()
         print(format_comparison(reports))
+
+
+def _benchmark(args: argparse.Namespace) -> None:
+    reports: list[dict[str, Any]] = []
+    for path in args.paths:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(value, dict):
+            raise ValueError(f"Benchmark report must be a JSON object: {path}")
+        reports.append(value)
+    aggregate = aggregate_benchmark_reports(reports)
+    markdown = format_benchmark_leaderboard(aggregate)
+    print(markdown, end="")
+    if args.out is not None:
+        stem = args.out.with_suffix("") if args.out.suffix else args.out
+        json_path = stem.with_suffix(".json")
+        markdown_path = stem.with_suffix(".md")
+        atomic_write_json(json_path, aggregate)
+        _atomic_write_text(markdown_path, markdown)
+        print(f"Wrote {json_path} and {markdown_path}")
+
+
+def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
+    if getattr(args, "benchmark_protocol", None) != BENCHMARK_PROTOCOL_ID:
+        return
+    if getattr(args, "population", None):
+        raise ValueError(
+            "participant-v1 uses one uniform model cohort; omit --population."
+        )
+    if args.brain not in {"llm", "codex", "claude", "cursor"}:
+        raise ValueError(
+            "participant-v1 requires an explicit model-backed --brain."
+        )
+    if getattr(args, "sequential_decisions", False):
+        raise ValueError("participant-v1 requires simultaneous decision collection.")
+
+    locked = {
+        "ticks": 40,
+        "agents": 10,
+        "preset": "organic-generalists",
+        "objective_mode": "neutral",
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "specialization_mode": "generalists",
+        "reasoning_effort": "medium",
+        "connector_profile": "stateless-v3",
+        "conversation_mode": "stateless",
+        "session_max_turns": 10,
+        "decision_mode": "raw",
+        "action_feedback_mode": "baseline",
+        "assignment_strategy": "ordered",
+        "assignment_seed": 0,
+        "width": 16,
+        "height": 16,
+        "max_workers": 4,
+        "codex_max_workers": 4,
+        "claude_max_workers": 4,
+        "cursor_max_workers": 4,
+        "llm_max_workers": 4,
+        "startup_health_check_tick": 5,
+        "startup_health_max_failure_rate": 0.2,
+    }
+    for name, required in locked.items():
+        current = getattr(args, name, None)
+        if current is not None and current != required:
+            raise ValueError(
+                f"participant-v1 requires --{name.replace('_', '-')}={required}; "
+                f"received {current!r}."
+            )
+        setattr(args, name, required)
+    if args.seed is None:
+        args.seed = 11
+    if args.seed not in {11, 41}:
+        raise ValueError("participant-v1 requires seed 11 or 41.")
+    if getattr(args, "no_agent_io_log", False):
+        raise ValueError("participant-v1 requires private agent I/O logging.")
+    args.benchmark_code_fingerprint = benchmark_code_fingerprint()
 
 
 def _experiment(args: argparse.Namespace) -> None:

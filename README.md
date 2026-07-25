@@ -302,6 +302,29 @@ Every ordinary run with `--out` also writes `*-manifest.json` with the resolved
 preset, complete assignment, assignment seed, harness condition, concurrency,
 command, git provenance, resolved response-model versions, and output paths.
 
+## Standardized model benchmarks
+
+Agent World Participant v1 provides three versioned 0-100 scores: planning
+execution, sustained competence, and entrepreneurial agency. Any run receives
+diagnostic cohort scores, while certified model results require two clean
+pure-model trials under the locked seeds 11/41 protocol.
+
+Start a standardized trial with:
+
+```bash
+python3 -m agent_world.cli run \
+  --benchmark-protocol participant-v1 \
+  --brain codex --model gpt-5.6-luna \
+  --seed 11 \
+  --out runs/benchmarks/luna-v1/seed-11/run.jsonl \
+  --snapshot runs/benchmarks/luna-v1/seed-11/run-snapshot.json
+```
+
+Repeat with seed 41, then pool the two generated reports using
+`python3 -m agent_world.cli benchmark ...`. The protocol, formulas, quality
+rules, and interpretation guidance are documented in
+[docs/model-benchmarks.md](docs/model-benchmarks.md).
+
 For a balanced comparison, run equal cohorts across several world and assignment
 seeds, then add homogeneous controls on those same world seeds. For example,
 repeat a 5/5/5/5 mixed population with `--seed 11 --assignment-seed 101`, then

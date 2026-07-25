@@ -13,6 +13,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from agent_world.benchmarks import build_benchmark_results
 from agent_world.metrics import is_decision_failure_message, is_quota_failure_message
 from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 from agent_world.usage import summarize_codex_simulation_credits
@@ -169,7 +170,7 @@ def build_report(
     population = _summarize_population(events, snapshot, usage_records)
 
     wealth_values = [agent["wealth"] for agent in agents.values()]
-    return {
+    report = {
         "schema_version": 1,
         "source": source,
         "run": run_summary,
@@ -268,6 +269,8 @@ def build_report(
         "wealth_gini": _gini(wealth_values),
         "transcript": says,
     }
+    report["benchmarks"] = build_benchmark_results(events, snapshot, report)
+    return report
 
 
 def _summarize_population(
@@ -1194,6 +1197,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         *_render_simulation_credit_lines(usage.get("simulation_credits")),
         *_render_plan_usage_lines(usage.get("plan_limits")),
         *(["", "## Model cohorts", *cohort_lines] if len(cohort_lines) > 1 else []),
+        *_render_benchmark_lines(report.get("benchmarks")),
         "",
         "## Society",
         f"- Groups: {len(report['groups'])}"
@@ -1257,6 +1261,44 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
     ]
     return "\n".join(lines)
+
+
+def _render_benchmark_lines(benchmarks: Any) -> list[str]:
+    if not isinstance(benchmarks, dict) or not benchmarks.get("cohorts"):
+        return []
+    trial = benchmarks.get("trial") or {}
+    status = (
+        "eligible replication"
+        if trial.get("protocol_compliant")
+        else "diagnostic only"
+    )
+    lines = [
+        "",
+        f"## Model benchmarks ({benchmarks.get('suite_id')})",
+        "",
+        f"Trial status: **{status}**.",
+        "",
+        "| Cohort | Model | Planning | Sustained competence | Entrepreneurial agency |",
+        "|---|---|---:|---:|---:|",
+    ]
+    for cohort_id, cohort in (benchmarks.get("cohorts") or {}).items():
+        scores = cohort.get("scores") or {}
+        lines.append(
+            f"| {cohort_id} | {cohort.get('model') or cohort.get('brain')} "
+            f"| {_render_score(scores.get('planning_execution', {}).get('score'))} "
+            f"| {_render_score(scores.get('sustained_competence', {}).get('score'))} "
+            f"| {_render_score(scores.get('entrepreneurial_agency', {}).get('score'))} |"
+        )
+    if trial.get("quality_flags"):
+        lines += [
+            "",
+            "Protocol flags: " + ", ".join(str(value) for value in trial["quality_flags"]) + ".",
+        ]
+    return lines
+
+
+def _render_score(value: Any) -> str:
+    return f"{float(value):.1f}" if isinstance(value, (int, float)) else "n/a"
 
 
 def write_report(
