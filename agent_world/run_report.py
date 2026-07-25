@@ -1272,23 +1272,65 @@ def _render_benchmark_lines(benchmarks: Any) -> list[str]:
         if trial.get("protocol_compliant")
         else "diagnostic only"
     )
+    cohorts = list((benchmarks.get("cohorts") or {}).items())
+    cohort_labels = [
+        f"{cohort_id} ({cohort.get('model') or cohort.get('brain')})"
+        for cohort_id, cohort in cohorts
+    ]
     lines = [
         "",
         f"## Model benchmarks ({benchmarks.get('suite_id')})",
         "",
         f"Trial status: **{status}**.",
         "",
-        "| Cohort | Model | Planning | Sustained competence | Entrepreneurial agency |",
-        "|---|---|---:|---:|---:|",
+        "> **Primary benchmark scorecard**",
+        ">",
+        "> | Benchmark | " + " | ".join(cohort_labels) + " |",
+        "> |---|" + "|".join("---:" for _ in cohorts) + "|",
     ]
-    for cohort_id, cohort in (benchmarks.get("cohorts") or {}).items():
-        scores = cohort.get("scores") or {}
+    for label, score_key in (
+        ("**Planning execution**", "planning_execution"),
+        ("**Sustained competence**", "sustained_competence"),
+        ("**Entrepreneurial agency**", "entrepreneurial_agency"),
+    ):
+        values = [
+            _render_score((cohort.get("scores") or {}).get(score_key, {}).get("score"))
+            for _, cohort in cohorts
+        ]
         lines.append(
-            f"| {cohort_id} | {cohort.get('model') or cohort.get('brain')} "
-            f"| {_render_score(scores.get('planning_execution', {}).get('score'))} "
-            f"| {_render_score(scores.get('sustained_competence', {}).get('score'))} "
-            f"| {_render_score(scores.get('entrepreneurial_agency', {}).get('score'))} |"
+            f"> | {label} | " + " | ".join(values) + " |"
         )
+    lines += [
+        "",
+        "### Supporting planning diagnostics",
+        "",
+        "| Metric | " + " | ".join(cohort_labels) + " |",
+        "|---|" + "|".join("---:" for _ in cohorts) + "|",
+    ]
+    submitted = [
+        int((cohort.get("raw") or {}).get("submitted_actions") or 0)
+        for _, cohort in cohorts
+    ]
+    for label, raw_key, denominators in (
+        ("Invalid proposals", "invalid_proposals", submitted),
+        ("Contention failures", "contention_failures", submitted),
+    ):
+        values = [
+            _render_count_rate(
+                (cohort.get("raw") or {}).get(raw_key),
+                denominators[index],
+            )
+            for index, (_, cohort) in enumerate(cohorts)
+        ]
+        lines.append(f"| {label} | " + " | ".join(values) + " |")
+    lines.append(
+        "| Action-point overruns | "
+        + " | ".join(
+            str(int((cohort.get("raw") or {}).get("action_point_overruns") or 0))
+            for _, cohort in cohorts
+        )
+        + " |"
+    )
     if trial.get("quality_flags"):
         lines += [
             "",
@@ -1299,6 +1341,13 @@ def _render_benchmark_lines(benchmarks: Any) -> list[str]:
 
 def _render_score(value: Any) -> str:
     return f"{float(value):.1f}" if isinstance(value, (int, float)) else "n/a"
+
+
+def _render_count_rate(value: Any, denominator: int) -> str:
+    count = int(value or 0)
+    if denominator <= 0:
+        return f"{count} (n/a)"
+    return f"{count} ({100.0 * count / denominator:.1f}%)"
 
 
 def write_report(

@@ -13,12 +13,22 @@ leaderboard result.
 Run root:
 `runs/benchmarks/gpt-5-3-codex-spark-participant-v1-20260724-220724`
 
-## Corrected objective diagnostic results
+## Corrected primary diagnostic scorecard
 
 These are incomplete-run diagnostics, not official or directly comparable
 Participant v2 scores. They were recomputed from the preserved v1 raw telemetry
 after this run exposed three competence-formula defects: missing target-horizon
 penalty, no endpoint-health component, and dead-estate wealth attribution.
+
+> **Primary benchmark scores**
+>
+> | Benchmark | Seed 11 | Seed 41 | Pooled diagnostic |
+> |---|---:|---:|---:|
+> | **Planning execution** | 68.79 | 64.95 | **66.84** |
+> | **Sustained competence** | 47.44 | 52.21 | **51.03** |
+> | **Entrepreneurial agency** | 0 | 0 | **0** |
+
+## Supporting objective results
 
 | Metric | Seed 11 | Seed 41 | Pooled diagnostic |
 |---|---:|---:|---:|
@@ -26,17 +36,14 @@ penalty, no endpoint-health component, and dead-estate wealth attribution.
 | Decisions | 314 | 315 | 629 |
 | Submitted actions | 965 | 994 | 1,959 |
 | Contention failures | 7 | 4 | 11 |
-| Invalid proposals | 299 | 347 | 646 |
+| Invalid proposals / submitted actions | 299/965 (31.0%) | 347/994 (34.9%) | 646/1,959 (33.0%) |
 | Action-point overruns | 32 | 44 | 76 |
-| Planning execution | 68.79 | 64.95 | 66.84 |
 | Target-horizon survival exposure | 78.50 | 78.75 | 78.62 |
 | Endpoint population health | 23.90 | 12.90 | 18.40 |
 | Survival continuity | 43.31 | 31.87 | 38.03 |
 | Living-accessible material outcome | 35.83 | 68.75 | 52.29 |
-| Sustained competence | 47.44 | 52.21 | 51.03 |
 | Venture initiatives | 7 | 3 | 10 |
 | Realized venture value | 0 | 0 | 0 |
-| Entrepreneurial agency | 0 | 0 | 0 |
 | Living at interruption | 4/10 | 8/10 | not endpoint-comparable |
 | Structures / gifts / groups | 0 / 0 / 0 | 0 / 0 / 0 | 0 / 0 / 0 |
 | Trades offered / accepted | 7 / 0 | 3 / 0 | 10 / 0 |
@@ -127,9 +134,11 @@ endpoint-health check, and counted inventory still attached to dead agents.
 Participant v2 corrects all three problems. Its 51.03 diagnostic matches the
 observed fragile foraging society much more closely.
 
-A certified result requires two fresh clean 40-tick runs. Resuming these
-checkpoints cannot make them official because their decision failures remain
-in the audit trail. At the observed output rate, the two-run protocol also
-appears larger than one weekly Spark allowance. The rate-safe route is one
-fresh seed per allowance window (or an explicitly authorized alternative
-billing/reset mechanism), followed by normal participant-v2 aggregation.
+Under the updated usage-constrained policy, Spark needs one fresh clean
+40-tick seed-11 run for a provisional benchmark and a later seed-41 run for
+replicated certification. Resuming the existing seed-11 checkpoint through
+tick 40 would cheaply complete its long-horizon diagnostic, but cannot make it
+provisional because its earlier decision failure remains in the audit trail.
+The preserved seed-41 checkpoint remains useful descriptive replication
+evidence and can also be completed later without pretending either degraded
+run is clean.

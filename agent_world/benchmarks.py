@@ -15,6 +15,7 @@ from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 BENCHMARK_SUITE_ID = "agent-world-participant-v2"
 BENCHMARK_PROTOCOL_ID = "participant-v2"
 BENCHMARK_SEEDS = frozenset({11, 41})
+BENCHMARK_PROVISIONAL_SEED = 11
 
 # These are mechanics-anchored "excellent" targets, not population percentiles.
 # Versioning the suite freezes them so later runs remain directly comparable.
@@ -54,7 +55,17 @@ def benchmark_protocol() -> dict[str, Any]:
         "id": BENCHMARK_PROTOCOL_ID,
         "suite_id": BENCHMARK_SUITE_ID,
         "code_fingerprint_sha256": benchmark_code_fingerprint(),
-        "replications": {"required_seeds": sorted(BENCHMARK_SEEDS), "minimum": 2},
+        "replications": {
+            "required_seeds": sorted(BENCHMARK_SEEDS),
+            "minimum": 2,
+            "provisional_seed": BENCHMARK_PROVISIONAL_SEED,
+            "provisional_minimum": 1,
+            "policy": (
+                "One clean complete seed-11 run is a provisional benchmark. "
+                "One clean run for each required seed is a replicated certified "
+                "benchmark. Seed 41 alone is not a provisional benchmark."
+            ),
+        },
         "trial": {
             "agents": 10,
             "ticks": 40,
@@ -81,8 +92,10 @@ def benchmark_protocol() -> dict[str, Any]:
             "realized_venture_value_per_100_agent_ticks": REALIZED_VALUE_TARGET_PER_100_AGENT_TICKS,
         },
         "aggregation": (
-            "Pool raw numerators and denominators across the two required seeds, "
-            "then apply the frozen formulas. Do not average per-run scores."
+            "For a provisional result, apply the frozen formulas to the clean "
+            "seed-11 raw counts. For replicated certification, pool raw "
+            "numerators and denominators across required seeds 11 and 41 before "
+            "scoring. Do not average per-run scores."
         ),
     }
 
@@ -354,11 +367,25 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             certification_flags.append("missing_required_seeds")
         if any(count != 1 for count in seed_counts.values()):
             certification_flags.append("duplicate_seed_replication")
+        certified = not certification_flags
+        provisional = (
+            seeds == [BENCHMARK_PROVISIONAL_SEED]
+            and seed_counts[BENCHMARK_PROVISIONAL_SEED] == 1
+            and certification_flags == ["missing_required_seeds"]
+        )
+        if certified:
+            status = "certified"
+        elif provisional:
+            status = "provisional"
+        else:
+            status = "incomplete_replication"
         results.append(
             {
                 **row,
                 "seeds": seeds,
-                "certified": not certification_flags,
+                "certified": certified,
+                "provisional": provisional,
+                "status": status,
                 "certification_flags": certification_flags,
                 "raw": raw,
                 "scores": score_benchmark_counts(raw),
@@ -384,17 +411,22 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
     lines = [
         f"# Agent World benchmark: {aggregate.get('suite_id')}",
         "",
-        "| Model | Seeds | Planning | Competence | Entrepreneurship | Status |",
-        "|---|---:|---:|---:|---:|---|",
+        "| Model | Seeds | Planning | Competence | Entrepreneurship | Invalid proposals | Status |",
+        "|---|---:|---:|---:|---:|---:|---|",
     ]
     for row in aggregate.get("results") or []:
         scores = row.get("scores") or {}
-        status = "certified" if row.get("certified") else "provisional"
+        raw = row.get("raw") or {}
+        status = row.get("status") or (
+            "certified" if row.get("certified") else "incomplete_replication"
+        )
+        status = str(status).replace("_", " ")
         lines.append(
             f"| {row.get('model')} | {','.join(str(value) for value in row.get('seeds') or [])} "
             f"| {_format_score(scores.get('planning_execution', {}).get('score'))} "
             f"| {_format_score(scores.get('sustained_competence', {}).get('score'))} "
             f"| {_format_score(scores.get('entrepreneurial_agency', {}).get('score'))} "
+            f"| {_format_count_rate(raw.get('invalid_proposals'), raw.get('submitted_actions'))} "
             f"| {status} |"
         )
     if aggregate.get("rejected"):
@@ -822,6 +854,14 @@ def _score_or_negative(value: Any) -> float:
 
 def _format_score(value: Any) -> str:
     return f"{float(value):.1f}" if isinstance(value, (int, float)) else "n/a"
+
+
+def _format_count_rate(value: Any, denominator: Any) -> str:
+    count = int(value or 0)
+    total = int(denominator or 0)
+    if total <= 0:
+        return f"{count} (n/a)"
+    return f"{count} ({100.0 * count / total:.1f}%)"
 
 
 def _merge_numeric_tree(target: dict[str, Any], source: dict[str, Any]) -> None:

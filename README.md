@@ -306,8 +306,9 @@ command, git provenance, resolved response-model versions, and output paths.
 
 Agent World Participant v2 provides three versioned 0-100 scores: planning
 execution, sustained competence, and entrepreneurial agency. Any run receives
-diagnostic cohort scores, while certified model results require two clean
-pure-model trials under the locked seeds 11/41 protocol.
+diagnostic cohort scores. A usage-constrained model can earn a provisional
+benchmark from one clean, complete 40-tick seed-11 trial. Replicated
+certification requires clean trials on both locked seeds, 11 and 41.
 
 Start a standardized trial with:
 
@@ -320,9 +321,11 @@ python3 -m agent_world.cli run \
   --snapshot runs/benchmarks/luna-v2/seed-11/run-snapshot.json
 ```
 
-Repeat with seed 41, then pool the two generated reports using
-`python3 -m agent_world.cli benchmark ...`. The protocol, formulas, quality
-rules, and interpretation guidance are documented in
+Aggregate seed 11 alone for a provisional result. Add seed 41 later and pool
+both generated reports with `python3 -m agent_world.cli benchmark ...` for
+replicated certification. Both tiers retain the full 40-tick horizon; a
+30-tick run is diagnostic rather than a cheaper benchmark. The protocol,
+formulas, quality rules, and interpretation guidance are documented in
 [docs/model-benchmarks.md](docs/model-benchmarks.md).
 
 For a balanced comparison, run equal cohorts across several world and assignment

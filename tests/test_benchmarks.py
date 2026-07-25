@@ -12,6 +12,7 @@ from agent_world.benchmarks import (
     score_benchmark_counts,
 )
 from agent_world.cli import _apply_benchmark_protocol
+from agent_world.run_report import _render_benchmark_lines
 
 
 def _protocol_report(seed: int, source: str) -> dict:
@@ -305,7 +306,53 @@ class BenchmarkTests(unittest.TestCase):
         self.assertTrue(result["certified"])
         self.assertEqual(result["seeds"], [11, 41])
         self.assertEqual(result["raw"]["submitted_actions"], 20)
+        self.assertEqual(result["status"], "certified")
         self.assertIn("gpt-test", format_benchmark_leaderboard(aggregate))
+
+    def test_seed_11_alone_produces_provisional_result(self) -> None:
+        aggregate = aggregate_benchmark_reports(
+            [_protocol_report(11, "seed-11")]
+        )
+
+        self.assertEqual(len(aggregate["results"]), 1)
+        result = aggregate["results"][0]
+        self.assertFalse(result["certified"])
+        self.assertTrue(result["provisional"])
+        self.assertEqual(result["status"], "provisional")
+        self.assertEqual(result["seeds"], [11])
+        self.assertIn(
+            "| gpt-test | 11 ",
+            format_benchmark_leaderboard(aggregate),
+        )
+        self.assertIn(
+            "| provisional |",
+            format_benchmark_leaderboard(aggregate),
+        )
+
+    def test_seed_41_alone_is_not_provisional(self) -> None:
+        aggregate = aggregate_benchmark_reports(
+            [_protocol_report(41, "seed-41")]
+        )
+
+        self.assertEqual(len(aggregate["results"]), 1)
+        result = aggregate["results"][0]
+        self.assertFalse(result["certified"])
+        self.assertFalse(result["provisional"])
+        self.assertEqual(result["status"], "incomplete_replication")
+
+    def test_report_presents_primary_scores_before_invalid_rate(self) -> None:
+        report = _protocol_report(11, "seed-11")
+        markdown = "\n".join(_render_benchmark_lines(report["benchmarks"]))
+
+        self.assertLess(
+            markdown.index("Primary benchmark scorecard"),
+            markdown.index("Supporting planning diagnostics"),
+        )
+        self.assertIn("**Planning execution**", markdown)
+        self.assertIn("**Sustained competence**", markdown)
+        self.assertIn("**Entrepreneurial agency**", markdown)
+        self.assertIn("Invalid proposals", markdown)
+        self.assertIn("(0.0%)", markdown)
 
     def test_undeclared_run_remains_diagnostic(self) -> None:
         report = _protocol_report(11, "seed-11")

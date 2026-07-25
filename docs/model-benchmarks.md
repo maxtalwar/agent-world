@@ -7,9 +7,11 @@ the raw evidence and formulas visible.
 The suite distinguishes:
 
 - **Diagnostic scores:** useful measurements from any run, including mixed
-  civilizations and older harnesses.
-- **Certified benchmark results:** pooled results from two clean runs that
-  exactly follow the participant-v2 protocol.
+  civilizations, stopped runs, degraded runs, and older harnesses.
+- **Provisional benchmark results:** one clean, complete 40-tick run on the
+  predeclared seed 11 that exactly follows participant-v2.
+- **Replicated certified benchmark results:** pooled results from clean,
+  complete 40-tick runs on both required seeds, 11 and 41.
 
 This prevents an interesting exploratory run from being presented as directly
 comparable to a controlled benchmark.
@@ -27,9 +29,9 @@ success, measured survival only over ticks that happened to run, and lacked an
 endpoint-health check. Historical v1 reports remain historical artifacts and
 must not be silently mixed with v2 results.
 
-## Standard trial
+## Standard and usage-constrained trials
 
-A certified result requires two pure-model replications:
+Every benchmark run uses the same pure-model 40-tick trial:
 
 | Setting | Required value |
 |---|---|
@@ -51,7 +53,7 @@ Pure-model trials isolate a model's behavior better than mixed populations.
 Mixed runs remain valuable ecology experiments, but one model can change the
 resource pressure and opportunities faced by every other cohort.
 
-Launch the first replication:
+Launch the predeclared seed-11 trial:
 
 ```bash
 python3 -m agent_world.cli run \
@@ -63,9 +65,16 @@ python3 -m agent_world.cli run \
   --progress
 ```
 
-Repeat with `--seed 41` and a different output directory. The benchmark flag
-sets and locks every other benchmark setting. A conflicting option fails before
-any model call.
+For a usage-constrained model, one clean seed-11 run is sufficient for a
+**provisional benchmark**. Seed 11 is fixed in advance so researchers cannot
+choose the more favorable world after seeing outcomes. A seed-41-only result is
+an incomplete replication, not a provisional benchmark.
+
+For the full **replicated certified benchmark**, repeat with `--seed 41` and a
+different output directory. The seed-41 result can be added later to promote an
+existing provisional result without rerunning seed 11. The benchmark flag sets
+and locks every other setting. A conflicting option fails before any model
+call.
 
 Each run report automatically contains `benchmarks`. Pool the two reports with:
 
@@ -77,7 +86,14 @@ python3 -m agent_world.cli benchmark \
 ```
 
 Aggregation pools the raw numerators and denominators before scoring. It does
-not average the two run scores.
+not average the two run scores. Passing only the clean seed-11 report emits a
+provisional result; passing both required seeds emits a replicated certified
+result.
+
+The horizon remains 40 ticks in both tiers. Shortening a constrained model to
+30 ticks is not allowed: late survival collapses and delayed consequences can
+make a weak long-horizon planner look artificially successful. If even one
+40-tick run is unaffordable, the available evidence remains diagnostic.
 
 ## The three scores
 
@@ -180,8 +196,20 @@ wealth accumulation with no venture initiation also cannot.
 
 A run is diagnostic-only if any required setting differs, the run stops early,
 the population is mixed, the model-decision ledger has failures, or usage
-coverage is incomplete. A certified model result requires one compliant run
-for each required seed.
+coverage is incomplete.
+
+Result status is assigned as follows:
+
+| Status | Requirement | Interpretation |
+|---|---|---|
+| Provisional | One clean, complete seed-11 run | Complete usage-constrained benchmark with single-world uncertainty |
+| Certified | One clean, complete run for each seed, 11 and 41 | Replicated benchmark; pool raw counts before scoring |
+| Incomplete replication | A clean seed-41 run without seed 11, or a duplicate required seed | Cannot stand alone; may contribute after the missing seed is added |
+| Diagnostic only | Early stop, decision/provider failure, protocol mismatch, mixed population, or incomplete usage | Descriptive evidence, never promoted by relabeling |
+
+Resuming a quota-paused run from its completed-tick checkpoint is allowed, but
+the complete audit remains authoritative. A prior model-decision failure does
+not disappear when a run resumes. Such a completed run remains diagnostic.
 
 At launch, the run records a SHA-256 fingerprint of the scoring code and the
 behavior-defining world, rules, map, model, interface, and runner sources.
@@ -200,6 +228,23 @@ The aggregate artifact retains:
 Changing a formula, target, world, or harness requires a new suite ID. Existing
 Participant v1 or v2 results must never be silently rescored under a changed
 definition.
+
+## Reporting standard
+
+Human-facing analyses put the three primary benchmark scores first in a
+visually distinct scorecard:
+
+1. planning execution;
+2. sustained competence;
+3. entrepreneurial agency.
+
+A supporting table follows in the style of the direct Opus comparison. It must
+include invalid proposals as both a count and a percentage of submitted
+actions, contention separately, action-point overruns, survival, economic and
+entrepreneurial outcomes, decision/provider failures, and usage where
+available. The result tier and seed coverage appear immediately above the
+scorecard. A high-level score must never replace the failure-rate denominator
+or the descriptive civilization analysis.
 
 ## What v2 does not score
 

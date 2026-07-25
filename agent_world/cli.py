@@ -219,7 +219,10 @@ def main(argv: list[str] | None = None) -> None:
         "paths",
         type=Path,
         nargs="+",
-        help="Benchmark-aware run-report.json files, normally the seed 11 and 41 replications.",
+        help=(
+            "Benchmark-aware run-report.json files: seed 11 alone for a "
+            "provisional result, or seeds 11 and 41 for replicated certification."
+        ),
     )
     benchmark_parser.add_argument(
         "--out",
