@@ -304,36 +304,42 @@ command, git provenance, resolved response-model versions, and output paths.
 
 ## Standardized model benchmarks
 
-Agent World Participant v3 provides three versioned scores: planning execution
+Agent World Participant v4 provides three versioned scores: effective execution
 and sustained competence are bounded from 0 to 100, while entrepreneurial
-agency is an open-ended index where 100 is the frozen excellent-performance
-target rather than a ceiling. Any run receives diagnostic cohort scores. A
-usage-constrained model can earn a provisional benchmark from one clean,
-complete 50-tick seed-11 trial. Replicated certification requires clean trials
-on both locked seeds, 11 and 41.
+agency is an open-ended index where 100 is the frozen reference target rather
+than a ceiling. Effective execution combines action feasibility with
+meaningful successful activity, so an all-`wait` policy cannot score 100.
+Entrepreneurship combines venture initiatives with actual net
+living-accessible value creation, so internal transfers and structure input
+cost are not mistaken for new value. Any run receives diagnostic cohort
+scores. A usage-constrained model can earn a provisional benchmark from one
+clean, complete 50-tick seed-11 trial. Replicated certification requires clean
+trials on all five locked seeds: 11, 41, 73, 101, and 137.
 
 Start a standardized trial with:
 
 ```bash
 python3 -m agent_world.cli run \
-  --benchmark-protocol participant-v3 \
+  --benchmark-protocol participant-v4 \
   --brain codex --model gpt-5.6-luna \
   --seed 11 \
-  --out runs/benchmarks/luna-v3/seed-11/run.jsonl \
-  --snapshot runs/benchmarks/luna-v3/seed-11/run-snapshot.json
+  --out runs/benchmarks/luna-v4/seed-11/run.jsonl \
+  --snapshot runs/benchmarks/luna-v4/seed-11/run-snapshot.json
 ```
 
-Aggregate seed 11 alone for a provisional result. Add seed 41 later and pool
-both generated reports with `python3 -m agent_world.cli benchmark ...` for
-replicated certification. Both tiers retain the full 50-tick horizon; a
-shorter run is diagnostic rather than a cheaper benchmark. An independently
-confirmed output-contract violation counts as an invalid proposal and remains
-part of the benchmark. Contract-valid output rejected by our adapter, failures
-before payload isolation, external quota/provider failures, or incomplete usage
-make the run diagnostic-only. Reports preserve
-diagnostic score trajectories at ticks 30 and 40 before the official tick-50
-endpoint. The protocol, formulas, quality rules, and interpretation guidance
-are documented in [docs/model-benchmarks.md](docs/model-benchmarks.md).
+Aggregate seed 11 alone for a provisional result. Add 41, 73, 101, and 137
+later and pool all five generated reports with
+`python3 -m agent_world.cli benchmark ...` for replicated certification. The
+aggregate retains per-seed values and reports descriptive uncertainty alongside
+the pooled score. Both tiers retain the full 50-tick horizon; a shorter run is
+diagnostic rather than a cheaper benchmark. An independently confirmed
+output-contract violation counts as an invalid proposal and remains part of
+the benchmark. Contract-valid output rejected by our adapter, failures before
+payload isolation, external quota/provider failures, or incomplete usage make
+the run diagnostic-only. Reports preserve diagnostic score trajectories at
+ticks 30 and 40 before the official tick-50 endpoint. The protocol, formulas,
+quality rules, and interpretation guidance are documented in
+[docs/model-benchmarks.md](docs/model-benchmarks.md).
 
 For a balanced comparison, run equal cohorts across several world and assignment
 seeds, then add homogeneous controls on those same world seeds. For example,

@@ -1345,7 +1345,7 @@ def _render_benchmark_lines(benchmarks: Any) -> list[str]:
         "> |---|" + "|".join("---:" for _ in cohorts) + "|",
     ]
     for label, score_key in (
-        ("**Planning execution**", "planning_execution"),
+        ("**Effective execution**", "effective_execution"),
         ("**Sustained competence**", "sustained_competence"),
         ("**Entrepreneurial agency**", "entrepreneurial_agency"),
     ):
@@ -1358,7 +1358,7 @@ def _render_benchmark_lines(benchmarks: Any) -> list[str]:
         )
     lines += [
         "",
-        "### Supporting planning diagnostics",
+        "### Supporting execution diagnostics",
         "",
         "| Metric | " + " | ".join(cohort_labels) + " |",
         "|---|" + "|".join("---:" for _ in cohorts) + "|",
@@ -1387,13 +1387,85 @@ def _render_benchmark_lines(benchmarks: Any) -> list[str]:
         )
         + " |"
     )
+    lines.append(
+        "| Purposeful agent-ticks | "
+        + " | ".join(
+            _render_count_rate(
+                (cohort.get("raw") or {}).get("purposeful_agent_ticks"),
+                int((cohort.get("raw") or {}).get("decisions") or 0),
+            )
+            for _, cohort in cohorts
+        )
+        + " |"
+    )
+    lines += [
+        "",
+        "### Supporting economic diagnostics",
+        "",
+        "| Metric | " + " | ".join(cohort_labels) + " |",
+        "|---|" + "|".join("---:" for _ in cohorts) + "|",
+    ]
+    for label, value_getter in (
+        (
+            "Living terminal value",
+            lambda cohort: (cohort.get("raw") or {}).get(
+                "living_terminal_economic_value"
+            ),
+        ),
+        (
+            "Starting endowment",
+            lambda cohort: (cohort.get("raw") or {}).get(
+                "initial_endowment_value"
+            ),
+        ),
+        (
+            "Net value created",
+            lambda cohort: (
+                (
+                    (cohort.get("scores") or {}).get("economic_productivity")
+                    or {}
+                ).get("components")
+                or {}
+            ).get("net_value_created"),
+        ),
+        (
+            "Net value / 100 agent-ticks",
+            lambda cohort: (
+                (
+                    (cohort.get("scores") or {}).get("economic_productivity")
+                    or {}
+                ).get("components")
+                or {}
+            ).get("net_value_created_per_100_agent_ticks"),
+        ),
+        (
+            "Venture initiatives",
+            lambda cohort: (cohort.get("raw") or {}).get(
+                "venture_initiatives"
+            ),
+        ),
+        (
+            "Economic productivity score",
+            lambda cohort: (
+                (cohort.get("scores") or {}).get("economic_productivity") or {}
+            ).get("score"),
+        ),
+    ):
+        lines.append(
+            f"| {label} | "
+            + " | ".join(
+                _render_score(value_getter(cohort))
+                for _, cohort in cohorts
+            )
+            + " |"
+        )
     trajectory = benchmarks.get("trajectory") or []
     if trajectory:
         lines += [
             "",
             "### Benchmark score trajectory",
             "",
-            "| Tick | Cohort | Role | Planning | Competence | Entrepreneurship | Living | Endpoint health | Living value |",
+            "| Tick | Cohort | Role | Execution | Competence | Entrepreneurship | Living | Endpoint health | Living value |",
             "|---:|---|---|---:|---:|---:|---:|---:|---:|",
         ]
         for checkpoint in trajectory:
@@ -1408,7 +1480,7 @@ def _render_benchmark_lines(benchmarks: Any) -> list[str]:
                 ).get("components") or {}
                 lines.append(
                     f"| {checkpoint.get('tick')} | {cohort_id} | {role} "
-                    f"| {_render_score((scores.get('planning_execution') or {}).get('score'))} "
+                    f"| {_render_score((scores.get('effective_execution') or {}).get('score'))} "
                     f"| {_render_score((scores.get('sustained_competence') or {}).get('score'))} "
                     f"| {_render_score((scores.get('entrepreneurial_agency') or {}).get('score'))} "
                     f"| {int(raw.get('living_agents') or 0)} "

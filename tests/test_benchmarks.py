@@ -4,11 +4,13 @@ import unittest
 from argparse import Namespace
 
 from agent_world.benchmarks import (
-    BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS,
     BENCHMARK_PROTOCOL_ID,
+    BENCHMARK_RESOURCE_VALUES,
+    BENCHMARK_SEEDS,
     BENCHMARK_SCORING_REVISION,
     BENCHMARK_SUITE_ID,
     _benchmark_trajectory,
+    _cohort_raw_metrics,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
     benchmark_protocol,
@@ -90,8 +92,8 @@ def _protocol_report(
             "type": "agent_response",
             "tick": 0,
             "actor_id": agent_id,
-            "message": "wait",
-            "data": {"actions": [{"type": "wait"}]},
+            "message": "move",
+            "data": {"actions": [{"type": "move", "direction": "north"}]},
         }
         for agent_id in agents
     ]
@@ -119,8 +121,20 @@ def _protocol_report(
         "items": {},
         "trades": {},
     }
+    purposeful_events = [
+        {
+            "type": "move",
+            "tick": 0,
+            "actor_id": agent_id,
+            "message": "moved",
+            "data": {},
+        }
+        for agent_id in agents[
+            1 if model_output_failure or harness_failure else 0:
+        ]
+    ]
     report["benchmarks"] = build_benchmark_results(
-        [start, *responses],
+        [start, *responses, *purposeful_events],
         snapshot,
         report,
     )
@@ -160,6 +174,27 @@ class BenchmarkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires --ticks=50"):
             _apply_benchmark_protocol(args)
 
+    def test_protocol_accepts_only_the_five_predeclared_seeds(self) -> None:
+        allowed = Namespace(
+            benchmark_protocol=BENCHMARK_PROTOCOL_ID,
+            population=None,
+            brain="codex",
+            sequential_decisions=False,
+            seed=137,
+        )
+        _apply_benchmark_protocol(allowed)
+        self.assertEqual(allowed.seed, 137)
+
+        rejected = Namespace(
+            benchmark_protocol=BENCHMARK_PROTOCOL_ID,
+            population=None,
+            brain="codex",
+            sequential_decisions=False,
+            seed=12,
+        )
+        with self.assertRaisesRegex(ValueError, "11, 41, 73, 101, 137"):
+            _apply_benchmark_protocol(rejected)
+
     def test_scores_use_frozen_formulas(self) -> None:
         scores = score_benchmark_counts(
             {
@@ -170,23 +205,162 @@ class BenchmarkTests(unittest.TestCase):
                 "action_point_overruns": 3,
                 "possible_agent_ticks": 100,
                 "decisions": 90,
+                "purposeful_agent_ticks": 45,
                 "endpoint_health_points": 600,
                 "endpoint_health_capacity": 1000,
                 "initial_endowment_value": 80,
                 "terminal_economic_value": 120,
                 "living_terminal_economic_value": 120,
                 "venture_initiatives": 10,
-                "realized_venture_value": 20,
             }
         )
 
-        self.assertEqual(scores["planning_execution"]["score"], 80.0)
+        self.assertEqual(scores["effective_execution"]["score"], 63.25)
         self.assertAlmostEqual(
             scores["sustained_competence"]["score"],
-            (80 * ((90 * 60) ** 0.5) * 50) ** (1 / 3),
+            (63.25 * ((90 * 60) ** 0.5) * 50) ** (1 / 3),
             places=2,
         )
-        self.assertEqual(scores["entrepreneurial_agency"]["score"], 50.0)
+        self.assertEqual(scores["entrepreneurial_agency"]["score"], 200.0)
+
+    def test_wait_only_policy_cannot_earn_execution_credit(self) -> None:
+        scores = score_benchmark_counts(
+            {
+                "submitted_actions": 100,
+                "submitted_actions_excluding_contention": 100,
+                "invalid_proposals": 0,
+                "decisions": 100,
+                "purposeful_agent_ticks": 0,
+                "possible_agent_ticks": 100,
+            }
+        )
+
+        execution = scores["effective_execution"]
+        self.assertEqual(execution["components"]["action_feasibility_pct"], 100.0)
+        self.assertEqual(execution["components"]["purposeful_agent_tick_pct"], 0.0)
+        self.assertEqual(execution["score"], 0.0)
+
+    def test_internal_turnover_cannot_create_entrepreneurial_value(self) -> None:
+        raw = _cohort_raw_metrics(
+            events=[
+                {
+                    "type": "offer_trade",
+                    "tick": 0,
+                    "actor_id": "agent-1",
+                    "data": {},
+                },
+                {
+                    "type": "accept_trade",
+                    "tick": 0,
+                    "actor_id": "agent-2",
+                    "data": {
+                        "value": {"give": 10_000, "receive": 10_000},
+                    },
+                },
+                {
+                    "type": "build",
+                    "tick": 0,
+                    "actor_id": "agent-2",
+                    "data": {
+                        "structure": {"type": "farm_plot"},
+                        "contributed": {"wood": 2, "fiber": 2},
+                    },
+                },
+            ],
+            snapshot={
+                "agents": {
+                    "agent-1": {
+                        "alive": True,
+                        "health": 100,
+                        "inventory": {"coin": 4, "food": 1, "water": 2},
+                    },
+                    "agent-2": {
+                        "alive": True,
+                        "health": 100,
+                        "inventory": {"coin": 2},
+                    },
+                },
+                "groups": {},
+                "structures": {
+                    "structure-1": {
+                        "status": "complete",
+                        "type": "farm_plot",
+                        "owner_id": "agent-2",
+                        "inventory": {},
+                        "treasury": {},
+                        "upkeep_reserve": {},
+                    }
+                },
+                "items": {},
+                "trades": {},
+                "contracts": {},
+            },
+            config={"economy_mode": "organic"},
+            member_ids=["agent-1", "agent-2"],
+            final_tick=1,
+            target_ticks=1,
+        )
+
+        scores = score_benchmark_counts(raw)
+        entrepreneurship = scores["entrepreneurial_agency"]
+        self.assertEqual(raw["initial_endowment_value"], 32)
+        self.assertEqual(raw["living_terminal_economic_value"], 32.0)
+        self.assertEqual(raw["venture_initiatives"], 2)
+        self.assertEqual(
+            entrepreneurship["components"]["value_creation_score"],
+            0.0,
+        )
+        self.assertEqual(entrepreneurship["score"], 0.0)
+
+    def test_recipe_consistent_values_do_not_penalize_production_chains(self) -> None:
+        self.assertGreaterEqual(BENCHMARK_RESOURCE_VALUES["ingot"], 19)
+        self.assertGreaterEqual(BENCHMARK_RESOURCE_VALUES["coin"] * 8, 19)
+        self.assertGreaterEqual(BENCHMARK_RESOURCE_VALUES["advanced_tool"], 43)
+        report = _protocol_report(11, "recipe-values")
+        raw = report["benchmarks"]["cohorts"]["cohort-1"]["raw"]
+        self.assertEqual(raw["initial_endowment_value"], 160)
+
+    def test_single_action_completed_build_counts_as_an_initiative(self) -> None:
+        raw = _cohort_raw_metrics(
+            events=[
+                {
+                    "type": "agent_response",
+                    "tick": 0,
+                    "actor_id": "agent-1",
+                    "data": {"actions": [{"type": "build"}]},
+                },
+                {
+                    "type": "build",
+                    "tick": 0,
+                    "actor_id": "agent-1",
+                    "data": {
+                        "structure": {"type": "farm_plot"},
+                        "contributed": {"wood": 2, "fiber": 2},
+                    },
+                },
+            ],
+            snapshot={
+                "agents": {
+                    "agent-1": {
+                        "alive": True,
+                        "health": 100,
+                        "inventory": {},
+                    }
+                },
+                "groups": {},
+                "structures": {},
+                "items": {},
+                "trades": {},
+                "contracts": {},
+            },
+            config={"economy_mode": "organic"},
+            member_ids=["agent-1"],
+            final_tick=1,
+            target_ticks=1,
+        )
+
+        self.assertEqual(raw["venture_initiatives"], 1)
+        self.assertEqual(raw["purposeful_agent_ticks"], 1)
 
     def test_entrepreneurship_score_has_no_upper_bound(self) -> None:
         scores = score_benchmark_counts(
@@ -194,26 +368,30 @@ class BenchmarkTests(unittest.TestCase):
                 "submitted_actions": 100,
                 "submitted_actions_excluding_contention": 100,
                 "possible_agent_ticks": 100,
+                "initial_endowment_value": 80,
+                "living_terminal_economic_value": 160,
                 "venture_initiatives": 20,
-                "realized_venture_value": 80,
             }
         )
 
         entrepreneurship = scores["entrepreneurial_agency"]
-        self.assertEqual(entrepreneurship["components"]["initiative_score"], 100.0)
-        self.assertEqual(entrepreneurship["components"]["realization_score"], 200.0)
-        self.assertEqual(entrepreneurship["score"], 141.42)
+        self.assertEqual(entrepreneurship["components"]["initiative_score"], 400.0)
+        self.assertEqual(
+            entrepreneurship["components"]["value_creation_score"],
+            400.0,
+        )
+        self.assertEqual(entrepreneurship["score"], 400.0)
         self.assertIsNone(entrepreneurship["scale"]["maximum"])
 
     def test_protocol_declares_unbounded_entrepreneurship_scale(self) -> None:
         protocol = benchmark_protocol()
 
         self.assertEqual(protocol["scoring_revision"], BENCHMARK_SCORING_REVISION)
-        self.assertEqual(BENCHMARK_SCORING_REVISION, 4)
+        self.assertEqual(BENCHMARK_SCORING_REVISION, 1)
         self.assertTrue(protocol["score_scale"]["metric_specific"])
         self.assertIsNone(protocol["score_scale"]["maximum"])
         self.assertEqual(
-            protocol["score_scales"]["planning_execution"]["maximum"],
+            protocol["score_scales"]["effective_execution"]["maximum"],
             100.0,
         )
         self.assertIsNone(
@@ -223,20 +401,21 @@ class BenchmarkTests(unittest.TestCase):
             protocol["score_scales"]["entrepreneurial_agency"]["reference_target"],
             100.0,
         )
-
-    def test_revision_two_report_can_be_explicitly_rescored_by_aggregation(self) -> None:
-        report = _protocol_report(11, "revision-2")
-        report["benchmarks"]["protocol"]["scoring_revision"] = 2
-        report["benchmarks"]["protocol"]["code_fingerprint_sha256"] = next(
-            iter(BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS)
+        self.assertTrue(
+            protocol["score_scales"]["economic_productivity"]["diagnostic"]
         )
+
+    def test_v4_does_not_rescore_incompatible_historical_reports(self) -> None:
+        report = _protocol_report(11, "historical-v3")
+        report["benchmarks"]["suite_id"] = "agent-world-participant-v3"
 
         aggregate = aggregate_benchmark_reports([report])
 
-        result = aggregate["results"][0]
-        self.assertEqual(result["source_scoring_revisions"], [2])
-        self.assertEqual(result["scoring_revision"], 4)
-        self.assertEqual(aggregate["protocol"]["scoring_revision"], 4)
+        self.assertEqual(aggregate["results"], [])
+        self.assertEqual(
+            aggregate["rejected"][0]["reason"],
+            "missing_or_incompatible_benchmark_suite",
+        )
 
     def test_competence_penalizes_dead_estates_and_endpoint_collapse(self) -> None:
         scores = score_benchmark_counts(
@@ -248,6 +427,7 @@ class BenchmarkTests(unittest.TestCase):
                 "action_point_overruns": 0,
                 "possible_agent_ticks": 100,
                 "decisions": 100,
+                "purposeful_agent_ticks": 70,
                 "initial_agents": 10,
                 "living_agents": 2,
                 "endpoint_health_points": 100,
@@ -256,7 +436,6 @@ class BenchmarkTests(unittest.TestCase):
                 "terminal_economic_value": 800,
                 "living_terminal_economic_value": 40,
                 "venture_initiatives": 0,
-                "realized_venture_value": 0,
             }
         )
 
@@ -286,6 +465,7 @@ class BenchmarkTests(unittest.TestCase):
                 "possible_agent_ticks": 800,
                 "observed_agent_ticks": 660,
                 "decisions": 629,
+                "purposeful_agent_ticks": 400,
                 "initial_agents": 20,
                 "living_agents": 12,
                 "endpoint_health_points": 368,
@@ -294,12 +474,11 @@ class BenchmarkTests(unittest.TestCase):
                 "terminal_economic_value": 419,
                 "living_terminal_economic_value": 251,
                 "venture_initiatives": 10,
-                "realized_venture_value": 0,
             }
         )
 
         competence = scores["sustained_competence"]
-        self.assertEqual(competence["score"], 51.03)
+        self.assertLess(competence["score"], 55.0)
         self.assertEqual(
             competence["components"]["survival_exposure_pct"],
             78.62,
@@ -369,7 +548,7 @@ class BenchmarkTests(unittest.TestCase):
             benchmark["cohorts"]["cohort-1"]["protocol_compliant"]
         )
         self.assertEqual(
-            benchmark["cohorts"]["cohort-1"]["scores"]["planning_execution"]["score"],
+            benchmark["cohorts"]["cohort-1"]["scores"]["effective_execution"]["score"],
             100.0,
         )
 
@@ -388,7 +567,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(cohort["raw"]["model_output_failures"], 1)
         self.assertEqual(cohort["raw"]["invalid_proposals"], 1)
         self.assertEqual(
-            cohort["scores"]["planning_execution"]["score"],
+            cohort["scores"]["effective_execution"]["score"],
             90.0,
         )
 
@@ -412,54 +591,6 @@ class BenchmarkTests(unittest.TestCase):
         aggregate = aggregate_benchmark_reports([report])
         self.assertEqual(aggregate["results"], [])
         self.assertEqual(aggregate["rejected"][0]["reason"], "diagnostic_only")
-
-    def test_unverified_legacy_model_failure_is_not_promoted(self) -> None:
-        report = _protocol_report(
-            11,
-            "legacy-unverified",
-            model_output_failure=True,
-        )
-        report["benchmarks"]["protocol"]["scoring_revision"] = 3
-        report["benchmarks"]["protocol"][
-            "code_fingerprint_sha256"
-        ] = "00efac99b0e0099214923ee3bd5d7d4bade4669bf994359604902c8ed2c59296"
-        report["benchmarks"]["trial"][
-            "code_fingerprint_sha256"
-        ] = "00efac99b0e0099214923ee3bd5d7d4bade4669bf994359604902c8ed2c59296"
-
-        aggregate = aggregate_benchmark_reports([report])
-
-        self.assertEqual(aggregate["results"], [])
-        self.assertEqual(
-            aggregate["rejected"][0]["reason"],
-            "unverified_legacy_model_output_attribution",
-        )
-
-    def test_disclosed_legacy_spark_result_remains_compatible(self) -> None:
-        report = _protocol_report(
-            11,
-            "legacy-spark",
-            model_output_failure=True,
-        )
-        benchmark = report["benchmarks"]
-        cohort = benchmark["cohorts"]["cohort-1"]
-        cohort["model"] = "gpt-5.3-codex-spark"
-        cohort["raw"]["model_output_failures"] = 2
-        cohort["raw"]["decision_failures"] = 2
-        cohort["raw"]["invalid_proposals"] = (
-            cohort["raw"]["engine_invalid_proposals"] + 2
-        )
-        benchmark["protocol"]["scoring_revision"] = 2
-        benchmark["protocol"][
-            "code_fingerprint_sha256"
-        ] = "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc"
-        benchmark["trial"][
-            "code_fingerprint_sha256"
-        ] = "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948"
-
-        aggregate = aggregate_benchmark_reports([report])
-
-        self.assertEqual(aggregate["results"][0]["status"], "provisional")
 
     def test_revision_one_checkpoint_uses_event_ledger_failure_classification(self) -> None:
         trajectory = _benchmark_trajectory(
@@ -503,18 +634,47 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(raw["model_output_failures"], 1)
         self.assertEqual(raw["invalid_proposals"], 3)
 
-    def test_two_required_seeds_produce_certified_pooled_result(self) -> None:
+    def test_five_required_seeds_produce_certified_pooled_result(self) -> None:
         aggregate = aggregate_benchmark_reports(
-            [_protocol_report(11, "seed-11"), _protocol_report(41, "seed-41")]
+            [
+                _protocol_report(seed, f"seed-{seed}")
+                for seed in sorted(BENCHMARK_SEEDS)
+            ]
         )
 
         self.assertEqual(len(aggregate["results"]), 1)
         result = aggregate["results"][0]
         self.assertTrue(result["certified"])
-        self.assertEqual(result["seeds"], [11, 41])
-        self.assertEqual(result["raw"]["submitted_actions"], 20)
+        self.assertEqual(result["seeds"], sorted(BENCHMARK_SEEDS))
+        self.assertEqual(result["raw"]["submitted_actions"], 50)
         self.assertEqual(result["status"], "certified")
-        self.assertIn("gpt-test", format_benchmark_leaderboard(aggregate))
+        self.assertEqual(
+            result["score_spread"]["effective_execution"]["n"],
+            5,
+        )
+        self.assertIn(
+            "mean_95pct_t_interval",
+            result["score_spread"]["sustained_competence"],
+        )
+        leaderboard = format_benchmark_leaderboard(aggregate)
+        self.assertIn("gpt-test", leaderboard)
+        self.assertIn("Per-replication scores", leaderboard)
+        self.assertIn("descriptive mean 95% t interval", leaderboard)
+
+    def test_duplicate_seed_does_not_enter_certified_pool(self) -> None:
+        reports = [
+            _protocol_report(seed, f"seed-{seed}")
+            for seed in sorted(BENCHMARK_SEEDS)
+        ]
+        reports.append(_protocol_report(11, "seed-11-repeat"))
+
+        result = aggregate_benchmark_reports(reports)["results"][0]
+
+        self.assertFalse(result["certified"])
+        self.assertIn(
+            "duplicate_seed_replication",
+            result["certification_flags"],
+        )
 
     def test_seed_11_alone_produces_provisional_result(self) -> None:
         aggregate = aggregate_benchmark_reports(
@@ -553,12 +713,14 @@ class BenchmarkTests(unittest.TestCase):
 
         self.assertLess(
             markdown.index("Primary benchmark scorecard"),
-            markdown.index("Supporting planning diagnostics"),
+            markdown.index("Supporting execution diagnostics"),
         )
-        self.assertIn("**Planning execution**", markdown)
+        self.assertIn("**Effective execution**", markdown)
         self.assertIn("**Sustained competence**", markdown)
         self.assertIn("**Entrepreneurial agency**", markdown)
         self.assertIn("Invalid proposals", markdown)
+        self.assertIn("Supporting economic diagnostics", markdown)
+        self.assertIn("Net value created", markdown)
         self.assertIn("(0.0%)", markdown)
 
     def test_undeclared_run_remains_diagnostic(self) -> None:

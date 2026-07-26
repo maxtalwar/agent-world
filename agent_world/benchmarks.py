@@ -6,6 +6,7 @@ import hashlib
 import math
 from collections import Counter
 from pathlib import Path
+from statistics import median, stdev
 from typing import Any, Iterable
 
 from agent_world.metrics import (
@@ -20,45 +21,71 @@ from agent_world.metrics import (
 from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 
 
-BENCHMARK_SUITE_ID = "agent-world-participant-v3"
-BENCHMARK_PROTOCOL_ID = "participant-v3"
-BENCHMARK_SEEDS = frozenset({11, 41})
+BENCHMARK_SUITE_ID = "agent-world-participant-v4"
+BENCHMARK_PROTOCOL_ID = "participant-v4"
+BENCHMARK_SEEDS = frozenset({11, 41, 73, 101, 137})
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
-BENCHMARK_SCORING_REVISION = 4
-BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS = frozenset(
-    {
-        # Initial Participant v3 launch fingerprint. The trial mechanics and
-        # fallback behavior are identical; revision 2 only reclassifies
-        # malformed model output as a scored planning failure.
-        "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948",
-        # Participant v3 scoring revision 2. Revision 3 changes only the
-        # entrepreneurship score scale, so its raw run evidence remains
-        # eligible for current scoring.
-        "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc",
-        # Participant v3 scoring revision 3. Revision 4 independently
-        # attributes decision-contract, adapter, and boundary failures.
-        "00efac99b0e0099214923ee3bd5d7d4bade4669bf994359604902c8ed2c59296",
-    }
-)
-BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS = frozenset(
-    {
-        # Scoring-revision-2 reports contain all raw counts needed to apply
-        # revision 3 without mutating the historical report.
-        "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc",
-        # Revision-3 reports retain the raw counts needed by revision 4.
-        "00efac99b0e0099214923ee3bd5d7d4bade4669bf994359604902c8ed2c59296",
-    }
-)
+BENCHMARK_SCORING_REVISION = 1
+BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
+BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
 
 # These are mechanics-anchored "excellent" targets, not population percentiles.
 # Versioning the suite freezes them so later runs remain directly comparable.
-INITIATIVE_TARGET_PER_100_AGENT_TICKS = 20.0
-REALIZED_VALUE_TARGET_PER_100_AGENT_TICKS = 40.0
+# Participant v4 anchors are intentionally close to demonstrated strong-model
+# behavior instead of preserving v3's unreachable scale. Five initiatives per
+# 100 agent-ticks is just above the 4.25 rate in the clean GPT-5.4 v2 reference.
+INITIATIVE_TARGET_PER_100_AGENT_TICKS = 5.0
+NET_VALUE_CREATION_TARGET_PER_100_AGENT_TICKS = 20.0
 TERMINAL_ENDOWMENT_MULTIPLE_TARGET = 3.0
 
 VENTURE_INITIATIVE_EVENTS = frozenset(
     {"offer_trade", "build_started", "create_contract", "set_access_fee"}
+)
+PURPOSEFUL_ACTION_EVENTS = frozenset(
+    {
+        "move",
+        "gather",
+        "chop",
+        "mine",
+        "harvest",
+        "fish",
+        "farm",
+        "craft",
+        "repair",
+        "pick_up",
+        "claimed_item_taken",
+        "drop",
+        "claim_item",
+        "consume",
+        "equip",
+        "store",
+        "retrieve",
+        "offer_trade",
+        "accept_trade",
+        "reject_trade",
+        "create_contract",
+        "accept_contract",
+        "repay_contract",
+        "fulfill_contract",
+        "gift",
+        "claim_tile",
+        "contest_claim",
+        "build",
+        "build_started",
+        "contribute",
+        "set_access_fee",
+        "claim_dividend",
+        "maintain_structure",
+        "grant_access",
+        "revoke_access",
+        "create_group",
+        "invite_member",
+        "join_group",
+        "leave_group",
+        "publish_rule",
+        "record_agreement",
+    }
 )
 BENCHMARK_FINGERPRINT_FILES = (
     "benchmarks.py",
@@ -81,6 +108,38 @@ BENCHMARK_FINGERPRINT_FILES = (
 )
 
 
+def _recipe_consistent_resource_values(economy_mode: str) -> dict[str, int]:
+    """Raise book values until every single-output recipe preserves input value."""
+
+    values = dict(RESOURCE_VALUES)
+    recipes = recipes_for_mode(economy_mode)
+    for _ in range(max(1, len(recipes) + 1)):
+        changed = False
+        for recipe in recipes.values():
+            outputs = {
+                str(item): max(0, int(quantity or 0))
+                for item, quantity in recipe.outputs.items()
+                if int(quantity or 0) > 0
+            }
+            if len(outputs) != 1:
+                continue
+            output_item, output_quantity = next(iter(outputs.items()))
+            input_value = sum(
+                values.get(str(item), 1) * max(0, int(quantity or 0))
+                for item, quantity in recipe.inputs.items()
+            )
+            minimum_unit_value = math.ceil(input_value / output_quantity)
+            if minimum_unit_value > values.get(output_item, 1):
+                values[output_item] = minimum_unit_value
+                changed = True
+        if not changed:
+            break
+    return values
+
+
+BENCHMARK_RESOURCE_VALUES = _recipe_consistent_resource_values("organic")
+
+
 def benchmark_code_fingerprint() -> str:
     """Hash benchmark formulas and behavior-defining world sources."""
 
@@ -93,7 +152,7 @@ def benchmark_code_fingerprint() -> str:
 
 
 def benchmark_protocol() -> dict[str, Any]:
-    """Return the frozen participant-v3 trial and scoring specification."""
+    """Return the frozen participant-v4 trial and scoring specification."""
 
     return {
         "id": BENCHMARK_PROTOCOL_ID,
@@ -102,13 +161,14 @@ def benchmark_protocol() -> dict[str, Any]:
         "code_fingerprint_sha256": benchmark_code_fingerprint(),
         "replications": {
             "required_seeds": sorted(BENCHMARK_SEEDS),
-            "minimum": 2,
+            "minimum": len(BENCHMARK_SEEDS),
             "provisional_seed": BENCHMARK_PROVISIONAL_SEED,
             "provisional_minimum": 1,
             "policy": (
                 "One clean complete seed-11 run is a provisional benchmark. "
-                "One clean run for each required seed is a replicated certified "
-                "benchmark. Seed 41 alone is not a provisional benchmark."
+                "One clean run for each of the five required seeds is a replicated "
+                "certified benchmark. Other partial seed sets are incomplete "
+                "replications."
             ),
         },
         "trial": {
@@ -146,7 +206,7 @@ def benchmark_protocol() -> dict[str, Any]:
             "details": "See score_scales for per-benchmark bounds.",
         },
         "score_scales": {
-            "planning_execution": {
+            "effective_execution": {
                 "minimum": 0.0,
                 "maximum": 100.0,
                 "higher_is_better": True,
@@ -162,18 +222,34 @@ def benchmark_protocol() -> dict[str, Any]:
                 "reference_target": 100.0,
                 "higher_is_better": True,
             },
+            "economic_productivity": {
+                "minimum": 0.0,
+                "maximum": None,
+                "reference_target": 100.0,
+                "higher_is_better": True,
+                "diagnostic": True,
+            },
         },
         "targets": {
             "terminal_endowment_multiple": TERMINAL_ENDOWMENT_MULTIPLE_TARGET,
             "venture_initiatives_per_100_agent_ticks": INITIATIVE_TARGET_PER_100_AGENT_TICKS,
-            "realized_venture_value_per_100_agent_ticks": REALIZED_VALUE_TARGET_PER_100_AGENT_TICKS,
+            "net_value_created_per_100_agent_ticks": NET_VALUE_CREATION_TARGET_PER_100_AGENT_TICKS,
+        },
+        "resource_values": {
+            "method": (
+                "Start from the world book-value table and raise output values "
+                "until every single-output recipe is worth at least its inputs."
+            ),
+            "values": dict(sorted(BENCHMARK_RESOURCE_VALUES.items())),
         },
         "aggregation": (
             "For a provisional result, apply the frozen formulas to the clean "
-            "seed-11 raw counts. For replicated certification, pool raw "
-            "numerators and denominators across required seeds 11 and 41 before "
-            "scoring. Do not average per-run scores. Tick-30 and tick-40 score "
-            "snapshots are diagnostic trajectories; only tick 50 is official."
+            "seed-11 raw counts. For replicated certification, pool raw numerators "
+            "and denominators across all five required seeds before scoring. "
+            "Also report the per-seed score distribution and descriptive 95% "
+            "Student-t interval. Do not average per-run scores for the official "
+            "result. Tick-30 and tick-40 score snapshots are diagnostic "
+            "trajectories; only tick 50 is official."
         ),
     }
 
@@ -219,15 +295,7 @@ def build_benchmark_results(
             for event in events
             if event.get("actor_id") in member_set
         )
-        if (
-            raw["model_output_failures"] > confirmed_contract_failures
-            and not _legacy_spark_attribution_exception(
-                model=str(cohort.get("model") or ""),
-                seed=config.get("seed"),
-                raw=raw,
-                source_fingerprint=start_data.get("benchmark_code_fingerprint"),
-            )
-        ):
+        if raw["model_output_failures"] > confirmed_contract_failures:
             cohort_flags.append("unverified_model_output_attribution")
         scores = score_benchmark_counts(raw)
         scored[str(cohort_id)] = {
@@ -273,19 +341,35 @@ def build_benchmark_results(
 
 
 def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
-    """Apply the frozen participant-v3 formulas to pooled or per-run counts."""
+    """Apply the frozen participant-v4 formulas to pooled or per-run counts."""
 
-    planning_denominator = float(raw.get("submitted_actions_excluding_contention") or 0)
+    feasibility_denominator = float(
+        raw.get("submitted_actions_excluding_contention") or 0
+    )
     invalid = float(raw.get("invalid_proposals") or 0)
-    planning = (
-        _clamp_score(100.0 * (planning_denominator - invalid) / planning_denominator)
-        if planning_denominator > 0
+    action_feasibility = (
+        _clamp_score(
+            100.0
+            * (feasibility_denominator - invalid)
+            / feasibility_denominator
+        )
+        if feasibility_denominator > 0
         else None
+    )
+    decisions = float(raw.get("decisions") or 0)
+    purposeful_agent_ticks = float(raw.get("purposeful_agent_ticks") or 0)
+    purposeful_agent_tick_pct = (
+        _clamp_score(100.0 * purposeful_agent_ticks / decisions)
+        if decisions > 0
+        else None
+    )
+    effective_execution = _geometric_mean(
+        (action_feasibility, purposeful_agent_tick_pct)
     )
 
     possible_ticks = float(raw.get("possible_agent_ticks") or 0)
     survival_exposure = (
-        _clamp_score(100.0 * float(raw.get("decisions") or 0) / possible_ticks)
+        _clamp_score(100.0 * decisions / possible_ticks)
         if possible_ticks > 0
         else None
     )
@@ -312,15 +396,21 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
         if material_target > 0
         else None
     )
-    competence = _geometric_mean((planning, survival_continuity, material))
+    competence = _geometric_mean(
+        (effective_execution, survival_continuity, material)
+    )
 
     initiative_rate = (
         100.0 * float(raw.get("venture_initiatives") or 0) / possible_ticks
         if possible_ticks > 0
         else None
     )
-    realized_rate = (
-        100.0 * float(raw.get("realized_venture_value") or 0) / possible_ticks
+    net_value_created = max(
+        0.0,
+        living_terminal_value - initial_endowment,
+    )
+    net_value_creation_rate = (
+        100.0 * net_value_created / possible_ticks
         if possible_ticks > 0
         else None
     )
@@ -331,18 +421,20 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
         if initiative_rate is not None
         else None
     )
-    realization_score = (
+    value_creation_score = (
         _nonnegative_score(
-            100.0 * realized_rate / REALIZED_VALUE_TARGET_PER_100_AGENT_TICKS
+            100.0
+            * net_value_creation_rate
+            / NET_VALUE_CREATION_TARGET_PER_100_AGENT_TICKS
         )
-        if realized_rate is not None
+        if net_value_creation_rate is not None
         else None
     )
-    entrepreneurship = _geometric_mean((initiative_score, realization_score))
+    entrepreneurship = _geometric_mean((initiative_score, value_creation_score))
 
     return {
-        "planning_execution": {
-            "score": planning,
+        "effective_execution": {
+            "score": effective_execution,
             "components": {
                 "submitted_actions": raw.get("submitted_actions", 0),
                 "contention_excluded": raw.get("contention_failures", 0),
@@ -353,17 +445,21 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
                 ),
                 "model_output_failures": raw.get("model_output_failures", 0),
                 "action_point_overruns": raw.get("action_point_overruns", 0),
-                "valid_proposal_rate_pct": planning,
+                "action_feasibility_pct": action_feasibility,
+                "purposeful_agent_ticks": raw.get("purposeful_agent_ticks", 0),
+                "decision_opportunities": raw.get("decisions", 0),
+                "purposeful_agent_tick_pct": purposeful_agent_tick_pct,
             },
             "formula": (
-                "100 * (submitted - contention - engine invalid - "
-                "model-output failures) / (submitted - contention)"
+                "geometric_mean(action feasibility, purposeful agent-tick rate); "
+                "action feasibility = 100 * (submitted - contention - engine "
+                "invalid - model-output failures) / (submitted - contention)"
             ),
         },
         "sustained_competence": {
             "score": competence,
             "components": {
-                "planning_execution": planning,
+                "effective_execution": effective_execution,
                 "survival_exposure_pct": survival_exposure,
                 "endpoint_population_health_pct": endpoint_population_health,
                 "survival_continuity_pct": survival_continuity,
@@ -378,7 +474,7 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
                 "material_target_value": material_target,
             },
             "formula": (
-                "geometric_mean(planning execution, "
+                "geometric_mean(effective execution, "
                 "geometric_mean(target-horizon survival exposure, "
                 "endpoint population health), living-accessible terminal value "
                 "relative to 3x starting endowment)"
@@ -390,14 +486,38 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
                 "venture_initiatives": raw.get("venture_initiatives", 0),
                 "venture_initiatives_per_100_agent_ticks": _rounded(initiative_rate),
                 "initiative_score": initiative_score,
-                "realized_venture_value": raw.get("realized_venture_value", 0),
-                "realized_value_per_100_agent_ticks": _rounded(realized_rate),
-                "realization_score": realization_score,
+                "net_value_created": _rounded(net_value_created),
+                "net_value_created_per_100_agent_ticks": _rounded(
+                    net_value_creation_rate
+                ),
+                "value_creation_score": value_creation_score,
             },
             "formula": (
-                "geometric_mean(initiative rate vs 20/100 agent-ticks, "
-                "realized value rate vs 40/100 agent-ticks); 100 is the "
+                "geometric_mean(initiative rate vs 5/100 agent-ticks, "
+                "positive living-accessible net value creation rate vs "
+                "20/100 agent-ticks); 100 is the "
                 "reference target, not a maximum"
+            ),
+            "scale": {
+                "minimum": 0.0,
+                "maximum": None,
+                "reference_target": 100.0,
+                "higher_is_better": True,
+            },
+        },
+        "economic_productivity": {
+            "score": value_creation_score,
+            "components": {
+                "living_terminal_economic_value": living_terminal_value,
+                "initial_endowment_value": initial_endowment,
+                "net_value_created": _rounded(net_value_created),
+                "net_value_created_per_100_agent_ticks": _rounded(
+                    net_value_creation_rate
+                ),
+            },
+            "formula": (
+                "positive living-accessible terminal value minus starting "
+                "endowment, per 100 agent-ticks, relative to the frozen target"
             ),
             "scale": {
                 "minimum": 0.0,
@@ -460,25 +580,6 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 )
                 continue
             cohort_raw = cohort.get("raw") or {}
-            if (
-                source_revision < 4
-                and int(cohort_raw.get("model_output_failures") or 0) > 0
-                and not _legacy_spark_attribution_exception(
-                    model=identity[1],
-                    seed=seed,
-                    raw=cohort_raw,
-                    source_fingerprint=trial.get("code_fingerprint_sha256"),
-                )
-            ):
-                rejected.append(
-                    {
-                        "source": report.get("source"),
-                        "cohort": cohort_id,
-                        "model": identity[1],
-                        "reason": "unverified_legacy_model_output_attribution",
-                    }
-                )
-                continue
             row = grouped.setdefault(
                 identity,
                 {
@@ -489,6 +590,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                     "seed_counts": Counter(),
                     "sources": [],
                     "source_scoring_revisions": set(),
+                    "replications": [],
                     "raw": {},
                 },
             )
@@ -498,6 +600,14 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             row["source_scoring_revisions"].add(
                 int(report_protocol.get("scoring_revision") or 1)
             )
+            row["replications"].append(
+                {
+                    "seed": int(seed),
+                    "source": report.get("source"),
+                    "raw": cohort_raw,
+                    "scores": score_benchmark_counts(cohort_raw),
+                }
+            )
             _merge_numeric_tree(row["raw"], cohort.get("raw") or {})
 
     results: list[dict[str, Any]] = []
@@ -506,6 +616,13 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
         seed_counts = row.pop("seed_counts")
         source_scoring_revisions = sorted(row.pop("source_scoring_revisions"))
         raw = row.pop("raw")
+        replications = sorted(
+            row.pop("replications"),
+            key=lambda replication: (
+                replication["seed"],
+                str(replication.get("source") or ""),
+            ),
+        )
         missing_seeds = sorted(BENCHMARK_SEEDS - set(seeds))
         certification_flags = []
         if missing_seeds:
@@ -534,6 +651,8 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 "certification_flags": certification_flags,
                 "source_scoring_revisions": source_scoring_revisions,
                 "scoring_revision": BENCHMARK_SCORING_REVISION,
+                "replications": replications,
+                "score_spread": _score_spread(replications),
                 "raw": raw,
                 "scores": score_benchmark_counts(raw),
             }
@@ -558,7 +677,7 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
     lines = [
         f"# Agent World benchmark: {aggregate.get('suite_id')}",
         "",
-        "| Model | Seeds | Planning | Competence | Entrepreneurship | Invalid proposals | Status |",
+        "| Model | Seeds | Execution | Competence | Entrepreneurship | Invalid proposals | Status |",
         "|---|---:|---:|---:|---:|---:|---|",
     ]
     for row in aggregate.get("results") or []:
@@ -570,12 +689,55 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
         status = str(status).replace("_", " ")
         lines.append(
             f"| {row.get('model')} | {','.join(str(value) for value in row.get('seeds') or [])} "
-            f"| {_format_score(scores.get('planning_execution', {}).get('score'))} "
+            f"| {_format_score(scores.get('effective_execution', {}).get('score'))} "
             f"| {_format_score(scores.get('sustained_competence', {}).get('score'))} "
             f"| {_format_score(scores.get('entrepreneurial_agency', {}).get('score'))} "
             f"| {_format_count_rate(raw.get('invalid_proposals'), raw.get('submitted_actions'))} "
             f"| {status} |"
         )
+    replications = [
+        (row, replication)
+        for row in aggregate.get("results") or []
+        for replication in row.get("replications") or []
+    ]
+    if replications:
+        lines += [
+            "",
+            "## Per-replication scores",
+            "",
+            "| Model | Seed | Execution | Competence | Entrepreneurship |",
+            "|---|---:|---:|---:|---:|",
+        ]
+        for row, replication in replications:
+            scores = replication.get("scores") or {}
+            lines.append(
+                f"| {row.get('model')} | {replication.get('seed')} "
+                f"| {_format_score((scores.get('effective_execution') or {}).get('score'))} "
+                f"| {_format_score((scores.get('sustained_competence') or {}).get('score'))} "
+                f"| {_format_score((scores.get('entrepreneurial_agency') or {}).get('score'))} |"
+            )
+        lines += [
+            "",
+            "Descriptive spread:",
+            "",
+        ]
+        for row in aggregate.get("results") or []:
+            competence_spread = (
+                (row.get("score_spread") or {}).get("sustained_competence") or {}
+            )
+            interval = competence_spread.get("mean_95pct_t_interval")
+            interval_text = (
+                f"{interval[0]:.2f} to {interval[1]:.2f}"
+                if isinstance(interval, list) and len(interval) == 2
+                else "n/a"
+            )
+            lines.append(
+                f"- {row.get('model')}: competence median "
+                f"{_format_score(competence_spread.get('median'))}, range "
+                f"{_format_score(competence_spread.get('minimum'))}–"
+                f"{_format_score(competence_spread.get('maximum'))}, "
+                f"descriptive mean 95% t interval {interval_text}."
+            )
     if aggregate.get("rejected"):
         lines += [
             "",
@@ -643,9 +805,24 @@ def _cohort_raw_metrics(
         str(event.get("type"))
         for event in events
         if event.get("actor_id") in members
-        and event.get("type") in VENTURE_INITIATIVE_EVENTS
+        and (
+            event.get("type") in VENTURE_INITIATIVE_EVENTS
+            or (
+                event.get("type") == "build"
+                and "contributed" in (event.get("data") or {})
+            )
+        )
     )
-    realized = _realized_venture_value(events, snapshot, config, members)
+    purposeful_agent_ticks = {
+        (int(event.get("tick") or 0), str(event.get("actor_id") or ""))
+        for event in events
+        if event.get("actor_id") in members
+        and event.get("type") in PURPOSEFUL_ACTION_EVENTS
+        and (
+            event.get("type") != "fulfill_contract"
+            or (event.get("data") or {}).get("voluntary") is True
+        )
+    }
     decision_failures = sum(
         is_decision_failure_message(event.get("type"), event.get("message"))
         for event in responses
@@ -690,10 +867,9 @@ def _cohort_raw_metrics(
         "endpoint_health_points": _rounded(endpoint_health_points),
         "endpoint_health_capacity": 100 * len(member_ids),
         "living_terminal_economic_value": _rounded(living_terminal_value),
+        "purposeful_agent_ticks": len(purposeful_agent_ticks),
         "venture_initiatives": sum(initiative_counts.values()),
         "venture_initiatives_by_type": dict(sorted(initiative_counts.items())),
-        "realized_venture_value": _rounded(realized["total"]),
-        "realized_venture_value_by_source": realized["by_source"],
     }
 
 
@@ -829,7 +1005,7 @@ def _cohort_diagnostics(
             else None
         ),
         "note": (
-            "Social activity is diagnostic only in v1: frequency does not establish "
+            "Social activity is diagnostic only in v4: frequency does not establish "
             "coordination quality or prosocial/antisocial intent."
         ),
     }
@@ -868,9 +1044,9 @@ def _terminal_economic_value(
     for item in (snapshot.get("items") or {}).values():
         owner = str(item.get("owner_id") or "")
         if owner in members:
-            value += RESOURCE_VALUES.get(str(item.get("item") or ""), 1) * int(
-                item.get("quantity") or 0
-            )
+            value += BENCHMARK_RESOURCE_VALUES.get(
+                str(item.get("item") or ""), 1
+            ) * int(item.get("quantity") or 0)
 
     for trade in (snapshot.get("trades") or {}).values():
         if (
@@ -892,67 +1068,6 @@ def _terminal_economic_value(
         ):
             value += _book_value(contract.get("collateral"))
     return value
-
-
-def _realized_venture_value(
-    events: list[dict[str, Any]],
-    snapshot: dict[str, Any],
-    config: dict[str, Any],
-    members: set[str],
-) -> dict[str, Any]:
-    groups = snapshot.get("groups") or {}
-    asset_value = 0.0
-    for structure in (snapshot.get("structures") or {}).values():
-        if structure.get("status") != "complete":
-            continue
-        replacement = _structure_replacement_value(
-            str(structure.get("type") or ""),
-            str(config.get("economy_mode") or "baseline"),
-        )
-        asset_value += _attributed_owner_value(
-            str(structure.get("owner_id") or ""),
-            float(replacement),
-            members,
-            groups,
-        )
-
-    trade_value = 0.0
-    fee_value = 0.0
-    contract_value = 0.0
-    structures = snapshot.get("structures") or {}
-    for event in events:
-        data = event.get("data") or {}
-        if event.get("type") == "accept_trade":
-            trade = data.get("trade") or {}
-            if str(trade.get("from_agent") or "") in members:
-                reported = data.get("value") or {}
-                trade_value += float(
-                    reported.get("give", _book_value(trade.get("give")))
-                )
-                trade_value += float(
-                    reported.get("receive", _book_value(trade.get("receive")))
-                )
-        elif event.get("type") == "pay_access_fee":
-            structure = structures.get(str(data.get("structure_id") or "")) or {}
-            fee = _book_value(data.get("fee"))
-            fee_value += _attributed_owner_value(
-                str(structure.get("owner_id") or ""),
-                float(fee),
-                members,
-                groups,
-            )
-        elif event.get("type") == "fulfill_contract":
-            contract = data.get("contract") or {}
-            if str(contract.get("lender_id") or "") in members:
-                contract_value += _book_value(contract.get("repayment"))
-
-    by_source = {
-        "completed_asset_value": _rounded(asset_value),
-        "originated_accepted_trade_value": _rounded(trade_value),
-        "access_fee_income_value": _rounded(fee_value),
-        "fulfilled_contract_repayment_value": _rounded(contract_value),
-    }
-    return {"total": sum(float(value) for value in by_source.values()), "by_source": by_source}
 
 
 def _attributed_owner_value(
@@ -989,7 +1104,8 @@ def _book_value(items: Any) -> int:
     if not isinstance(items, dict):
         return 0
     return sum(
-        RESOURCE_VALUES.get(str(item), 1) * max(0, int(quantity or 0))
+        BENCHMARK_RESOURCE_VALUES.get(str(item), 1)
+        * max(0, int(quantity or 0))
         for item, quantity in items.items()
     )
 
@@ -1006,7 +1122,7 @@ def _latest_lifecycle_event(events: list[dict[str, Any]]) -> dict[str, Any] | No
 
 
 def _benchmark_trajectory(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Recover durable v3 checkpoints and apply the current scoring revision."""
+    """Recover durable v4 checkpoints and apply the current scoring revision."""
 
     checkpoints: dict[int, dict[str, Any]] = {}
     for event in events:
@@ -1097,7 +1213,7 @@ def _normalize_model_failure_raw(
     model_output_failures: int | None,
     external_decision_failures: int | None,
 ) -> dict[str, Any]:
-    """Migrate revision-1 raw counts without altering the source event ledger."""
+    """Normalize durable checkpoint failure counts from the event ledger."""
 
     normalized = dict(raw)
     if "engine_invalid_proposals" in normalized:
@@ -1119,24 +1235,6 @@ def _normalize_model_failure_raw(
     )
     normalized["invalid_proposals"] = engine_invalid + model_failures
     return normalized
-
-
-def _legacy_spark_attribution_exception(
-    *,
-    model: str,
-    seed: Any,
-    raw: dict[str, Any],
-    source_fingerprint: Any,
-) -> bool:
-    """Retain the explicitly disclosed pre-raw-retention Spark result."""
-
-    return (
-        model == "gpt-5.3-codex-spark"
-        and seed == 11
-        and int(raw.get("model_output_failures") or 0) == 2
-        and source_fingerprint
-        == "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948"
-    )
 
 
 def _geometric_mean(values: Iterable[float | None]) -> float | None:
@@ -1177,6 +1275,88 @@ def _format_count_rate(value: Any, denominator: Any) -> str:
     if total <= 0:
         return f"{count} (n/a)"
     return f"{count} ({100.0 * count / total:.1f}%)"
+
+
+def _score_spread(replications: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return transparent descriptive uncertainty without changing pooled scores."""
+
+    spread: dict[str, Any] = {}
+    for score_key in (
+        "effective_execution",
+        "sustained_competence",
+        "entrepreneurial_agency",
+        "economic_productivity",
+    ):
+        values = [
+            float(score)
+            for replication in replications
+            if isinstance(
+                score := (
+                    (replication.get("scores") or {}).get(score_key) or {}
+                ).get("score"),
+                (int, float),
+            )
+        ]
+        if not values:
+            continue
+        mean = sum(values) / len(values)
+        row: dict[str, Any] = {
+            "n": len(values),
+            "values": [round(value, 2) for value in values],
+            "mean": round(mean, 2),
+            "median": round(median(values), 2),
+            "minimum": round(min(values), 2),
+            "maximum": round(max(values), 2),
+        }
+        if len(values) >= 2:
+            sample_sd = stdev(values)
+            # Two-sided 95% Student-t critical values for df 1..30.
+            critical_values = (
+                12.706,
+                4.303,
+                3.182,
+                2.776,
+                2.571,
+                2.447,
+                2.365,
+                2.306,
+                2.262,
+                2.228,
+                2.201,
+                2.179,
+                2.160,
+                2.145,
+                2.131,
+                2.120,
+                2.110,
+                2.101,
+                2.093,
+                2.086,
+                2.080,
+                2.074,
+                2.069,
+                2.064,
+                2.060,
+                2.056,
+                2.052,
+                2.048,
+                2.045,
+                2.042,
+            )
+            degrees_of_freedom = len(values) - 1
+            critical = (
+                critical_values[degrees_of_freedom - 1]
+                if degrees_of_freedom <= len(critical_values)
+                else 1.96
+            )
+            margin = critical * sample_sd / math.sqrt(len(values))
+            row["sample_standard_deviation"] = round(sample_sd, 2)
+            row["mean_95pct_t_interval"] = [
+                round(mean - margin, 2),
+                round(mean + margin, 2),
+            ]
+        spread[score_key] = row
+    return spread
 
 
 def _merge_numeric_tree(target: dict[str, Any], source: dict[str, Any]) -> None:

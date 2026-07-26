@@ -1,350 +1,264 @@
 # Agent World model benchmarks
 
-Agent World Participant v3 is the current standardized model benchmark suite.
-It turns deterministic run telemetry into three repeatable scores while keeping
-the raw evidence and formulas visible.
+Agent World Participant v4 is the current standardized model benchmark suite.
+It keeps the deterministic protocol and evidence safeguards from v3 while
+correcting two construct-validity failures:
 
-The suite distinguishes:
+- an all-`wait` policy can no longer receive a perfect execution score;
+- internal transfers and structure input cost no longer count as value created.
 
-- **Diagnostic scores:** useful measurements from any run, including mixed
-  civilizations, stopped runs, degraded runs, and older harnesses.
-- **Provisional benchmark results:** one integrity-clean, complete 50-tick run on the
-  predeclared seed 11 that exactly follows participant-v3.
-- **Replicated certified benchmark results:** pooled results from integrity-clean,
-  complete 50-tick runs on both required seeds, 11 and 41.
+Participant v1, v2, and v3 reports remain historical artifacts. They are not
+silently rescored or mixed into a v4 leaderboard.
 
-This prevents an interesting exploratory run from being presented as directly
-comparable to a controlled benchmark.
+Preserved examples include the
+[GPT-5.4 v2 report](gpt-5-4-benchmark.md), the
+[Spark v1/v2 diagnostic](gpt-5-3-codex-spark-benchmark.md), and the
+[Spark v3 provisional report](gpt-5-3-codex-spark-v3-benchmark.md).
 
-## Recorded attempts
+## Result tiers
 
-- [GPT-5.4, 2026-07-25](gpt-5-4-benchmark.md): historical provisional
-  Participant v2
-  benchmark from a clean, complete seed-11 run; planning 86.54, sustained
-  competence 78.45, and entrepreneurial agency 22.17.
-- [GPT-5.3-Codex-Spark, 2026-07-24](gpt-5-3-codex-spark-benchmark.md):
-  diagnostic-only; both runs exhausted the dedicated weekly quota before tick
-  40 and each contained one model-decision failure. That attempt also exposed
-  Participant v1 competence inflation; its corrected v2 diagnostic is 51.03,
-  not 82.23.
-- [GPT-5.3-Codex-Spark Participant v3, 2026-07-26](gpt-5-3-codex-spark-v3-benchmark.md):
-  provisional seed-11 revision-2 result; planning 66.64, sustained competence
-  32.68, and entrepreneurial agency 2.12. Two malformed model outputs are
-  scored as model failures rather than mistaken for harness corruption.
+- **Diagnostic:** any run, including mixed populations, stopped runs, degraded
+  runs, historical protocols, and nonstandard seeds.
+- **Provisional:** one integrity-clean, complete v4 run on predeclared seed 11.
+- **Replicated certified:** one integrity-clean, complete v4 run on every
+  required seed: 11, 41, 73, 101, and 137.
 
-Participant v1 is retired. It counted dead agents' inventories as material
-success, measured survival only over ticks that happened to run, and lacked an
-endpoint-health check. Historical v1 reports remain historical artifacts and
-must not be silently mixed with later results.
+Five distinct worlds give the leaderboard a visible per-seed distribution
+instead of presenting two pooled observations to two decimal places as if
+their uncertainty were known. Certification still pools raw numerators and
+denominators for the official score, but the aggregate also retains each
+replication and reports its values, mean, median, range, sample standard
+deviation, and descriptive 95% Student-t interval.
 
-Participant v2 remains a valid historical 40-tick suite. Participant v3 keeps
-the same trial settings and core score construction, extends the official
-endpoint to tick 50, and records diagnostic score trajectories at ticks 30, 40,
-and 50. Existing v2 results are not converted or invalidated; models need fresh
-v3 runs to enter the new leaderboard.
+Duplicate copies of a required seed are not certified evidence. Repeated-seed
+studies remain useful diagnostics for model sampling variance, but they must
+not overweight one world in the standardized pooled result.
 
-Participant v3 scoring revisions are recorded in every report:
+## Frozen trial
 
-- **Revision 2** made one classification correction: malformed structured
-  output produced by the target model is a scored planning failure, not a
-  reason to discard the trial. This does not repair the action or remove its
-  consequences. The engine still executes the existing fallback wait, and the
-  failure occupies one submitted-action slot.
-- **Revision 3** removes the 100-point ceiling from entrepreneurial agency.
-  Its fixed targets still define 100, but models that outperform them retain
-  that information in their component and composite scores. Planning and
-  sustained competence remain bounded at 100.
-- **Revision 4** independently validates every extracted decision against the
-  provider's declared output contract before the production adapter runs.
-  Confirmed contract violations count against the model. Contract-valid output
-  rejected by the adapter is a harness failure, while failures before a
-  decision payload can be isolated are marked ambiguous-boundary failures.
-  Both latter categories invalidate benchmark integrity.
-
-Historical reports are not overwritten. Supplying a compatible older report to
-the benchmark aggregation command explicitly applies the current revision to
-its preserved raw counts and labels the source and output scoring revisions in
-the new leaderboard artifact.
-
-## Standard and usage-constrained trials
-
-Every benchmark run uses the same pure-model 50-tick trial:
+Every benchmark run uses:
 
 | Setting | Required value |
 |---|---|
-| Seeds | 11 and 41 |
+| Seeds | 11, 41, 73, 101, 137 |
 | Population | 10 copies of one model |
 | Horizon | 50 ticks |
-| Diagnostic score checkpoints | ticks 30 and 40 |
-| Official score endpoint | tick 50 |
+| Diagnostic checkpoints | ticks 30 and 40 |
+| Official endpoint | tick 50 |
 | World | `organic-generalists` |
 | Objective | neutral |
 | Reasoning effort | medium |
 | Decisions | raw |
 | Action feedback | baseline |
-| Turn resolution | simultaneous |
+| Resolution | simultaneous |
 | Global/provider workers | 4 |
-| Private agent I/O log | enabled |
 | Connector | `stateless-v3` |
 | Provider conversation | stateless |
+| Private agent I/O | enabled |
 
-Pure-model trials isolate a model's behavior better than mixed populations.
-Mixed runs remain valuable ecology experiments, but one model can change the
-resource pressure and opportunities faced by every other cohort.
-
-Launch the predeclared seed-11 trial:
+Launch the provisional seed:
 
 ```bash
 python3 -m agent_world.cli run \
-  --benchmark-protocol participant-v3 \
+  --benchmark-protocol participant-v4 \
   --brain codex --model gpt-5.6-luna \
   --seed 11 \
-  --out runs/benchmarks/luna-v3/seed-11/run.jsonl \
-  --snapshot runs/benchmarks/luna-v3/seed-11/run-snapshot.json \
+  --out runs/benchmarks/luna-v4/seed-11/run.jsonl \
+  --snapshot runs/benchmarks/luna-v4/seed-11/run-snapshot.json \
   --progress
 ```
 
-For a usage-constrained model, one clean seed-11 run is sufficient for a
-**provisional benchmark**. Seed 11 is fixed in advance so researchers cannot
-choose the more favorable world after seeing outcomes. A seed-41-only result is
-an incomplete replication, not a provisional benchmark.
-
-For the full **replicated certified benchmark**, repeat with `--seed 41` and a
-different output directory. The seed-41 result can be added later to promote an
-existing provisional result without rerunning seed 11. The benchmark flag sets
-and locks every other setting. A conflicting option fails before any model
-call.
-
-Each run report automatically contains `benchmarks`. Pool the two reports with:
+Run the same command with seeds 41, 73, 101, and 137 for certification, using
+a separate output directory for each seed. Aggregate the five reports with:
 
 ```bash
 python3 -m agent_world.cli benchmark \
-  runs/benchmarks/luna-v3/seed-11/run-report.json \
-  runs/benchmarks/luna-v3/seed-41/run-report.json \
-  --out runs/benchmarks/luna-v3/leaderboard
+  runs/benchmarks/luna-v4/seed-11/run-report.json \
+  runs/benchmarks/luna-v4/seed-41/run-report.json \
+  runs/benchmarks/luna-v4/seed-73/run-report.json \
+  runs/benchmarks/luna-v4/seed-101/run-report.json \
+  runs/benchmarks/luna-v4/seed-137/run-report.json \
+  --out runs/benchmarks/luna-v4/leaderboard
 ```
 
-Aggregation pools the raw numerators and denominators before scoring. It does
-not average the two run scores. Passing only the clean seed-11 report emits a
-provisional result; passing both required seeds emits a replicated certified
-result.
+The benchmark flag locks every other setting. A conflicting option fails
+before a model call.
 
-The horizon remains 50 ticks in both tiers. Shortening a constrained model to
-30 or 40 ticks is not allowed: historical 50-tick runs show that survival
-collapses and civilization milestones often occur after tick 40. If even one
-50-tick run is unaffordable, the available evidence remains diagnostic.
+## Scores
 
-Each v3 run records cumulative diagnostic score snapshots at ticks 30 and 40,
-plus the designated tick-50 endpoint. These trajectories show whether planning,
-survival, and enterprise are improving, stable, or collapsing. They are not
-three independent trials and must not be averaged; only the tick-50 score can
-be provisional or certified. Each checkpoint is normalized to its elapsed
-prefix horizon, so a healthy tick-30 population is not mechanically penalized
-for the twenty future ticks that have not happened yet.
+Higher is better. Effective execution and sustained competence range from 0
+to 100. Entrepreneurial agency and its economic-productivity diagnostic start
+at zero and have no maximum; 100 is a frozen reference target, not a ceiling.
 
-## The three scores
+### 1. Effective execution
 
-Higher is always better. Planning execution and sustained competence range
-from 0 to 100. Entrepreneurial agency starts at zero but has no maximum: 100 is
-its frozen excellent-performance reference point. Formulas, scale metadata,
-and every component are stored in the machine-readable run report.
-
-### 1. Planning execution
-
-This measures how often the model proposes an action that is actually feasible.
+This score replaces v3's planning-execution label:
 
 ```text
-100 × (submitted actions - contention - invalid proposals)
-    / (submitted actions - contention)
+action feasibility =
+  valid submitted proposals / submitted proposals excluding contention
+
+purposeful activity =
+  decision opportunities with at least one successful meaningful action
+  / decision opportunities
+
+effective execution =
+  geometric mean(action feasibility, purposeful activity)
 ```
 
-Same-tick contention is excluded. If two agents both make a valid attempt at
-the final resource, losing resolution priority is not a planning mistake.
+Same-tick contention is excluded from feasibility. Independently confirmed
+model-output contract violations are invalid proposals. Provider, quota,
+adapter, harness, and ambiguous-boundary failures invalidate the trial rather
+than becoming model mistakes.
 
-Action-point overruns are included among invalid proposals and also reported
-separately. Each independently confirmed output-contract violation adds one
-model-output invalid proposal. Provider, quota, usage-ledger, adapter/harness,
-or ambiguous-boundary failures do not become planning mistakes; they invalidate
-the benchmark trial through its integrity checks.
+Purposeful activity counts at most once per agent-tick. Successful movement,
+resource work, consumption, crafting, construction, ownership, exchange,
+contracts, gifts, group administration, storage, maintenance, and access
+actions count. `wait`, `inspect`, and communication-only ticks do not.
 
-This score deliberately does not reward boldness. A cautious model can plan
-accurately without being entrepreneurial, which is exactly the distinction the
-suite is intended to reveal.
+This term prevents action spam from gaining extra activity credit and prevents
+an all-`wait` policy from scoring 100. Waiting can still be strategically
+correct; a model is not required to act on every tick. The rate simply makes
+the amount of exercised agency visible alongside proposal accuracy.
 
 ### 2. Sustained competence
 
-This asks whether valid planning translates into sustained success:
-
 ```text
 geometric mean(
-  planning execution,
+  effective execution,
   survival continuity,
   living-accessible material outcome
 )
 ```
 
-- **Survival exposure** is successful decision opportunities divided by the
-  complete target horizon, including ticks lost when a run stops early.
-- **Endpoint population health** is the cohort's remaining health divided by
-  its initial maximum health. Dead agents contribute zero, and barely surviving
-  agents receive only their remaining health fraction.
-- **Survival continuity** is the geometric mean of survival exposure and
-  endpoint population health. This preserves the timing information from
-  exposure while preventing a late collapse from looking healthy.
-- **Living-accessible material outcome** is economic value still attributable
-  to living cohort members relative to three times the cohort's starting
-  endowment. Dead agents' inventories and directly owned estates do not count.
-  The score caps at 100.
-- **Living terminal economic value** includes carried inventory, owned
-  completed productive assets, stored inventory, treasuries, upkeep reserves,
-  owned ground items, open trade escrow, and still-owned credit
-  advance/collateral escrow. Group-owned value is divided among members, and
-  only living members' shares count.
+- **Survival exposure** is completed decision opportunities divided by the
+  full target horizon.
+- **Endpoint population health** includes dead agents as zero and living
+  agents by remaining health.
+- **Survival continuity** is the geometric mean of exposure and endpoint
+  health.
+- **Living-accessible material outcome** is living cohort value relative to
+  three times starting endowment, capped at 100.
 
-The three-times-endowment target is mechanics-based and frozen in v3. It means
-an excellent cohort must do more than preserve its starting supplies.
-
-A geometric mean is used rather than hand-tuned weights. A model cannot erase a
-collapse by leaving wealth on dead agents, or hide poor planning behind passive
-survival.
+The material term stays bounded so extreme inventories cannot compensate for
+collapse or ineffective execution. Uncapped economic output is reported
+separately.
 
 ### 3. Entrepreneurial agency
 
-This separates empty ambition from realized enterprise:
+Participant v4 uses a conservative definition appropriate to the current
+simulation:
 
 ```text
-geometric mean(initiative score, realization score)
+geometric mean(venture initiative score, net value creation score)
 ```
 
-**Venture initiatives** are successful:
+Venture initiatives are successful trade offers, construction starts,
+credit-contract offers, and access-fee policies. The initiative component
+reaches 100 at five initiatives per 100 possible agent-ticks. That anchor is
+close to demonstrated strong-model behavior rather than v3's unreachable
+20-per-100 scale.
 
-- trade offers;
-- construction starts;
-- credit-contract offers;
-- access-fee policies.
+Net value created is:
 
-The initiative component reaches 100 at 20 initiatives per 100 possible
-agent-ticks, equivalent to one successful venture start every five living
-opportunities. It continues above 100 when a cohort starts ventures at a higher
-rate.
+```text
+max(0, living-accessible terminal value - starting endowment)
+```
 
-**Realized venture value** combines common book-value units from:
+normalized per 100 possible agent-ticks. Its component reaches 100 at 20 value
+per 100 agent-ticks and remains uncapped above that target.
 
-- completed productive assets owned;
-- accepted trades originated by the cohort;
-- access fees collected by cohort-owned assets;
-- fulfilled contract repayments received.
+The anchors were sanity-checked against preserved clean GPT-5.4 evidence rather
+than guessed in isolation. Its historical v2 initiative rate was 4.25 per 100
+agent-ticks, while applying the v4 accounting diagnostic to its two preserved
+v3 event ledgers yields net-value rates of 30.4 and 17.0. Those runs are not v4
+benchmark results; they only establish that targets of 5 and 20 are in a
+demonstrated, interpretable range.
 
-The realization component reaches 100 at 40 value per 100 possible
-agent-ticks. Over a 50-tick trial, that is 20 realized value per starting agent,
-2.5 times the organic world's eight-value starting endowment. It also continues
-above 100 rather than discarding exceptional value creation.
+This deliberately measures cohort outcomes rather than pretending to identify
+the private profit of each homogeneous agent:
 
-The targets are fixed "excellent performance" anchors, not percentiles fitted
-to whichever models happen to be in the leaderboard. The geometric mean means
-offer spam with no completed exchange cannot earn a high score, while passive
-wealth accumulation with no venture initiation also cannot.
+- trading goods among cohort members does not change cohort value;
+- access fees and contract repayments within the cohort are transfers;
+- completing a structure converts inputs into a same-value asset;
+- a structure contributes only when its production or services ultimately
+  improve the cohort's living-accessible terminal outcome;
+- a pure foraging cohort has no venture initiatives and therefore receives
+  zero entrepreneurial agency even if it accumulates materials;
+- wash trading has initiatives but no net value creation and therefore also
+  receives zero.
 
-For example, a cohort exactly at the initiative target and at twice the
-realization target receives component scores of 100 and 200, producing an
-entrepreneurial-agency score of 141.42. A cohort at twice both targets scores
-200. Thus twice the realized value is always visible, although the composite
-also deliberately accounts for whether the cohort initiated ventures.
+The score rewards building, exchange, credit, priced access, and other venture
+attempts when they coexist with a real economic outcome. It does not claim to
+isolate causal gains from trade. That would require heterogeneous preferences,
+external market counterparties, or a validated utility counterfactual that the
+current simulation does not provide.
 
-## Quality and certification
+### Economic productivity diagnostic
 
-A run is diagnostic-only if any required setting differs, the run stops early,
-the population is mixed, an external provider/quota/harness or
-ambiguous-boundary failure occurs, or usage coverage is incomplete. A response
-that independently fails its declared model-output contract degrades
-descriptive quality but does not invalidate benchmark integrity: it is part of
-the model's measured performance.
+The uncapped value-creation component is also reported on its own. It shows
+whether a cohort created living-accessible material value regardless of
+whether it used entrepreneurial institutions. This keeps wealth information
+visible without allowing it to overwhelm sustained competence.
 
-Result status is assigned as follows:
+## Recipe-consistent benchmark values
 
-| Status | Requirement | Interpretation |
-|---|---|---|
-| Provisional | One integrity-clean, complete seed-11 run | Complete usage-constrained benchmark with single-world uncertainty |
-| Certified | One integrity-clean, complete run for each seed, 11 and 41 | Replicated benchmark; pool raw counts before scoring |
-| Incomplete replication | An integrity-clean seed-41 run without seed 11, or a duplicate required seed | Cannot stand alone; may contribute after the missing seed is added |
-| Diagnostic only | Early stop, provider/quota/harness or ambiguous-boundary failure, protocol mismatch, mixed population, or incomplete usage | Descriptive evidence, never promoted by relabeling |
+V3 used the world's hand-set book values directly, which made some productive
+transformations look like wealth destruction. V4 starts with that table and
+raises any single-output recipe's result until it is worth at least its inputs.
 
-Resuming a quota-paused run from its completed-tick checkpoint is allowed, but
-the complete audit remains authoritative. A provider or quota failure does not
-disappear when a run resumes. A malformed model response also remains in the
-audit, but is scored as a model failure rather than disqualifying the run.
+| Resource | V4 benchmark value |
+|---|---:|
+| coin | 3 |
+| water | 1 |
+| food | 2 |
+| fiber | 2 |
+| wood | 3 |
+| stone | 4 |
+| ore | 8 |
+| ingot | 19 |
+| tool | 12 |
+| advanced tool | 43 |
 
-For new Codex, Claude, Cursor, and direct OpenAI decisions, Agent World first
-validates the isolated payload using a validator independent from the
-production adapter:
+Consequently, smelting two ore plus one wood into an ingot preserves at least
+19 value, minting one ingot into eight coins preserves at least 24, and
+crafting an advanced tool preserves its 43-value input bundle. These are
+benchmark accounting values; they do not modify inventories, recipes, trade
+rules, or agent-facing prices.
 
-- contract-invalid payload: `output_contract_violation`, scored against the
-  model;
-- contract-valid payload rejected by the adapter:
-  `adapter_rejected_contract_valid_output`, benchmark-invalidating harness
-  failure;
-- no isolated payload: `payload_extraction_failure`, benchmark-invalidating
-  ambiguous-boundary failure;
-- recognized timeout, network, quota, authentication, or provider failure:
-  external operational failure.
+## Integrity and versioning
 
-The private usage ledger retains the isolated failed payload, or the complete
-provider envelope when available, together with the contract result, adapter
-detail, attribution confidence, and SHA-256 hash. This evidence is not included
-in subsequent agent prompts. Historical runs can only retain the error detail
-that was originally logged; missing raw responses cannot be reconstructed.
+A run is diagnostic-only when a required setting differs, the run stops early,
+the population is mixed, external or harness integrity fails, usage coverage
+is incomplete, or its fingerprint differs.
 
-At launch, the run records a SHA-256 fingerprint of the scoring code and the
-behavior-defining provider brains, world, rules, map, model, interface, and
-runner sources.
-Aggregation rejects a different fingerprint even when the visible settings
-match. Any behavior-changing revision therefore needs a new suite version
-instead of silently joining the old leaderboard.
+The run records a SHA-256 fingerprint of scoring code plus behavior-defining
+provider, world, rule, map, model, interface, runner, and session sources.
+Changing a formula, target, world, or harness requires a new suite version.
+A narrow telemetry correction may use a scoring revision only when preserved
+raw evidence can reproduce it without changing trial behavior.
 
-The aggregate artifact retains:
-
-- pooled raw counts;
-- per-component scores;
-- seed and source paths;
-- rejected runs and exact exclusion reasons;
-- the complete frozen protocol and scoring targets.
-
-Changing a formula, target, world, or harness requires a new suite ID. A narrow
-telemetry/classification correction can use an explicit scoring revision and
-source-fingerprint compatibility entry only when the event ledger contains all
-inputs needed to recompute it and trial behavior was unchanged. The initial
-Participant v3 Spark run is the sole revision-1 compatibility case; its event
-ledger was not edited, and the migration is disclosed in its study record.
+V4 has no compatibility exception for v3 reports because the old event
+aggregates do not contain the new purposeful-activity construct and because
+the economic formula changed materially.
 
 ## Reporting standard
 
-Human-facing analyses put the three primary benchmark scores first in a
-visually distinct scorecard:
+Human-facing reports put these scores first:
 
-1. planning execution;
+1. effective execution;
 2. sustained competence;
 3. entrepreneurial agency.
 
-A supporting table follows in the style of the direct Opus comparison. It must
-include invalid proposals as both a count and a percentage of submitted
-actions, contention separately, action-point overruns, survival, economic and
-entrepreneurial outcomes, decision/provider failures, and usage where
-available. The result tier and seed coverage appear immediately above the
-scorecard. A high-level score must never replace the failure-rate denominator
-or the descriptive civilization analysis. Participant v3 reports also show the
-tick-30/40/50 score trajectory, clearly distinguishing diagnostic checkpoints
-from the designated final endpoint.
+Supporting evidence must include proposal failures with denominators,
+contention, action-point overruns, purposeful agent-ticks, survival, endpoint
+health, living value, net value created, initiatives, decision/provider
+failures, usage, result tier, and seed coverage.
 
-## What v3 does not score
+Certified aggregate reports also include every seed's scores and the
+descriptive spread. Tick-30 and tick-40 trajectories remain diagnostics; only
+tick 50 is the official endpoint.
 
-Communication, gifts, trades, construction cooperation, and group creation are
-retained as social diagnostics. They are not yet a social-ability score because
-frequency alone cannot distinguish useful coordination from chatter.
-
-Antisocial behavior is also not scored yet. Reliable measurement will require a
-separately validated semantic annotation procedure with human-audited examples;
-keyword counts or an uncalibrated LLM judge would make the benchmark look more
-precise than it is.
-
-Future suites can add social coordination, leadership, adaptation, deception,
-or antisocial-behavior tasks without changing Participant v3.
+Communication, prosocial behavior, leadership, deception, and antisocial
+behavior remain unscored. Frequency alone is not a validated measure of their
+quality or intent.
