@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "gpt-5-4-participant-v2-provisional-seed11-20260725-041235",
-  "status": "running",
+  "status": "completed_provisional",
   "created_at_utc": "2026-07-25T04:12:35Z",
   "suite_id": "agent-world-participant-v2",
   "benchmark_protocol": "participant-v2",
@@ -21,8 +21,11 @@
     "cells": {
       "seed-11": {
         "seed": 11,
-        "status": "running",
-        "screen": "aw-bench-gpt54-s11"
+        "status": "completed_clean",
+        "screen": "aw-bench-gpt54-s11",
+        "final_tick": 40,
+        "decision_failures": 0,
+        "quality_status": "clean"
       }
     }
   },
@@ -75,5 +78,44 @@
     "--snapshot",
     "runs/benchmarks/gpt-5-4-participant-v2-provisional-seed11-20260725-041235/seed-11/run-snapshot.json",
     "--progress"
-  ]
+  ],
+  "outcome": {
+    "benchmark_status": "provisional",
+    "completed_at_utc": "2026-07-25T06:30:22.217932+00:00",
+    "seed": 11,
+    "final_tick": 40,
+    "quality_status": "clean",
+    "usage_coverage_pct": 100.0,
+    "decision_failures": 0,
+    "scores": {
+      "planning_execution": 86.54,
+      "sustained_competence": 78.45,
+      "entrepreneurial_agency": 22.17
+    },
+    "supporting": {
+      "decisions": 400,
+      "submitted_actions": 1391,
+      "invalid_proposals": 186,
+      "invalid_proposal_rate_pct": 13.4,
+      "contention_failures": 9,
+      "action_point_overruns": 4,
+      "living_agents": 9,
+      "initial_agents": 10,
+      "endpoint_population_health_pct": 59.9,
+      "living_terminal_economic_value": 173,
+      "venture_initiatives": 17,
+      "realized_venture_value": 37
+    },
+    "usage": {
+      "calls": 400,
+      "prompt_tokens": 4765929,
+      "output_tokens": 354249,
+      "reasoning_tokens": 308022,
+      "cache_hit_rate_pct": 58.4,
+      "plan_usage_delta_percentage_points": 4,
+      "exact_simulation_credits_available": false
+    },
+    "analysis": "docs/gpt-5-4-benchmark.md",
+    "leaderboard": "runs/benchmarks/gpt-5-4-participant-v2-provisional-seed11-20260725-041235/leaderboard.json"
+  }
 }

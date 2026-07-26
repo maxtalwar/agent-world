@@ -1,0 +1,140 @@
+{
+  "protocol": {
+    "aggregation": "For a provisional result, apply the frozen formulas to the clean seed-11 raw counts. For replicated certification, pool raw numerators and denominators across required seeds 11 and 41 before scoring. Do not average per-run scores.",
+    "code_fingerprint_sha256": "a991cc300a160428884ecd31303020e6fbd68233ffa737feeb8d7dcfebcf9661",
+    "id": "participant-v2",
+    "replications": {
+      "minimum": 2,
+      "policy": "One clean complete seed-11 run is a provisional benchmark. One clean run for each required seed is a replicated certified benchmark. Seed 41 alone is not a provisional benchmark.",
+      "provisional_minimum": 1,
+      "provisional_seed": 11,
+      "required_seeds": [
+        11,
+        41
+      ]
+    },
+    "score_scale": {
+      "higher_is_better": true,
+      "maximum": 100.0,
+      "minimum": 0.0
+    },
+    "suite_id": "agent-world-participant-v2",
+    "targets": {
+      "realized_venture_value_per_100_agent_ticks": 40.0,
+      "terminal_endowment_multiple": 3.0,
+      "venture_initiatives_per_100_agent_ticks": 20.0
+    },
+    "trial": {
+      "action_feedback_mode": "baseline",
+      "agent_io_log": true,
+      "agents": 10,
+      "connector_profile": "stateless-v3",
+      "conversation_mode": "stateless",
+      "decision_mode": "raw",
+      "economy_mode": "organic",
+      "geography_mode": "dispersed",
+      "global_max_workers": 4,
+      "objective_mode": "neutral",
+      "population": "one uniform model cohort",
+      "preset": "organic-generalists",
+      "provider_max_workers": 4,
+      "reasoning_effort": "medium",
+      "specialization_mode": "generalists",
+      "ticks": 40,
+      "turn_resolution": "simultaneous"
+    }
+  },
+  "rejected": [],
+  "results": [
+    {
+      "brain": "codex",
+      "certification_flags": [
+        "missing_required_seeds"
+      ],
+      "certified": false,
+      "model": "gpt-5.4",
+      "provisional": true,
+      "raw": {
+        "action_point_overruns": 4,
+        "contention_failures": 9,
+        "decision_failures": 0,
+        "decisions": 400,
+        "endpoint_health_capacity": 1000,
+        "endpoint_health_points": 599.0,
+        "initial_agents": 10,
+        "initial_endowment_value": 80,
+        "invalid_proposals": 186,
+        "living_agents": 9,
+        "living_terminal_economic_value": 173.0,
+        "observed_agent_ticks": 400,
+        "possible_agent_ticks": 400,
+        "realized_venture_value": 37.0,
+        "realized_venture_value_by_source": {
+          "access_fee_income_value": 0.0,
+          "completed_asset_value": 30.0,
+          "fulfilled_contract_repayment_value": 0.0,
+          "originated_accepted_trade_value": 7.0
+        },
+        "submitted_actions": 1391,
+        "submitted_actions_excluding_contention": 1382,
+        "terminal_economic_value": 186.0,
+        "venture_initiatives": 17,
+        "venture_initiatives_by_type": {
+          "build_started": 3,
+          "offer_trade": 14
+        }
+      },
+      "reasoning_effort": "medium",
+      "scores": {
+        "entrepreneurial_agency": {
+          "components": {
+            "initiative_score": 21.25,
+            "realization_score": 23.12,
+            "realized_value_per_100_agent_ticks": 9.25,
+            "realized_venture_value": 37.0,
+            "venture_initiatives": 17,
+            "venture_initiatives_per_100_agent_ticks": 4.25
+          },
+          "formula": "geometric_mean(initiative rate vs 20/100 agent-ticks, realized value rate vs 40/100 agent-ticks)",
+          "score": 22.17
+        },
+        "planning_execution": {
+          "components": {
+            "action_point_overruns": 4,
+            "contention_excluded": 9,
+            "invalid_proposals": 186,
+            "submitted_actions": 1391,
+            "valid_proposal_rate_pct": 86.54
+          },
+          "formula": "100 * (submitted - contention - invalid) / (submitted - contention)",
+          "score": 86.54
+        },
+        "sustained_competence": {
+          "components": {
+            "endpoint_population_health_pct": 59.9,
+            "initial_agents": 10,
+            "initial_endowment_value": 80.0,
+            "living_agents": 9,
+            "living_terminal_economic_value": 173.0,
+            "material_outcome_pct": 72.08,
+            "material_target_value": 240.0,
+            "planning_execution": 86.54,
+            "survival_continuity_pct": 77.4,
+            "survival_exposure_pct": 100.0,
+            "total_terminal_economic_value": 186.0
+          },
+          "formula": "geometric_mean(planning execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)",
+          "score": 78.45
+        }
+      },
+      "seeds": [
+        11
+      ],
+      "sources": [
+        "run"
+      ],
+      "status": "provisional"
+    }
+  ],
+  "suite_id": "agent-world-participant-v2"
+}

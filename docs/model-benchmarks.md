@@ -18,6 +18,9 @@ comparable to a controlled benchmark.
 
 ## Recorded attempts
 
+- [GPT-5.4, 2026-07-25](gpt-5-4-benchmark.md): provisional Participant v2
+  benchmark from a clean, complete seed-11 run; planning 86.54, sustained
+  competence 78.45, and entrepreneurial agency 22.17.
 - [GPT-5.3-Codex-Spark, 2026-07-24](gpt-5-3-codex-spark-benchmark.md):
   diagnostic-only; both runs exhausted the dedicated weekly quota before tick
   40 and each contained one model-decision failure. That attempt also exposed
