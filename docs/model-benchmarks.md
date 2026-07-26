@@ -204,13 +204,14 @@ whether a cohort created living-accessible material value regardless of
 whether it used entrepreneurial institutions. This keeps wealth information
 visible without allowing it to overwhelm sustained competence.
 
-## Recipe-consistent benchmark values
+## Recipe-consistent benchmark accounting units
 
-V3 used the world's hand-set book values directly, which made some productive
-transformations look like wealth destruction. V4 starts with that table and
-raises any single-output recipe's result until it is worth at least its inputs.
+V3 used the offline metrics table directly, which made some productive
+transformations look like wealth destruction. V4 starts with that accounting
+table and raises any single-output recipe's result until its accounting total
+is at least its inputs.
 
-| Resource | V4 benchmark value |
+| Resource | V4 accounting units |
 |---|---:|
 | coin | 3 |
 | water | 1 |
@@ -224,10 +225,11 @@ raises any single-output recipe's result until it is worth at least its inputs.
 | advanced tool | 43 |
 
 Consequently, smelting two ore plus one wood into an ingot preserves at least
-19 value, minting one ingot into eight coins preserves at least 24, and
-crafting an advanced tool preserves its 43-value input bundle. These are
-benchmark accounting values; they do not modify inventories, recipes, trade
-rules, or agent-facing prices.
+19 accounting units, minting one ingot into eight coins preserves at least 24,
+and crafting an advanced tool preserves its 43-unit input bundle. These units
+exist only in offline metrics and benchmark scoring. The world engine does not
+use or expose them as prices: agents choose trade bundles, and accepted bundles
+are the only observed market terms.
 
 ## Integrity and versioning
 

@@ -589,6 +589,10 @@ class WorldEngineTests(unittest.TestCase):
         )
         self.assertTrue(site.is_complete)
         self.assertGreaterEqual(len(site.contributors), 2)
+        self.assertEqual(
+            site.contributor_shares(),
+            {owner.id: 0.5, helper.id: 0.5},
+        )
         metrics = compute_metrics(engine.state)
         self.assertGreaterEqual(metrics["construction"]["cooperative_sites"], 1)
         self.assertGreaterEqual(metrics["construction"]["contributions"], 2)
@@ -1001,6 +1005,11 @@ class WorldEngineTests(unittest.TestCase):
         self.assertEqual(sum(event.type == "wait" and event.actor_id == buyer.id for event in new_events), 4)
         self.assertEqual(engine.state.trades[trade_id].status, "accepted")
         self.assertEqual(engine.state.market_history[0]["trade_id"], trade_id)
+        self.assertNotIn("value", engine.state.market_history[0])
+        accepted_event = next(event for event in new_events if event.type == "accept_trade")
+        self.assertNotIn("value", accepted_event.data)
+        buyer_observation = build_observation(engine.state, buyer.id)
+        self.assertNotIn("value", buyer_observation["market_history"][0])
 
     def test_commerce_standing_offer_fills_multiple_escrowed_lots(self) -> None:
         engine = WorldEngine.create(WorldConfig(seed=3, economy_mode="commerce"), agent_names=["Seller", "Buyer"])

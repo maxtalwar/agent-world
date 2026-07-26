@@ -256,7 +256,7 @@ COMPACT_MECHANICS: dict[str, tuple[str, ...]] = {
         "food: consume for hunger+small energy; gather/harvest/fish/farm",
         "fiber: local gather material",
         "wood: local chop material for craft/build/repair",
-        "stone|ore: mine local mountain resources; ore is high-value raw material",
+        "stone|ore: mine local mountain resources; smelt ore into ingot at a workshop",
         "tool: craft from wood+stone+fiber; equip",
         "ingot: workshop-smelted ore; advanced_tool input",
         "advanced_tool: workshop equipment; more output, less work energy",

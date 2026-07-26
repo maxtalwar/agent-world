@@ -292,7 +292,9 @@ class EconomicInterfaceTests(unittest.TestCase):
         self.assertEqual(near["world"]["trade_settlement"], "physical_meeting_at_escrow_position")
         self.assertEqual(near["world"]["recipes"]["well"]["inputs"], {"wood": 6, "stone": 2, "fiber": 2})
         self.assertNotIn("offer_contract", [action["type"] for action in near["valid_actions"]])
-        self.assertIn("zero carry weight", build_static_context(near["world"]))
+        static_context = build_static_context(near["world"])
+        self.assertIn("zero carry weight", static_context)
+        self.assertNotIn("high-value", static_context)
 
 
 if __name__ == "__main__":

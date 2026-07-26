@@ -51,7 +51,7 @@ Agents spawn near the center at `(8,8)`.
 - `fiber`: early building/crafting input.
 - `wood`: building/crafting/repair input from forests.
 - `stone`: building/crafting input from mountains.
-- `ore`: high-value raw material, reserved for later production chains.
+- `ore`: industrial raw material for the ingot and advanced-tool production chain.
 - `tool`: craftable/equippable item, reserved for deeper tool effects.
 
 Wild food/fiber are intentionally modest so persistent infrastructure can become valuable.

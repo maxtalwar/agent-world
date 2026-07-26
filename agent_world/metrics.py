@@ -6,19 +6,19 @@ from collections import Counter
 from typing import Any
 
 from agent_world.models import WorldState
-from agent_world.rules import RESOURCE_VALUES, STRUCTURE_TYPES, recipes_for_mode
+from agent_world.rules import ACCOUNTING_VALUES, STRUCTURE_TYPES, recipes_for_mode
 
 
 def compute_metrics(state: WorldState) -> dict[str, Any]:
     living_agents = [agent for agent in state.agents.values() if agent.alive]
     wealth = {
-        agent.id: sum(RESOURCE_VALUES.get(item, 1) * qty for item, qty in agent.inventory.items())
+        agent.id: sum(ACCOUNTING_VALUES.get(item, 1) * qty for item, qty in agent.inventory.items())
         for agent in state.agents.values()
     }
     for trade in state.trades.values():
         if trade.status == "open" and not trade.escrow_released:
             wealth[trade.from_agent] = wealth.get(trade.from_agent, 0) + sum(
-                RESOURCE_VALUES.get(item, 1) * qty * getattr(trade, "lots_remaining", 1)
+                ACCOUNTING_VALUES.get(item, 1) * qty * getattr(trade, "lots_remaining", 1)
                 for item, qty in trade.give.items()
             )
     for contract in getattr(state, "contracts", {}).values():
@@ -65,8 +65,9 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
     trade_volume = 0
     for event in state.events:
         if event.type == "accept_trade":
-            value = event.data.get("value", {})
-            trade_volume += int(value.get("give", 0)) + int(value.get("receive", 0))
+            trade = event.data.get("trade", {})
+            trade_volume += _item_value(trade.get("give", {}))
+            trade_volume += _item_value(trade.get("receive", {}))
     economic_flows = _economic_flow_metrics(state)
     specialization = _specialization_metrics(state)
     productive_assets = _productive_asset_metrics(state, wealth)
@@ -352,7 +353,7 @@ def _gini(values: list[int]) -> float:
 
 
 def _item_value(items: dict[str, int] | Counter[str]) -> int:
-    return sum(RESOURCE_VALUES.get(item, 1) * int(quantity) for item, quantity in items.items())
+    return sum(ACCOUNTING_VALUES.get(item, 1) * int(quantity) for item, quantity in items.items())
 
 
 def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:

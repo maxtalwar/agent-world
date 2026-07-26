@@ -267,6 +267,7 @@ class Structure:
     status: str = "complete"
     remaining_inputs: Counter[str] = field(default_factory=Counter)
     contributors: set[str] = field(default_factory=set)
+    # Integer recipe-completion credits, not prices or offline accounting units.
     contribution_units: Counter[str] = field(default_factory=Counter)
     public_access: bool = False
     access_fee: Counter[str] = field(default_factory=Counter)

@@ -17,7 +17,7 @@ from agent_world.metrics import (
     is_provider_failure_message,
     is_quota_failure_message,
 )
-from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
+from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 
 
 BENCHMARK_SUITE_ID = "agent-world-participant-v4"
@@ -109,10 +109,10 @@ BENCHMARK_FINGERPRINT_FILES = (
 )
 
 
-def _recipe_consistent_resource_values(economy_mode: str) -> dict[str, int]:
+def _recipe_consistent_accounting_values(economy_mode: str) -> dict[str, int]:
     """Raise book values until every single-output recipe preserves input value."""
 
-    values = dict(RESOURCE_VALUES)
+    values = dict(ACCOUNTING_VALUES)
     recipes = recipes_for_mode(economy_mode)
     for _ in range(max(1, len(recipes) + 1)):
         changed = False
@@ -138,7 +138,7 @@ def _recipe_consistent_resource_values(economy_mode: str) -> dict[str, int]:
     return values
 
 
-BENCHMARK_RESOURCE_VALUES = _recipe_consistent_resource_values("organic")
+BENCHMARK_ACCOUNTING_VALUES = _recipe_consistent_accounting_values("organic")
 
 
 def benchmark_code_fingerprint() -> str:
@@ -237,12 +237,12 @@ def benchmark_protocol() -> dict[str, Any]:
             "venture_initiatives_per_100_agent_ticks": INITIATIVE_TARGET_PER_100_AGENT_TICKS,
             "net_value_created_per_100_agent_ticks": NET_VALUE_CREATION_TARGET_PER_100_AGENT_TICKS,
         },
-        "resource_values": {
+        "accounting_values": {
             "method": (
                 "Start from the world book-value table and raise output values "
                 "until every single-output recipe is worth at least its inputs."
             ),
-            "values": dict(sorted(BENCHMARK_RESOURCE_VALUES.items())),
+            "values": dict(sorted(BENCHMARK_ACCOUNTING_VALUES.items())),
         },
         "aggregation": (
             "For a provisional result, apply the frozen formulas to the clean "
@@ -1093,7 +1093,7 @@ def _terminal_economic_value(
     for item in (snapshot.get("items") or {}).values():
         owner = str(item.get("owner_id") or "")
         if owner in members:
-            value += BENCHMARK_RESOURCE_VALUES.get(
+            value += BENCHMARK_ACCOUNTING_VALUES.get(
                 str(item.get("item") or ""), 1
             ) * int(item.get("quantity") or 0)
 
@@ -1153,7 +1153,7 @@ def _book_value(items: Any) -> int:
     if not isinstance(items, dict):
         return 0
     return sum(
-        BENCHMARK_RESOURCE_VALUES.get(str(item), 1)
+        BENCHMARK_ACCOUNTING_VALUES.get(str(item), 1)
         * max(0, int(quantity or 0))
         for item, quantity in items.items()
     )

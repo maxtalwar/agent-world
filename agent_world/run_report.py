@@ -22,7 +22,7 @@ from agent_world.metrics import (
     is_provider_failure_message,
     is_quota_failure_message,
 )
-from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
+from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 from agent_world.usage import summarize_codex_simulation_credits
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
@@ -70,7 +70,7 @@ def build_report(
             "inventory": {item: qty for item, qty in (agent.get("inventory") or {}).items() if qty},
             "groups": agent.get("groups", []),
             "wealth": sum(
-                RESOURCE_VALUES.get(item, 1) * qty for item, qty in (agent.get("inventory") or {}).items()
+                ACCOUNTING_VALUES.get(item, 1) * qty for item, qty in (agent.get("inventory") or {}).items()
             ),
         }
         for agent_id, agent in sorted(snapshot.get("agents", {}).items())
@@ -610,7 +610,7 @@ def _summarize_gifts(
         "gift_value": _book_value(items_total),
         "gift_by_item": dict(sorted(items_total.items())),
         "gift_value_by_item": {
-            item: RESOURCE_VALUES.get(item, 1) * quantity
+            item: ACCOUNTING_VALUES.get(item, 1) * quantity
             for item, quantity in sorted(items_total.items())
         },
         "gift_network_quantity": dict(quantity_network),
@@ -1138,7 +1138,7 @@ def _positive_item_counts(value: Any) -> Counter[str]:
 
 
 def _book_value(items: Any) -> int:
-    return sum(RESOURCE_VALUES.get(item, 1) * quantity for item, quantity in items.items())
+    return sum(ACCOUNTING_VALUES.get(item, 1) * quantity for item, quantity in items.items())
 
 
 def _positive_int(value: Any) -> int | None:

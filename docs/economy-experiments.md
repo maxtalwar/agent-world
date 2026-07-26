@@ -21,6 +21,8 @@ The `organic` condition pairs dispersed specialists with physical local exchange
 - Each agent begins with four physical `coin` items. Coins have no survival effect, weigh nothing at the current integer scale, can be lost/stored/transferred, and can be minted from ingots in a workshop. The prompt does not assign them a price or require their use.
 - Offering a trade removes the offered goods from inventory and deposits them at the offer tile. Both parties must meet on that exact tile to settle.
 - Public offers and completed prices are visible only locally. If an offer expires while its owner is away, the goods remain as an owned pile at the offer tile.
+- Market history contains the actual accepted `give` and `receive` bundles, not an engine-assigned conversion value.
+- Construction contributor shares use recipe-completion credits: completing each required input category carries equal project credit, independent of offline accounting units or market prices.
 - Local speech and group administration are free. Global order books and engine-enforced credit are disabled; agents can still create groups, record agreements, grant access, and exchange physical goods.
 
 ## Commerce Mechanics

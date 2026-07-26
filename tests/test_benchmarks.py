@@ -6,7 +6,7 @@ from argparse import Namespace
 from agent_world.benchmarks import (
     BENCHMARK_EXTENDED_SEEDS,
     BENCHMARK_PROTOCOL_ID,
-    BENCHMARK_RESOURCE_VALUES,
+    BENCHMARK_ACCOUNTING_VALUES,
     BENCHMARK_SEEDS,
     BENCHMARK_SCORING_REVISION,
     BENCHMARK_SUITE_ID,
@@ -314,9 +314,9 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(entrepreneurship["score"], 0.0)
 
     def test_recipe_consistent_values_do_not_penalize_production_chains(self) -> None:
-        self.assertGreaterEqual(BENCHMARK_RESOURCE_VALUES["ingot"], 19)
-        self.assertGreaterEqual(BENCHMARK_RESOURCE_VALUES["coin"] * 8, 19)
-        self.assertGreaterEqual(BENCHMARK_RESOURCE_VALUES["advanced_tool"], 43)
+        self.assertGreaterEqual(BENCHMARK_ACCOUNTING_VALUES["ingot"], 19)
+        self.assertGreaterEqual(BENCHMARK_ACCOUNTING_VALUES["coin"] * 8, 19)
+        self.assertGreaterEqual(BENCHMARK_ACCOUNTING_VALUES["advanced_tool"], 43)
         report = _protocol_report(11, "recipe-values")
         raw = report["benchmarks"]["cohorts"]["cohort-1"]["raw"]
         self.assertEqual(raw["initial_endowment_value"], 160)

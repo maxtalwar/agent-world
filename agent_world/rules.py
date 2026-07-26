@@ -10,7 +10,9 @@ from dataclasses import dataclass, replace
 from typing import Mapping
 
 
-RESOURCE_VALUES: dict[str, int] = {
+# Frozen reference units for offline metrics and benchmark accounting only.
+# The world engine and agent-facing observations must not use these as prices.
+ACCOUNTING_VALUES: dict[str, int] = {
     "coin": 1,
     "water": 1,
     "food": 2,

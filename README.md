@@ -442,7 +442,7 @@ Current inventory resources:
 - `fiber`: building/crafting input, especially early farms/storage/tools.
 - `wood`: building/crafting/repair input, produced by chopping forest resources.
 - `stone`: building/crafting input, produced by mining.
-- `ore`: high-value raw material, present for later production chains.
+- `ore`: industrial raw material for the ingot and advanced-tool production chain.
 - `tool`: craftable/equippable item, present for later tool/skill mechanics.
 - `ingot`: workshop-smelted intermediate made from ore and wood.
 - `advanced_tool`: durable workshop-made capital good with a larger productivity and energy advantage.

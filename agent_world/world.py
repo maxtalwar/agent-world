@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import asdict
 import json
+import math
 import random
 from typing import Any, Iterable
 
@@ -29,7 +30,6 @@ from agent_world.rules import (
     CONSUMABLE_EFFECTS,
     DIRECTIONS,
     COMMUNICATION_ACTION_TYPES,
-    RESOURCE_VALUES,
     RESOURCE_WEIGHTS,
     REST_STRUCTURE_ENERGY_BONUS,
     REST_STRUCTURE_TYPES,
@@ -1133,7 +1133,6 @@ class WorldEngine:
             "buyer_id": agent.id,
             "give": dict(trade.give),
             "receive": dict(trade.receive),
-            "value": self._trade_value(trade),
             "market_scope": trade.market_scope,
             "lot_number": trade.accepted_count,
             "position": asdict(agent.position),
@@ -1144,7 +1143,7 @@ class WorldEngine:
             actor_id=agent.id,
             position=agent.position,
             message=f"{agent.name} accepted lot {trade.accepted_count} of {trade.id}.",
-            data={"trade": trade.summary(), "value": self._trade_value(trade), "transaction": transaction},
+            data={"trade": trade.summary(), "transaction": transaction},
             recipients={offerer.id},
         )
         return action_points
@@ -1592,10 +1591,33 @@ class WorldEngine:
                 deposited[item] = amount
         if deposited:
             structure.contributors.add(agent.id)
-            structure.contribution_units[agent.id] += sum(
-                RESOURCE_VALUES.get(item, 1) * quantity for item, quantity in deposited.items()
-            )
+            credits = self._construction_completion_credits(structure, deposited)
+            structure.contribution_units[agent.id] += credits
         return deposited
+
+    def _construction_completion_credits(
+        self,
+        structure: Structure,
+        deposited: dict[str, int],
+    ) -> int:
+        """Credit recipe completion without assigning market values to inputs."""
+
+        recipe = recipes_for_mode(self.state.config.economy_mode).get(structure.type)
+        requirements = {
+            str(item): int(quantity)
+            for item, quantity in (getattr(recipe, "inputs", {}) or {}).items()
+            if int(quantity) > 0
+        }
+        if not requirements:
+            return sum(max(0, int(quantity)) for quantity in deposited.values())
+        category_credit = math.lcm(*requirements.values())
+        return sum(
+            max(0, int(quantity))
+            * category_credit
+            // requirements[item]
+            for item, quantity in deposited.items()
+            if item in requirements
+        )
 
     def _finalize_site_if_ready(self, structure: Structure) -> bool:
         if not structure.is_complete and not any(qty > 0 for qty in structure.remaining_inputs.values()):
@@ -2514,12 +2536,6 @@ class WorldEngine:
         agent.skill_progress[skill] = progress - gained
         if gained > 0:
             agent.skills[skill] = agent.skills.get(skill, 0) + gained
-
-    def _trade_value(self, trade: TradeOffer) -> dict[str, int]:
-        return {
-            "give": sum(RESOURCE_VALUES.get(item, 1) * qty for item, qty in trade.give.items()),
-            "receive": sum(RESOURCE_VALUES.get(item, 1) * qty for item, qty in trade.receive.items()),
-        }
 
     def _trade_private_recipients(self, trade: TradeOffer) -> set[str]:
         recipients = {trade.from_agent}
