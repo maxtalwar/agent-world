@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "study_id": "gpt-5-4-participant-v3-provisional-seed11-20260726-035825",
+  "status": "running",
+  "created_at_utc": "2026-07-26T03:58:25Z",
+  "suite_id": "agent-world-participant-v3",
+  "benchmark_protocol": "participant-v3",
+  "benchmark_code_fingerprint_sha256": "3b4d69526653673e094ff4e08ca72929f3d13d7b5ba269993f58649572beaede",
+  "benchmark_scoring_revision": 4,
+  "target": {
+    "brain": "codex",
+    "model": "gpt-5.4",
+    "reasoning_effort": "medium"
+  },
+  "result_tier": {
+    "requested": "provisional",
+    "required_seed": 11,
+    "promotion_seed": 41,
+    "policy": "One clean complete seed-11 run earns provisional status. A later clean seed-41 run promotes it to replicated certification."
+  },
+  "replications": {
+    "cells": {
+      "seed-11": {
+        "seed": 11,
+        "status": "running",
+        "screen": "aw-bench-gpt54-v3-s11",
+        "target_tick": 50
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [
+      30,
+      40,
+      50
+    ],
+    "official_score_tick": 50,
+    "preset": "organic-generalists",
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  },
+  "quality_policy": {
+    "provisional": "The run must complete tick 50 with clean benchmark integrity, complete usage coverage, and a matching benchmark fingerprint. Independently confirmed output-contract violations are scored as invalid proposals.",
+    "diagnostic": "An early stop, external provider/quota/harness or ambiguous-boundary failure, protocol mismatch, or incomplete usage prevents provisional status but remains reportable."
+  },
+  "provenance": {
+    "git_branch": "main",
+    "git_sha_at_launch": "2fd78f2",
+    "codex_executable": "/Applications/ChatGPT.app/Contents/Resources/codex",
+    "codex_cli_version": "0.146.0-alpha.3.1"
+  },
+  "command": [
+    "python3",
+    "-m",
+    "agent_world.cli",
+    "run",
+    "--benchmark-protocol",
+    "participant-v3",
+    "--brain",
+    "codex",
+    "--model",
+    "gpt-5.4",
+    "--seed",
+    "11",
+    "--out",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run.jsonl",
+    "--snapshot",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run-snapshot.json",
+    "--progress"
+  ],
+  "outputs": [
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run.jsonl",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run-snapshot.json",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run-report.json"
+  ]
+}
