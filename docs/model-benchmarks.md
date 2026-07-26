@@ -20,15 +20,16 @@ Preserved examples include the
 - **Diagnostic:** any run, including mixed populations, stopped runs, degraded
   runs, historical protocols, and nonstandard seeds.
 - **Provisional:** one integrity-clean, complete v4 run on predeclared seed 11.
-- **Replicated certified:** one integrity-clean, complete v4 run on every
-  required seed: 11, 41, 73, 101, and 137.
+- **Replicated certified:** one integrity-clean, complete v4 run on each
+  required seed: 11 and 41.
 
-Five distinct worlds give the leaderboard a visible per-seed distribution
-instead of presenting two pooled observations to two decimal places as if
-their uncertainty were known. Certification still pools raw numerators and
-denominators for the official score, but the aggregate also retains each
-replication and reports its values, mean, median, range, sample standard
-deviation, and descriptive 95% Student-t interval.
+Certification pools raw numerators and denominators from seeds 11 and 41 for
+the official score. The aggregate also retains both replication scores and
+reports their range and absolute difference. Two worlds are not enough to
+justify a formal confidence interval, so the benchmark does not report one.
+Seeds 73, 101, and 137 may be run as optional extended evidence when budget
+allows; they are displayed separately and never change or block the official
+certified score.
 
 Duplicate copies of a required seed are not certified evidence. Repeated-seed
 studies remain useful diagnostics for model sampling variance, but they must
@@ -40,7 +41,8 @@ Every benchmark run uses:
 
 | Setting | Required value |
 |---|---|
-| Seeds | 11, 41, 73, 101, 137 |
+| Certification seeds | 11, 41 |
+| Optional extended seeds | 73, 101, 137 |
 | Population | 10 copies of one model |
 | Horizon | 50 ticks |
 | Diagnostic checkpoints | ticks 30 and 40 |
@@ -68,18 +70,19 @@ python3 -m agent_world.cli run \
   --progress
 ```
 
-Run the same command with seeds 41, 73, 101, and 137 for certification, using
-a separate output directory for each seed. Aggregate the five reports with:
+Run the same command with seed 41 for certification, using a separate output
+directory. Aggregate the two reports with:
 
 ```bash
 python3 -m agent_world.cli benchmark \
   runs/benchmarks/luna-v4/seed-11/run-report.json \
   runs/benchmarks/luna-v4/seed-41/run-report.json \
-  runs/benchmarks/luna-v4/seed-73/run-report.json \
-  runs/benchmarks/luna-v4/seed-101/run-report.json \
-  runs/benchmarks/luna-v4/seed-137/run-report.json \
   --out runs/benchmarks/luna-v4/leaderboard
 ```
+
+If budget allows, add reports for seeds 73, 101, and 137 to the same aggregate
+command. They appear as optional extended evidence without changing the
+official two-seed score.
 
 The benchmark flag locks every other setting. A conflicting option fails
 before a model call.
@@ -255,9 +258,10 @@ contention, action-point overruns, purposeful agent-ticks, survival, endpoint
 health, living value, net value created, initiatives, decision/provider
 failures, usage, result tier, and seed coverage.
 
-Certified aggregate reports also include every seed's scores and the
-descriptive spread. Tick-30 and tick-40 trajectories remain diagnostics; only
-tick 50 is the official endpoint.
+Certified aggregate reports also include both required seeds' scores, range,
+and absolute difference. Optional extended seeds are labeled separately.
+Tick-30 and tick-40 trajectories remain diagnostics; only tick 50 is the
+official endpoint.
 
 Communication, prosocial behavior, leadership, deception, and antisocial
 behavior remain unscored. Frequency alone is not a validated measure of their

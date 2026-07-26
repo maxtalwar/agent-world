@@ -6,7 +6,6 @@ import hashlib
 import math
 from collections import Counter
 from pathlib import Path
-from statistics import median, stdev
 from typing import Any, Iterable
 
 from agent_world.metrics import (
@@ -23,7 +22,9 @@ from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 
 BENCHMARK_SUITE_ID = "agent-world-participant-v4"
 BENCHMARK_PROTOCOL_ID = "participant-v4"
-BENCHMARK_SEEDS = frozenset({11, 41, 73, 101, 137})
+BENCHMARK_SEEDS = frozenset({11, 41})
+BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
+BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
 BENCHMARK_SCORING_REVISION = 1
@@ -164,11 +165,12 @@ def benchmark_protocol() -> dict[str, Any]:
             "minimum": len(BENCHMARK_SEEDS),
             "provisional_seed": BENCHMARK_PROVISIONAL_SEED,
             "provisional_minimum": 1,
+            "optional_extended_seeds": sorted(BENCHMARK_EXTENDED_SEEDS),
             "policy": (
                 "One clean complete seed-11 run is a provisional benchmark. "
-                "One clean run for each of the five required seeds is a replicated "
-                "certified benchmark. Other partial seed sets are incomplete "
-                "replications."
+                "Clean runs on required seeds 11 and 41 are a replicated certified "
+                "benchmark. Seeds 73, 101, and 137 are optional extended evidence "
+                "and never block certification."
             ),
         },
         "trial": {
@@ -245,11 +247,12 @@ def benchmark_protocol() -> dict[str, Any]:
         "aggregation": (
             "For a provisional result, apply the frozen formulas to the clean "
             "seed-11 raw counts. For replicated certification, pool raw numerators "
-            "and denominators across all five required seeds before scoring. "
-            "Also report the per-seed score distribution and descriptive 95% "
-            "Student-t interval. Do not average per-run scores for the official "
-            "result. Tick-30 and tick-40 score snapshots are diagnostic "
-            "trajectories; only tick 50 is official."
+            "and denominators across required seeds 11 and 41 before scoring. "
+            "Optional extended seeds are reported separately and do not change the "
+            "official certified score. Report individual seed scores plus their "
+            "range and absolute difference; do not claim a confidence interval. "
+            "Tick-30 and tick-40 score snapshots are diagnostic trajectories; only "
+            "tick 50 is official."
         ),
     }
 
@@ -591,7 +594,6 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                     "sources": [],
                     "source_scoring_revisions": set(),
                     "replications": [],
-                    "raw": {},
                 },
             )
             row["seeds"].add(int(seed))
@@ -608,14 +610,12 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                     "scores": score_benchmark_counts(cohort_raw),
                 }
             )
-            _merge_numeric_tree(row["raw"], cohort.get("raw") or {})
 
     results: list[dict[str, Any]] = []
     for row in grouped.values():
         seeds = sorted(row.pop("seeds"))
         seed_counts = row.pop("seed_counts")
         source_scoring_revisions = sorted(row.pop("source_scoring_revisions"))
-        raw = row.pop("raw")
         replications = sorted(
             row.pop("replications"),
             key=lambda replication: (
@@ -623,15 +623,34 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 str(replication.get("source") or ""),
             ),
         )
-        missing_seeds = sorted(BENCHMARK_SEEDS - set(seeds))
+        required_seeds = sorted(BENCHMARK_SEEDS & set(seeds))
+        extended_seeds = sorted(BENCHMARK_EXTENDED_SEEDS & set(seeds))
+        required_replications = [
+            replication
+            for replication in replications
+            if replication["seed"] in BENCHMARK_SEEDS
+        ]
+        extended_replications = [
+            replication
+            for replication in replications
+            if replication["seed"] in BENCHMARK_EXTENDED_SEEDS
+        ]
+        official_raw: dict[str, Any] = {}
+        for replication in required_replications:
+            _merge_numeric_tree(official_raw, replication.get("raw") or {})
+        all_raw: dict[str, Any] = {}
+        for replication in replications:
+            _merge_numeric_tree(all_raw, replication.get("raw") or {})
+
+        missing_seeds = sorted(BENCHMARK_SEEDS - set(required_seeds))
         certification_flags = []
         if missing_seeds:
             certification_flags.append("missing_required_seeds")
-        if any(count != 1 for count in seed_counts.values()):
+        if any(seed_counts[seed] != 1 for seed in required_seeds):
             certification_flags.append("duplicate_seed_replication")
         certified = not certification_flags
         provisional = (
-            seeds == [BENCHMARK_PROVISIONAL_SEED]
+            required_seeds == [BENCHMARK_PROVISIONAL_SEED]
             and seed_counts[BENCHMARK_PROVISIONAL_SEED] == 1
             and certification_flags == ["missing_required_seeds"]
         )
@@ -645,6 +664,8 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             {
                 **row,
                 "seeds": seeds,
+                "required_seeds": required_seeds,
+                "extended_seeds": extended_seeds,
                 "certified": certified,
                 "provisional": provisional,
                 "status": status,
@@ -652,9 +673,20 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 "source_scoring_revisions": source_scoring_revisions,
                 "scoring_revision": BENCHMARK_SCORING_REVISION,
                 "replications": replications,
-                "score_spread": _score_spread(replications),
-                "raw": raw,
-                "scores": score_benchmark_counts(raw),
+                "required_replications": required_replications,
+                "extended_replications": extended_replications,
+                "score_spread": _score_spread(required_replications),
+                "extended_score_spread": (
+                    _score_spread(replications) if extended_replications else None
+                ),
+                "raw": official_raw,
+                "scores": score_benchmark_counts(official_raw),
+                "extended_raw": all_raw if extended_replications else None,
+                "extended_scores": (
+                    score_benchmark_counts(all_raw)
+                    if extended_replications
+                    else None
+                ),
             }
         )
     results.sort(
@@ -687,8 +719,13 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
             "certified" if row.get("certified") else "incomplete_replication"
         )
         status = str(status).replace("_", " ")
+        seed_text = ",".join(
+            str(value) for value in row.get("required_seeds") or []
+        )
+        if row.get("extended_seeds"):
+            seed_text += f" (+{len(row['extended_seeds'])} extended)"
         lines.append(
-            f"| {row.get('model')} | {','.join(str(value) for value in row.get('seeds') or [])} "
+            f"| {row.get('model')} | {seed_text} "
             f"| {_format_score(scores.get('effective_execution', {}).get('score'))} "
             f"| {_format_score(scores.get('sustained_competence', {}).get('score'))} "
             f"| {_format_score(scores.get('entrepreneurial_agency', {}).get('score'))} "
@@ -705,13 +742,18 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
             "",
             "## Per-replication scores",
             "",
-            "| Model | Seed | Execution | Competence | Entrepreneurship |",
-            "|---|---:|---:|---:|---:|",
+            "| Model | Seed | Role | Execution | Competence | Entrepreneurship |",
+            "|---|---:|---|---:|---:|---:|",
         ]
         for row, replication in replications:
             scores = replication.get("scores") or {}
+            role = (
+                "certification"
+                if replication.get("seed") in BENCHMARK_SEEDS
+                else "optional extended"
+            )
             lines.append(
-                f"| {row.get('model')} | {replication.get('seed')} "
+                f"| {row.get('model')} | {replication.get('seed')} | {role} "
                 f"| {_format_score((scores.get('effective_execution') or {}).get('score'))} "
                 f"| {_format_score((scores.get('sustained_competence') or {}).get('score'))} "
                 f"| {_format_score((scores.get('entrepreneurial_agency') or {}).get('score'))} |"
@@ -725,19 +767,26 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
             competence_spread = (
                 (row.get("score_spread") or {}).get("sustained_competence") or {}
             )
-            interval = competence_spread.get("mean_95pct_t_interval")
-            interval_text = (
-                f"{interval[0]:.2f} to {interval[1]:.2f}"
-                if isinstance(interval, list) and len(interval) == 2
-                else "n/a"
+            difference = competence_spread.get("absolute_difference")
+            difference_text = (
+                _format_score(difference) if difference is not None else "n/a"
             )
             lines.append(
-                f"- {row.get('model')}: competence median "
-                f"{_format_score(competence_spread.get('median'))}, range "
+                f"- {row.get('model')}: official competence range "
                 f"{_format_score(competence_spread.get('minimum'))}–"
                 f"{_format_score(competence_spread.get('maximum'))}, "
-                f"descriptive mean 95% t interval {interval_text}."
+                f"absolute seed difference {difference_text}."
             )
+            if row.get("extended_score_spread"):
+                extended_competence = (
+                    row["extended_score_spread"].get("sustained_competence") or {}
+                )
+                lines.append(
+                    f"  Optional extended evidence ({len(row.get('extended_seeds') or [])} "
+                    f"extra seed(s)): full range "
+                    f"{_format_score(extended_competence.get('minimum'))}–"
+                    f"{_format_score(extended_competence.get('maximum'))}."
+                )
     if aggregate.get("rejected"):
         lines += [
             "",
@@ -932,7 +981,7 @@ def _trial_flags(
         and not compatible_source
     ):
         flags.append("benchmark_code_fingerprint_mismatch")
-    if config.get("seed") not in BENCHMARK_SEEDS:
+    if config.get("seed") not in BENCHMARK_ALLOWED_SEEDS:
         flags.append("nonstandard_seed")
     if not run.get("completed"):
         flags.append("run_not_completed")
@@ -1299,62 +1348,15 @@ def _score_spread(replications: list[dict[str, Any]]) -> dict[str, Any]:
         ]
         if not values:
             continue
-        mean = sum(values) / len(values)
         row: dict[str, Any] = {
             "n": len(values),
             "values": [round(value, 2) for value in values],
-            "mean": round(mean, 2),
-            "median": round(median(values), 2),
             "minimum": round(min(values), 2),
             "maximum": round(max(values), 2),
+            "range_width": round(max(values) - min(values), 2),
         }
-        if len(values) >= 2:
-            sample_sd = stdev(values)
-            # Two-sided 95% Student-t critical values for df 1..30.
-            critical_values = (
-                12.706,
-                4.303,
-                3.182,
-                2.776,
-                2.571,
-                2.447,
-                2.365,
-                2.306,
-                2.262,
-                2.228,
-                2.201,
-                2.179,
-                2.160,
-                2.145,
-                2.131,
-                2.120,
-                2.110,
-                2.101,
-                2.093,
-                2.086,
-                2.080,
-                2.074,
-                2.069,
-                2.064,
-                2.060,
-                2.056,
-                2.052,
-                2.048,
-                2.045,
-                2.042,
-            )
-            degrees_of_freedom = len(values) - 1
-            critical = (
-                critical_values[degrees_of_freedom - 1]
-                if degrees_of_freedom <= len(critical_values)
-                else 1.96
-            )
-            margin = critical * sample_sd / math.sqrt(len(values))
-            row["sample_standard_deviation"] = round(sample_sd, 2)
-            row["mean_95pct_t_interval"] = [
-                round(mean - margin, 2),
-                round(mean + margin, 2),
-            ]
+        if len(values) == 2:
+            row["absolute_difference"] = round(abs(values[1] - values[0]), 2)
         spread[score_key] = row
     return spread
 

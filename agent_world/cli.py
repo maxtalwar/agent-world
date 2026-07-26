@@ -14,9 +14,9 @@ from typing import Any
 from agent_world.ablation import format_table, run_ablation
 from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.benchmarks import (
+    BENCHMARK_ALLOWED_SEEDS,
     BENCHMARK_DIAGNOSTIC_TICKS,
     BENCHMARK_PROTOCOL_ID,
-    BENCHMARK_SEEDS,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
     format_benchmark_leaderboard,
@@ -164,8 +164,8 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help=(
             f"Lock this run to the standardized {BENCHMARK_PROTOCOL_ID} benchmark trial. "
-            "Seed 11 alone can earn provisional status; all five declared "
-            "seeds are required for replicated certification."
+            "Seed 11 alone can earn provisional status; seeds 11 and 41 "
+            "provide replicated certification."
         ),
     )
 
@@ -224,8 +224,8 @@ def main(argv: list[str] | None = None) -> None:
         nargs="+",
         help=(
             "Benchmark-aware run-report.json files: seed 11 alone for a "
-            "provisional result, or all five declared seeds for replicated "
-            "certification."
+            "provisional result, or seeds 11 and 41 for replicated certification. "
+            "Additional declared seeds are optional extended evidence."
         ),
     )
     benchmark_parser.add_argument(
@@ -891,8 +891,10 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         setattr(args, name, required)
     if args.seed is None:
         args.seed = 11
-    if args.seed not in BENCHMARK_SEEDS:
-        declared = ", ".join(str(seed) for seed in sorted(BENCHMARK_SEEDS))
+    if args.seed not in BENCHMARK_ALLOWED_SEEDS:
+        declared = ", ".join(
+            str(seed) for seed in sorted(BENCHMARK_ALLOWED_SEEDS)
+        )
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} requires one of the declared seeds: "
             f"{declared}."

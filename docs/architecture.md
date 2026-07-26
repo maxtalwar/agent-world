@@ -29,9 +29,10 @@ PopulationSpec -> BrainRuntime -> SimulationSession -> SimulationRunner -> World
 - `benchmarks.py` converts report evidence into versioned cohort scores.
   Ordinary runs receive diagnostic scores; only runs satisfying the declared
   participant-v4 protocol can enter benchmark results. One clean, complete
-  seed-11 run is provisional; pooling clean seeds 11, 41, 73, 101, and 137
-  promotes the model to replicated certification and exposes per-seed
-  uncertainty. The horizon is 50 ticks in both tiers, with durable diagnostic
+  seed-11 run is provisional; pooling clean seeds 11 and 41 promotes the model
+  to replicated certification. Seeds 73, 101, and 137 are optional extended
+  evidence and do not change or block the official score. The horizon is 50
+  ticks in both tiers, with durable diagnostic
   score checkpoints at ticks 30 and 40 before the tick-50 scoring endpoint.
   Effective execution and competence remain bounded percentages;
   entrepreneurship and its economic-productivity component are uncapped

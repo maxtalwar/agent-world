@@ -314,7 +314,8 @@ living-accessible value creation, so internal transfers and structure input
 cost are not mistaken for new value. Any run receives diagnostic cohort
 scores. A usage-constrained model can earn a provisional benchmark from one
 clean, complete 50-tick seed-11 trial. Replicated certification requires clean
-trials on all five locked seeds: 11, 41, 73, 101, and 137.
+trials on seeds 11 and 41. Seeds 73, 101, and 137 are optional extended
+evidence, not certification requirements.
 
 Start a standardized trial with:
 
@@ -327,12 +328,14 @@ python3 -m agent_world.cli run \
   --snapshot runs/benchmarks/luna-v4/seed-11/run-snapshot.json
 ```
 
-Aggregate seed 11 alone for a provisional result. Add 41, 73, 101, and 137
-later and pool all five generated reports with
-`python3 -m agent_world.cli benchmark ...` for replicated certification. The
-aggregate retains per-seed values and reports descriptive uncertainty alongside
-the pooled score. Both tiers retain the full 50-tick horizon; a shorter run is
-diagnostic rather than a cheaper benchmark. An independently confirmed
+Aggregate seed 11 alone for a provisional result. Add seed 41 and pool the two
+generated reports with `python3 -m agent_world.cli benchmark ...` for
+replicated certification. The aggregate retains both seed values and reports
+their range and absolute difference alongside the pooled score. Seeds 73, 101,
+and 137 may be added as optional extended evidence, but they do not change the
+official certified score or block certification. Both tiers retain the full
+50-tick horizon; a shorter run is diagnostic rather than a cheaper benchmark.
+An independently confirmed
 output-contract violation counts as an invalid proposal and remains part of
 the benchmark. Contract-valid output rejected by our adapter, failures before
 payload isolation, external quota/provider failures, or incomplete usage make

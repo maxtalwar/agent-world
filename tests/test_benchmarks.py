@@ -4,6 +4,7 @@ import unittest
 from argparse import Namespace
 
 from agent_world.benchmarks import (
+    BENCHMARK_EXTENDED_SEEDS,
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_RESOURCE_VALUES,
     BENCHMARK_SEEDS,
@@ -174,7 +175,7 @@ class BenchmarkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires --ticks=50"):
             _apply_benchmark_protocol(args)
 
-    def test_protocol_accepts_only_the_five_predeclared_seeds(self) -> None:
+    def test_protocol_accepts_certification_and_optional_extended_seeds(self) -> None:
         allowed = Namespace(
             benchmark_protocol=BENCHMARK_PROTOCOL_ID,
             population=None,
@@ -634,7 +635,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(raw["model_output_failures"], 1)
         self.assertEqual(raw["invalid_proposals"], 3)
 
-    def test_five_required_seeds_produce_certified_pooled_result(self) -> None:
+    def test_two_required_seeds_produce_certified_pooled_result(self) -> None:
         aggregate = aggregate_benchmark_reports(
             [
                 _protocol_report(seed, f"seed-{seed}")
@@ -646,20 +647,50 @@ class BenchmarkTests(unittest.TestCase):
         result = aggregate["results"][0]
         self.assertTrue(result["certified"])
         self.assertEqual(result["seeds"], sorted(BENCHMARK_SEEDS))
-        self.assertEqual(result["raw"]["submitted_actions"], 50)
+        self.assertEqual(result["required_seeds"], sorted(BENCHMARK_SEEDS))
+        self.assertEqual(result["extended_seeds"], [])
+        self.assertEqual(result["raw"]["submitted_actions"], 20)
         self.assertEqual(result["status"], "certified")
         self.assertEqual(
             result["score_spread"]["effective_execution"]["n"],
-            5,
+            2,
         )
         self.assertIn(
-            "mean_95pct_t_interval",
+            "absolute_difference",
             result["score_spread"]["sustained_competence"],
         )
         leaderboard = format_benchmark_leaderboard(aggregate)
         self.assertIn("gpt-test", leaderboard)
         self.assertIn("Per-replication scores", leaderboard)
-        self.assertIn("descriptive mean 95% t interval", leaderboard)
+        self.assertIn("absolute seed difference", leaderboard)
+        self.assertNotIn("95%", leaderboard)
+
+    def test_optional_extended_seed_does_not_change_official_score(self) -> None:
+        required_reports = [
+            _protocol_report(seed, f"seed-{seed}")
+            for seed in sorted(BENCHMARK_SEEDS)
+        ]
+        official = aggregate_benchmark_reports(required_reports)["results"][0]
+        extended_seed = min(BENCHMARK_EXTENDED_SEEDS)
+        with_extended = aggregate_benchmark_reports(
+            required_reports
+            + [_protocol_report(extended_seed, f"seed-{extended_seed}")]
+        )["results"][0]
+
+        self.assertTrue(with_extended["certified"])
+        self.assertEqual(with_extended["required_seeds"], sorted(BENCHMARK_SEEDS))
+        self.assertEqual(with_extended["extended_seeds"], [extended_seed])
+        self.assertEqual(with_extended["raw"], official["raw"])
+        self.assertEqual(with_extended["scores"], official["scores"])
+        self.assertEqual(with_extended["extended_raw"]["submitted_actions"], 30)
+        leaderboard = format_benchmark_leaderboard(
+            aggregate_benchmark_reports(
+                required_reports
+                + [_protocol_report(extended_seed, f"seed-{extended_seed}")]
+            )
+        )
+        self.assertIn("(+1 extended)", leaderboard)
+        self.assertIn("optional extended", leaderboard)
 
     def test_duplicate_seed_does_not_enter_certified_pool(self) -> None:
         reports = [
