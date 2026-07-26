@@ -14,7 +14,12 @@ from pathlib import Path
 from typing import Any
 
 from agent_world.benchmarks import build_benchmark_results
-from agent_world.metrics import is_decision_failure_message, is_quota_failure_message
+from agent_world.metrics import (
+    is_decision_failure_message,
+    is_model_output_failure_message,
+    is_provider_failure_message,
+    is_quota_failure_message,
+)
 from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 from agent_world.usage import summarize_codex_simulation_credits
 
@@ -96,6 +101,28 @@ def build_report(
         for event in events
         if is_decision_failure_message(event.get("type"), event.get("message"))
     ]
+    model_output_failures = [
+        event
+        for event in llm_failures
+        if is_model_output_failure_message(event.get("type"), event.get("message"))
+    ]
+    quota_failures = [
+        event
+        for event in llm_failures
+        if is_quota_failure_message(event.get("type"), event.get("message"))
+    ]
+    provider_failures = [
+        event
+        for event in llm_failures
+        if is_provider_failure_message(event.get("type"), event.get("message"))
+    ]
+    harness_failures = [
+        event
+        for event in llm_failures
+        if event not in model_output_failures
+        and event not in quota_failures
+        and event not in provider_failures
+    ]
     decision_attempts = sum(event.get("type") == "agent_response" for event in events)
     decision_failure_rate = (
         round(100 * len(llm_failures) / decision_attempts, 2) if decision_attempts else 0.0
@@ -106,8 +133,14 @@ def build_report(
         else None
     )
     quality_flags: list[str] = []
-    if llm_failures:
-        quality_flags.append("decision_failures_present")
+    if model_output_failures:
+        quality_flags.append("model_output_failures_present")
+    if quota_failures:
+        quality_flags.append("quota_failures_present")
+    if provider_failures:
+        quality_flags.append("provider_failures_present")
+    if harness_failures:
+        quality_flags.append("harness_failures_present")
     if usage_coverage is not None and usage_coverage < 100:
         quality_flags.append("missing_usage_records")
 
@@ -235,14 +268,23 @@ def build_report(
         "milestone_first_ticks": firsts,
         "reliability": {
             "quality_status": "degraded" if quality_flags else "clean",
+            "benchmark_integrity_status": (
+                "clean"
+                if not quota_failures
+                and not provider_failures
+                and not harness_failures
+                and (usage_coverage is None or usage_coverage >= 100)
+                else "invalid"
+            ),
             "quality_flags": quality_flags,
             "decision_attempts": decision_attempts,
             "decision_failure_rate_pct": decision_failure_rate,
             "usage_record_coverage_pct": usage_coverage,
             "llm_failure_events": len(llm_failures),
-            "llm_quota_failure_events": sum(
-                is_quota_failure_message(event.get("type"), event.get("message")) for event in llm_failures
-            ),
+            "model_output_failure_events": len(model_output_failures),
+            "llm_quota_failure_events": len(quota_failures),
+            "llm_provider_failure_events": len(provider_failures),
+            "harness_failure_events": len(harness_failures),
             "llm_failures_by_agent": dict(
                 Counter(event.get("actor_id") or "unknown" for event in llm_failures).most_common()
             ),

@@ -255,8 +255,27 @@ class CodexBrain:
                 "duration_seconds": round(elapsed, 3),
                 **self.boundary.usage_metadata(invocation),
             }
+            try:
+                decision = parse_agent_response(
+                    normalize_codex_response(response_text)
+                )
+            except (ValueError, json.JSONDecodeError) as exc:
+                self._record_usage(
+                    usage,
+                    {
+                        **request_meta,
+                        "decision_failure_origin": "model_output",
+                        "decision_failure_detail": f"{type(exc).__name__}: {exc}",
+                        "failed_raw_response": response_text,
+                        "failed_raw_response_sha256": hashlib.sha256(
+                            response_text.encode("utf-8")
+                        ).hexdigest(),
+                    },
+                )
+                if self.conversation_mode != "stateless":
+                    self.boundary.reset("model_output_failure")
+                return _failure_decision(f"Codex model output failed: {exc}")
             self._record_usage(usage, request_meta)
-            decision = parse_agent_response(normalize_codex_response(response_text))
             self.boundary.commit(invocation, session_id)
             return decision
         except subprocess.TimeoutExpired:

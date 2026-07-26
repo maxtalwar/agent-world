@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import subprocess
@@ -28,6 +29,26 @@ def _successful_stdout(intent: str = "wait") -> str:
     events = [
         {"type": "thread.started", "thread_id": "thread-1"},
         {"type": "item.completed", "item": {"type": "agent_message", "text": decision}},
+        {
+            "type": "turn.completed",
+            "usage": {
+                "input_tokens": 1200,
+                "cached_input_tokens": 800,
+                "output_tokens": 90,
+                "reasoning_output_tokens": 40,
+            },
+        },
+    ]
+    return "\n".join(json.dumps(event) for event in events)
+
+
+def _stdout_with_response(response: str) -> str:
+    events = [
+        {"type": "thread.started", "thread_id": "thread-1"},
+        {
+            "type": "item.completed",
+            "item": {"type": "agent_message", "text": response},
+        },
         {
             "type": "turn.completed",
             "usage": {
@@ -80,6 +101,45 @@ class CodexBrainTests(unittest.TestCase):
         self.assertEqual(records[0]["prompt_tokens"], 1200)
         self.assertEqual(records[0]["tick"], 2)
         self.assertEqual(records[0]["cost"], 0)
+
+    def test_malformed_model_output_is_preserved_with_failure_metadata(self) -> None:
+        raw_response = json.dumps(
+            {
+                "intent": "move east",
+                "actions": [
+                    {"type": "move", "arguments_json": '{"direction":"east"'}
+                ],
+                "messages": [],
+                "memory_updates": [],
+            }
+        )
+        completed = subprocess.CompletedProcess(
+            ["codex"],
+            0,
+            stdout=_stdout_with_response(raw_response),
+            stderr="",
+        )
+        with patch(
+            "agent_world.codex_brain.subprocess.run",
+            return_value=completed,
+        ):
+            brain = CodexBrain(executable="codex")
+            decision = brain.decide({"tick": 7, "self": {"id": "agent-1"}})
+
+        self.assertEqual(decision.actions, [{"type": "wait"}])
+        self.assertTrue(decision.intent.startswith("Codex model output failed:"))
+        records = brain.runtime.usage_records()
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["decision_failure_origin"], "model_output")
+        self.assertEqual(records[0]["failed_raw_response"], raw_response)
+        self.assertEqual(
+            records[0]["failed_raw_response_sha256"],
+            hashlib.sha256(raw_response.encode("utf-8")).hexdigest(),
+        )
+        self.assertIn(
+            "Codex action arguments_json is invalid",
+            records[0]["decision_failure_detail"],
+        )
 
     def test_stateless_v2_reuses_workspace_and_disables_irrelevant_skills(self) -> None:
         completed = subprocess.CompletedProcess(

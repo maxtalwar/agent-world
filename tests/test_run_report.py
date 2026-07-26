@@ -181,6 +181,16 @@ class RunReportTests(unittest.TestCase):
                     "data": {},
                 },
                 {
+                    "type": "agent_response",
+                    "tick": 2,
+                    "actor_id": "agent-2",
+                    "message": (
+                        "Codex model output failed: Codex action arguments_json "
+                        "is invalid: Expecting value"
+                    ),
+                    "data": {"actions": [{"type": "wait"}]},
+                },
+                {
                     "type": "some_error_event",
                     "tick": 2,
                     "actor_id": None,
@@ -192,8 +202,17 @@ class RunReportTests(unittest.TestCase):
 
         report = build_report(events, snapshot)
 
-        self.assertEqual(report["reliability"]["llm_failure_events"], 1)
-        self.assertEqual(report["reliability"]["llm_failures_by_agent"], {"agent-1": 1})
+        self.assertEqual(report["reliability"]["llm_failure_events"], 2)
+        self.assertEqual(report["reliability"]["model_output_failure_events"], 2)
+        self.assertEqual(
+            report["reliability"]["benchmark_integrity_status"],
+            "clean",
+        )
+        self.assertEqual(report["reliability"]["quality_status"], "degraded")
+        self.assertEqual(
+            report["reliability"]["llm_failures_by_agent"],
+            {"agent-1": 1, "agent-2": 1},
+        )
         self.assertNotIn("agent_response", report["actions"]["counts"])
 
     def test_economy_reports_transfer_trade_and_asset_flows(self) -> None:

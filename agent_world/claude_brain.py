@@ -202,8 +202,55 @@ class ClaudeBrain:
                 "duration_seconds": round(elapsed, 3),
                 **self.boundary.usage_metadata(invocation),
             }
+            try:
+                parsed_decision = parse_agent_response(decision)
+            except (ValueError, json.JSONDecodeError) as exc:
+                failed_raw_response = (
+                    decision
+                    if isinstance(decision, str)
+                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
+                )
+                self._record_usage(
+                    usage,
+                    response_model,
+                    {
+                        **request_meta,
+                        "decision_failure_origin": "model_output",
+                        "decision_failure_detail": f"{type(exc).__name__}: {exc}",
+                        "failed_raw_response": failed_raw_response,
+                        "failed_raw_response_sha256": hashlib.sha256(
+                            failed_raw_response.encode("utf-8")
+                        ).hexdigest(),
+                    },
+                )
+                if self.conversation_mode != "stateless":
+                    self.boundary.reset("model_output_failure")
+                return _failure_decision(f"Claude model output failed: {exc}")
+            if parsed_decision.intent.startswith("Invalid JSON response:"):
+                failed_raw_response = (
+                    decision
+                    if isinstance(decision, str)
+                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
+                )
+                self._record_usage(
+                    usage,
+                    response_model,
+                    {
+                        **request_meta,
+                        "decision_failure_origin": "model_output",
+                        "decision_failure_detail": parsed_decision.intent,
+                        "failed_raw_response": failed_raw_response,
+                        "failed_raw_response_sha256": hashlib.sha256(
+                            failed_raw_response.encode("utf-8")
+                        ).hexdigest(),
+                    },
+                )
+                if self.conversation_mode != "stateless":
+                    self.boundary.reset("model_output_failure")
+                return _failure_decision(
+                    f"Claude model output failed: {parsed_decision.intent}"
+                )
             self._record_usage(usage, response_model, request_meta)
-            parsed_decision = parse_agent_response(decision)
             self.boundary.commit(invocation, session_id)
             return parsed_decision
         except subprocess.TimeoutExpired:

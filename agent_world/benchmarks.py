@@ -8,7 +8,12 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
-from agent_world.metrics import is_decision_failure_message
+from agent_world.metrics import (
+    is_decision_failure_message,
+    is_model_output_failure_message,
+    is_provider_failure_message,
+    is_quota_failure_message,
+)
 from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 
 
@@ -17,6 +22,15 @@ BENCHMARK_PROTOCOL_ID = "participant-v3"
 BENCHMARK_SEEDS = frozenset({11, 41})
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
+BENCHMARK_SCORING_REVISION = 2
+BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS = frozenset(
+    {
+        # Initial Participant v3 launch fingerprint. The trial mechanics and
+        # fallback behavior are identical; revision 2 only reclassifies
+        # malformed model output as a scored planning failure.
+        "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948",
+    }
+)
 
 # These are mechanics-anchored "excellent" targets, not population percentiles.
 # Versioning the suite freezes them so later runs remain directly comparable.
@@ -29,10 +43,16 @@ VENTURE_INITIATIVE_EVENTS = frozenset(
 )
 BENCHMARK_FINGERPRINT_FILES = (
     "benchmarks.py",
+    "brain_boundary.py",
+    "brain_runtime.py",
+    "claude_brain.py",
     "cli.py",
+    "codex_brain.py",
+    "cursor_brain.py",
     "interface.py",
     "maps.py",
     "models.py",
+    "openai_brain.py",
     "rules.py",
     "run_report.py",
     "runner.py",
@@ -57,6 +77,7 @@ def benchmark_protocol() -> dict[str, Any]:
 
     return {
         "id": BENCHMARK_PROTOCOL_ID,
+        "scoring_revision": BENCHMARK_SCORING_REVISION,
         "suite_id": BENCHMARK_SUITE_ID,
         "code_fingerprint_sha256": benchmark_code_fingerprint(),
         "replications": {
@@ -90,6 +111,10 @@ def benchmark_protocol() -> dict[str, Any]:
             "global_max_workers": 4,
             "provider_max_workers": 4,
             "agent_io_log": True,
+            "model_output_failure_policy": (
+                "Count each malformed model decision as one invalid proposal; "
+                "do not invalidate an otherwise complete run."
+            ),
         },
         "score_scale": {"minimum": 0.0, "maximum": 100.0, "higher_is_better": True},
         "targets": {
@@ -139,8 +164,6 @@ def build_benchmark_results(
             cohort_flags.append("insufficient_action_sample")
         if raw["possible_agent_ticks"] <= 0:
             cohort_flags.append("insufficient_agent_tick_sample")
-        if raw["decision_failures"]:
-            cohort_flags.append("cohort_decision_failures_present")
         scores = score_benchmark_counts(raw)
         scored[str(cohort_id)] = {
             "brain": cohort.get("brain"),
@@ -162,6 +185,10 @@ def build_benchmark_results(
             "declared_protocol": trial_protocol,
             "code_fingerprint_sha256": start_data.get(
                 "benchmark_code_fingerprint"
+            ),
+            "source_fingerprint_compatible": (
+                start_data.get("benchmark_code_fingerprint")
+                in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS
             ),
             "protocol_compliant": not trial_flags,
             "quality_flags": sorted(set(trial_flags)),
@@ -251,12 +278,17 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
                 "submitted_actions": raw.get("submitted_actions", 0),
                 "contention_excluded": raw.get("contention_failures", 0),
                 "invalid_proposals": raw.get("invalid_proposals", 0),
+                "engine_invalid_proposals": raw.get(
+                    "engine_invalid_proposals",
+                    raw.get("invalid_proposals", 0),
+                ),
+                "model_output_failures": raw.get("model_output_failures", 0),
                 "action_point_overruns": raw.get("action_point_overruns", 0),
                 "valid_proposal_rate_pct": planning,
             },
             "formula": (
-                "100 * (submitted - contention - invalid) / "
-                "(submitted - contention)"
+                "100 * (submitted - contention - engine invalid - "
+                "model-output failures) / (submitted - contention)"
             ),
         },
         "sustained_competence": {
@@ -511,18 +543,31 @@ def _cohort_raw_metrics(
         is_decision_failure_message(event.get("type"), event.get("message"))
         for event in responses
     )
+    model_output_failures = sum(
+        is_model_output_failure_message(event.get("type"), event.get("message"))
+        for event in responses
+    )
+    external_decision_failures = sum(
+        is_quota_failure_message(event.get("type"), event.get("message"))
+        or is_provider_failure_message(event.get("type"), event.get("message"))
+        for event in responses
+    )
+    engine_invalid_proposals = len(invalid_events)
     return {
         "initial_agents": len(member_ids),
         "possible_agent_ticks": possible_ticks,
         "observed_agent_ticks": observed_ticks,
         "decisions": len(responses),
         "decision_failures": decision_failures,
+        "model_output_failures": model_output_failures,
+        "external_decision_failures": external_decision_failures,
         "submitted_actions": submitted,
         "contention_failures": len(contention_events),
         "submitted_actions_excluding_contention": max(
             0, submitted - len(contention_events)
         ),
-        "invalid_proposals": len(invalid_events),
+        "engine_invalid_proposals": engine_invalid_proposals,
+        "invalid_proposals": engine_invalid_proposals + model_output_failures,
         "action_point_overruns": sum(
             "action point" in str(event.get("message") or "").lower()
             for event in invalid_events
@@ -587,9 +632,17 @@ def _trial_flags(
     for name, (actual, wanted) in checks.items():
         if actual != wanted:
             flags.append(f"protocol_mismatch:{name}")
+    source_fingerprint = start_data.get("benchmark_code_fingerprint")
+    compatible_source = (
+        start_data.get("benchmark_protocol") == BENCHMARK_PROTOCOL_ID
+        and source_fingerprint in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS
+    )
     if start_data.get("benchmark_protocol") != BENCHMARK_PROTOCOL_ID:
         flags.append("benchmark_protocol_not_declared")
-    if start_data.get("benchmark_code_fingerprint") != benchmark_code_fingerprint():
+    if (
+        source_fingerprint != benchmark_code_fingerprint()
+        and not compatible_source
+    ):
         flags.append("benchmark_code_fingerprint_mismatch")
     if config.get("seed") not in BENCHMARK_SEEDS:
         flags.append("nonstandard_seed")
@@ -603,7 +656,11 @@ def _trial_flags(
             flags.append("protocol_mismatch:reasoning_effort")
         if cohort.get("initial_agents") != expected["agents"]:
             flags.append("protocol_mismatch:cohort_size")
-    if reliability.get("quality_status") != "clean":
+    integrity_status = reliability.get("benchmark_integrity_status")
+    if integrity_status is not None:
+        if integrity_status != "clean":
+            flags.append("run_integrity_not_clean")
+    elif reliability.get("quality_status") != "clean":
         flags.append("run_quality_not_clean")
     if reliability.get("usage_record_coverage_pct") != 100.0:
         flags.append("usage_coverage_not_complete")
@@ -837,7 +894,7 @@ def _latest_lifecycle_event(events: list[dict[str, Any]]) -> dict[str, Any] | No
 
 
 def _benchmark_trajectory(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Recover durable v3 diagnostic checkpoints from the event ledger."""
+    """Recover durable v3 checkpoints and apply the current scoring revision."""
 
     checkpoints: dict[int, dict[str, Any]] = {}
     for event in events:
@@ -853,9 +910,50 @@ def _benchmark_trajectory(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
             tick = int(data.get("tick"))
         except (TypeError, ValueError):
             continue
-        cohorts = data.get("cohorts")
-        if tick not in BENCHMARK_DIAGNOSTIC_TICKS or not isinstance(cohorts, dict):
+        stored_cohorts = data.get("cohorts")
+        if tick not in BENCHMARK_DIAGNOSTIC_TICKS or not isinstance(stored_cohorts, dict):
             continue
+        checkpoint_model_failures: int | None = None
+        checkpoint_external_failures: int | None = None
+        if len(stored_cohorts) == 1:
+            checkpoint_responses = [
+                candidate
+                for candidate in events
+                if candidate.get("type") == "agent_response"
+                and int(candidate.get("tick") or 0) < tick
+            ]
+            checkpoint_model_failures = sum(
+                is_model_output_failure_message(
+                    candidate.get("type"),
+                    candidate.get("message"),
+                )
+                for candidate in checkpoint_responses
+            )
+            checkpoint_external_failures = sum(
+                is_quota_failure_message(
+                    candidate.get("type"),
+                    candidate.get("message"),
+                )
+                or is_provider_failure_message(
+                    candidate.get("type"),
+                    candidate.get("message"),
+                )
+                for candidate in checkpoint_responses
+            )
+        cohorts: dict[str, Any] = {}
+        for cohort_id, cohort in stored_cohorts.items():
+            if not isinstance(cohort, dict):
+                continue
+            raw = _normalize_model_failure_raw(
+                cohort.get("raw") or {},
+                model_output_failures=checkpoint_model_failures,
+                external_decision_failures=checkpoint_external_failures,
+            )
+            cohorts[str(cohort_id)] = {
+                **cohort,
+                "raw": raw,
+                "scores": score_benchmark_counts(raw),
+            }
         try:
             score_horizon = int(data.get("score_horizon_ticks") or tick)
         except (TypeError, ValueError):
@@ -871,6 +969,36 @@ def _benchmark_trajectory(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "cohorts": cohorts,
         }
     return [checkpoints[tick] for tick in sorted(checkpoints)]
+
+
+def _normalize_model_failure_raw(
+    raw: dict[str, Any],
+    *,
+    model_output_failures: int | None,
+    external_decision_failures: int | None,
+) -> dict[str, Any]:
+    """Migrate revision-1 raw counts without altering the source event ledger."""
+
+    normalized = dict(raw)
+    if "engine_invalid_proposals" in normalized:
+        return normalized
+    engine_invalid = int(normalized.get("invalid_proposals") or 0)
+    model_failures = int(
+        model_output_failures
+        if model_output_failures is not None
+        else normalized.get("model_output_failures")
+        or 0
+    )
+    normalized["engine_invalid_proposals"] = engine_invalid
+    normalized["model_output_failures"] = model_failures
+    normalized["external_decision_failures"] = int(
+        external_decision_failures
+        if external_decision_failures is not None
+        else normalized.get("external_decision_failures")
+        or 0
+    )
+    normalized["invalid_proposals"] = engine_invalid + model_failures
+    return normalized
 
 
 def _geometric_mean(values: Iterable[float | None]) -> float | None:

@@ -189,14 +189,18 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
     return message.startswith(
         (
             "OpenAI decision failed:",
+            "OpenAI model output failed:",
             "OpenAI quota unavailable:",
             "Codex decision failed:",
+            "Codex model output failed:",
             "Codex quota unavailable:",
             "Codex provider unavailable:",
             "Claude decision failed:",
+            "Claude model output failed:",
             "Claude quota unavailable:",
             "Claude provider unavailable:",
             "Cursor decision failed:",
+            "Cursor model output failed:",
             "Cursor quota unavailable:",
             "Cursor provider unavailable:",
             "Invalid JSON response:",
@@ -230,6 +234,28 @@ def is_provider_failure_message(event_type: str | None, message: str | None) -> 
             "Codex provider unavailable:",
             "Cursor provider unavailable:",
             "OpenAI provider unavailable:",
+        )
+    )
+
+
+def is_model_output_failure_message(
+    event_type: str | None,
+    message: str | None,
+) -> bool:
+    """Return whether a completed provider turn contained unusable model output."""
+
+    if event_type != "agent_response" or not message:
+        return False
+    return message.startswith(
+        (
+            "OpenAI model output failed:",
+            "Codex model output failed:",
+            "Claude model output failed:",
+            "Cursor model output failed:",
+            "Codex decision failed: Codex action arguments_json is invalid:",
+            "Codex decision failed: Codex action arguments_json must decode to an object",
+            "Codex decision failed: Codex decision was not a JSON object",
+            "Invalid JSON response:",
         )
     )
 

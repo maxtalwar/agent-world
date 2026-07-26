@@ -71,6 +71,21 @@ Checkpoints preserve the complete engine and random-number-generator state. They
 - `llm.decision_failures`
 - `llm.rate_limit_failures`
 
+When Codex, Claude, Cursor, or the direct OpenAI connector returns a response
+that Agent World cannot parse into a valid decision, the corresponding private
+usage record also stores:
+
+- `decision_failure_origin=model_output`;
+- the parser exception in `decision_failure_detail`;
+- the exact `failed_raw_response`;
+- `failed_raw_response_sha256`.
+
+Successful response bodies are not duplicated in the usage ledger. Failed raw
+output is diagnostic-only and is never fed back into later agent observations.
+Run reports separate these model-output failures from quota, provider, and
+harness failures so benchmarks can score the former while invalidating on the
+latter.
+
 ## Observatory UI
 
 The observatory at `http://127.0.0.1:8765` is a full-screen illustrated map with floating panels (Rebel Inc-style): the world fills the viewport, and dock buttons on the right open windows over it.

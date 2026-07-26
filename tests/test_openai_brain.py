@@ -53,6 +53,21 @@ class CapturingChatBrain(OpenAIBrain):
         }
 
 
+class MalformedOpenAIBrain(OpenAIBrain):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.api_style = "responses"
+
+    def _post_json_with_retries(self, path, payload):
+        return {
+            "output_text": '{"intent":"move"',
+            "usage": {
+                "prompt_tokens": 100,
+                "completion_tokens": 10,
+            },
+        }
+
+
 class OpenAIBrainTests(unittest.TestCase):
     def test_extract_output_text_from_output_text(self) -> None:
         response = {"output_text": '{"intent":"wait","actions":[],"messages":[],"memory_updates":[]}'}
@@ -126,6 +141,20 @@ class OpenAIBrainTests(unittest.TestCase):
 
         self.assertEqual(decision.intent, "wait")
         self.assertEqual(brain.last_payload["reasoning"], {"effort": "high"})
+
+    def test_malformed_model_output_is_preserved_with_failure_metadata(self) -> None:
+        brain = MalformedOpenAIBrain(
+            api_key="test-key",
+            min_request_interval_seconds=0,
+        )
+        decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertEqual(decision.actions, [{"type": "wait"}])
+        self.assertTrue(decision.intent.startswith("OpenAI model output failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "model_output")
+        self.assertEqual(record["failed_raw_response"], '{"intent":"move"')
+        self.assertEqual(len(record["failed_raw_response_sha256"]), 64)
 
     def test_default_max_output_tokens_allow_medium_reasoning_headroom(self) -> None:
         old_value = os.environ.pop("OPENAI_MAX_OUTPUT_TOKENS", None)

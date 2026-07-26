@@ -105,6 +105,37 @@ class ClaudeBrainTests(unittest.TestCase):
         self.assertEqual(records[0]["tick"], 2)
         self.assertEqual(records[0]["cost"], 0)
 
+    def test_malformed_model_output_is_preserved_with_failure_metadata(self) -> None:
+        raw_response = '{"intent":"move"'
+        stdout = json.dumps(
+            {
+                "type": "result",
+                "subtype": "success",
+                "is_error": False,
+                "result": raw_response,
+                "usage": {"input_tokens": 10, "output_tokens": 5},
+            }
+        )
+        completed = subprocess.CompletedProcess(
+            ["claude"],
+            0,
+            stdout=stdout,
+            stderr="",
+        )
+        with patch(
+            "agent_world.claude_brain.subprocess.run",
+            return_value=completed,
+        ):
+            brain = ClaudeBrain(executable="claude")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertEqual(decision.actions, [{"type": "wait"}])
+        self.assertTrue(decision.intent.startswith("Claude model output failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "model_output")
+        self.assertEqual(record["failed_raw_response"], raw_response)
+        self.assertEqual(len(record["failed_raw_response_sha256"]), 64)
+
     def test_minimal_effort_maps_to_low_for_the_cli(self) -> None:
         completed = subprocess.CompletedProcess(["claude"], 0, stdout=_successful_stdout(), stderr="")
         with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:

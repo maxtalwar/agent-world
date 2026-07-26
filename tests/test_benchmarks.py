@@ -5,6 +5,8 @@ from argparse import Namespace
 
 from agent_world.benchmarks import (
     BENCHMARK_PROTOCOL_ID,
+    BENCHMARK_SUITE_ID,
+    _benchmark_trajectory,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
     build_benchmark_results,
@@ -15,7 +17,12 @@ from agent_world.cli import _apply_benchmark_protocol
 from agent_world.run_report import _render_benchmark_lines
 
 
-def _protocol_report(seed: int, source: str) -> dict:
+def _protocol_report(
+    seed: int,
+    source: str,
+    *,
+    model_output_failure: bool = False,
+) -> dict:
     agents = [f"agent-{index}" for index in range(1, 11)]
     cohort = {
         "brain": "codex",
@@ -45,7 +52,8 @@ def _protocol_report(seed: int, source: str) -> dict:
             "cohorts": {"cohort-1": cohort},
         },
         "reliability": {
-            "quality_status": "clean",
+            "quality_status": "degraded" if model_output_failure else "clean",
+            "benchmark_integrity_status": "clean",
             "usage_record_coverage_pct": 100.0,
         },
     }
@@ -77,6 +85,11 @@ def _protocol_report(seed: int, source: str) -> dict:
         }
         for agent_id in agents
     ]
+    if model_output_failure:
+        responses[0]["message"] = (
+            "Codex model output failed: Codex action arguments_json is invalid: "
+            "Expecting value: line 1 column 1 (char 0)"
+        )
     snapshot = {
         "tick": 50,
         "agents": {
@@ -295,6 +308,70 @@ class BenchmarkTests(unittest.TestCase):
             benchmark["cohorts"]["cohort-1"]["scores"]["planning_execution"]["score"],
             100.0,
         )
+
+    def test_model_output_failure_is_scored_without_invalidating_trial(self) -> None:
+        report = _protocol_report(
+            11,
+            "seed-11-model-failure",
+            model_output_failure=True,
+        )
+        benchmark = report["benchmarks"]
+        cohort = benchmark["cohorts"]["cohort-1"]
+
+        self.assertTrue(benchmark["trial"]["protocol_compliant"])
+        self.assertTrue(cohort["protocol_compliant"])
+        self.assertEqual(cohort["raw"]["engine_invalid_proposals"], 0)
+        self.assertEqual(cohort["raw"]["model_output_failures"], 1)
+        self.assertEqual(cohort["raw"]["invalid_proposals"], 1)
+        self.assertEqual(
+            cohort["scores"]["planning_execution"]["score"],
+            90.0,
+        )
+
+        aggregate = aggregate_benchmark_reports([report])
+        self.assertEqual(aggregate["results"][0]["status"], "provisional")
+
+    def test_revision_one_checkpoint_uses_event_ledger_failure_classification(self) -> None:
+        trajectory = _benchmark_trajectory(
+            [
+                {
+                    "type": "agent_response",
+                    "tick": 7,
+                    "actor_id": "agent-1",
+                    "message": (
+                        "Codex decision failed: Codex action arguments_json "
+                        "is invalid: Expecting value"
+                    ),
+                    "data": {"actions": [{"type": "wait"}]},
+                },
+                {
+                    "type": "benchmark_checkpoint",
+                    "tick": 30,
+                    "actor_id": None,
+                    "message": "checkpoint",
+                    "data": {
+                        "suite_id": BENCHMARK_SUITE_ID,
+                        "protocol_id": BENCHMARK_PROTOCOL_ID,
+                        "tick": 30,
+                        "cohorts": {
+                            "cohort-1": {
+                                "raw": {
+                                    "submitted_actions": 10,
+                                    "submitted_actions_excluding_contention": 10,
+                                    "invalid_proposals": 2,
+                                    "decision_failures": 1,
+                                },
+                            },
+                        },
+                    },
+                },
+            ]
+        )
+
+        raw = trajectory[0]["cohorts"]["cohort-1"]["raw"]
+        self.assertEqual(raw["engine_invalid_proposals"], 2)
+        self.assertEqual(raw["model_output_failures"], 1)
+        self.assertEqual(raw["invalid_proposals"], 3)
 
     def test_two_required_seeds_produce_certified_pooled_result(self) -> None:
         aggregate = aggregate_benchmark_reports(

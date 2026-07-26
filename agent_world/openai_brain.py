@@ -181,8 +181,59 @@ class OpenAIBrain:
         }
         try:
             response = self._post_json_with_retries(endpoint, payload)
+            decision = extractor(response)
+            try:
+                parsed_decision = parse_agent_response(decision)
+            except (ValueError, json.JSONDecodeError) as exc:
+                failed_raw_response = (
+                    decision
+                    if isinstance(decision, str)
+                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
+                )
+                self._record_usage(
+                    response,
+                    {
+                        **request_meta,
+                        "decision_failure_origin": "model_output",
+                        "decision_failure_detail": f"{type(exc).__name__}: {exc}",
+                        "failed_raw_response": failed_raw_response,
+                        "failed_raw_response_sha256": hashlib.sha256(
+                            failed_raw_response.encode("utf-8")
+                        ).hexdigest(),
+                    },
+                )
+                return AgentDecision(
+                    intent=f"OpenAI model output failed: {exc}",
+                    actions=[{"type": "wait"}],
+                    messages=[],
+                    memory_updates=[],
+                )
+            if parsed_decision.intent.startswith("Invalid JSON response:"):
+                failed_raw_response = (
+                    decision
+                    if isinstance(decision, str)
+                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
+                )
+                self._record_usage(
+                    response,
+                    {
+                        **request_meta,
+                        "decision_failure_origin": "model_output",
+                        "decision_failure_detail": parsed_decision.intent,
+                        "failed_raw_response": failed_raw_response,
+                        "failed_raw_response_sha256": hashlib.sha256(
+                            failed_raw_response.encode("utf-8")
+                        ).hexdigest(),
+                    },
+                )
+                return AgentDecision(
+                    intent=f"OpenAI model output failed: {parsed_decision.intent}",
+                    actions=[{"type": "wait"}],
+                    messages=[],
+                    memory_updates=[],
+                )
             self._record_usage(response, request_meta)
-            return parse_agent_response(extractor(response))
+            return parsed_decision
         except OpenAIQuotaError as exc:
             self._mark_quota_unavailable(str(exc))
             return _quota_decision(str(exc))

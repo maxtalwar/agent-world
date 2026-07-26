@@ -147,6 +147,37 @@ class CursorBrainTests(unittest.TestCase):
         self.assertEqual(records[0]["cursor_session_id"], "cursor-session")
         self.assertEqual(records[0]["cost"], 0)
 
+    def test_malformed_model_output_is_preserved_with_failure_metadata(self) -> None:
+        raw_response = '{"intent":"move"'
+        stdout = json.dumps(
+            {
+                "type": "result",
+                "subtype": "success",
+                "is_error": False,
+                "result": raw_response,
+                "usage": {"inputTokens": 10, "outputTokens": 5},
+            }
+        )
+        completed = subprocess.CompletedProcess(
+            ["cursor-agent"],
+            0,
+            stdout=stdout,
+            stderr="",
+        )
+        with patch(
+            "agent_world.cursor_brain.subprocess.run",
+            return_value=completed,
+        ):
+            brain = CursorBrain(executable="cursor-agent")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertEqual(decision.actions, [{"type": "wait"}])
+        self.assertTrue(decision.intent.startswith("Cursor model output failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "model_output")
+        self.assertEqual(record["failed_raw_response"], raw_response)
+        self.assertEqual(len(record["failed_raw_response_sha256"]), 64)
+
     def test_extract_cursor_result(self) -> None:
         decision, usage, model = extract_cursor_result(json.loads(_successful_stdout("observe")))
         self.assertIn("observe", decision)
