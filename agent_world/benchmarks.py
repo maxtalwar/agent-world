@@ -22,13 +22,24 @@ BENCHMARK_PROTOCOL_ID = "participant-v3"
 BENCHMARK_SEEDS = frozenset({11, 41})
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
-BENCHMARK_SCORING_REVISION = 2
+BENCHMARK_SCORING_REVISION = 3
 BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS = frozenset(
     {
         # Initial Participant v3 launch fingerprint. The trial mechanics and
         # fallback behavior are identical; revision 2 only reclassifies
         # malformed model output as a scored planning failure.
         "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948",
+        # Participant v3 scoring revision 2. Revision 3 changes only the
+        # entrepreneurship score scale, so its raw run evidence remains
+        # eligible for current scoring.
+        "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc",
+    }
+)
+BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS = frozenset(
+    {
+        # Scoring-revision-2 reports contain all raw counts needed to apply
+        # revision 3 without mutating the historical report.
+        "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc",
     }
 )
 
@@ -116,7 +127,31 @@ def benchmark_protocol() -> dict[str, Any]:
                 "do not invalidate an otherwise complete run."
             ),
         },
-        "score_scale": {"minimum": 0.0, "maximum": 100.0, "higher_is_better": True},
+        "score_scale": {
+            "minimum": 0.0,
+            "maximum": None,
+            "higher_is_better": True,
+            "metric_specific": True,
+            "details": "See score_scales for per-benchmark bounds.",
+        },
+        "score_scales": {
+            "planning_execution": {
+                "minimum": 0.0,
+                "maximum": 100.0,
+                "higher_is_better": True,
+            },
+            "sustained_competence": {
+                "minimum": 0.0,
+                "maximum": 100.0,
+                "higher_is_better": True,
+            },
+            "entrepreneurial_agency": {
+                "minimum": 0.0,
+                "maximum": None,
+                "reference_target": 100.0,
+                "higher_is_better": True,
+            },
+        },
         "targets": {
             "terminal_endowment_multiple": TERMINAL_ENDOWMENT_MULTIPLE_TARGET,
             "venture_initiatives_per_100_agent_ticks": INITIATIVE_TARGET_PER_100_AGENT_TICKS,
@@ -260,12 +295,16 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
         else None
     )
     initiative_score = (
-        _clamp_score(100.0 * initiative_rate / INITIATIVE_TARGET_PER_100_AGENT_TICKS)
+        _nonnegative_score(
+            100.0 * initiative_rate / INITIATIVE_TARGET_PER_100_AGENT_TICKS
+        )
         if initiative_rate is not None
         else None
     )
     realization_score = (
-        _clamp_score(100.0 * realized_rate / REALIZED_VALUE_TARGET_PER_100_AGENT_TICKS)
+        _nonnegative_score(
+            100.0 * realized_rate / REALIZED_VALUE_TARGET_PER_100_AGENT_TICKS
+        )
         if realized_rate is not None
         else None
     )
@@ -327,8 +366,15 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
             },
             "formula": (
                 "geometric_mean(initiative rate vs 20/100 agent-ticks, "
-                "realized value rate vs 40/100 agent-ticks)"
+                "realized value rate vs 40/100 agent-ticks); 100 is the "
+                "reference target, not a maximum"
             ),
+            "scale": {
+                "minimum": 0.0,
+                "maximum": None,
+                "reference_target": 100.0,
+                "higher_is_better": True,
+            },
         },
     }
 
@@ -349,10 +395,13 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 }
             )
             continue
-        if (
-            (benchmark.get("protocol") or {}).get("code_fingerprint_sha256")
-            != expected_fingerprint
-        ):
+        report_protocol = benchmark.get("protocol") or {}
+        report_fingerprint = report_protocol.get("code_fingerprint_sha256")
+        compatible_prior_report = (
+            report_protocol.get("scoring_revision") == 2
+            and report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
+        )
+        if report_fingerprint != expected_fingerprint and not compatible_prior_report:
             rejected.append(
                 {
                     "source": report.get("source"),
@@ -388,18 +437,23 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                     "seeds": set(),
                     "seed_counts": Counter(),
                     "sources": [],
+                    "source_scoring_revisions": set(),
                     "raw": {},
                 },
             )
             row["seeds"].add(int(seed))
             row["seed_counts"][int(seed)] += 1
             row["sources"].append(report.get("source"))
+            row["source_scoring_revisions"].add(
+                int(report_protocol.get("scoring_revision") or 1)
+            )
             _merge_numeric_tree(row["raw"], cohort.get("raw") or {})
 
     results: list[dict[str, Any]] = []
     for row in grouped.values():
         seeds = sorted(row.pop("seeds"))
         seed_counts = row.pop("seed_counts")
+        source_scoring_revisions = sorted(row.pop("source_scoring_revisions"))
         raw = row.pop("raw")
         missing_seeds = sorted(BENCHMARK_SEEDS - set(seeds))
         certification_flags = []
@@ -427,6 +481,8 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 "provisional": provisional,
                 "status": status,
                 "certification_flags": certification_flags,
+                "source_scoring_revisions": source_scoring_revisions,
+                "scoring_revision": BENCHMARK_SCORING_REVISION,
                 "raw": raw,
                 "scores": score_benchmark_counts(raw),
             }
@@ -1015,6 +1071,10 @@ def _geometric_mean(values: Iterable[float | None]) -> float | None:
 
 def _clamp_score(value: float) -> float:
     return round(max(0.0, min(100.0, value)), 2)
+
+
+def _nonnegative_score(value: float) -> float:
+    return round(max(0.0, value), 2)
 
 
 def _rounded(value: float | None) -> float | None:

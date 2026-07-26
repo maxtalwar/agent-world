@@ -28,9 +28,9 @@ comparable to a controlled benchmark.
   Participant v1 competence inflation; its corrected v2 diagnostic is 51.03,
   not 82.23.
 - [GPT-5.3-Codex-Spark Participant v3, 2026-07-26](gpt-5-3-codex-spark-v3-benchmark.md):
-  provisional seed-11 result; planning 66.64, sustained competence 32.68, and
-  entrepreneurial agency 2.12. Two malformed model outputs are scored as model
-  failures rather than mistaken for harness corruption.
+  provisional seed-11 revision-2 result; planning 66.64, sustained competence
+  32.68, and entrepreneurial agency 2.12. Two malformed model outputs are
+  scored as model failures rather than mistaken for harness corruption.
 
 Participant v1 is retired. It counted dead agents' inventories as material
 success, measured survival only over ticks that happened to run, and lacked an
@@ -38,16 +38,27 @@ endpoint-health check. Historical v1 reports remain historical artifacts and
 must not be silently mixed with later results.
 
 Participant v2 remains a valid historical 40-tick suite. Participant v3 keeps
-its scoring formulas and trial settings, extends the official endpoint to tick
-50, and records diagnostic score trajectories at ticks 30, 40, and 50. Existing
-v2 results are not converted or invalidated; models need fresh v3 runs to enter
-the new leaderboard.
+the same trial settings and core score construction, extends the official
+endpoint to tick 50, and records diagnostic score trajectories at ticks 30, 40,
+and 50. Existing v2 results are not converted or invalidated; models need fresh
+v3 runs to enter the new leaderboard.
 
-Participant v3 scoring revision 2 makes one classification correction:
-malformed structured output produced by the target model is a scored planning
-failure, not a reason to discard the trial. This does not repair the action or
-remove its consequences. The engine still executes the existing fallback wait,
-and the failure occupies one submitted-action slot.
+Participant v3 scoring revisions are recorded in every report:
+
+- **Revision 2** made one classification correction: malformed structured
+  output produced by the target model is a scored planning failure, not a
+  reason to discard the trial. This does not repair the action or remove its
+  consequences. The engine still executes the existing fallback wait, and the
+  failure occupies one submitted-action slot.
+- **Revision 3** removes the 100-point ceiling from entrepreneurial agency.
+  Its fixed targets still define 100, but models that outperform them retain
+  that information in their component and composite scores. Planning and
+  sustained competence remain bounded at 100.
+
+Historical revision-2 reports are not overwritten. Supplying one to the
+benchmark aggregation command explicitly applies revision 3 to its preserved
+raw counts and labels the source and output scoring revisions in the new
+leaderboard artifact.
 
 ## Standard and usage-constrained trials
 
@@ -127,8 +138,10 @@ for the twenty future ticks that have not happened yet.
 
 ## The three scores
 
-All scores range from 0 to 100. Higher is better. Formulas and every component
-are stored in the machine-readable run report.
+Higher is always better. Planning execution and sustained competence range
+from 0 to 100. Entrepreneurial agency starts at zero but has no maximum: 100 is
+its frozen excellent-performance reference point. Formulas, scale metadata,
+and every component are stored in the machine-readable run report.
 
 ### 1. Planning execution
 
@@ -206,7 +219,8 @@ geometric mean(initiative score, realization score)
 
 The initiative component reaches 100 at 20 initiatives per 100 possible
 agent-ticks, equivalent to one successful venture start every five living
-opportunities.
+opportunities. It continues above 100 when a cohort starts ventures at a higher
+rate.
 
 **Realized venture value** combines common book-value units from:
 
@@ -217,12 +231,19 @@ opportunities.
 
 The realization component reaches 100 at 40 value per 100 possible
 agent-ticks. Over a 50-tick trial, that is 20 realized value per starting agent,
-2.5 times the organic world's eight-value starting endowment.
+2.5 times the organic world's eight-value starting endowment. It also continues
+above 100 rather than discarding exceptional value creation.
 
 The targets are fixed "excellent performance" anchors, not percentiles fitted
 to whichever models happen to be in the leaderboard. The geometric mean means
 offer spam with no completed exchange cannot earn a high score, while passive
 wealth accumulation with no venture initiation also cannot.
+
+For example, a cohort exactly at the initiative target and at twice the
+realization target receives component scores of 100 and 200, producing an
+entrepreneurial-agency score of 141.42. A cohort at twice both targets scores
+200. Thus twice the realized value is always visible, although the composite
+also deliberately accounts for whether the cohort initiated ventures.
 
 ## Quality and certification
 

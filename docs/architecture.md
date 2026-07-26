@@ -32,7 +32,9 @@ PopulationSpec -> BrainRuntime -> SimulationSession -> SimulationRunner -> World
   seed-11 run is provisional; pooling clean seeds 11 and 41 promotes the model
   to replicated certification. The horizon is 50 ticks in both tiers, with
   durable diagnostic score checkpoints at ticks 30 and 40 before the tick-50
-  scoring endpoint.
+  scoring endpoint. Planning and competence remain bounded percentages;
+  entrepreneurship is an uncapped target-relative index so exceptional
+  economic performance remains distinguishable above 100.
 
 CLI, experiment, and observatory callers retain their presentation-specific responsibilities. Experiments update provenance manifests through session callbacks; the observatory updates live status and pause/stop controls through callbacks. They do not implement separate simulation loops.
 

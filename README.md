@@ -304,11 +304,13 @@ command, git provenance, resolved response-model versions, and output paths.
 
 ## Standardized model benchmarks
 
-Agent World Participant v3 provides three versioned 0-100 scores: planning
-execution, sustained competence, and entrepreneurial agency. Any run receives
-diagnostic cohort scores. A usage-constrained model can earn a provisional
-benchmark from one clean, complete 50-tick seed-11 trial. Replicated
-certification requires clean trials on both locked seeds, 11 and 41.
+Agent World Participant v3 provides three versioned scores: planning execution
+and sustained competence are bounded from 0 to 100, while entrepreneurial
+agency is an open-ended index where 100 is the frozen excellent-performance
+target rather than a ceiling. Any run receives diagnostic cohort scores. A
+usage-constrained model can earn a provisional benchmark from one clean,
+complete 50-tick seed-11 trial. Replicated certification requires clean trials
+on both locked seeds, 11 and 41.
 
 Start a standardized trial with:
 

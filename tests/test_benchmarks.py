@@ -4,11 +4,14 @@ import unittest
 from argparse import Namespace
 
 from agent_world.benchmarks import (
+    BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS,
     BENCHMARK_PROTOCOL_ID,
+    BENCHMARK_SCORING_REVISION,
     BENCHMARK_SUITE_ID,
     _benchmark_trajectory,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
+    benchmark_protocol,
     build_benchmark_results,
     format_benchmark_leaderboard,
     score_benchmark_counts,
@@ -173,6 +176,56 @@ class BenchmarkTests(unittest.TestCase):
             places=2,
         )
         self.assertEqual(scores["entrepreneurial_agency"]["score"], 50.0)
+
+    def test_entrepreneurship_score_has_no_upper_bound(self) -> None:
+        scores = score_benchmark_counts(
+            {
+                "submitted_actions": 100,
+                "submitted_actions_excluding_contention": 100,
+                "possible_agent_ticks": 100,
+                "venture_initiatives": 20,
+                "realized_venture_value": 80,
+            }
+        )
+
+        entrepreneurship = scores["entrepreneurial_agency"]
+        self.assertEqual(entrepreneurship["components"]["initiative_score"], 100.0)
+        self.assertEqual(entrepreneurship["components"]["realization_score"], 200.0)
+        self.assertEqual(entrepreneurship["score"], 141.42)
+        self.assertIsNone(entrepreneurship["scale"]["maximum"])
+
+    def test_protocol_declares_unbounded_entrepreneurship_scale(self) -> None:
+        protocol = benchmark_protocol()
+
+        self.assertEqual(protocol["scoring_revision"], BENCHMARK_SCORING_REVISION)
+        self.assertEqual(BENCHMARK_SCORING_REVISION, 3)
+        self.assertTrue(protocol["score_scale"]["metric_specific"])
+        self.assertIsNone(protocol["score_scale"]["maximum"])
+        self.assertEqual(
+            protocol["score_scales"]["planning_execution"]["maximum"],
+            100.0,
+        )
+        self.assertIsNone(
+            protocol["score_scales"]["entrepreneurial_agency"]["maximum"]
+        )
+        self.assertEqual(
+            protocol["score_scales"]["entrepreneurial_agency"]["reference_target"],
+            100.0,
+        )
+
+    def test_revision_two_report_can_be_explicitly_rescored_by_aggregation(self) -> None:
+        report = _protocol_report(11, "revision-2")
+        report["benchmarks"]["protocol"]["scoring_revision"] = 2
+        report["benchmarks"]["protocol"]["code_fingerprint_sha256"] = next(
+            iter(BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS)
+        )
+
+        aggregate = aggregate_benchmark_reports([report])
+
+        result = aggregate["results"][0]
+        self.assertEqual(result["source_scoring_revisions"], [2])
+        self.assertEqual(result["scoring_revision"], 3)
+        self.assertEqual(aggregate["protocol"]["scoring_revision"], 3)
 
     def test_competence_penalizes_dead_estates_and_endpoint_collapse(self) -> None:
         scores = score_benchmark_counts(
