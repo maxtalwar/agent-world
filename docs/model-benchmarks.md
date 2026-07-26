@@ -1,6 +1,6 @@
 # Agent World model benchmarks
 
-Agent World Participant v2 is the current standardized model benchmark suite.
+Agent World Participant v3 is the current standardized model benchmark suite.
 It turns deterministic run telemetry into three repeatable scores while keeping
 the raw evidence and formulas visible.
 
@@ -8,17 +8,18 @@ The suite distinguishes:
 
 - **Diagnostic scores:** useful measurements from any run, including mixed
   civilizations, stopped runs, degraded runs, and older harnesses.
-- **Provisional benchmark results:** one clean, complete 40-tick run on the
-  predeclared seed 11 that exactly follows participant-v2.
+- **Provisional benchmark results:** one clean, complete 50-tick run on the
+  predeclared seed 11 that exactly follows participant-v3.
 - **Replicated certified benchmark results:** pooled results from clean,
-  complete 40-tick runs on both required seeds, 11 and 41.
+  complete 50-tick runs on both required seeds, 11 and 41.
 
 This prevents an interesting exploratory run from being presented as directly
 comparable to a controlled benchmark.
 
 ## Recorded attempts
 
-- [GPT-5.4, 2026-07-25](gpt-5-4-benchmark.md): provisional Participant v2
+- [GPT-5.4, 2026-07-25](gpt-5-4-benchmark.md): historical provisional
+  Participant v2
   benchmark from a clean, complete seed-11 run; planning 86.54, sustained
   competence 78.45, and entrepreneurial agency 22.17.
 - [GPT-5.3-Codex-Spark, 2026-07-24](gpt-5-3-codex-spark-benchmark.md):
@@ -30,17 +31,25 @@ comparable to a controlled benchmark.
 Participant v1 is retired. It counted dead agents' inventories as material
 success, measured survival only over ticks that happened to run, and lacked an
 endpoint-health check. Historical v1 reports remain historical artifacts and
-must not be silently mixed with v2 results.
+must not be silently mixed with later results.
+
+Participant v2 remains a valid historical 40-tick suite. Participant v3 keeps
+its scoring formulas and trial settings, extends the official endpoint to tick
+50, and records diagnostic score trajectories at ticks 30, 40, and 50. Existing
+v2 results are not converted or invalidated; models need fresh v3 runs to enter
+the new leaderboard.
 
 ## Standard and usage-constrained trials
 
-Every benchmark run uses the same pure-model 40-tick trial:
+Every benchmark run uses the same pure-model 50-tick trial:
 
 | Setting | Required value |
 |---|---|
 | Seeds | 11 and 41 |
 | Population | 10 copies of one model |
-| Horizon | 40 ticks |
+| Horizon | 50 ticks |
+| Diagnostic score checkpoints | ticks 30 and 40 |
+| Official score endpoint | tick 50 |
 | World | `organic-generalists` |
 | Objective | neutral |
 | Reasoning effort | medium |
@@ -60,11 +69,11 @@ Launch the predeclared seed-11 trial:
 
 ```bash
 python3 -m agent_world.cli run \
-  --benchmark-protocol participant-v2 \
+  --benchmark-protocol participant-v3 \
   --brain codex --model gpt-5.6-luna \
   --seed 11 \
-  --out runs/benchmarks/luna-v2/seed-11/run.jsonl \
-  --snapshot runs/benchmarks/luna-v2/seed-11/run-snapshot.json \
+  --out runs/benchmarks/luna-v3/seed-11/run.jsonl \
+  --snapshot runs/benchmarks/luna-v3/seed-11/run-snapshot.json \
   --progress
 ```
 
@@ -83,9 +92,9 @@ Each run report automatically contains `benchmarks`. Pool the two reports with:
 
 ```bash
 python3 -m agent_world.cli benchmark \
-  runs/benchmarks/luna-v2/seed-11/run-report.json \
-  runs/benchmarks/luna-v2/seed-41/run-report.json \
-  --out runs/benchmarks/luna-v2/leaderboard
+  runs/benchmarks/luna-v3/seed-11/run-report.json \
+  runs/benchmarks/luna-v3/seed-41/run-report.json \
+  --out runs/benchmarks/luna-v3/leaderboard
 ```
 
 Aggregation pools the raw numerators and denominators before scoring. It does
@@ -93,10 +102,18 @@ not average the two run scores. Passing only the clean seed-11 report emits a
 provisional result; passing both required seeds emits a replicated certified
 result.
 
-The horizon remains 40 ticks in both tiers. Shortening a constrained model to
-30 ticks is not allowed: late survival collapses and delayed consequences can
-make a weak long-horizon planner look artificially successful. If even one
-40-tick run is unaffordable, the available evidence remains diagnostic.
+The horizon remains 50 ticks in both tiers. Shortening a constrained model to
+30 or 40 ticks is not allowed: historical 50-tick runs show that survival
+collapses and civilization milestones often occur after tick 40. If even one
+50-tick run is unaffordable, the available evidence remains diagnostic.
+
+Each v3 run records cumulative diagnostic score snapshots at ticks 30 and 40,
+plus the designated tick-50 endpoint. These trajectories show whether planning,
+survival, and enterprise are improving, stable, or collapsing. They are not
+three independent trials and must not be averaged; only the tick-50 score can
+be provisional or certified. Each checkpoint is normalized to its elapsed
+prefix horizon, so a healthy tick-30 population is not mechanically penalized
+for the twenty future ticks that have not happened yet.
 
 ## The three scores
 
@@ -153,7 +170,7 @@ geometric mean(
   advance/collateral escrow. Group-owned value is divided among members, and
   only living members' shares count.
 
-The three-times-endowment target is mechanics-based and frozen in v2. It means
+The three-times-endowment target is mechanics-based and frozen in v3. It means
 an excellent cohort must do more than preserve its starting supplies.
 
 A geometric mean is used rather than hand-tuned weights. A model cannot erase a
@@ -187,8 +204,8 @@ opportunities.
 - fulfilled contract repayments received.
 
 The realization component reaches 100 at 40 value per 100 possible
-agent-ticks. Over a 40-tick trial, that is 16 realized value per starting agent,
-twice the organic world's eight-value starting endowment.
+agent-ticks. Over a 50-tick trial, that is 20 realized value per starting agent,
+2.5 times the organic world's eight-value starting endowment.
 
 The targets are fixed "excellent performance" anchors, not percentiles fitted
 to whichever models happen to be in the leaderboard. The geometric mean means
@@ -229,8 +246,8 @@ The aggregate artifact retains:
 - the complete frozen protocol and scoring targets.
 
 Changing a formula, target, world, or harness requires a new suite ID. Existing
-Participant v1 or v2 results must never be silently rescored under a changed
-definition.
+Participant v1, v2, or v3 results must never be silently rescored under a
+changed definition.
 
 ## Reporting standard
 
@@ -247,9 +264,11 @@ actions, contention separately, action-point overruns, survival, economic and
 entrepreneurial outcomes, decision/provider failures, and usage where
 available. The result tier and seed coverage appear immediately above the
 scorecard. A high-level score must never replace the failure-rate denominator
-or the descriptive civilization analysis.
+or the descriptive civilization analysis. Participant v3 reports also show the
+tick-30/40/50 score trajectory, clearly distinguishing diagnostic checkpoints
+from the designated final endpoint.
 
-## What v2 does not score
+## What v3 does not score
 
 Communication, gifts, trades, construction cooperation, and group creation are
 retained as social diagnostics. They are not yet a social-ability score because
@@ -261,4 +280,4 @@ keyword counts or an uncalibrated LLM judge would make the benchmark look more
 precise than it is.
 
 Future suites can add social coordination, leadership, adaptation, deception,
-or antisocial-behavior tasks without changing Participant v2.
+or antisocial-behavior tasks without changing Participant v3.

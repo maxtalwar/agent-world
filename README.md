@@ -304,29 +304,30 @@ command, git provenance, resolved response-model versions, and output paths.
 
 ## Standardized model benchmarks
 
-Agent World Participant v2 provides three versioned 0-100 scores: planning
+Agent World Participant v3 provides three versioned 0-100 scores: planning
 execution, sustained competence, and entrepreneurial agency. Any run receives
 diagnostic cohort scores. A usage-constrained model can earn a provisional
-benchmark from one clean, complete 40-tick seed-11 trial. Replicated
+benchmark from one clean, complete 50-tick seed-11 trial. Replicated
 certification requires clean trials on both locked seeds, 11 and 41.
 
 Start a standardized trial with:
 
 ```bash
 python3 -m agent_world.cli run \
-  --benchmark-protocol participant-v2 \
+  --benchmark-protocol participant-v3 \
   --brain codex --model gpt-5.6-luna \
   --seed 11 \
-  --out runs/benchmarks/luna-v2/seed-11/run.jsonl \
-  --snapshot runs/benchmarks/luna-v2/seed-11/run-snapshot.json
+  --out runs/benchmarks/luna-v3/seed-11/run.jsonl \
+  --snapshot runs/benchmarks/luna-v3/seed-11/run-snapshot.json
 ```
 
 Aggregate seed 11 alone for a provisional result. Add seed 41 later and pool
 both generated reports with `python3 -m agent_world.cli benchmark ...` for
-replicated certification. Both tiers retain the full 40-tick horizon; a
-30-tick run is diagnostic rather than a cheaper benchmark. The protocol,
-formulas, quality rules, and interpretation guidance are documented in
-[docs/model-benchmarks.md](docs/model-benchmarks.md).
+replicated certification. Both tiers retain the full 50-tick horizon; a
+shorter run is diagnostic rather than a cheaper benchmark. Reports preserve
+diagnostic score trajectories at ticks 30 and 40 before the official tick-50
+endpoint. The protocol, formulas, quality rules, and interpretation guidance
+are documented in [docs/model-benchmarks.md](docs/model-benchmarks.md).
 
 For a balanced comparison, run equal cohorts across several world and assignment
 seeds, then add homogeneous controls on those same world seeds. For example,

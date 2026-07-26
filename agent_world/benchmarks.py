@@ -12,10 +12,11 @@ from agent_world.metrics import is_decision_failure_message
 from agent_world.rules import RESOURCE_VALUES, recipes_for_mode
 
 
-BENCHMARK_SUITE_ID = "agent-world-participant-v2"
-BENCHMARK_PROTOCOL_ID = "participant-v2"
+BENCHMARK_SUITE_ID = "agent-world-participant-v3"
+BENCHMARK_PROTOCOL_ID = "participant-v3"
 BENCHMARK_SEEDS = frozenset({11, 41})
 BENCHMARK_PROVISIONAL_SEED = 11
+BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
 
 # These are mechanics-anchored "excellent" targets, not population percentiles.
 # Versioning the suite freezes them so later runs remain directly comparable.
@@ -28,11 +29,14 @@ VENTURE_INITIATIVE_EVENTS = frozenset(
 )
 BENCHMARK_FINGERPRINT_FILES = (
     "benchmarks.py",
+    "cli.py",
     "interface.py",
     "maps.py",
     "models.py",
     "rules.py",
+    "run_report.py",
     "runner.py",
+    "session.py",
     "world.py",
 )
 
@@ -49,7 +53,7 @@ def benchmark_code_fingerprint() -> str:
 
 
 def benchmark_protocol() -> dict[str, Any]:
-    """Return the frozen participant-v2 trial and scoring specification."""
+    """Return the frozen participant-v3 trial and scoring specification."""
 
     return {
         "id": BENCHMARK_PROTOCOL_ID,
@@ -68,7 +72,9 @@ def benchmark_protocol() -> dict[str, Any]:
         },
         "trial": {
             "agents": 10,
-            "ticks": 40,
+            "ticks": 50,
+            "diagnostic_score_ticks": list(BENCHMARK_DIAGNOSTIC_TICKS),
+            "official_score_tick": 50,
             "preset": "organic-generalists",
             "economy_mode": "organic",
             "geography_mode": "dispersed",
@@ -95,7 +101,8 @@ def benchmark_protocol() -> dict[str, Any]:
             "For a provisional result, apply the frozen formulas to the clean "
             "seed-11 raw counts. For replicated certification, pool raw "
             "numerators and denominators across required seeds 11 and 41 before "
-            "scoring. Do not average per-run scores."
+            "scoring. Do not average per-run scores. Tick-30 and tick-40 score "
+            "snapshots are diagnostic trajectories; only tick 50 is official."
         ),
     }
 
@@ -169,11 +176,12 @@ def build_benchmark_results(
             ),
         },
         "cohorts": scored,
+        "trajectory": _benchmark_trajectory(events),
     }
 
 
 def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
-    """Apply the frozen participant-v2 formulas to pooled or per-run counts."""
+    """Apply the frozen participant-v3 formulas to pooled or per-run counts."""
 
     planning_denominator = float(raw.get("submitted_actions_excluding_contention") or 0)
     invalid = float(raw.get("invalid_proposals") or 0)
@@ -826,6 +834,43 @@ def _latest_lifecycle_event(events: list[dict[str, Any]]) -> dict[str, Any] | No
         ),
         None,
     )
+
+
+def _benchmark_trajectory(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Recover durable v3 diagnostic checkpoints from the event ledger."""
+
+    checkpoints: dict[int, dict[str, Any]] = {}
+    for event in events:
+        if event.get("type") != "benchmark_checkpoint":
+            continue
+        data = event.get("data") or {}
+        if (
+            data.get("suite_id") != BENCHMARK_SUITE_ID
+            or data.get("protocol_id") != BENCHMARK_PROTOCOL_ID
+        ):
+            continue
+        try:
+            tick = int(data.get("tick"))
+        except (TypeError, ValueError):
+            continue
+        cohorts = data.get("cohorts")
+        if tick not in BENCHMARK_DIAGNOSTIC_TICKS or not isinstance(cohorts, dict):
+            continue
+        try:
+            score_horizon = int(data.get("score_horizon_ticks") or tick)
+        except (TypeError, ValueError):
+            score_horizon = tick
+        checkpoints[tick] = {
+            "tick": tick,
+            "score_horizon_ticks": score_horizon,
+            "role": (
+                "official_endpoint"
+                if tick == BENCHMARK_DIAGNOSTIC_TICKS[-1]
+                else "diagnostic_checkpoint"
+            ),
+            "cohorts": cohorts,
+        }
+    return [checkpoints[tick] for tick in sorted(checkpoints)]
 
 
 def _geometric_mean(values: Iterable[float | None]) -> float | None:

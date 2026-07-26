@@ -1331,6 +1331,34 @@ def _render_benchmark_lines(benchmarks: Any) -> list[str]:
         )
         + " |"
     )
+    trajectory = benchmarks.get("trajectory") or []
+    if trajectory:
+        lines += [
+            "",
+            "### Benchmark score trajectory",
+            "",
+            "| Tick | Cohort | Role | Planning | Competence | Entrepreneurship | Living | Endpoint health | Living value |",
+            "|---:|---|---|---:|---:|---:|---:|---:|---:|",
+        ]
+        for checkpoint in trajectory:
+            role = str(checkpoint.get("role") or "diagnostic_checkpoint").replace(
+                "_", " "
+            )
+            for cohort_id, cohort in (checkpoint.get("cohorts") or {}).items():
+                scores = cohort.get("scores") or {}
+                raw = cohort.get("raw") or {}
+                competence_components = (
+                    scores.get("sustained_competence") or {}
+                ).get("components") or {}
+                lines.append(
+                    f"| {checkpoint.get('tick')} | {cohort_id} | {role} "
+                    f"| {_render_score((scores.get('planning_execution') or {}).get('score'))} "
+                    f"| {_render_score((scores.get('sustained_competence') or {}).get('score'))} "
+                    f"| {_render_score((scores.get('entrepreneurial_agency') or {}).get('score'))} "
+                    f"| {int(raw.get('living_agents') or 0)} "
+                    f"| {_render_score(competence_components.get('endpoint_population_health_pct'))} "
+                    f"| {_render_score(raw.get('living_terminal_economic_value'))} |"
+                )
     if trial.get("quality_flags"):
         lines += [
             "",

@@ -19,7 +19,7 @@ from agent_world.metrics import (
     is_quota_failure_message,
 )
 from agent_world.persistence import IncrementalRunWriter
-from agent_world.run_report import write_report
+from agent_world.run_report import build_report, write_report
 from agent_world.runner import (
     ModelProviderUnavailableError,
     ModelQuotaUnavailableError,
@@ -67,6 +67,7 @@ class SimulationSession:
         report_stem: Path | None = None,
         plan_usage_path: Path | None = None,
         plan_usage_checkpoints: list[dict[str, Any]] | None = None,
+        benchmark_checkpoint_ticks: tuple[int, ...] = (),
         startup_health_check_tick: int | None = 5,
         startup_health_max_failure_rate: float = 0.2,
     ):
@@ -105,6 +106,9 @@ class SimulationSession:
         self.report_stem = report_stem
         self.plan_usage_path = plan_usage_path
         self.plan_usage_checkpoints = list(plan_usage_checkpoints or [])
+        self.benchmark_checkpoint_ticks = tuple(
+            sorted(set(int(tick) for tick in benchmark_checkpoint_ticks))
+        )
         if startup_health_check_tick is not None and startup_health_check_tick < 1:
             raise ValueError("startup health-check tick must be positive or None")
         if not 0 <= startup_health_max_failure_rate <= 1:
@@ -254,6 +258,8 @@ class SimulationSession:
                         )
                 if self._should_capture_plan_usage(self.engine.state.tick, bool(stop_reason)):
                     self._capture_plan_usage(self.engine.state.tick)
+                if self.engine.state.tick in self.benchmark_checkpoint_ticks:
+                    self._capture_benchmark_checkpoint(self.engine.state.tick)
                 if self.on_tick is not None:
                     self.on_tick(self, events)
                 self.flush()
@@ -492,6 +498,46 @@ class SimulationSession:
                     "summary": summarize_plan_usage(self.plan_usage_checkpoints),
                 },
             )
+
+    def _capture_benchmark_checkpoint(self, tick: int) -> None:
+        if any(
+            event.type == "benchmark_checkpoint"
+            and (event.data or {}).get("tick") == tick
+            for event in self.engine.state.events
+        ):
+            return
+        report = build_report(
+            [event.to_dict() for event in self.engine.state.events],
+            self.engine.snapshot(),
+            self.runtime.usage_records(),
+            target_ticks=tick,
+        )
+        benchmark = report.get("benchmarks") or {}
+        cohorts = {
+            cohort_id: {
+                "brain": cohort.get("brain"),
+                "model": cohort.get("model"),
+                "reasoning_effort": cohort.get("reasoning_effort"),
+                "provider": cohort.get("provider"),
+                "raw": cohort.get("raw") or {},
+                "scores": cohort.get("scores") or {},
+            }
+            for cohort_id, cohort in (benchmark.get("cohorts") or {}).items()
+        }
+        self.engine.log_event(
+            "benchmark_checkpoint",
+            message=f"Captured benchmark score trajectory at tick {tick}.",
+            data={
+                "schema_version": 1,
+                "suite_id": benchmark.get("suite_id"),
+                "protocol_id": (benchmark.get("protocol") or {}).get("id"),
+                "tick": tick,
+                "target_ticks": self.target_ticks,
+                "score_horizon_ticks": tick,
+                "cohorts": cohorts,
+            },
+            scope="private",
+        )
 
     def _should_capture_plan_usage(self, tick: int, stopping: bool) -> bool:
         interval = max(0, int(os.environ.get("CODEX_PLAN_SNAPSHOT_INTERVAL_TICKS", "0")))

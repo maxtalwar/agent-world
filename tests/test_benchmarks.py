@@ -29,8 +29,8 @@ def _protocol_report(seed: int, source: str) -> dict:
         "source": source,
         "run": {
             "completed": True,
-            "final_tick": 40,
-            "target_ticks": 40,
+            "final_tick": 50,
+            "target_ticks": 50,
         },
         "config": {
             "seed": seed,
@@ -78,7 +78,7 @@ def _protocol_report(seed: int, source: str) -> dict:
         for agent_id in agents
     ]
     snapshot = {
-        "tick": 40,
+        "tick": 50,
         "agents": {
             agent_id: {
                 "alive": True,
@@ -113,7 +113,7 @@ class BenchmarkTests(unittest.TestCase):
         _apply_benchmark_protocol(args)
 
         self.assertEqual(args.seed, 11)
-        self.assertEqual(args.ticks, 40)
+        self.assertEqual(args.ticks, 50)
         self.assertEqual(args.agents, 10)
         self.assertEqual(args.preset, "organic-generalists")
         self.assertEqual(args.reasoning_effort, "medium")
@@ -127,10 +127,10 @@ class BenchmarkTests(unittest.TestCase):
             brain="codex",
             sequential_decisions=False,
             seed=11,
-            ticks=50,
+            ticks=40,
         )
 
-        with self.assertRaisesRegex(ValueError, "requires --ticks=40"):
+        with self.assertRaisesRegex(ValueError, "requires --ticks=50"):
             _apply_benchmark_protocol(args)
 
     def test_scores_use_frozen_formulas(self) -> None:
@@ -281,7 +281,7 @@ class BenchmarkTests(unittest.TestCase):
             "sustained_competence"
         ]["components"]
 
-        self.assertEqual(components["survival_exposure_pct"], 50.0)
+        self.assertEqual(components["survival_exposure_pct"], 40.0)
 
     def test_declared_standard_trial_is_protocol_compliant(self) -> None:
         report = _protocol_report(11, "seed-11")

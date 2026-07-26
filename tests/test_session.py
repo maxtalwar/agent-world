@@ -4,6 +4,11 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from agent_world.benchmarks import (
+    BENCHMARK_DIAGNOSTIC_TICKS,
+    BENCHMARK_PROTOCOL_ID,
+    benchmark_code_fingerprint,
+)
 from agent_world.brain_factory import BrainSpec, PopulationGroup, PopulationSpec
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.models import AgentDecision, WorldConfig
@@ -60,6 +65,72 @@ class SimulationSessionTests(unittest.TestCase):
         self.assertEqual(result.status, "stopped")
         self.assertEqual(result.stop_reason, "stop_requested")
         self.assertEqual(result.final_tick, 2)
+
+    def test_session_persists_benchmark_score_trajectory_in_event_log(self) -> None:
+        class WaitBrain:
+            def decide(self, _observation):
+                return AgentDecision(intent="wait", actions=[{"type": "wait"}])
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            engine = WorldEngine.create(WorldConfig(seed=51), agent_names=["A1"])
+            session = SimulationSession(
+                engine=engine,
+                brain_spec=BrainSpec.resolve("survival"),
+                runtime=BrainRuntime(),
+                writer=IncrementalRunWriter(
+                    root / "run.jsonl",
+                    root / "run-snapshot.json",
+                    fsync=False,
+                ),
+                target_ticks=50,
+                brains={"agent-1": WaitBrain()},
+                lifecycle_metadata={
+                    "benchmark_protocol": BENCHMARK_PROTOCOL_ID,
+                    "benchmark_code_fingerprint": benchmark_code_fingerprint(),
+                },
+                benchmark_checkpoint_ticks=BENCHMARK_DIAGNOSTIC_TICKS,
+                report_stem=root / "run",
+            )
+
+            result = session.run()
+
+            checkpoints = [
+                event
+                for event in engine.state.events
+                if event.type == "benchmark_checkpoint"
+            ]
+            self.assertEqual(
+                [event.data["tick"] for event in checkpoints],
+                [30, 40, 50],
+            )
+            self.assertTrue(all(event.scope == "private" for event in checkpoints))
+            self.assertEqual(
+                [row["tick"] for row in result.report["benchmarks"]["trajectory"]],
+                [30, 40, 50],
+            )
+            self.assertEqual(
+                [
+                    row["role"]
+                    for row in result.report["benchmarks"]["trajectory"]
+                ],
+                [
+                    "diagnostic_checkpoint",
+                    "diagnostic_checkpoint",
+                    "official_endpoint",
+                ],
+            )
+            self.assertEqual(
+                [
+                    row["cohorts"]["cohort-1"]["raw"]["possible_agent_ticks"]
+                    for row in result.report["benchmarks"]["trajectory"]
+                ],
+                [30, 40, 50],
+            )
+            self.assertIn(
+                "Benchmark score trajectory",
+                (root / "run-report.md").read_text(encoding="utf-8"),
+            )
 
     def test_session_stops_all_entry_points_on_quota_failure(self) -> None:
         class QuotaBrain:

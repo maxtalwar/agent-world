@@ -14,6 +14,7 @@ from typing import Any
 from agent_world.ablation import format_table, run_ablation
 from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.benchmarks import (
+    BENCHMARK_DIAGNOSTIC_TICKS,
     BENCHMARK_PROTOCOL_ID,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
@@ -660,6 +661,11 @@ def _run(args: argparse.Namespace) -> None:
         report_stem=report_stem,
         plan_usage_path=plan_usage_path,
         plan_usage_checkpoints=list(checkpoint_extra.get("plan_usage_checkpoints") or []),
+        benchmark_checkpoint_ticks=(
+            BENCHMARK_DIAGNOSTIC_TICKS
+            if getattr(args, "benchmark_protocol", None) == BENCHMARK_PROTOCOL_ID
+            else ()
+        ),
         startup_health_check_tick=startup_health_check_tick,
         startup_health_max_failure_rate=startup_health_max_failure_rate,
     )
@@ -847,7 +853,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         )
 
     locked = {
-        "ticks": 40,
+        "ticks": 50,
         "agents": 10,
         "preset": "organic-generalists",
         "objective_mode": "neutral",
