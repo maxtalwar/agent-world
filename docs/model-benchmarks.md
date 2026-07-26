@@ -15,6 +15,12 @@ correcting four construct-validity failures:
 Participant v1, v2, and v3 reports remain historical artifacts. They are not
 silently rescored or mixed into a v4 leaderboard.
 
+The [Participant v4 retrospective rescore](participant-v4-retrospective-rescore.md)
+applies the v4 formulas to every preserved Spark and GPT-5.4 ledger without
+re-running a simulation. Those results are diagnostic only: the agent-facing
+mechanics text and the construction share rule both changed after those runs,
+so the behavior was produced by a different world.
+
 Preserved examples include the
 [GPT-5.4 v2 report](gpt-5-4-benchmark.md), the
 [Spark v1/v2 diagnostic](gpt-5-3-codex-spark-benchmark.md), and the
