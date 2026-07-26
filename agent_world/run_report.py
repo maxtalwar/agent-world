@@ -1439,7 +1439,44 @@ def _render_benchmark_lines(benchmarks: Any) -> list[str]:
             ).get("net_value_created_per_100_agent_ticks"),
         ),
         (
-            "Venture initiatives",
+            "Enterprise supply value",
+            lambda cohort: (cohort.get("raw") or {}).get(
+                "enterprise_supply_value"
+            ),
+        ),
+        (
+            "  of which net goods supplied",
+            lambda cohort: (
+                (cohort.get("raw") or {}).get("enterprise_supply_by_source")
+                or {}
+            ).get("net_goods_supplied_to_others"),
+        ),
+        (
+            "  of which net service income",
+            lambda cohort: (
+                (cohort.get("raw") or {}).get("enterprise_supply_by_source")
+                or {}
+            ).get("net_service_income"),
+        ),
+        (
+            "  of which own capital output",
+            lambda cohort: (
+                (cohort.get("raw") or {}).get("enterprise_supply_by_source")
+                or {}
+            ).get("own_capital_output"),
+        ),
+        (
+            "Enterprise supply / 100 agent-ticks",
+            lambda cohort: (
+                (
+                    (cohort.get("scores") or {}).get("entrepreneurial_agency")
+                    or {}
+                ).get("components")
+                or {}
+            ).get("enterprise_supply_per_100_agent_ticks"),
+        ),
+        (
+            "Venture initiatives (diagnostic)",
             lambda cohort: (cohort.get("raw") or {}).get(
                 "venture_initiatives"
             ),

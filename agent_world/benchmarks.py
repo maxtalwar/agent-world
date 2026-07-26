@@ -38,11 +38,25 @@ BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
 # 100 agent-ticks is just above the 4.25 rate in the clean GPT-5.4 v2 reference.
 INITIATIVE_TARGET_PER_100_AGENT_TICKS = 5.0
 NET_VALUE_CREATION_TARGET_PER_100_AGENT_TICKS = 20.0
+# Enterprise supply on the preserved clean ledgers is 0.6 per 100 agent-ticks
+# for the collapsing Spark cohort and 9.4-10.8 for GPT-5.4. Those GPT-5.4
+# figures are almost entirely own-capital output with roughly 5 units of
+# actual commerce, so anchoring at the demonstrated rate would call a
+# near-tradeless economy excellent. Anchoring at 20 places the best observed
+# cohort mid-scale and leaves headroom for one that both builds capital and
+# supplies customers. The scale is uncapped, so there is no ceiling risk.
+ENTERPRISE_SUPPLY_TARGET_PER_100_AGENT_TICKS = 20.0
 TERMINAL_ENDOWMENT_MULTIPLE_TARGET = 3.0
+
+_VALUE_EPSILON = 1e-9
 
 VENTURE_INITIATIVE_EVENTS = frozenset(
     {"offer_trade", "build_started", "create_contract", "set_access_fee"}
 )
+# Coin is the cohort's medium of exchange, not a produced good. Paying for
+# goods must not read as supplying them, so coin flows are excluded from
+# enterprise supply. Coin still counts as wealth in terminal value.
+ENTERPRISE_SUPPLY_EXCLUDED_GOODS = frozenset({"coin"})
 PURPOSEFUL_ACTION_EVENTS = frozenset(
     {
         "move",
@@ -64,7 +78,6 @@ PURPOSEFUL_ACTION_EVENTS = frozenset(
         "retrieve",
         "offer_trade",
         "accept_trade",
-        "reject_trade",
         "create_contract",
         "accept_contract",
         "repay_contract",
@@ -75,9 +88,17 @@ PURPOSEFUL_ACTION_EVENTS = frozenset(
         "build",
         "build_started",
         "contribute",
-        "set_access_fee",
         "claim_dividend",
         "maintain_structure",
+    }
+)
+# Purposeful activity must cost something or move something. These actions are
+# zero-action-point bookkeeping with no material consequence, so counting them
+# would replace v3's all-`wait` exploit with an equally free all-`publish_rule`
+# one. Zero-cost actions that do move goods (accept_trade, repay_contract,
+# claim_dividend) stay in the set above.
+NON_MATERIAL_FREE_ACTION_EVENTS = frozenset(
+    {
         "grant_access",
         "revoke_access",
         "create_group",
@@ -86,6 +107,8 @@ PURPOSEFUL_ACTION_EVENTS = frozenset(
         "leave_group",
         "publish_rule",
         "record_agreement",
+        "reject_trade",
+        "set_access_fee",
     }
 )
 BENCHMARK_FINGERPRINT_FILES = (
@@ -109,10 +132,18 @@ BENCHMARK_FINGERPRINT_FILES = (
 )
 
 
-def _recipe_consistent_accounting_values(economy_mode: str) -> dict[str, int]:
-    """Raise book values until every single-output recipe preserves input value."""
+def _recipe_consistent_accounting_values(economy_mode: str) -> dict[str, float]:
+    """Raise book values until every single-output recipe preserves input value.
 
-    values = dict(ACCOUNTING_VALUES)
+    The output unit value is the exact input total divided by the output
+    quantity. Rounding the unit value up instead would multiply the rounding
+    error by the output quantity, so a multi-output recipe such as minting
+    eight coins from one ingot would manufacture accounting value on every
+    cycle. Units are analysis quantities, never prices shown to agents, so
+    they are free to be fractional.
+    """
+
+    values = {str(item): float(value) for item, value in ACCOUNTING_VALUES.items()}
     recipes = recipes_for_mode(economy_mode)
     for _ in range(max(1, len(recipes) + 1)):
         changed = False
@@ -126,11 +157,11 @@ def _recipe_consistent_accounting_values(economy_mode: str) -> dict[str, int]:
                 continue
             output_item, output_quantity = next(iter(outputs.items()))
             input_value = sum(
-                values.get(str(item), 1) * max(0, int(quantity or 0))
+                values.get(str(item), 1.0) * max(0, int(quantity or 0))
                 for item, quantity in recipe.inputs.items()
             )
-            minimum_unit_value = math.ceil(input_value / output_quantity)
-            if minimum_unit_value > values.get(output_item, 1):
+            minimum_unit_value = input_value / output_quantity
+            if minimum_unit_value > values.get(output_item, 1.0) + _VALUE_EPSILON:
                 values[output_item] = minimum_unit_value
                 changed = True
         if not changed:
@@ -234,15 +265,21 @@ def benchmark_protocol() -> dict[str, Any]:
         },
         "targets": {
             "terminal_endowment_multiple": TERMINAL_ENDOWMENT_MULTIPLE_TARGET,
-            "venture_initiatives_per_100_agent_ticks": INITIATIVE_TARGET_PER_100_AGENT_TICKS,
+            "enterprise_supply_per_100_agent_ticks": ENTERPRISE_SUPPLY_TARGET_PER_100_AGENT_TICKS,
             "net_value_created_per_100_agent_ticks": NET_VALUE_CREATION_TARGET_PER_100_AGENT_TICKS,
+            "venture_initiatives_per_100_agent_ticks": INITIATIVE_TARGET_PER_100_AGENT_TICKS,
         },
         "accounting_values": {
             "method": (
-                "Start from the world book-value table and raise output values "
-                "until every single-output recipe is worth at least its inputs."
+                "Start from the world book-value table and raise each "
+                "single-output recipe's output to exactly its input total "
+                "divided by the output quantity. Values are fractional so no "
+                "recipe can manufacture accounting value through rounding."
             ),
-            "values": dict(sorted(BENCHMARK_ACCOUNTING_VALUES.items())),
+            "values": {
+                item: round(value, 6)
+                for item, value in sorted(BENCHMARK_ACCOUNTING_VALUES.items())
+            },
         },
         "aggregation": (
             "For a provisional result, apply the frozen formulas to the clean "
@@ -433,7 +470,23 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
         if net_value_creation_rate is not None
         else None
     )
-    entrepreneurship = _geometric_mean((initiative_score, value_creation_score))
+    enterprise_supply_rate = (
+        100.0 * float(raw.get("enterprise_supply_value") or 0) / possible_ticks
+        if possible_ticks > 0
+        else None
+    )
+    enterprise_supply_score = (
+        _nonnegative_score(
+            100.0
+            * enterprise_supply_rate
+            / ENTERPRISE_SUPPLY_TARGET_PER_100_AGENT_TICKS
+        )
+        if enterprise_supply_rate is not None
+        else None
+    )
+    entrepreneurship = _geometric_mean(
+        (enterprise_supply_score, value_creation_score)
+    )
 
     return {
         "effective_execution": {
@@ -486,17 +539,31 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
         "entrepreneurial_agency": {
             "score": entrepreneurship,
             "components": {
-                "venture_initiatives": raw.get("venture_initiatives", 0),
-                "venture_initiatives_per_100_agent_ticks": _rounded(initiative_rate),
-                "initiative_score": initiative_score,
+                "enterprise_supply_value": raw.get("enterprise_supply_value", 0),
+                "enterprise_supply_by_source": raw.get(
+                    "enterprise_supply_by_source", {}
+                ),
+                "enterprise_supply_per_100_agent_ticks": _rounded(
+                    enterprise_supply_rate
+                ),
+                "enterprise_supply_score": enterprise_supply_score,
                 "net_value_created": _rounded(net_value_created),
                 "net_value_created_per_100_agent_ticks": _rounded(
                     net_value_creation_rate
                 ),
                 "value_creation_score": value_creation_score,
+                "venture_initiatives": raw.get("venture_initiatives", 0),
+                "venture_initiatives_per_100_agent_ticks": _rounded(initiative_rate),
+                "initiative_score": initiative_score,
+                "initiative_note": (
+                    "Venture initiatives are a diagnostic in the finalized v4 "
+                    "scoring. They count attempts, several of which cost no "
+                    "action points, so they are too cheap to saturate to gate "
+                    "the score."
+                ),
             },
             "formula": (
-                "geometric_mean(initiative rate vs 5/100 agent-ticks, "
+                "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, "
                 "positive living-accessible net value creation rate vs "
                 "20/100 agent-ticks); 100 is the "
                 "reference target, not a maximum"
@@ -862,6 +929,7 @@ def _cohort_raw_metrics(
             )
         )
     )
+    enterprise = _enterprise_supply(events, members)
     purposeful_agent_ticks = {
         (int(event.get("tick") or 0), str(event.get("actor_id") or ""))
         for event in events
@@ -919,6 +987,8 @@ def _cohort_raw_metrics(
         "purposeful_agent_ticks": len(purposeful_agent_ticks),
         "venture_initiatives": sum(initiative_counts.values()),
         "venture_initiatives_by_type": dict(sorted(initiative_counts.items())),
+        "enterprise_supply_value": _rounded(enterprise["total"]),
+        "enterprise_supply_by_source": enterprise["by_source"],
     }
 
 
@@ -1137,23 +1207,144 @@ def _attributed_owner_value(
     return value * matching / len(group_members)
 
 
-def _initial_endowment_value(config: dict[str, Any]) -> int:
+def _enterprise_supply(
+    events: list[dict[str, Any]],
+    members: set[str],
+) -> dict[str, Any]:
+    """Measure enterprise activity that survives cohort-level netting.
+
+    Terminal value is a cohort balance sheet, so one member selling to another
+    cannot move it. That does not make intra-cohort commerce worthless: it
+    makes the balance sheet the wrong instrument. Enterprise supply instead
+    measures directional flow, which is what distinguishes a producer with
+    customers from a subsistence forager.
+
+    Each component nets an agent's outflows against its inflows before any
+    credit is given, so value that returns to its origin scores nothing. A
+    wash trade cancels exactly. A circular A->B->C->A flow also cancels,
+    because netting is per agent across all counterparties rather than per
+    trading pair. Only a persistent directional surplus - goods produced in
+    excess of what was consumed and then supplied to others - can score.
+    """
+
+    exported: dict[str, Counter] = {}
+    imported: dict[str, Counter] = {}
+    service_in: Counter = Counter()
+    service_out: Counter = Counter()
+    capital_output = 0.0
+
+    def _flow(sender: str, receiver: str, items: Any) -> None:
+        if not isinstance(items, dict):
+            return
+        for item, quantity in items.items():
+            amount = max(0, int(quantity or 0))
+            if amount <= 0:
+                continue
+            if sender in members:
+                exported.setdefault(sender, Counter())[str(item)] += amount
+            if receiver in members:
+                imported.setdefault(receiver, Counter())[str(item)] += amount
+
+    for event in events:
+        event_type = event.get("type")
+        data = event.get("data") or {}
+        if event_type == "accept_trade":
+            trade = data.get("trade") or {}
+            transaction = data.get("transaction") or {}
+            offerer = str(trade.get("from_agent") or "")
+            acceptor = str(
+                trade.get("accepted_by")
+                or transaction.get("buyer_id")
+                or event.get("actor_id")
+                or ""
+            )
+            # The transaction block is per accepted lot; the trade block is the
+            # whole standing offer and would overcount a multi-lot trade.
+            give = transaction.get("give", trade.get("give"))
+            receive = transaction.get("receive", trade.get("receive"))
+            _flow(offerer, acceptor, give)
+            _flow(acceptor, offerer, receive)
+        elif event_type == "gift":
+            _flow(
+                str(event.get("actor_id") or ""),
+                str(data.get("to") or ""),
+                data.get("items"),
+            )
+        elif event_type == "pay_access_fee":
+            payer = str(event.get("actor_id") or "")
+            owner = next(
+                (str(value) for value in event.get("recipients") or []),
+                "",
+            )
+            fee = _book_value(data.get("fee"))
+            if owner in members:
+                service_in[owner] += fee
+            if payer in members:
+                service_out[payer] += fee
+        elif event_type in {"fulfill_contract", "repay_contract"}:
+            contract = data.get("contract") or data
+            premium = _book_value(contract.get("repayment")) - _book_value(
+                contract.get("advance")
+            )
+            if premium <= 0:
+                continue
+            lender = str(contract.get("lender_id") or "")
+            borrower = str(contract.get("borrower_id") or "")
+            if lender in members:
+                service_in[lender] += premium
+            if borrower in members:
+                service_out[borrower] += premium
+        elif event_type == "harvest" and data.get("improved_land") is True:
+            actor = str(event.get("actor_id") or "")
+            if actor in members:
+                capital_output += BENCHMARK_ACCOUNTING_VALUES.get(
+                    str(data.get("resource") or ""), 1.0
+                ) * max(0, int(data.get("quantity") or 0))
+
+    goods_supplied = 0.0
+    for agent_id in members:
+        agent_exports = exported.get(agent_id) or Counter()
+        agent_imports = imported.get(agent_id) or Counter()
+        for item, amount in agent_exports.items():
+            if item in ENTERPRISE_SUPPLY_EXCLUDED_GOODS:
+                continue
+            net = amount - agent_imports.get(item, 0)
+            if net > 0:
+                net_value = BENCHMARK_ACCOUNTING_VALUES.get(item, 1.0) * net
+                goods_supplied += net_value
+
+    service_income = sum(
+        max(0.0, float(service_in.get(agent_id, 0)) - float(service_out.get(agent_id, 0)))
+        for agent_id in members
+    )
+    by_source = {
+        "net_goods_supplied_to_others": _rounded(goods_supplied),
+        "net_service_income": _rounded(service_income),
+        "own_capital_output": _rounded(capital_output),
+    }
+    return {
+        "total": goods_supplied + service_income + capital_output,
+        "by_source": by_source,
+    }
+
+
+def _initial_endowment_value(config: dict[str, Any]) -> float:
     inventory = {"food": 1, "water": 2}
     if config.get("economy_mode") == "organic":
         inventory["coin"] = 4
     return _book_value(inventory)
 
 
-def _structure_replacement_value(structure_type: str, economy_mode: str) -> int:
+def _structure_replacement_value(structure_type: str, economy_mode: str) -> float:
     recipe = recipes_for_mode(economy_mode).get(structure_type)
-    return _book_value(getattr(recipe, "inputs", {})) if recipe is not None else 0
+    return _book_value(getattr(recipe, "inputs", {})) if recipe is not None else 0.0
 
 
-def _book_value(items: Any) -> int:
+def _book_value(items: Any) -> float:
     if not isinstance(items, dict):
-        return 0
+        return 0.0
     return sum(
-        BENCHMARK_ACCOUNTING_VALUES.get(str(item), 1)
+        BENCHMARK_ACCOUNTING_VALUES.get(str(item), 1.0)
         * max(0, int(quantity or 0))
         for item, quantity in items.items()
     )

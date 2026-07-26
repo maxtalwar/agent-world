@@ -10,8 +10,11 @@ from agent_world.benchmarks import (
     BENCHMARK_SEEDS,
     BENCHMARK_SCORING_REVISION,
     BENCHMARK_SUITE_ID,
+    NON_MATERIAL_FREE_ACTION_EVENTS,
+    PURPOSEFUL_ACTION_EVENTS,
     _benchmark_trajectory,
     _cohort_raw_metrics,
+    _enterprise_supply,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
     benchmark_protocol,
@@ -213,6 +216,7 @@ class BenchmarkTests(unittest.TestCase):
                 "terminal_economic_value": 120,
                 "living_terminal_economic_value": 120,
                 "venture_initiatives": 10,
+                "enterprise_supply_value": 40,
             }
         )
 
@@ -222,6 +226,7 @@ class BenchmarkTests(unittest.TestCase):
             (63.25 * ((90 * 60) ** 0.5) * 50) ** (1 / 3),
             places=2,
         )
+        # supply 40/100 agent-ticks = 200; net value (120-80)=40/100 = 200.
         self.assertEqual(scores["entrepreneurial_agency"]["score"], 200.0)
 
     def test_wait_only_policy_cannot_earn_execution_credit(self) -> None:
@@ -304,22 +309,29 @@ class BenchmarkTests(unittest.TestCase):
 
         scores = score_benchmark_counts(raw)
         entrepreneurship = scores["entrepreneurial_agency"]
-        self.assertEqual(raw["initial_endowment_value"], 32)
-        self.assertEqual(raw["living_terminal_economic_value"], 32.0)
+        self.assertAlmostEqual(raw["initial_endowment_value"], 27.0)
+        # The fixture's completed farm is worth exactly the materials it
+        # consumed, so the only "growth" is the fixture handing the cohort a
+        # structure. The 10,000-unit internal trade contributes nothing.
+        self.assertAlmostEqual(raw["living_terminal_economic_value"], 28.25)
         self.assertEqual(raw["venture_initiatives"], 2)
+        self.assertEqual(raw["enterprise_supply_value"], 0.0)
         self.assertEqual(
-            entrepreneurship["components"]["value_creation_score"],
+            entrepreneurship["components"]["enterprise_supply_score"],
             0.0,
         )
         self.assertEqual(entrepreneurship["score"], 0.0)
 
     def test_recipe_consistent_values_do_not_penalize_production_chains(self) -> None:
-        self.assertGreaterEqual(BENCHMARK_ACCOUNTING_VALUES["ingot"], 19)
-        self.assertGreaterEqual(BENCHMARK_ACCOUNTING_VALUES["coin"] * 8, 19)
-        self.assertGreaterEqual(BENCHMARK_ACCOUNTING_VALUES["advanced_tool"], 43)
+        self.assertAlmostEqual(BENCHMARK_ACCOUNTING_VALUES["ingot"], 19)
+        self.assertAlmostEqual(BENCHMARK_ACCOUNTING_VALUES["advanced_tool"], 43)
+        # Minting must be exactly value preserving. Rounding the per-unit coin
+        # value up would multiply the error by the eight-coin output and let a
+        # cohort print accounting value on every ore -> ingot -> coin cycle.
+        self.assertAlmostEqual(BENCHMARK_ACCOUNTING_VALUES["coin"] * 8, 19)
         report = _protocol_report(11, "recipe-values")
         raw = report["benchmarks"]["cohorts"]["cohort-1"]["raw"]
-        self.assertEqual(raw["initial_endowment_value"], 160)
+        self.assertAlmostEqual(raw["initial_endowment_value"], 135.0)
 
     def test_single_action_completed_build_counts_as_an_initiative(self) -> None:
         raw = _cohort_raw_metrics(
@@ -363,6 +375,176 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(raw["venture_initiatives"], 1)
         self.assertEqual(raw["purposeful_agent_ticks"], 1)
 
+    def _trade(self, offerer: str, acceptor: str, give: dict, receive: dict) -> dict:
+        return {
+            "type": "accept_trade",
+            "tick": 0,
+            "actor_id": acceptor,
+            "data": {
+                "trade": {"from_agent": offerer, "accepted_by": acceptor},
+                "transaction": {"give": give, "receive": receive},
+            },
+        }
+
+    def test_free_bookkeeping_actions_cannot_earn_purposeful_activity(self) -> None:
+        """An all-`publish_rule` policy must be as worthless as an all-`wait` one."""
+
+        from agent_world.rules import FREE_ACTION_TYPES
+
+        self.assertFalse(PURPOSEFUL_ACTION_EVENTS & NON_MATERIAL_FREE_ACTION_EVENTS)
+        # Every zero-action-point event that is still counted must move goods.
+        self.assertEqual(
+            PURPOSEFUL_ACTION_EVENTS & FREE_ACTION_TYPES,
+            {
+                "accept_trade",
+                "accept_contract",
+                "repay_contract",
+                "claim_dividend",
+            },
+        )
+
+        raw = _cohort_raw_metrics(
+            events=[
+                {
+                    "type": "agent_response",
+                    "tick": tick,
+                    "actor_id": "agent-1",
+                    "data": {"actions": [{"type": "publish_rule"}]},
+                }
+                for tick in range(4)
+            ]
+            + [
+                {"type": event, "tick": tick, "actor_id": "agent-1", "data": {}}
+                for tick, event in enumerate(
+                    ["publish_rule", "create_group", "leave_group", "revoke_access"]
+                )
+            ],
+            snapshot={"agents": {"agent-1": {"alive": True, "health": 100}}},
+            config={"economy_mode": "organic"},
+            member_ids=["agent-1"],
+            final_tick=4,
+            target_ticks=4,
+        )
+
+        self.assertEqual(raw["purposeful_agent_ticks"], 0)
+        scores = score_benchmark_counts(raw)
+        self.assertEqual(
+            scores["effective_execution"]["components"]["action_feasibility_pct"],
+            100.0,
+        )
+        self.assertEqual(scores["effective_execution"]["score"], 0.0)
+
+    def test_minting_chain_cannot_manufacture_accounting_value(self) -> None:
+        """ore -> ingot -> coins must conserve accounting units exactly."""
+
+        values = BENCHMARK_ACCOUNTING_VALUES
+        smelt_inputs = 2 * values["ore"] + values["wood"]
+        self.assertAlmostEqual(smelt_inputs, values["ingot"])
+        self.assertAlmostEqual(values["ingot"], 8 * values["coin"])
+        self.assertAlmostEqual(smelt_inputs, 8 * values["coin"])
+
+    def test_wash_trading_creates_no_enterprise_supply(self) -> None:
+        """Value that returns to its origin must score nothing."""
+
+        # Straight round trip between a pair.
+        pairwise = _enterprise_supply(
+            [
+                self._trade("agent-1", "agent-2", {"wood": 5}, {"food": 5}),
+                self._trade("agent-2", "agent-1", {"wood": 5}, {"food": 5}),
+            ],
+            {"agent-1", "agent-2"},
+        )
+        self.assertEqual(pairwise["total"], 0.0)
+
+        # Circular flow, which per-pair netting would miss.
+        circular = _enterprise_supply(
+            [
+                self._trade("agent-1", "agent-2", {"wood": 3}, {}),
+                self._trade("agent-2", "agent-3", {"wood": 3}, {}),
+                self._trade("agent-3", "agent-1", {"wood": 3}, {}),
+            ],
+            {"agent-1", "agent-2", "agent-3"},
+        )
+        self.assertEqual(circular["total"], 0.0)
+
+    def test_producer_selling_to_same_model_peers_scores_enterprise_supply(self) -> None:
+        """A cohort member with customers is an entrepreneur even when the
+        customers run the same model and cohort net worth does not move."""
+
+        supply = _enterprise_supply(
+            [
+                {
+                    "type": "harvest",
+                    "tick": 1,
+                    "actor_id": "agent-1",
+                    "data": {
+                        "improved_land": True,
+                        "resource": "food",
+                        "quantity": 6,
+                    },
+                },
+                self._trade("agent-1", "agent-2", {"food": 3}, {"coin": 8}),
+                self._trade("agent-1", "agent-3", {"food": 2}, {"coin": 6}),
+            ],
+            {"agent-1", "agent-2", "agent-3"},
+        )
+
+        by_source = supply["by_source"]
+        self.assertEqual(by_source["own_capital_output"], 12.0)
+        # Five food supplied outward at two units each; coin paid back is
+        # excluded so buyers are not credited for supplying currency.
+        self.assertEqual(by_source["net_goods_supplied_to_others"], 10.0)
+        self.assertEqual(supply["total"], 22.0)
+
+    def test_access_fee_wash_between_members_nets_out(self) -> None:
+        events = [
+            {
+                "type": "pay_access_fee",
+                "tick": 0,
+                "actor_id": "agent-1",
+                "recipients": ["agent-2"],
+                "data": {"fee": {"food": 2}},
+            },
+            {
+                "type": "pay_access_fee",
+                "tick": 1,
+                "actor_id": "agent-2",
+                "recipients": ["agent-1"],
+                "data": {"fee": {"food": 2}},
+            },
+        ]
+        self.assertEqual(
+            _enterprise_supply(events, {"agent-1", "agent-2"})["total"], 0.0
+        )
+        # One-directional fee income is real service revenue.
+        self.assertEqual(
+            _enterprise_supply(events[:1], {"agent-1", "agent-2"})["by_source"][
+                "net_service_income"
+            ],
+            4.0,
+        )
+
+    def test_entrepreneurship_is_not_a_restatement_of_terminal_wealth(self) -> None:
+        """Two cohorts with identical wealth must separate on enterprise."""
+
+        base = {
+            "submitted_actions": 100,
+            "submitted_actions_excluding_contention": 100,
+            "possible_agent_ticks": 100,
+            "initial_endowment_value": 80,
+            "living_terminal_economic_value": 120,
+        }
+        forager = score_benchmark_counts({**base, "enterprise_supply_value": 0})
+        trader = score_benchmark_counts({**base, "enterprise_supply_value": 20})
+
+        self.assertEqual(
+            forager["sustained_competence"]["components"]["material_outcome_pct"],
+            trader["sustained_competence"]["components"]["material_outcome_pct"],
+        )
+        self.assertEqual(forager["entrepreneurial_agency"]["score"], 0.0)
+        # geometric_mean(supply 100, value creation 200)
+        self.assertEqual(trader["entrepreneurial_agency"]["score"], 141.42)
+
     def test_entrepreneurship_score_has_no_upper_bound(self) -> None:
         scores = score_benchmark_counts(
             {
@@ -372,11 +554,14 @@ class BenchmarkTests(unittest.TestCase):
                 "initial_endowment_value": 80,
                 "living_terminal_economic_value": 160,
                 "venture_initiatives": 20,
+                "enterprise_supply_value": 80,
             }
         )
 
         entrepreneurship = scores["entrepreneurial_agency"]
-        self.assertEqual(entrepreneurship["components"]["initiative_score"], 400.0)
+        self.assertEqual(
+            entrepreneurship["components"]["enterprise_supply_score"], 400.0
+        )
         self.assertEqual(
             entrepreneurship["components"]["value_creation_score"],
             400.0,

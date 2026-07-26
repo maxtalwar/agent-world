@@ -2,10 +2,15 @@
 
 Agent World Participant v4 is the current standardized model benchmark suite.
 It keeps the deterministic protocol and evidence safeguards from v3 while
-correcting two construct-validity failures:
+correcting four construct-validity failures:
 
-- an all-`wait` policy can no longer receive a perfect execution score;
-- internal transfers and structure input cost no longer count as value created.
+- an all-`wait` policy can no longer receive a perfect execution score, and
+  neither can an all-`publish_rule` policy built from zero-cost actions;
+- internal transfers and structure input cost no longer count as value created;
+- entrepreneurial agency is no longer a restatement of terminal wealth: it
+  scores enterprise supply, which sees a member selling to same-model peers;
+- benchmark accounting units conserve value across every production chain, so
+  no recipe can mint measured wealth through rounding.
 
 Participant v1, v2, and v3 reports remain historical artifacts. They are not
 silently rescored or mixed into a v4 leaderboard.
@@ -116,8 +121,17 @@ than becoming model mistakes.
 
 Purposeful activity counts at most once per agent-tick. Successful movement,
 resource work, consumption, crafting, construction, ownership, exchange,
-contracts, gifts, group administration, storage, maintenance, and access
-actions count. `wait`, `inspect`, and communication-only ticks do not.
+contracts, gifts, storage, and maintenance count. `wait`, `inspect`, and
+communication-only ticks do not.
+
+Neither do zero-action-point bookkeeping actions: `create_group`, `join_group`,
+`leave_group`, `invite_member`, `publish_rule`, `record_agreement`,
+`grant_access`, `revoke_access`, `reject_trade`, and `set_access_fee`. Counting
+them would replace the all-`wait` exploit with an equally free
+all-`publish_rule` one, since a model could emit one per tick at no cost. Free
+actions that do move goods - `accept_trade`, `accept_contract`,
+`repay_contract`, `claim_dividend` - still count. The rule is that purposeful
+activity must cost something or move something.
 
 This term prevents action spam from gaining extra activity credit and prevents
 an all-`wait` policy from scoring 100. Waiting can still be strategically
@@ -149,53 +163,80 @@ separately.
 
 ### 3. Entrepreneurial agency
 
-Participant v4 uses a conservative definition appropriate to the current
-simulation:
-
 ```text
-geometric mean(venture initiative score, net value creation score)
+geometric mean(enterprise supply score, net value creation score)
 ```
 
-Venture initiatives are successful trade offers, construction starts,
-credit-contract offers, and access-fee policies. The initiative component
-reaches 100 at five initiatives per 100 possible agent-ticks. That anchor is
-close to demonstrated strong-model behavior rather than v3's unreachable
-20-per-100 scale.
+Both halves are required, matching the two halves of the plain-language idea:
+you built something that serves others, and the economy actually grew.
 
-Net value created is:
+**Net value created** is the money-making half:
 
 ```text
 max(0, living-accessible terminal value - starting endowment)
 ```
 
-normalized per 100 possible agent-ticks. Its component reaches 100 at 20 value
-per 100 agent-ticks and remains uncapped above that target.
+normalized per 100 possible agent-ticks, reaching 100 at 20 value per 100
+agent-ticks and uncapped above it.
 
-The anchors were sanity-checked against preserved clean GPT-5.4 evidence rather
-than guessed in isolation. Its historical v2 initiative rate was 4.25 per 100
-agent-ticks, while applying the v4 accounting diagnostic to its two preserved
-v3 event ledgers yields net-value rates of 30.4 and 17.0. Those runs are not v4
-benchmark results; they only establish that targets of 5 and 20 are in a
-demonstrated, interpretable range.
+**Enterprise supply** is the business-building half. A cohort balance sheet
+cannot show one member selling to another, but that is a limitation of the
+instrument, not evidence that intra-cohort commerce is worthless. A farmer who
+builds a plot and supplies nine neighbours is an entrepreneur even when every
+neighbour runs the same model. Enterprise supply measures directional flow
+rather than net worth, so it sees exactly that:
 
-This deliberately measures cohort outcomes rather than pretending to identify
-the private profit of each homogeneous agent:
+- **net goods supplied to others** - for each agent and each good, outflows to
+  other agents minus inflows of the same good, counting only the positive
+  remainder;
+- **net service income** - access fees and contract premiums received, minus
+  those paid;
+- **own capital output** - goods produced from improved land the cohort built.
 
-- trading goods among cohort members does not change cohort value;
-- access fees and contract repayments within the cohort are transfers;
-- completing a structure converts inputs into a same-value asset;
-- a structure contributes only when its production or services ultimately
-  improve the cohort's living-accessible terminal outcome;
-- a pure foraging cohort has no venture initiatives and therefore receives
-  zero entrepreneurial agency even if it accumulates materials;
-- wash trading has initiatives but no net value creation and therefore also
-  receives zero.
+Coin is excluded from the goods term. It is the medium of exchange, so paying
+for food must not read as supplying it. Coin still counts as wealth in terminal
+value.
 
-The score rewards building, exchange, credit, priced access, and other venture
-attempts when they coexist with a real economic outcome. It does not claim to
-isolate causal gains from trade. That would require heterogeneous preferences,
-external market counterparties, or a validated utility counterfactual that the
-current simulation does not provide.
+Netting is per agent across all counterparties, not per trading pair, so value
+that returns to its origin scores nothing:
+
+- a straight round trip between two agents cancels exactly;
+- a circular A->B->C->A flow also cancels, which per-pair netting would miss;
+- reciprocal access fees between members cancel;
+- completing a structure converts inputs into a same-value asset, so building
+  alone scores nothing until the structure produces.
+
+Only a persistent directional surplus - goods produced beyond what the producer
+consumed, then supplied to others - can score. The component reaches 100 at 20
+supply units per 100 possible agent-ticks and is uncapped.
+
+Applied to the preserved clean ledgers, enterprise supply is 0.6 per 100
+agent-ticks for the collapsing Spark cohort and 9.4 to 10.8 for GPT-5.4. The
+GPT-5.4 figure is almost entirely own capital output with roughly 5 units of
+actual commerce, so anchoring at the demonstrated rate would call a nearly
+tradeless economy excellent. The 20-per-100 anchor places the best observed
+cohort mid-scale and leaves headroom for a cohort that both builds capital and
+supplies customers. Those runs are not v4 results; they only establish that the
+anchor sits in a demonstrated, interpretable range.
+
+**Venture initiatives are a diagnostic, not a scored component.** They count
+attempts, and several qualifying actions - `set_access_fee` among them - cost
+zero action points, so the initiative rate is too cheap to saturate to gate the
+score. Enterprise supply subsumes the honest part of the signal: commerce that
+happened rather than commerce that was proposed. Initiatives remain in every
+report as evidence of intent.
+
+Two consequences worth stating plainly:
+
+- a pure foraging cohort accumulates value but supplies nobody, so it scores
+  zero;
+- a wash-trading cohort supplies nobody in net terms, so it also scores zero.
+
+What the score still does not capture is pure arbitrage. A middleman who buys
+low from one cohort member and sells high to another has zero net supply, and
+their gain is a transfer from peers rather than new value. Measuring that
+fairly would need heterogeneous preferences, external counterparties, or a
+validated utility counterfactual that the current simulation does not provide.
 
 ### Economic productivity diagnostic
 
@@ -208,12 +249,18 @@ visible without allowing it to overwhelm sustained competence.
 
 V3 used the offline metrics table directly, which made some productive
 transformations look like wealth destruction. V4 starts with that accounting
-table and raises any single-output recipe's result until its accounting total
-is at least its inputs.
+table and raises each single-output recipe's result to exactly its input total
+divided by the output quantity.
+
+Units are fractional by design. Rounding the per-unit value up would multiply
+the rounding error by the output quantity, so minting eight coins from one
+ingot would manufacture accounting value on every cycle - the same defect as
+wash trading, relocated into the crafting layer. Exact division makes every
+transformation conserve units.
 
 | Resource | V4 accounting units |
 |---|---:|
-| coin | 3 |
+| coin | 2.375 |
 | water | 1 |
 | food | 2 |
 | fiber | 2 |
@@ -224,9 +271,10 @@ is at least its inputs.
 | tool | 12 |
 | advanced tool | 43 |
 
-Consequently, smelting two ore plus one wood into an ingot preserves at least
-19 accounting units, minting one ingot into eight coins preserves at least 24,
-and crafting an advanced tool preserves its 43-unit input bundle. These units
+Consequently, smelting two ore plus one wood into an ingot preserves exactly
+19 accounting units, minting one ingot into eight coins preserves exactly 19,
+and crafting an advanced tool preserves its 43-unit input bundle. No production
+chain gains or loses measured wealth through the accounting itself. These units
 exist only in offline metrics and benchmark scoring. The world engine does not
 use or expose them as prices: agents choose trade bundles, and accepted bundles
 are the only observed market terms.

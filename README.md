@@ -308,10 +308,12 @@ Agent World Participant v4 provides three versioned scores: effective execution
 and sustained competence are bounded from 0 to 100, while entrepreneurial
 agency is an open-ended index where 100 is the frozen reference target rather
 than a ceiling. Effective execution combines action feasibility with
-meaningful successful activity, so an all-`wait` policy cannot score 100.
-Entrepreneurship combines venture initiatives with actual net
+meaningful successful activity, so neither an all-`wait` policy nor an
+all-`publish_rule` policy of zero-cost actions can score 100.
+Entrepreneurship combines enterprise supply with actual net
 living-accessible value creation, so internal transfers and structure input
-cost are not mistaken for new value. Any run receives diagnostic cohort
+cost are not mistaken for new value, while a cohort member that produces goods
+and supplies them to same-model peers is still credited. Any run receives diagnostic cohort
 scores. A usage-constrained model can earn a provisional benchmark from one
 clean, complete 50-tick seed-11 trial. Replicated certification requires clean
 trials on seeds 11 and 41. Seeds 73, 101, and 137 are optional extended
