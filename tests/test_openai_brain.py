@@ -68,6 +68,22 @@ class MalformedOpenAIBrain(OpenAIBrain):
         }
 
 
+class MissingOutputOpenAIBrain(OpenAIBrain):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.api_style = "responses"
+
+    def _post_json_with_retries(self, path, payload):
+        return {
+            "status": "incomplete",
+            "output": [],
+            "usage": {
+                "prompt_tokens": 100,
+                "completion_tokens": 10,
+            },
+        }
+
+
 class OpenAIBrainTests(unittest.TestCase):
     def test_extract_output_text_from_output_text(self) -> None:
         response = {"output_text": '{"intent":"wait","actions":[],"messages":[],"memory_updates":[]}'}
@@ -150,11 +166,43 @@ class OpenAIBrainTests(unittest.TestCase):
         decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
 
         self.assertEqual(decision.actions, [{"type": "wait"}])
-        self.assertTrue(decision.intent.startswith("OpenAI model output failed:"))
+        self.assertTrue(
+            decision.intent.startswith("OpenAI model output contract failed:")
+        )
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "model_output")
         self.assertEqual(record["failed_raw_response"], '{"intent":"move"')
         self.assertEqual(len(record["failed_raw_response_sha256"]), 64)
+
+    def test_contract_valid_output_rejected_by_adapter_is_harness_failure(self) -> None:
+        brain = CapturingChatBrain(
+            api_key="test-key",
+            base_url="https://openrouter.ai/api/v1",
+            min_request_interval_seconds=0,
+        )
+        with patch(
+            "agent_world.openai_brain.parse_agent_response",
+            side_effect=ValueError("adapter regression"),
+        ):
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("OpenAI harness failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "harness")
+        self.assertEqual(record["decision_contract_validation"], "valid")
+
+    def test_payload_extraction_failure_preserves_provider_envelope(self) -> None:
+        brain = MissingOutputOpenAIBrain(
+            api_key="test-key",
+            min_request_interval_seconds=0,
+        )
+        decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("OpenAI boundary failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "ambiguous_boundary")
+        self.assertEqual(record["decision_contract_validation"], "not_tested")
+        self.assertIn('"status":"incomplete"', record["failed_raw_provider_envelope"])
 
     def test_default_max_output_tokens_allow_medium_reasoning_headroom(self) -> None:
         old_value = os.environ.pop("OPENAI_MAX_OUTPUT_TOKENS", None)

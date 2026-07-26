@@ -15,7 +15,9 @@ from typing import Any
 
 from agent_world.benchmarks import build_benchmark_results
 from agent_world.metrics import (
+    is_ambiguous_boundary_failure_message,
     is_decision_failure_message,
+    is_harness_failure_message,
     is_model_output_failure_message,
     is_provider_failure_message,
     is_quota_failure_message,
@@ -116,12 +118,18 @@ def build_report(
         for event in llm_failures
         if is_provider_failure_message(event.get("type"), event.get("message"))
     ]
+    ambiguous_boundary_failures = [
+        event
+        for event in llm_failures
+        if is_ambiguous_boundary_failure_message(
+            event.get("type"),
+            event.get("message"),
+        )
+    ]
     harness_failures = [
         event
         for event in llm_failures
-        if event not in model_output_failures
-        and event not in quota_failures
-        and event not in provider_failures
+        if is_harness_failure_message(event.get("type"), event.get("message"))
     ]
     decision_attempts = sum(event.get("type") == "agent_response" for event in events)
     decision_failure_rate = (
@@ -139,6 +147,8 @@ def build_report(
         quality_flags.append("quota_failures_present")
     if provider_failures:
         quality_flags.append("provider_failures_present")
+    if ambiguous_boundary_failures:
+        quality_flags.append("ambiguous_boundary_failures_present")
     if harness_failures:
         quality_flags.append("harness_failures_present")
     if usage_coverage is not None and usage_coverage < 100:
@@ -272,6 +282,7 @@ def build_report(
                 "clean"
                 if not quota_failures
                 and not provider_failures
+                and not ambiguous_boundary_failures
                 and not harness_failures
                 and (usage_coverage is None or usage_coverage >= 100)
                 else "invalid"
@@ -284,6 +295,9 @@ def build_report(
             "model_output_failure_events": len(model_output_failures),
             "llm_quota_failure_events": len(quota_failures),
             "llm_provider_failure_events": len(provider_failures),
+            "ambiguous_boundary_failure_events": len(
+                ambiguous_boundary_failures
+            ),
             "harness_failure_events": len(harness_failures),
             "llm_failures_by_agent": dict(
                 Counter(event.get("actor_id") or "unknown" for event in llm_failures).most_common()

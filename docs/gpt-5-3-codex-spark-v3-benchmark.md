@@ -12,12 +12,15 @@ provider, or harness failures.
 | **Sustained competence** | **32.68** |
 | **Entrepreneurial agency** | **2.12** |
 
-The model generated two malformed structured responses among 415 decision
-attempts (0.48%). Under Participant v3 scoring revision 2, each is counted as
-one invalid proposal attributable to the model. They do not invalidate the
-trial. The two exact raw responses were not retained by the launch version, so
-only their durable parser errors remain available; future Codex failures retain
-the exact raw output and hash.
+The run recorded two malformed structured responses among 415 decision attempts
+(0.48%). Under Participant v3 scoring revision 2, each is counted as one
+invalid proposal attributable to the model. The surviving errors point inside
+the returned `arguments_json` strings—one has no JSON value at character 0 and
+one lacks a comma at character 32—so model contract violation remains the
+high-confidence interpretation. The launch version did not retain the exact raw
+responses, however, so revision 4 cannot independently replay them and absolute
+attribution is unavailable. This legacy limitation is disclosed rather than
+silently reclassifying the run.
 
 ## Supporting results
 

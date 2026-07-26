@@ -189,18 +189,30 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
     return message.startswith(
         (
             "OpenAI decision failed:",
+            "OpenAI harness failed:",
+            "OpenAI boundary failed:",
             "OpenAI model output failed:",
+            "OpenAI model output contract failed:",
             "OpenAI quota unavailable:",
             "Codex decision failed:",
+            "Codex harness failed:",
+            "Codex boundary failed:",
             "Codex model output failed:",
+            "Codex model output contract failed:",
             "Codex quota unavailable:",
             "Codex provider unavailable:",
             "Claude decision failed:",
+            "Claude harness failed:",
+            "Claude boundary failed:",
             "Claude model output failed:",
+            "Claude model output contract failed:",
             "Claude quota unavailable:",
             "Claude provider unavailable:",
             "Cursor decision failed:",
+            "Cursor harness failed:",
+            "Cursor boundary failed:",
             "Cursor model output failed:",
+            "Cursor model output contract failed:",
             "Cursor quota unavailable:",
             "Cursor provider unavailable:",
             "Invalid JSON response:",
@@ -249,15 +261,72 @@ def is_model_output_failure_message(
     return message.startswith(
         (
             "OpenAI model output failed:",
+            "OpenAI model output contract failed:",
             "Codex model output failed:",
+            "Codex model output contract failed:",
             "Claude model output failed:",
+            "Claude model output contract failed:",
             "Cursor model output failed:",
+            "Cursor model output contract failed:",
             "Codex decision failed: Codex action arguments_json is invalid:",
             "Codex decision failed: Codex action arguments_json must decode to an object",
             "Codex decision failed: Codex decision was not a JSON object",
             "Invalid JSON response:",
         )
     )
+
+
+def is_confirmed_model_contract_failure_message(
+    event_type: str | None,
+    message: str | None,
+) -> bool:
+    if event_type != "agent_response" or not message:
+        return False
+    return message.startswith(
+        (
+            "OpenAI model output contract failed:",
+            "Codex model output contract failed:",
+            "Claude model output contract failed:",
+            "Cursor model output contract failed:",
+        )
+    )
+
+
+def is_ambiguous_boundary_failure_message(
+    event_type: str | None,
+    message: str | None,
+) -> bool:
+    if event_type != "agent_response" or not message:
+        return False
+    return message.startswith(
+        (
+            "OpenAI boundary failed:",
+            "Codex boundary failed:",
+            "Claude boundary failed:",
+            "Cursor boundary failed:",
+        )
+    )
+
+
+def is_harness_failure_message(
+    event_type: str | None,
+    message: str | None,
+) -> bool:
+    if event_type != "agent_response" or not message:
+        return False
+    return message.startswith(
+        (
+            "OpenAI harness failed:",
+            "Codex harness failed:",
+            "Claude harness failed:",
+            "Cursor harness failed:",
+            "OpenAI decision failed:",
+            "Codex decision failed:",
+            "Claude decision failed:",
+            "Cursor decision failed:",
+            "Agent brain failed:",
+        )
+    ) and not is_model_output_failure_message(event_type, message)
 
 
 def _median(values: list[int]) -> float:

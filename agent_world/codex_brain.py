@@ -27,6 +27,11 @@ from agent_world.brain_boundary import (
     ConversationInvocation,
 )
 from agent_world.brain_runtime import BrainRuntime
+from agent_world.decision_failure import (
+    ambiguous_boundary_metadata,
+    attribute_decision_failure,
+    attributed_failure_message,
+)
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
 from agent_world.openai_brain import SYSTEM_INSTRUCTIONS
@@ -236,9 +241,36 @@ class CodexBrain:
                         message = f"Codex provider unavailable: {detail}"
                         self._mark_quota_unavailable(message)
                         return _failure_decision(message)
-                    raise ValueError(f"codex exec exited {completed.returncode}: {detail}")
+                    boundary_detail = (
+                        f"codex exec exited {completed.returncode}: {detail}"
+                    )
+                    envelope = json.dumps(
+                        {
+                            "stdout": completed.stdout,
+                            "stderr": completed.stderr,
+                        },
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    )
+                    self._record_usage(
+                        _best_effort_codex_usage(completed.stdout),
+                        {
+                            "agent_id": observation.get("self", {}).get("id"),
+                            "tick": observation.get("tick"),
+                            "duration_seconds": round(elapsed, 3),
+                            **self.boundary.usage_metadata(invocation),
+                            **ambiguous_boundary_metadata(
+                                envelope,
+                                boundary_detail,
+                            ),
+                        },
+                    )
+                    if self.conversation_mode != "stateless":
+                        self.boundary.reset("ambiguous_boundary_failure")
+                    return _failure_decision(
+                        f"Codex boundary failed: {boundary_detail}"
+                    )
 
-            response_text, usage = parse_codex_jsonl(completed.stdout)
             session_id = parse_codex_session_id(completed.stdout) or invocation.resume_session_id
             request_meta = {
                 "agent_id": observation.get("self", {}).get("id"),
@@ -256,25 +288,59 @@ class CodexBrain:
                 **self.boundary.usage_metadata(invocation),
             }
             try:
-                decision = parse_agent_response(
-                    normalize_codex_response(response_text)
+                response_text, usage = parse_codex_jsonl(completed.stdout)
+            except Exception as exc:
+                detail = f"{type(exc).__name__}: {exc}"
+                self._record_usage(
+                    _best_effort_codex_usage(completed.stdout),
+                    {
+                        **request_meta,
+                        **ambiguous_boundary_metadata(completed.stdout, detail),
+                    },
                 )
-            except (ValueError, json.JSONDecodeError) as exc:
+                if self.conversation_mode != "stateless":
+                    self.boundary.reset("ambiguous_boundary_failure")
+                return _failure_decision(f"Codex boundary failed: {detail}")
+            attribution = attribute_decision_failure(
+                response_text,
+                CODEX_AGENT_DECISION_SCHEMA,
+                codex_nested_arguments=True,
+            )
+            if attribution.origin == "model_output":
+                detail = (
+                    "Independent contract validation failed: "
+                    f"{attribution.contract_validation.detail}"
+                )
                 self._record_usage(
                     usage,
                     {
                         **request_meta,
-                        "decision_failure_origin": "model_output",
-                        "decision_failure_detail": f"{type(exc).__name__}: {exc}",
-                        "failed_raw_response": response_text,
-                        "failed_raw_response_sha256": hashlib.sha256(
-                            response_text.encode("utf-8")
-                        ).hexdigest(),
+                        **attribution.usage_metadata(detail),
                     },
                 )
                 if self.conversation_mode != "stateless":
                     self.boundary.reset("model_output_failure")
-                return _failure_decision(f"Codex model output failed: {exc}")
+                return _failure_decision(
+                    attributed_failure_message("Codex", attribution, detail)
+                )
+            try:
+                decision = parse_agent_response(
+                    normalize_codex_response(response_text)
+                )
+            except Exception as exc:
+                detail = f"{type(exc).__name__}: {exc}"
+                self._record_usage(
+                    usage,
+                    {
+                        **request_meta,
+                        **attribution.usage_metadata(detail),
+                    },
+                )
+                if self.conversation_mode != "stateless":
+                    self.boundary.reset(f"{attribution.origin}_failure")
+                return _failure_decision(
+                    attributed_failure_message("Codex", attribution, detail)
+                )
             self._record_usage(usage, request_meta)
             self.boundary.commit(invocation, session_id)
             return decision
@@ -455,6 +521,23 @@ def parse_codex_jsonl(text: str) -> tuple[str, dict[str, Any]]:
         suffix = f": {'; '.join(errors)}" if errors else ""
         raise ValueError(f"codex exec returned no final agent message{suffix}")
     return final_message, usage
+
+
+def _best_effort_codex_usage(text: str) -> dict[str, Any]:
+    usage: dict[str, Any] = {}
+    for raw_line in text.splitlines():
+        if not raw_line.strip():
+            continue
+        try:
+            event = json.loads(raw_line)
+        except json.JSONDecodeError:
+            continue
+        if event.get("type") == "turn.completed" and isinstance(
+            event.get("usage"),
+            dict,
+        ):
+            usage = event["usage"]
+    return usage
 
 
 def parse_codex_session_id(text: str) -> str | None:

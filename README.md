@@ -326,10 +326,11 @@ python3 -m agent_world.cli run \
 Aggregate seed 11 alone for a provisional result. Add seed 41 later and pool
 both generated reports with `python3 -m agent_world.cli benchmark ...` for
 replicated certification. Both tiers retain the full 50-tick horizon; a
-shorter run is diagnostic rather than a cheaper benchmark. Malformed structured
-output from the target model counts as an invalid proposal and remains part of
-the benchmark; external quota, provider, harness, or usage-ledger failures make
-the run diagnostic-only. Reports preserve
+shorter run is diagnostic rather than a cheaper benchmark. An independently
+confirmed output-contract violation counts as an invalid proposal and remains
+part of the benchmark. Contract-valid output rejected by our adapter, failures
+before payload isolation, external quota/provider failures, or incomplete usage
+make the run diagnostic-only. Reports preserve
 diagnostic score trajectories at ticks 30 and 40 before the official tick-50
 endpoint. The protocol, formulas, quality rules, and interpretation guidance
 are documented in [docs/model-benchmarks.md](docs/model-benchmarks.md).

@@ -30,6 +30,11 @@ from agent_world.brain_boundary import (
     ConversationInvocation,
 )
 from agent_world.brain_runtime import BrainRuntime
+from agent_world.decision_failure import (
+    ambiguous_boundary_metadata,
+    attribute_decision_failure,
+    attributed_failure_message,
+)
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
 from agent_world.openai_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
@@ -177,9 +182,38 @@ class ClaudeBrain:
                         message = f"Claude provider unavailable: {detail}"
                         self._mark_quota_unavailable(message)
                         return _failure_decision(message)
-                    raise ValueError(f"claude -p exited {completed.returncode}: {detail}")
+                    boundary_detail = (
+                        f"claude -p exited {completed.returncode}: {detail}"
+                    )
+                    usage, response_model = _best_effort_claude_metadata(result)
+                    envelope = json.dumps(
+                        {
+                            "stdout": completed.stdout,
+                            "stderr": completed.stderr,
+                        },
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    )
+                    self._record_usage(
+                        usage,
+                        response_model,
+                        {
+                            "agent_id": observation.get("self", {}).get("id"),
+                            "tick": observation.get("tick"),
+                            "duration_seconds": round(elapsed, 3),
+                            **self.boundary.usage_metadata(invocation),
+                            **ambiguous_boundary_metadata(
+                                envelope,
+                                boundary_detail,
+                            ),
+                        },
+                    )
+                    if self.conversation_mode != "stateless":
+                        self.boundary.reset("ambiguous_boundary_failure")
+                    return _failure_decision(
+                        f"Claude boundary failed: {boundary_detail}"
+                    )
 
-            decision, usage, response_model = extract_claude_result(result)
             session_id = (
                 result.get("session_id")
                 if isinstance(result, dict) and isinstance(result.get("session_id"), str)
@@ -203,53 +237,79 @@ class ClaudeBrain:
                 **self.boundary.usage_metadata(invocation),
             }
             try:
-                parsed_decision = parse_agent_response(decision)
-            except (ValueError, json.JSONDecodeError) as exc:
-                failed_raw_response = (
-                    decision
-                    if isinstance(decision, str)
-                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
-                )
+                decision, usage, response_model = extract_claude_result(result)
+            except Exception as exc:
+                detail = f"{type(exc).__name__}: {exc}"
+                usage, response_model = _best_effort_claude_metadata(result)
                 self._record_usage(
                     usage,
                     response_model,
                     {
                         **request_meta,
-                        "decision_failure_origin": "model_output",
-                        "decision_failure_detail": f"{type(exc).__name__}: {exc}",
-                        "failed_raw_response": failed_raw_response,
-                        "failed_raw_response_sha256": hashlib.sha256(
-                            failed_raw_response.encode("utf-8")
-                        ).hexdigest(),
+                        **ambiguous_boundary_metadata(completed.stdout, detail),
                     },
                 )
                 if self.conversation_mode != "stateless":
-                    self.boundary.reset("model_output_failure")
-                return _failure_decision(f"Claude model output failed: {exc}")
-            if parsed_decision.intent.startswith("Invalid JSON response:"):
-                failed_raw_response = (
-                    decision
-                    if isinstance(decision, str)
-                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
+                    self.boundary.reset("ambiguous_boundary_failure")
+                return _failure_decision(f"Claude boundary failed: {detail}")
+
+            attribution = attribute_decision_failure(
+                decision,
+                CLAUDE_AGENT_DECISION_SCHEMA,
+            )
+            if attribution.origin == "model_output":
+                adapter_detail = (
+                    "Independent contract validation failed: "
+                    f"{attribution.contract_validation.detail}"
                 )
                 self._record_usage(
                     usage,
                     response_model,
                     {
                         **request_meta,
-                        "decision_failure_origin": "model_output",
-                        "decision_failure_detail": parsed_decision.intent,
-                        "failed_raw_response": failed_raw_response,
-                        "failed_raw_response_sha256": hashlib.sha256(
-                            failed_raw_response.encode("utf-8")
-                        ).hexdigest(),
+                        **attribution.usage_metadata(adapter_detail),
                     },
                 )
                 if self.conversation_mode != "stateless":
                     self.boundary.reset("model_output_failure")
                 return _failure_decision(
-                    f"Claude model output failed: {parsed_decision.intent}"
+                    attributed_failure_message(
+                        "Claude",
+                        attribution,
+                        adapter_detail,
+                    )
                 )
+
+            adapter_detail: str | None = None
+            try:
+                parsed_decision = parse_agent_response(decision)
+            except Exception as exc:
+                adapter_detail = f"{type(exc).__name__}: {exc}"
+                parsed_decision = None
+            if (
+                parsed_decision is not None
+                and parsed_decision.intent.startswith("Invalid JSON response:")
+            ):
+                adapter_detail = parsed_decision.intent
+            if adapter_detail is not None:
+                self._record_usage(
+                    usage,
+                    response_model,
+                    {
+                        **request_meta,
+                        **attribution.usage_metadata(adapter_detail),
+                    },
+                )
+                if self.conversation_mode != "stateless":
+                    self.boundary.reset(f"{attribution.origin}_failure")
+                return _failure_decision(
+                    attributed_failure_message(
+                        "Claude",
+                        attribution,
+                        adapter_detail,
+                    )
+                )
+            assert parsed_decision is not None
             self._record_usage(usage, response_model, request_meta)
             self.boundary.commit(invocation, session_id)
             return parsed_decision
@@ -400,6 +460,21 @@ def extract_claude_result(result: dict[str, Any]) -> tuple[dict[str, Any] | str,
     if isinstance(text, str) and text.strip():
         return text, usage, response_model
     raise ValueError(f"claude -p returned no decision (subtype={result.get('subtype')})")
+
+
+def _best_effort_claude_metadata(
+    result: dict[str, Any] | None,
+) -> tuple[dict[str, Any], str | None]:
+    if not isinstance(result, dict):
+        return {}, None
+    usage = result.get("usage") if isinstance(result.get("usage"), dict) else {}
+    model_usage = result.get("modelUsage")
+    response_model = (
+        next(iter(model_usage))
+        if isinstance(model_usage, dict) and model_usage
+        else None
+    )
+    return usage, response_model
 
 
 def _parse_result_json(stdout: str) -> dict[str, Any] | None:

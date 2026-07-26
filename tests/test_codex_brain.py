@@ -21,7 +21,7 @@ def _successful_stdout(intent: str = "wait") -> str:
     decision = json.dumps(
         {
             "intent": intent,
-            "actions": [{"type": "wait"}],
+            "actions": [{"type": "wait", "arguments_json": "{}"}],
             "messages": [],
             "memory_updates": [],
         }
@@ -127,7 +127,9 @@ class CodexBrainTests(unittest.TestCase):
             decision = brain.decide({"tick": 7, "self": {"id": "agent-1"}})
 
         self.assertEqual(decision.actions, [{"type": "wait"}])
-        self.assertTrue(decision.intent.startswith("Codex model output failed:"))
+        self.assertTrue(
+            decision.intent.startswith("Codex model output contract failed:")
+        )
         records = brain.runtime.usage_records()
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["decision_failure_origin"], "model_output")
@@ -137,9 +139,83 @@ class CodexBrainTests(unittest.TestCase):
             hashlib.sha256(raw_response.encode("utf-8")).hexdigest(),
         )
         self.assertIn(
-            "Codex action arguments_json is invalid",
+            "arguments_json is not valid JSON",
             records[0]["decision_failure_detail"],
         )
+
+    def test_contract_valid_output_rejected_by_adapter_is_harness_failure(self) -> None:
+        raw_response = json.dumps(
+            {
+                "intent": "move east",
+                "actions": [
+                    {
+                        "type": "move",
+                        "arguments_json": '{"direction":"east"}',
+                    }
+                ],
+                "messages": [],
+                "memory_updates": [],
+            }
+        )
+        completed = subprocess.CompletedProcess(
+            ["codex"],
+            0,
+            stdout=_stdout_with_response(raw_response),
+            stderr="",
+        )
+        with patch(
+            "agent_world.codex_brain.subprocess.run",
+            return_value=completed,
+        ), patch(
+            "agent_world.codex_brain.parse_agent_response",
+            side_effect=ValueError("adapter regression"),
+        ):
+            brain = CodexBrain(executable="codex")
+            decision = brain.decide({"tick": 7, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("Codex harness failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "harness")
+        self.assertEqual(record["decision_contract_validation"], "valid")
+        self.assertEqual(
+            record["decision_failure_class"],
+            "adapter_rejected_contract_valid_output",
+        )
+
+    def test_payload_extraction_failure_preserves_provider_envelope(self) -> None:
+        envelope = "\n".join(
+            [
+                json.dumps({"type": "thread.started", "thread_id": "thread-1"}),
+                json.dumps(
+                    {
+                        "type": "turn.completed",
+                        "usage": {
+                            "input_tokens": 100,
+                            "output_tokens": 10,
+                        },
+                    }
+                ),
+            ]
+        )
+        completed = subprocess.CompletedProcess(
+            ["codex"],
+            0,
+            stdout=envelope,
+            stderr="",
+        )
+        with patch(
+            "agent_world.codex_brain.subprocess.run",
+            return_value=completed,
+        ):
+            brain = CodexBrain(executable="codex")
+            decision = brain.decide({"tick": 7, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("Codex boundary failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "ambiguous_boundary")
+        self.assertEqual(record["decision_contract_validation"], "not_tested")
+        self.assertEqual(record["failed_raw_provider_envelope"], envelope)
+        self.assertEqual(record["prompt_tokens"], 100)
 
     def test_stateless_v2_reuses_workspace_and_disables_irrelevant_skills(self) -> None:
         completed = subprocess.CompletedProcess(

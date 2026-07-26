@@ -26,6 +26,11 @@ from agent_world.brain_boundary import (
     ConversationInvocation,
 )
 from agent_world.brain_runtime import BrainRuntime
+from agent_world.decision_failure import (
+    ambiguous_boundary_metadata,
+    attribute_decision_failure,
+    attributed_failure_message,
+)
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
 from agent_world.openai_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
@@ -194,9 +199,39 @@ class CursorBrain:
                         message = f"Cursor provider unavailable: {detail}"
                         self.runtime.mark_quota_unavailable(message)
                         return _failure_decision(message)
-                    raise ValueError(f"cursor-agent -p exited {completed.returncode}: {detail}")
+                    boundary_detail = (
+                        f"cursor-agent -p exited {completed.returncode}: {detail}"
+                    )
+                    usage, response_model = _best_effort_cursor_metadata(result)
+                    envelope = json.dumps(
+                        {
+                            "stdout": completed.stdout,
+                            "stderr": completed.stderr,
+                        },
+                        separators=(",", ":"),
+                        sort_keys=True,
+                    )
+                    self._record_usage(
+                        usage,
+                        response_model or self.resolved_model,
+                        result,
+                        {
+                            "agent_id": observation.get("self", {}).get("id"),
+                            "tick": observation.get("tick"),
+                            "duration_seconds": round(elapsed, 3),
+                            **self.boundary.usage_metadata(invocation),
+                            **ambiguous_boundary_metadata(
+                                envelope,
+                                boundary_detail,
+                            ),
+                        },
+                    )
+                    if self.conversation_mode != "stateless":
+                        self.boundary.reset("ambiguous_boundary_failure")
+                    return _failure_decision(
+                        f"Cursor boundary failed: {boundary_detail}"
+                    )
 
-            decision, usage, response_model = extract_cursor_result(result)
             session_id = (
                 result.get("session_id")
                 if isinstance(result, dict) and isinstance(result.get("session_id"), str)
@@ -216,35 +251,31 @@ class CursorBrain:
                 **self.boundary.usage_metadata(invocation),
             }
             try:
-                parsed_decision = parse_agent_response(decision)
-            except (ValueError, json.JSONDecodeError) as exc:
-                failed_raw_response = (
-                    decision
-                    if isinstance(decision, str)
-                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
-                )
+                decision, usage, response_model = extract_cursor_result(result)
+            except Exception as exc:
+                detail = f"{type(exc).__name__}: {exc}"
+                usage, response_model = _best_effort_cursor_metadata(result)
                 self._record_usage(
                     usage,
                     response_model or self.resolved_model,
                     result,
                     {
                         **request_meta,
-                        "decision_failure_origin": "model_output",
-                        "decision_failure_detail": f"{type(exc).__name__}: {exc}",
-                        "failed_raw_response": failed_raw_response,
-                        "failed_raw_response_sha256": hashlib.sha256(
-                            failed_raw_response.encode("utf-8")
-                        ).hexdigest(),
+                        **ambiguous_boundary_metadata(completed.stdout, detail),
                     },
                 )
                 if self.conversation_mode != "stateless":
-                    self.boundary.reset("model_output_failure")
-                return _failure_decision(f"Cursor model output failed: {exc}")
-            if parsed_decision.intent.startswith("Invalid JSON response:"):
-                failed_raw_response = (
-                    decision
-                    if isinstance(decision, str)
-                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
+                    self.boundary.reset("ambiguous_boundary_failure")
+                return _failure_decision(f"Cursor boundary failed: {detail}")
+
+            attribution = attribute_decision_failure(
+                decision,
+                AGENT_DECISION_SCHEMA,
+            )
+            if attribution.origin == "model_output":
+                adapter_detail = (
+                    "Independent contract validation failed: "
+                    f"{attribution.contract_validation.detail}"
                 )
                 self._record_usage(
                     usage,
@@ -252,19 +283,50 @@ class CursorBrain:
                     result,
                     {
                         **request_meta,
-                        "decision_failure_origin": "model_output",
-                        "decision_failure_detail": parsed_decision.intent,
-                        "failed_raw_response": failed_raw_response,
-                        "failed_raw_response_sha256": hashlib.sha256(
-                            failed_raw_response.encode("utf-8")
-                        ).hexdigest(),
+                        **attribution.usage_metadata(adapter_detail),
                     },
                 )
                 if self.conversation_mode != "stateless":
                     self.boundary.reset("model_output_failure")
                 return _failure_decision(
-                    f"Cursor model output failed: {parsed_decision.intent}"
+                    attributed_failure_message(
+                        "Cursor",
+                        attribution,
+                        adapter_detail,
+                    )
                 )
+
+            adapter_detail: str | None = None
+            try:
+                parsed_decision = parse_agent_response(decision)
+            except Exception as exc:
+                adapter_detail = f"{type(exc).__name__}: {exc}"
+                parsed_decision = None
+            if (
+                parsed_decision is not None
+                and parsed_decision.intent.startswith("Invalid JSON response:")
+            ):
+                adapter_detail = parsed_decision.intent
+            if adapter_detail is not None:
+                self._record_usage(
+                    usage,
+                    response_model or self.resolved_model,
+                    result,
+                    {
+                        **request_meta,
+                        **attribution.usage_metadata(adapter_detail),
+                    },
+                )
+                if self.conversation_mode != "stateless":
+                    self.boundary.reset(f"{attribution.origin}_failure")
+                return _failure_decision(
+                    attributed_failure_message(
+                        "Cursor",
+                        attribution,
+                        adapter_detail,
+                    )
+                )
+            assert parsed_decision is not None
             self._record_usage(
                 usage,
                 response_model or self.resolved_model,
@@ -356,7 +418,7 @@ class CursorBrain:
         self,
         usage: dict[str, Any],
         response_model: str | None,
-        result: dict[str, Any],
+        result: dict[str, Any] | None,
         request_meta: dict[str, Any],
     ) -> None:
         input_tokens = int(usage.get("inputTokens") or usage.get("input_tokens") or 0)
@@ -377,8 +439,8 @@ class CursorBrain:
                 "reasoning_tokens": 0,
                 "cost": 0,
                 "time": time.time(),
-                "cursor_session_id": result.get("session_id"),
-                "cursor_request_id": result.get("request_id"),
+                "cursor_session_id": result.get("session_id") if result else None,
+                "cursor_request_id": result.get("request_id") if result else None,
                 **request_meta,
             }
         )
@@ -414,6 +476,16 @@ def extract_cursor_result(result: dict[str, Any] | None) -> tuple[dict[str, Any]
     if isinstance(decision, str) and decision.strip():
         return decision, usage, response_model
     raise ValueError(f"cursor-agent returned no decision (subtype={result.get('subtype')})")
+
+
+def _best_effort_cursor_metadata(
+    result: dict[str, Any] | None,
+) -> tuple[dict[str, Any], str | None]:
+    if not isinstance(result, dict):
+        return {}, None
+    usage = result.get("usage") if isinstance(result.get("usage"), dict) else {}
+    response_model = result.get("model") if isinstance(result.get("model"), str) else None
+    return usage, response_model
 
 
 def parse_cursor_model_list(text: str) -> set[str]:

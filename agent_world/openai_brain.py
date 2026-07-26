@@ -19,6 +19,12 @@ from typing import Any
 from urllib import error, request
 
 from agent_world.brain_runtime import BrainRuntime
+from agent_world.decision_failure import (
+    ambiguous_boundary_metadata,
+    attribute_decision_failure,
+    attributed_failure_message,
+    serialize_raw,
+)
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
 
@@ -181,65 +187,129 @@ class OpenAIBrain:
         }
         try:
             response = self._post_json_with_retries(endpoint, payload)
-            decision = extractor(response)
+            try:
+                decision = extractor(response)
+            except Exception as exc:
+                detail = f"{type(exc).__name__}: {exc}"
+                self._record_usage(
+                    response,
+                    {
+                        **request_meta,
+                        **ambiguous_boundary_metadata(
+                            serialize_raw(response),
+                            detail,
+                        ),
+                    },
+                )
+                return AgentDecision(
+                    intent=f"OpenAI boundary failed: {detail}",
+                    actions=[{"type": "wait"}],
+                    messages=[],
+                    memory_updates=[],
+                )
+
+            attribution = attribute_decision_failure(
+                decision,
+                AGENT_DECISION_SCHEMA,
+            )
+            if attribution.origin == "model_output":
+                adapter_detail = (
+                    "Independent contract validation failed: "
+                    f"{attribution.contract_validation.detail}"
+                )
+                self._record_usage(
+                    response,
+                    {
+                        **request_meta,
+                        **attribution.usage_metadata(adapter_detail),
+                    },
+                )
+                return AgentDecision(
+                    intent=attributed_failure_message(
+                        "OpenAI",
+                        attribution,
+                        adapter_detail,
+                    ),
+                    actions=[{"type": "wait"}],
+                    messages=[],
+                    memory_updates=[],
+                )
+
+            adapter_detail: str | None = None
             try:
                 parsed_decision = parse_agent_response(decision)
-            except (ValueError, json.JSONDecodeError) as exc:
-                failed_raw_response = (
-                    decision
-                    if isinstance(decision, str)
-                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
-                )
+            except Exception as exc:
+                adapter_detail = f"{type(exc).__name__}: {exc}"
+                parsed_decision = None
+            if (
+                parsed_decision is not None
+                and parsed_decision.intent.startswith("Invalid JSON response:")
+            ):
+                adapter_detail = parsed_decision.intent
+            if adapter_detail is not None:
                 self._record_usage(
                     response,
                     {
                         **request_meta,
-                        "decision_failure_origin": "model_output",
-                        "decision_failure_detail": f"{type(exc).__name__}: {exc}",
-                        "failed_raw_response": failed_raw_response,
-                        "failed_raw_response_sha256": hashlib.sha256(
-                            failed_raw_response.encode("utf-8")
-                        ).hexdigest(),
+                        **attribution.usage_metadata(adapter_detail),
                     },
                 )
                 return AgentDecision(
-                    intent=f"OpenAI model output failed: {exc}",
+                    intent=attributed_failure_message(
+                        "OpenAI",
+                        attribution,
+                        adapter_detail,
+                    ),
                     actions=[{"type": "wait"}],
                     messages=[],
                     memory_updates=[],
                 )
-            if parsed_decision.intent.startswith("Invalid JSON response:"):
-                failed_raw_response = (
-                    decision
-                    if isinstance(decision, str)
-                    else json.dumps(decision, separators=(",", ":"), sort_keys=True)
-                )
-                self._record_usage(
-                    response,
-                    {
-                        **request_meta,
-                        "decision_failure_origin": "model_output",
-                        "decision_failure_detail": parsed_decision.intent,
-                        "failed_raw_response": failed_raw_response,
-                        "failed_raw_response_sha256": hashlib.sha256(
-                            failed_raw_response.encode("utf-8")
-                        ).hexdigest(),
-                    },
-                )
-                return AgentDecision(
-                    intent=f"OpenAI model output failed: {parsed_decision.intent}",
-                    actions=[{"type": "wait"}],
-                    messages=[],
-                    memory_updates=[],
-                )
+            assert parsed_decision is not None
             self._record_usage(response, request_meta)
             return parsed_decision
         except OpenAIQuotaError as exc:
             self._mark_quota_unavailable(str(exc))
             return _quota_decision(str(exc))
-        except (OSError, ValueError, KeyError, json.JSONDecodeError) as exc:
+        except OpenAIRateLimitError as exc:
+            message = f"OpenAI provider unavailable: {exc}"
+            self._mark_quota_unavailable(message)
             return AgentDecision(
-                intent=f"OpenAI decision failed: {exc}",
+                intent=message,
+                actions=[{"type": "wait"}],
+                messages=[],
+                memory_updates=[],
+            )
+        except OSError as exc:
+            message = f"OpenAI provider unavailable: {exc}"
+            self._mark_quota_unavailable(message)
+            return AgentDecision(
+                intent=message,
+                actions=[{"type": "wait"}],
+                messages=[],
+                memory_updates=[],
+            )
+        except (ValueError, KeyError, json.JSONDecodeError) as exc:
+            detail = f"{type(exc).__name__}: {exc}"
+            self.runtime.record_usage(
+                {
+                    "model": self.model,
+                    "response_model": None,
+                    "provider": None,
+                    "api_style": self.api_style,
+                    "base_url": self.base_url,
+                    "reasoning_effort": self.reasoning_effort,
+                    "prompt_tokens": 0,
+                    "cached_tokens": 0,
+                    "completion_tokens": 0,
+                    "reasoning_tokens": 0,
+                    "cost": 0,
+                    "time": time.time(),
+                    **request_meta,
+                    **ambiguous_boundary_metadata(detail, detail),
+                }
+            )
+            return AgentDecision(
+                intent=f"OpenAI boundary failed: {detail}",
                 actions=[{"type": "wait"}],
                 messages=[],
                 memory_updates=[],

@@ -130,11 +130,61 @@ class ClaudeBrainTests(unittest.TestCase):
             decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
 
         self.assertEqual(decision.actions, [{"type": "wait"}])
-        self.assertTrue(decision.intent.startswith("Claude model output failed:"))
+        self.assertTrue(
+            decision.intent.startswith("Claude model output contract failed:")
+        )
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "model_output")
         self.assertEqual(record["failed_raw_response"], raw_response)
         self.assertEqual(len(record["failed_raw_response_sha256"]), 64)
+
+    def test_contract_valid_output_rejected_by_adapter_is_harness_failure(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude"],
+            0,
+            stdout=_successful_stdout(),
+            stderr="",
+        )
+        with patch(
+            "agent_world.claude_brain.subprocess.run",
+            return_value=completed,
+        ), patch(
+            "agent_world.claude_brain.parse_agent_response",
+            side_effect=ValueError("adapter regression"),
+        ):
+            brain = ClaudeBrain(executable="claude")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("Claude harness failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "harness")
+        self.assertEqual(record["decision_contract_validation"], "valid")
+
+    def test_payload_extraction_failure_preserves_provider_envelope(self) -> None:
+        result = {
+            "type": "result",
+            "subtype": "success",
+            "is_error": False,
+            "usage": {"input_tokens": 10, "output_tokens": 5},
+        }
+        envelope = json.dumps(result)
+        completed = subprocess.CompletedProcess(
+            ["claude"],
+            0,
+            stdout=envelope,
+            stderr="",
+        )
+        with patch(
+            "agent_world.claude_brain.subprocess.run",
+            return_value=completed,
+        ):
+            brain = ClaudeBrain(executable="claude")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("Claude boundary failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "ambiguous_boundary")
+        self.assertEqual(record["failed_raw_provider_envelope"], envelope)
 
     def test_minimal_effort_maps_to_low_for_the_cli(self) -> None:
         completed = subprocess.CompletedProcess(["claude"], 0, stdout=_successful_stdout(), stderr="")
@@ -256,9 +306,14 @@ class ClaudeBrainTests(unittest.TestCase):
         )
         completed = subprocess.CompletedProcess(["claude"], 0, stdout=stdout, stderr="")
         with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
-            decision = ClaudeBrain(executable="claude").decide({"tick": 0, "self": {"id": "agent-1"}})
-        self.assertTrue(decision.intent.startswith("Claude decision failed:"))
+            brain = ClaudeBrain(executable="claude")
+            decision = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+        self.assertTrue(decision.intent.startswith("Claude boundary failed:"))
         self.assertEqual(decision.actions, [{"type": "wait"}])
+        self.assertEqual(
+            brain.runtime.usage_records()[0]["decision_failure_origin"],
+            "ambiguous_boundary",
+        )
 
     def test_missing_decision_is_reported(self) -> None:
         with self.assertRaisesRegex(ValueError, "no decision"):

@@ -1,7 +1,7 @@
 {
   "protocol": {
     "aggregation": "For a provisional result, apply the frozen formulas to the clean seed-11 raw counts. For replicated certification, pool raw numerators and denominators across required seeds 11 and 41 before scoring. Do not average per-run scores. Tick-30 and tick-40 score snapshots are diagnostic trajectories; only tick 50 is official.",
-    "code_fingerprint_sha256": "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc",
+    "code_fingerprint_sha256": "3b4d69526653673e094ff4e08ca72929f3d13d7b5ba269993f58649572beaede",
     "id": "participant-v3",
     "replications": {
       "minimum": 2,
@@ -14,11 +14,31 @@
       ]
     },
     "score_scale": {
+      "details": "See score_scales for per-benchmark bounds.",
       "higher_is_better": true,
-      "maximum": 100.0,
+      "maximum": null,
+      "metric_specific": true,
       "minimum": 0.0
     },
-    "scoring_revision": 2,
+    "score_scales": {
+      "entrepreneurial_agency": {
+        "higher_is_better": true,
+        "maximum": null,
+        "minimum": 0.0,
+        "reference_target": 100.0
+      },
+      "planning_execution": {
+        "higher_is_better": true,
+        "maximum": 100.0,
+        "minimum": 0.0
+      },
+      "sustained_competence": {
+        "higher_is_better": true,
+        "maximum": 100.0,
+        "minimum": 0.0
+      }
+    },
+    "scoring_revision": 4,
     "suite_id": "agent-world-participant-v3",
     "targets": {
       "realized_venture_value_per_100_agent_ticks": 40.0,
@@ -40,7 +60,7 @@
       "economy_mode": "organic",
       "geography_mode": "dispersed",
       "global_max_workers": 4,
-      "model_output_failure_policy": "Count each malformed model decision as one invalid proposal; do not invalidate an otherwise complete run.",
+      "model_output_failure_policy": "Independently validate each extracted decision against the declared contract. Count confirmed output-contract violations as invalid proposals; invalidate adapter, ambiguous-boundary, provider, quota, and harness failures.",
       "objective_mode": "neutral",
       "official_score_tick": 50,
       "population": "one uniform model cohort",
@@ -105,7 +125,13 @@
             "venture_initiatives": 3,
             "venture_initiatives_per_100_agent_ticks": 0.6
           },
-          "formula": "geometric_mean(initiative rate vs 20/100 agent-ticks, realized value rate vs 40/100 agent-ticks)",
+          "formula": "geometric_mean(initiative rate vs 20/100 agent-ticks, realized value rate vs 40/100 agent-ticks); 100 is the reference target, not a maximum",
+          "scale": {
+            "higher_is_better": true,
+            "maximum": null,
+            "minimum": 0.0,
+            "reference_target": 100.0
+          },
           "score": 2.12
         },
         "planning_execution": {
@@ -139,8 +165,12 @@
           "score": 32.68
         }
       },
+      "scoring_revision": 4,
       "seeds": [
         11
+      ],
+      "source_scoring_revisions": [
+        2
       ],
       "sources": [
         "run"

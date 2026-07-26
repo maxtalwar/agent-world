@@ -7,7 +7,9 @@
   "benchmark_protocol": "participant-v3",
   "benchmark_code_fingerprint_sha256": "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948",
   "benchmark_scoring_revision": 2,
+  "current_aggregation_scoring_revision": 4,
   "report_code_fingerprint_sha256": "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc",
+  "current_aggregation_code_fingerprint_sha256": "3b4d69526653673e094ff4e08ca72929f3d13d7b5ba269993f58649572beaede",
   "source_fingerprint_compatibility": {
     "compatible": true,
     "reason": "Participant v3 revision 2 reclassifies target-model malformed output as scored invalid proposals without changing trial behavior or the durable event ledger."
@@ -69,8 +71,8 @@
     "startup_health_max_failure_rate": 0.2
   },
   "quality_policy": {
-    "provisional": "The run must complete tick 50 with clean benchmark integrity, complete usage coverage, and a matching or explicitly compatible benchmark fingerprint. Target-model malformed outputs are scored as invalid proposals.",
-    "diagnostic": "An early stop, external provider/quota/harness failure, protocol mismatch, or incomplete usage prevents provisional status but remains reportable."
+    "provisional": "The run must complete tick 50 with clean benchmark integrity, complete usage coverage, and a matching or explicitly compatible benchmark fingerprint. Independently confirmed output-contract violations are scored as invalid proposals.",
+    "diagnostic": "An early stop, external provider/quota/harness or ambiguous-boundary failure, protocol mismatch, or incomplete usage prevents provisional status but remains reportable."
   },
   "provenance": {
     "git_branch": "codex/action-feedback-experiment",

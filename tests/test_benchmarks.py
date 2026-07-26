@@ -25,6 +25,7 @@ def _protocol_report(
     source: str,
     *,
     model_output_failure: bool = False,
+    harness_failure: bool = False,
 ) -> dict:
     agents = [f"agent-{index}" for index in range(1, 11)]
     cohort = {
@@ -55,8 +56,14 @@ def _protocol_report(
             "cohorts": {"cohort-1": cohort},
         },
         "reliability": {
-            "quality_status": "degraded" if model_output_failure else "clean",
-            "benchmark_integrity_status": "clean",
+            "quality_status": (
+                "degraded"
+                if model_output_failure or harness_failure
+                else "clean"
+            ),
+            "benchmark_integrity_status": (
+                "invalid" if harness_failure else "clean"
+            ),
             "usage_record_coverage_pct": 100.0,
         },
     }
@@ -90,8 +97,12 @@ def _protocol_report(
     ]
     if model_output_failure:
         responses[0]["message"] = (
-            "Codex model output failed: Codex action arguments_json is invalid: "
+            "Codex model output contract failed: arguments_json is invalid: "
             "Expecting value: line 1 column 1 (char 0)"
+        )
+    if harness_failure:
+        responses[0]["message"] = (
+            "Codex harness failed: adapter rejected contract-valid output"
         )
     snapshot = {
         "tick": 50,
@@ -198,7 +209,7 @@ class BenchmarkTests(unittest.TestCase):
         protocol = benchmark_protocol()
 
         self.assertEqual(protocol["scoring_revision"], BENCHMARK_SCORING_REVISION)
-        self.assertEqual(BENCHMARK_SCORING_REVISION, 3)
+        self.assertEqual(BENCHMARK_SCORING_REVISION, 4)
         self.assertTrue(protocol["score_scale"]["metric_specific"])
         self.assertIsNone(protocol["score_scale"]["maximum"])
         self.assertEqual(
@@ -224,8 +235,8 @@ class BenchmarkTests(unittest.TestCase):
 
         result = aggregate["results"][0]
         self.assertEqual(result["source_scoring_revisions"], [2])
-        self.assertEqual(result["scoring_revision"], 3)
-        self.assertEqual(aggregate["protocol"]["scoring_revision"], 3)
+        self.assertEqual(result["scoring_revision"], 4)
+        self.assertEqual(aggregate["protocol"]["scoring_revision"], 4)
 
     def test_competence_penalizes_dead_estates_and_endpoint_collapse(self) -> None:
         scores = score_benchmark_counts(
@@ -382,6 +393,72 @@ class BenchmarkTests(unittest.TestCase):
         )
 
         aggregate = aggregate_benchmark_reports([report])
+        self.assertEqual(aggregate["results"][0]["status"], "provisional")
+
+    def test_harness_failure_invalidates_trial_instead_of_scoring_model(self) -> None:
+        report = _protocol_report(
+            11,
+            "seed-11-harness-failure",
+            harness_failure=True,
+        )
+        benchmark = report["benchmarks"]
+        cohort = benchmark["cohorts"]["cohort-1"]
+
+        self.assertFalse(benchmark["trial"]["protocol_compliant"])
+        self.assertFalse(cohort["protocol_compliant"])
+        self.assertEqual(cohort["raw"]["model_output_failures"], 0)
+        self.assertEqual(cohort["raw"]["external_decision_failures"], 1)
+
+        aggregate = aggregate_benchmark_reports([report])
+        self.assertEqual(aggregate["results"], [])
+        self.assertEqual(aggregate["rejected"][0]["reason"], "diagnostic_only")
+
+    def test_unverified_legacy_model_failure_is_not_promoted(self) -> None:
+        report = _protocol_report(
+            11,
+            "legacy-unverified",
+            model_output_failure=True,
+        )
+        report["benchmarks"]["protocol"]["scoring_revision"] = 3
+        report["benchmarks"]["protocol"][
+            "code_fingerprint_sha256"
+        ] = "00efac99b0e0099214923ee3bd5d7d4bade4669bf994359604902c8ed2c59296"
+        report["benchmarks"]["trial"][
+            "code_fingerprint_sha256"
+        ] = "00efac99b0e0099214923ee3bd5d7d4bade4669bf994359604902c8ed2c59296"
+
+        aggregate = aggregate_benchmark_reports([report])
+
+        self.assertEqual(aggregate["results"], [])
+        self.assertEqual(
+            aggregate["rejected"][0]["reason"],
+            "unverified_legacy_model_output_attribution",
+        )
+
+    def test_disclosed_legacy_spark_result_remains_compatible(self) -> None:
+        report = _protocol_report(
+            11,
+            "legacy-spark",
+            model_output_failure=True,
+        )
+        benchmark = report["benchmarks"]
+        cohort = benchmark["cohorts"]["cohort-1"]
+        cohort["model"] = "gpt-5.3-codex-spark"
+        cohort["raw"]["model_output_failures"] = 2
+        cohort["raw"]["decision_failures"] = 2
+        cohort["raw"]["invalid_proposals"] = (
+            cohort["raw"]["engine_invalid_proposals"] + 2
+        )
+        benchmark["protocol"]["scoring_revision"] = 2
+        benchmark["protocol"][
+            "code_fingerprint_sha256"
+        ] = "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc"
+        benchmark["trial"][
+            "code_fingerprint_sha256"
+        ] = "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948"
+
+        aggregate = aggregate_benchmark_reports([report])
+
         self.assertEqual(aggregate["results"][0]["status"], "provisional")
 
     def test_revision_one_checkpoint_uses_event_ledger_failure_classification(self) -> None:

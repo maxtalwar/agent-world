@@ -185,9 +185,26 @@ class RunReportTests(unittest.TestCase):
                     "tick": 2,
                     "actor_id": "agent-2",
                     "message": (
-                        "Codex model output failed: Codex action arguments_json "
+                        "Codex model output contract failed: arguments_json "
                         "is invalid: Expecting value"
                     ),
+                    "data": {"actions": [{"type": "wait"}]},
+                },
+                {
+                    "type": "agent_response",
+                    "tick": 2,
+                    "actor_id": "agent-1",
+                    "message": (
+                        "Codex harness failed: adapter rejected "
+                        "contract-valid output"
+                    ),
+                    "data": {"actions": [{"type": "wait"}]},
+                },
+                {
+                    "type": "agent_response",
+                    "tick": 2,
+                    "actor_id": "agent-2",
+                    "message": "Codex boundary failed: no decision payload",
                     "data": {"actions": [{"type": "wait"}]},
                 },
                 {
@@ -202,16 +219,21 @@ class RunReportTests(unittest.TestCase):
 
         report = build_report(events, snapshot)
 
-        self.assertEqual(report["reliability"]["llm_failure_events"], 2)
+        self.assertEqual(report["reliability"]["llm_failure_events"], 4)
         self.assertEqual(report["reliability"]["model_output_failure_events"], 2)
+        self.assertEqual(report["reliability"]["harness_failure_events"], 1)
+        self.assertEqual(
+            report["reliability"]["ambiguous_boundary_failure_events"],
+            1,
+        )
         self.assertEqual(
             report["reliability"]["benchmark_integrity_status"],
-            "clean",
+            "invalid",
         )
         self.assertEqual(report["reliability"]["quality_status"], "degraded")
         self.assertEqual(
             report["reliability"]["llm_failures_by_agent"],
-            {"agent-1": 1, "agent-2": 1},
+            {"agent-1": 2, "agent-2": 2},
         )
         self.assertNotIn("agent_response", report["actions"]["counts"])
 

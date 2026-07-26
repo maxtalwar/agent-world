@@ -9,7 +9,10 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from agent_world.metrics import (
+    is_ambiguous_boundary_failure_message,
+    is_confirmed_model_contract_failure_message,
     is_decision_failure_message,
+    is_harness_failure_message,
     is_model_output_failure_message,
     is_provider_failure_message,
     is_quota_failure_message,
@@ -22,7 +25,7 @@ BENCHMARK_PROTOCOL_ID = "participant-v3"
 BENCHMARK_SEEDS = frozenset({11, 41})
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
-BENCHMARK_SCORING_REVISION = 3
+BENCHMARK_SCORING_REVISION = 4
 BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS = frozenset(
     {
         # Initial Participant v3 launch fingerprint. The trial mechanics and
@@ -33,6 +36,9 @@ BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS = frozenset(
         # entrepreneurship score scale, so its raw run evidence remains
         # eligible for current scoring.
         "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc",
+        # Participant v3 scoring revision 3. Revision 4 independently
+        # attributes decision-contract, adapter, and boundary failures.
+        "00efac99b0e0099214923ee3bd5d7d4bade4669bf994359604902c8ed2c59296",
     }
 )
 BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS = frozenset(
@@ -40,6 +46,8 @@ BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS = frozenset(
         # Scoring-revision-2 reports contain all raw counts needed to apply
         # revision 3 without mutating the historical report.
         "0dfb56b9ee8fccb7cc186457784e7aa99ea242bd88f17952c68eb98ba7c8b9dc",
+        # Revision-3 reports retain the raw counts needed by revision 4.
+        "00efac99b0e0099214923ee3bd5d7d4bade4669bf994359604902c8ed2c59296",
     }
 )
 
@@ -60,6 +68,7 @@ BENCHMARK_FINGERPRINT_FILES = (
     "cli.py",
     "codex_brain.py",
     "cursor_brain.py",
+    "decision_failure.py",
     "interface.py",
     "maps.py",
     "models.py",
@@ -123,8 +132,10 @@ def benchmark_protocol() -> dict[str, Any]:
             "provider_max_workers": 4,
             "agent_io_log": True,
             "model_output_failure_policy": (
-                "Count each malformed model decision as one invalid proposal; "
-                "do not invalidate an otherwise complete run."
+                "Independently validate each extracted decision against the "
+                "declared contract. Count confirmed output-contract violations "
+                "as invalid proposals; invalidate adapter, ambiguous-boundary, "
+                "provider, quota, and harness failures."
             ),
         },
         "score_scale": {
@@ -186,6 +197,7 @@ def build_benchmark_results(
     scored: dict[str, Any] = {}
     for cohort_id, cohort in cohorts.items():
         member_ids = [str(value) for value in cohort.get("agents") or []]
+        member_set = set(member_ids)
         raw = _cohort_raw_metrics(
             events=events,
             snapshot=snapshot,
@@ -199,6 +211,24 @@ def build_benchmark_results(
             cohort_flags.append("insufficient_action_sample")
         if raw["possible_agent_ticks"] <= 0:
             cohort_flags.append("insufficient_agent_tick_sample")
+        confirmed_contract_failures = sum(
+            is_confirmed_model_contract_failure_message(
+                event.get("type"),
+                event.get("message"),
+            )
+            for event in events
+            if event.get("actor_id") in member_set
+        )
+        if (
+            raw["model_output_failures"] > confirmed_contract_failures
+            and not _legacy_spark_attribution_exception(
+                model=str(cohort.get("model") or ""),
+                seed=config.get("seed"),
+                raw=raw,
+                source_fingerprint=start_data.get("benchmark_code_fingerprint"),
+            )
+        ):
+            cohort_flags.append("unverified_model_output_attribution")
         scores = score_benchmark_counts(raw)
         scored[str(cohort_id)] = {
             "brain": cohort.get("brain"),
@@ -397,8 +427,9 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             continue
         report_protocol = benchmark.get("protocol") or {}
         report_fingerprint = report_protocol.get("code_fingerprint_sha256")
+        source_revision = int(report_protocol.get("scoring_revision") or 1)
         compatible_prior_report = (
-            report_protocol.get("scoring_revision") == 2
+            source_revision < BENCHMARK_SCORING_REVISION
             and report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
         )
         if report_fingerprint != expected_fingerprint and not compatible_prior_report:
@@ -425,6 +456,26 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                         "model": identity[1],
                         "reason": "diagnostic_only",
                         "quality_flags": cohort.get("quality_flags") or [],
+                    }
+                )
+                continue
+            cohort_raw = cohort.get("raw") or {}
+            if (
+                source_revision < 4
+                and int(cohort_raw.get("model_output_failures") or 0) > 0
+                and not _legacy_spark_attribution_exception(
+                    model=identity[1],
+                    seed=seed,
+                    raw=cohort_raw,
+                    source_fingerprint=trial.get("code_fingerprint_sha256"),
+                )
+            ):
+                rejected.append(
+                    {
+                        "source": report.get("source"),
+                        "cohort": cohort_id,
+                        "model": identity[1],
+                        "reason": "unverified_legacy_model_output_attribution",
                     }
                 )
                 continue
@@ -606,6 +657,11 @@ def _cohort_raw_metrics(
     external_decision_failures = sum(
         is_quota_failure_message(event.get("type"), event.get("message"))
         or is_provider_failure_message(event.get("type"), event.get("message"))
+        or is_harness_failure_message(event.get("type"), event.get("message"))
+        or is_ambiguous_boundary_failure_message(
+            event.get("type"),
+            event.get("message"),
+        )
         for event in responses
     )
     engine_invalid_proposals = len(invalid_events)
@@ -994,6 +1050,14 @@ def _benchmark_trajectory(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     candidate.get("type"),
                     candidate.get("message"),
                 )
+                or is_harness_failure_message(
+                    candidate.get("type"),
+                    candidate.get("message"),
+                )
+                or is_ambiguous_boundary_failure_message(
+                    candidate.get("type"),
+                    candidate.get("message"),
+                )
                 for candidate in checkpoint_responses
             )
         cohorts: dict[str, Any] = {}
@@ -1055,6 +1119,24 @@ def _normalize_model_failure_raw(
     )
     normalized["invalid_proposals"] = engine_invalid + model_failures
     return normalized
+
+
+def _legacy_spark_attribution_exception(
+    *,
+    model: str,
+    seed: Any,
+    raw: dict[str, Any],
+    source_fingerprint: Any,
+) -> bool:
+    """Retain the explicitly disclosed pre-raw-retention Spark result."""
+
+    return (
+        model == "gpt-5.3-codex-spark"
+        and seed == 11
+        and int(raw.get("model_output_failures") or 0) == 2
+        and source_fingerprint
+        == "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948"
+    )
 
 
 def _geometric_mean(values: Iterable[float | None]) -> float | None:

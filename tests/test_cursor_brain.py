@@ -172,11 +172,61 @@ class CursorBrainTests(unittest.TestCase):
             decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
 
         self.assertEqual(decision.actions, [{"type": "wait"}])
-        self.assertTrue(decision.intent.startswith("Cursor model output failed:"))
+        self.assertTrue(
+            decision.intent.startswith("Cursor model output contract failed:")
+        )
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "model_output")
         self.assertEqual(record["failed_raw_response"], raw_response)
         self.assertEqual(len(record["failed_raw_response_sha256"]), 64)
+
+    def test_contract_valid_output_rejected_by_adapter_is_harness_failure(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["cursor-agent"],
+            0,
+            stdout=_successful_stdout(),
+            stderr="",
+        )
+        with patch(
+            "agent_world.cursor_brain.subprocess.run",
+            return_value=completed,
+        ), patch(
+            "agent_world.cursor_brain.parse_agent_response",
+            side_effect=ValueError("adapter regression"),
+        ):
+            brain = CursorBrain(executable="cursor-agent")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("Cursor harness failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "harness")
+        self.assertEqual(record["decision_contract_validation"], "valid")
+
+    def test_payload_extraction_failure_preserves_provider_envelope(self) -> None:
+        result = {
+            "type": "result",
+            "subtype": "success",
+            "is_error": False,
+            "usage": {"inputTokens": 10, "outputTokens": 5},
+        }
+        envelope = json.dumps(result)
+        completed = subprocess.CompletedProcess(
+            ["cursor-agent"],
+            0,
+            stdout=envelope,
+            stderr="",
+        )
+        with patch(
+            "agent_world.cursor_brain.subprocess.run",
+            return_value=completed,
+        ):
+            brain = CursorBrain(executable="cursor-agent")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("Cursor boundary failed:"))
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "ambiguous_boundary")
+        self.assertEqual(record["failed_raw_provider_envelope"], envelope)
 
     def test_extract_cursor_result(self) -> None:
         decision, usage, model = extract_cursor_result(json.loads(_successful_stdout("observe")))
