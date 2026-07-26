@@ -1,8 +1,9 @@
 {
   "schema_version": 1,
   "study_id": "gpt-5-4-participant-v3-provisional-seed11-20260726-035825",
-  "status": "running",
+  "status": "running_replicated",
   "created_at_utc": "2026-07-26T03:58:25Z",
+  "expanded_to_replication_at_utc": "2026-07-26T04:00:58Z",
   "suite_id": "agent-world-participant-v3",
   "benchmark_protocol": "participant-v3",
   "benchmark_code_fingerprint_sha256": "3b4d69526653673e094ff4e08ca72929f3d13d7b5ba269993f58649572beaede",
@@ -13,7 +14,7 @@
     "reasoning_effort": "medium"
   },
   "result_tier": {
-    "requested": "provisional",
+    "requested": "replicated_certified",
     "required_seed": 11,
     "promotion_seed": 41,
     "policy": "One clean complete seed-11 run earns provisional status. A later clean seed-41 run promotes it to replicated certification."
@@ -24,6 +25,12 @@
         "seed": 11,
         "status": "running",
         "screen": "aw-bench-gpt54-v3-s11",
+        "target_tick": 50
+      },
+      "seed-41": {
+        "seed": 41,
+        "status": "running",
+        "screen": "aw-bench-gpt54-v3-s41",
         "target_tick": 50
       }
     }
@@ -84,9 +91,31 @@
     "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run-snapshot.json",
     "--progress"
   ],
+  "replication_command": [
+    "python3",
+    "-m",
+    "agent_world.cli",
+    "run",
+    "--benchmark-protocol",
+    "participant-v3",
+    "--brain",
+    "codex",
+    "--model",
+    "gpt-5.4",
+    "--seed",
+    "41",
+    "--out",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-41/run.jsonl",
+    "--snapshot",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-41/run-snapshot.json",
+    "--progress"
+  ],
   "outputs": [
     "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run.jsonl",
     "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run-snapshot.json",
-    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run-report.json"
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11/run-report.json",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-41/run.jsonl",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-41/run-snapshot.json",
+    "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-41/run-report.json"
   ]
 }
