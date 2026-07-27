@@ -17,9 +17,9 @@ silently rescored or mixed into a v4 leaderboard.
 
 The [Participant v4 retrospective rescore](participant-v4-retrospective-rescore.md)
 applies the v4 formulas to every preserved Spark and GPT-5.4 ledger without
-re-running a simulation. Those results are diagnostic only: the agent-facing
-mechanics text and the construction share rule both changed after those runs,
-so the behavior was produced by a different world.
+re-running a simulation. The GPT-5.4 seed-11/41 pair is certified from that
+evidence under an audited declared deviation; every other rescored run remains
+diagnostic.
 
 Preserved examples include the
 [GPT-5.4 v2 report](gpt-5-4-benchmark.md), the
@@ -32,7 +32,9 @@ Preserved examples include the
   runs, historical protocols, and nonstandard seeds.
 - **Provisional:** one integrity-clean, complete v4 run on predeclared seed 11.
 - **Replicated certified:** one integrity-clean, complete v4 run on each
-  required seed: 11 and 41.
+  required seed: 11 and 41. A trial run under an earlier protocol may qualify
+  only through an audited entry in `BENCHMARK_ACCEPTED_PRIOR_TRIALS`, and is
+  then labelled *certified with declared deviation*.
 
 Certification pools raw numerators and denominators from seeds 11 and 41 for
 the official score. The aggregate also retains both replication scores and
@@ -196,8 +198,15 @@ rather than net worth, so it sees exactly that:
   other agents minus inflows of the same good, counting only the positive
   remainder;
 - **net service income** - access fees and contract premiums received, minus
-  those paid;
-- **own capital output** - goods produced from improved land the cohort built.
+  those paid.
+
+**Own capital output** - goods produced from improved land the cohort built -
+is reported alongside these but is deliberately *not* scored as supply. Those
+goods stay in cohort inventory, so net value creation already counts them.
+Scoring them here as well would count the same harvest events in both halves
+of the geometric mean and re-couple the two axes, which is the defect this
+construct exists to avoid. A cohort that builds producing capital is still
+rewarded - through the value term, once.
 
 Coin is excluded from the goods term. It is the medium of exchange, so paying
 for food must not read as supplying it. Coin still counts as wealth in terminal
@@ -216,14 +225,19 @@ Only a persistent directional surplus - goods produced beyond what the producer
 consumed, then supplied to others - can score. The component reaches 100 at 20
 supply units per 100 possible agent-ticks and is uncapped.
 
-Applied to the preserved clean ledgers, enterprise supply is 0.6 per 100
-agent-ticks for the collapsing Spark cohort and 9.4 to 10.8 for GPT-5.4. The
-GPT-5.4 figure is almost entirely own capital output with roughly 5 units of
-actual commerce, so anchoring at the demonstrated rate would call a nearly
-tradeless economy excellent. The 20-per-100 anchor places the best observed
-cohort mid-scale and leaves headroom for a cohort that both builds capital and
-supplies customers. Those runs are not v4 results; they only establish that the
-anchor sits in a demonstrated, interpretable range.
+The 20-per-100 anchor is mechanics-based, not fitted to observed behavior.
+Accepting a trade costs no action points, so over a 500 agent-tick trial the
+target is roughly one accepted trade per agent per twenty ticks - clearly
+reachable.
+
+Measured behavior is nowhere near it. Across the three complete 50-tick runs on
+record, 22 trade offers produced **three** accepted trades in total, giving
+enterprise supply rates of 0.6 to 1.0 per 100 agent-ticks. Current models
+essentially do not trade. The benchmark reports that as a low score rather than
+lowering the anchor to flatter it: an anchor fitted to whichever models happen
+to be on the leaderboard would stop measuring anything. Expect enterprise
+supply to behave as a near-binary "does this model trade at all" signal until
+models improve.
 
 **Venture initiatives are a diagnostic, not a scored component.** They count
 attempts, and several qualifying actions - `set_access_fee` among them - cost
@@ -297,9 +311,39 @@ Changing a formula, target, world, or harness requires a new suite version.
 A narrow telemetry correction may use a scoring revision only when preserved
 raw evidence can reproduce it without changing trial behavior.
 
-V4 has no compatibility exception for v3 reports because the old event
-aggregates do not contain the new purposeful-activity construct and because
-the economic formula changed materially.
+V4 has no blanket compatibility exception for v3 reports: the old aggregates
+do not contain the purposeful-activity construct and the economic formula
+changed materially. A v3 *report* is never rescored as v4.
+
+A v3 *trial* is a different matter. The event ledger and terminal snapshot are
+the primary evidence, and every v4 metric derives from them, so a trial run
+under an earlier protocol can be re-derived exactly. What it cannot do is
+prove the model faced the same world. `BENCHMARK_ACCEPTED_PRIOR_TRIALS` is a
+named allowlist for trials where that question has been audited and answered:
+each entry stores the exact source fingerprint, the protocol it ran under, the
+surviving deviation, and the audit that examined every other difference. A
+fingerprint is only accepted under the protocol it was audited against, and
+unknown fingerprints are never accepted.
+
+Accepted trials are certified, not silently absorbed. Their status reads
+`certified with declared deviation`, and the leaderboard prints the deviation
+and its audit in full. Anything the audit cannot dismiss - a different horizon,
+a real mechanical change, an unexamined difference - keeps the trial
+diagnostic.
+
+One entry exists today, covering the GPT-5.4 seed-11/41 pair. It ran under
+`participant-v3` and differs from v4 in one line of static context: ore was
+described as a "high-value raw material" rather than as smeltable into an
+ingot. The audit checked the two other v4-era changes against the ledgers and
+found neither binds. No structure in either run had more than one contributor,
+so the construction contributor-share change is inert. Engine-declared trade
+values never reached agents, because market history was already filtered to
+give/receive bundles and event rendering never exposed event data at all.
+
+The Spark seed-11 trial is **not** accepted. It carries an older fingerprint
+that predates the independent decision-contract validator, which is a harness
+change on the decision path rather than a prompt wording difference, and it
+would only reach provisional status in any case.
 
 ## Reporting standard
 

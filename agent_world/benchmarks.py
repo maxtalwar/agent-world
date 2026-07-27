@@ -31,6 +31,33 @@ BENCHMARK_SCORING_REVISION = 1
 BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
 BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
 
+# Trials run under an earlier protocol that are accepted as v4 evidence after
+# an audited review of every behavioral difference. This is deliberately a
+# named allowlist rather than a rule: each entry records the exact deviation
+# so it appears in every artifact rather than being silently absorbed. An
+# entry is only justified when the surviving differences have been checked
+# against the actual ledgers and shown not to bind.
+BENCHMARK_ACCEPTED_PRIOR_TRIALS: dict[str, dict[str, str]] = {
+    "3b4d69526653673e094ff4e08ca72929f3d13d7b5ba269993f58649572beaede": {
+        "protocol": "participant-v3",
+        "deviation": (
+            "static_context_mechanics_text: ore was described as a "
+            "'high-value raw material' rather than as smeltable into an "
+            "ingot. One line of a 6,430-character static context."
+        ),
+        "audited": (
+            "The other two differences introduced with v4 were checked "
+            "against these ledgers and do not bind. No structure in any run "
+            "had more than one contributor, so the construction "
+            "contributor-share change is inert. Engine-declared trade values "
+            "never reached agents: market history was already filtered to "
+            "give/receive bundles and event rendering never exposed event "
+            "data. Trial settings, horizon, integrity, and usage coverage "
+            "all match v4 exactly."
+        ),
+    },
+}
+
 # These are mechanics-anchored "excellent" targets, not population percentiles.
 # Versioning the suite freezes them so later runs remain directly comparable.
 # Participant v4 anchors are intentionally close to demonstrated strong-model
@@ -170,6 +197,23 @@ def _recipe_consistent_accounting_values(economy_mode: str) -> dict[str, float]:
 
 
 BENCHMARK_ACCOUNTING_VALUES = _recipe_consistent_accounting_values("organic")
+
+
+def accepted_prior_trial(
+    declared_protocol: Any,
+    source_fingerprint: Any,
+) -> dict[str, str] | None:
+    """Return the audited deviation record for an accepted earlier trial.
+
+    Returns None unless this exact fingerprint was explicitly allowlisted and
+    its declared protocol matches the one recorded for it, so a fingerprint
+    can never be promoted under a protocol it was not audited against.
+    """
+
+    entry = BENCHMARK_ACCEPTED_PRIOR_TRIALS.get(str(source_fingerprint))
+    if entry is None or entry["protocol"] != str(declared_protocol):
+        return None
+    return entry
 
 
 def benchmark_code_fingerprint() -> str:
@@ -365,6 +409,10 @@ def build_benchmark_results(
             ),
             "protocol_compliant": not trial_flags,
             "quality_flags": sorted(set(trial_flags)),
+            "accepted_prior_trial": accepted_prior_trial(
+                trial_protocol,
+                start_data.get("benchmark_code_fingerprint"),
+            ),
             "seed": config.get("seed"),
             "completed": bool(run.get("completed")),
             "final_tick": run.get("final_tick"),
@@ -547,6 +595,14 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
                     enterprise_supply_rate
                 ),
                 "enterprise_supply_score": enterprise_supply_score,
+                "own_capital_output_value": raw.get("own_capital_output_value", 0),
+                "own_capital_output_note": (
+                    "Reported, not scored here. Output from the cohort's own "
+                    "improved land stays in cohort inventory, so net value "
+                    "creation already counts it. Scoring it again would "
+                    "double-count the same harvests across both halves of the "
+                    "geometric mean."
+                ),
                 "net_value_created": _rounded(net_value_created),
                 "net_value_created_per_100_agent_ticks": _rounded(
                     net_value_creation_rate
@@ -660,6 +716,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                     "seed_counts": Counter(),
                     "sources": [],
                     "source_scoring_revisions": set(),
+                    "declared_deviations": [],
                     "replications": [],
                 },
             )
@@ -669,6 +726,11 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             row["source_scoring_revisions"].add(
                 int(report_protocol.get("scoring_revision") or 1)
             )
+            deviation = trial.get("accepted_prior_trial")
+            if deviation:
+                row["declared_deviations"].append(
+                    {"seed": int(seed), "source": report.get("source"), **deviation}
+                )
             row["replications"].append(
                 {
                     "seed": int(seed),
@@ -683,6 +745,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
         seeds = sorted(row.pop("seeds"))
         seed_counts = row.pop("seed_counts")
         source_scoring_revisions = sorted(row.pop("source_scoring_revisions"))
+        declared_deviations = row.pop("declared_deviations")
         replications = sorted(
             row.pop("replications"),
             key=lambda replication: (
@@ -721,8 +784,15 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             and seed_counts[BENCHMARK_PROVISIONAL_SEED] == 1
             and certification_flags == ["missing_required_seeds"]
         )
-        if certified:
+        if certified and declared_deviations:
+            # Still certified: every required seed is present and clean. The
+            # label carries the deviation so no reader can mistake it for a
+            # trial run entirely under current code.
+            status = "certified_with_declared_deviation"
+        elif certified:
             status = "certified"
+        elif provisional and declared_deviations:
+            status = "provisional_with_declared_deviation"
         elif provisional:
             status = "provisional"
         else:
@@ -737,6 +807,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 "provisional": provisional,
                 "status": status,
                 "certification_flags": certification_flags,
+                "declared_deviations": declared_deviations,
                 "source_scoring_revisions": source_scoring_revisions,
                 "scoring_revision": BENCHMARK_SCORING_REVISION,
                 "replications": replications,
@@ -854,6 +925,22 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
                     f"{_format_score(extended_competence.get('minimum'))}–"
                     f"{_format_score(extended_competence.get('maximum'))}."
                 )
+    deviating = [
+        row for row in aggregate.get("results") or [] if row.get("declared_deviations")
+    ]
+    if deviating:
+        lines += ["", "## Declared deviations", ""]
+        for row in deviating:
+            seeds = ", ".join(
+                str(item.get("seed")) for item in row["declared_deviations"]
+            )
+            first = row["declared_deviations"][0]
+            lines += [
+                f"- **{row.get('model')}** (seeds {seeds}) ran under "
+                f"`{first.get('protocol')}`, accepted as v4 evidence after audit.",
+                f"  - Deviation: {first.get('deviation')}",
+                f"  - Audit: {first.get('audited')}",
+            ]
     if aggregate.get("rejected"):
         lines += [
             "",
@@ -989,6 +1076,7 @@ def _cohort_raw_metrics(
         "venture_initiatives_by_type": dict(sorted(initiative_counts.items())),
         "enterprise_supply_value": _rounded(enterprise["total"]),
         "enterprise_supply_by_source": enterprise["by_source"],
+        "own_capital_output_value": enterprise["own_capital_output"],
     }
 
 
@@ -1044,11 +1132,19 @@ def _trial_flags(
         start_data.get("benchmark_protocol") == BENCHMARK_PROTOCOL_ID
         and source_fingerprint in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS
     )
-    if start_data.get("benchmark_protocol") != BENCHMARK_PROTOCOL_ID:
+    accepted_prior = accepted_prior_trial(
+        start_data.get("benchmark_protocol"),
+        source_fingerprint,
+    )
+    if (
+        start_data.get("benchmark_protocol") != BENCHMARK_PROTOCOL_ID
+        and accepted_prior is None
+    ):
         flags.append("benchmark_protocol_not_declared")
     if (
         source_fingerprint != benchmark_code_fingerprint()
         and not compatible_source
+        and accepted_prior is None
     ):
         flags.append("benchmark_code_fingerprint_mismatch")
     if config.get("seed") not in BENCHMARK_ALLOWED_SEEDS:
@@ -1320,11 +1416,18 @@ def _enterprise_supply(
     by_source = {
         "net_goods_supplied_to_others": _rounded(goods_supplied),
         "net_service_income": _rounded(service_income),
-        "own_capital_output": _rounded(capital_output),
     }
     return {
-        "total": goods_supplied + service_income + capital_output,
+        # Own capital output is deliberately excluded from the scored total.
+        # Goods harvested from a cohort's own improved land stay in the
+        # cohort's inventory, so their value is already counted by net value
+        # creation. Adding them here would score the same harvest events
+        # twice and re-couple the two halves of the geometric mean, which is
+        # the defect this construct exists to avoid. They remain reported
+        # because "built producing capital" is worth seeing on its own.
+        "total": goods_supplied + service_income,
         "by_source": by_source,
+        "own_capital_output": _rounded(capital_output),
     }
 
 

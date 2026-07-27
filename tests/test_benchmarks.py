@@ -10,11 +10,13 @@ from agent_world.benchmarks import (
     BENCHMARK_SEEDS,
     BENCHMARK_SCORING_REVISION,
     BENCHMARK_SUITE_ID,
+    BENCHMARK_ACCEPTED_PRIOR_TRIALS,
     NON_MATERIAL_FREE_ACTION_EVENTS,
     PURPOSEFUL_ACTION_EVENTS,
     _benchmark_trajectory,
     _cohort_raw_metrics,
     _enterprise_supply,
+    accepted_prior_trial,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
     benchmark_protocol,
@@ -490,11 +492,14 @@ class BenchmarkTests(unittest.TestCase):
         )
 
         by_source = supply["by_source"]
-        self.assertEqual(by_source["own_capital_output"], 12.0)
         # Five food supplied outward at two units each; coin paid back is
         # excluded so buyers are not credited for supplying currency.
         self.assertEqual(by_source["net_goods_supplied_to_others"], 10.0)
-        self.assertEqual(supply["total"], 22.0)
+        # Capital output is reported but not scored: those six harvested food
+        # sit in cohort inventory, so net value creation already counts them.
+        # Only the five that reached other agents are enterprise supply.
+        self.assertEqual(supply["own_capital_output"], 12.0)
+        self.assertEqual(supply["total"], 10.0)
 
     def test_access_fee_wash_between_members_nets_out(self) -> None:
         events = [
@@ -544,6 +549,48 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(forager["entrepreneurial_agency"]["score"], 0.0)
         # geometric_mean(supply 100, value creation 200)
         self.assertEqual(trader["entrepreneurial_agency"]["score"], 141.42)
+
+    def test_accepted_prior_trial_requires_an_exact_audited_match(self) -> None:
+        """Promotion is a named allowlist, never an inferred rule."""
+
+        fingerprint = next(iter(BENCHMARK_ACCEPTED_PRIOR_TRIALS))
+        entry = BENCHMARK_ACCEPTED_PRIOR_TRIALS[fingerprint]
+
+        # Matching fingerprint under its audited protocol is accepted.
+        self.assertIsNotNone(accepted_prior_trial(entry["protocol"], fingerprint))
+        # Every entry must carry both the deviation and the audit that
+        # justified it, so no artifact can present a bare exemption.
+        for record in BENCHMARK_ACCEPTED_PRIOR_TRIALS.values():
+            self.assertTrue(record.get("deviation"))
+            self.assertTrue(record.get("audited"))
+
+        # A fingerprint is never promotable under a protocol it was not
+        # audited against, and unknown fingerprints are never promotable.
+        self.assertIsNone(accepted_prior_trial("participant-v1", fingerprint))
+        self.assertIsNone(accepted_prior_trial(entry["protocol"], "deadbeef"))
+        self.assertIsNone(accepted_prior_trial(None, None))
+
+    def test_capital_output_is_reported_but_not_scored_as_supply(self) -> None:
+        """Harvests from own land already count in net value creation."""
+
+        supply = _enterprise_supply(
+            [
+                {
+                    "type": "harvest",
+                    "tick": 1,
+                    "actor_id": "agent-1",
+                    "data": {
+                        "improved_land": True,
+                        "resource": "food",
+                        "quantity": 10,
+                    },
+                }
+            ],
+            {"agent-1"},
+        )
+
+        self.assertEqual(supply["own_capital_output"], 20.0)
+        self.assertEqual(supply["total"], 0.0)
 
     def test_entrepreneurship_score_has_no_upper_bound(self) -> None:
         scores = score_benchmark_counts(

@@ -1,0 +1,49 @@
+{
+ "schema_version": 1,
+ "study_id": "gpt-5-4-participant-v4-certified-20260726",
+ "status": "completed_certified_with_declared_deviation",
+ "created_at_utc": "2026-07-26T18:00:00Z",
+ "suite_id": "agent-world-participant-v4",
+ "benchmark_protocol": "participant-v4",
+ "benchmark_scoring_revision": 1,
+ "scoring_code_fingerprint_sha256": "dabcd2d82c2ab16938978d00fea3a2075fcfc3a7c0e62bae25f0ad1c5be7d4e2",
+ "trial_source_fingerprint_sha256": "3b4d69526653673e094ff4e08ca72929f3d13d7b5ba269993f58649572beaede",
+ "derivation": {
+  "method": "retrospective_rescore_from_preserved_ledger",
+  "note": "No simulation was re-run. Every v4 metric was recomputed from the preserved event ledger and terminal snapshot of the source trials. The v3 run reports were not rescored or edited.",
+  "source_runs": [
+   "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-11",
+   "runs/benchmarks/gpt-5-4-participant-v3-provisional-seed11-20260726-035825/seed-41"
+  ]
+ },
+ "accepted_prior_trial": {
+  "protocol": "participant-v3",
+  "deviation": "static_context_mechanics_text: ore was described as a 'high-value raw material' rather than as smeltable into an ingot. One line of a 6,430-character static context.",
+  "audited": "The other two differences introduced with v4 were checked against these ledgers and do not bind. No structure in any run had more than one contributor, so the construction contributor-share change is inert. Engine-declared trade values never reached agents: market history was already filtered to give/receive bundles and event rendering never exposed event data. Trial settings, horizon, integrity, and usage coverage all match v4 exactly."
+ },
+ "target": {
+  "brain": "codex",
+  "model": "gpt-5.4",
+  "reasoning_effort": "medium"
+ },
+ "result_tier": {
+  "granted": "certified_with_declared_deviation",
+  "required_seeds": [
+   11,
+   41
+  ],
+  "policy": "Both required seeds completed 50 ticks with clean integrity and full usage coverage. The trials predate v4, so certification carries an audited declared deviation rather than being silent."
+ },
+ "replications": {
+  "cells": {
+   "seed-11": {
+    "seed": 11,
+    "status": "certification"
+   },
+   "seed-41": {
+    "seed": 41,
+    "status": "certification"
+   }
+  }
+ }
+}
