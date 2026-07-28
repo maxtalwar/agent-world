@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import tempfile
 import unittest
 from argparse import Namespace
+from pathlib import Path
+
+import agent_world.benchmarks
 
 from agent_world.benchmarks import (
+    BENCHMARK_CORE_FINGERPRINT_FILES,
+    BENCHMARK_PROVIDER_FINGERPRINT_FILES,
     BENCHMARK_EXTENDED_SEEDS,
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_ACCOUNTING_VALUES,
@@ -85,7 +91,7 @@ def _protocol_report(
         "message": "started",
         "data": {
             "benchmark_protocol": BENCHMARK_PROTOCOL_ID,
-            "benchmark_code_fingerprint": benchmark_code_fingerprint(),
+            "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"]),
             "decision_mode": "raw",
             "turn_resolution": "simultaneous",
             "global_max_workers": 4,
@@ -177,7 +183,13 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.preset, "organic-generalists")
         self.assertEqual(args.reasoning_effort, "medium")
         self.assertEqual(args.connector_profile, "stateless-v3")
-        self.assertEqual(args.benchmark_code_fingerprint, benchmark_code_fingerprint())
+        # Scoped to the adapter this trial will invoke, not every adapter.
+        self.assertEqual(
+            args.benchmark_code_fingerprint, benchmark_code_fingerprint(["codex_cli"])
+        )
+        self.assertNotEqual(
+            args.benchmark_code_fingerprint, benchmark_code_fingerprint()
+        )
 
     def test_protocol_flag_rejects_conflicting_settings(self) -> None:
         args = Namespace(
@@ -678,7 +690,7 @@ class BenchmarkTests(unittest.TestCase):
         protocol = benchmark_protocol()
 
         self.assertEqual(protocol["scoring_revision"], BENCHMARK_SCORING_REVISION)
-        self.assertEqual(BENCHMARK_SCORING_REVISION, 1)
+        self.assertEqual(BENCHMARK_SCORING_REVISION, 2)
         self.assertTrue(protocol["score_scale"]["metric_specific"])
         self.assertIsNone(protocol["score_scale"]["maximum"])
         self.assertEqual(
@@ -1060,3 +1072,52 @@ class BenchmarkTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BenchmarkFingerprintScopeTests(unittest.TestCase):
+    """The fingerprint must catch real changes without firing on unrelated ones."""
+
+    def test_provider_scope_excludes_adapters_a_trial_never_invoked(self) -> None:
+        claude = benchmark_code_fingerprint(["claude_cli"])
+        codex = benchmark_code_fingerprint(["codex_cli"])
+        self.assertNotEqual(claude, codex)
+        # Neither equals the all-adapter fingerprint, so scoping is in effect.
+        self.assertNotEqual(claude, benchmark_code_fingerprint())
+        # Asking twice is stable.
+        self.assertEqual(claude, benchmark_code_fingerprint(["claude_cli"]))
+
+    def test_every_provider_maps_to_a_real_source_file(self) -> None:
+        package_dir = Path(agent_world.benchmarks.__file__).resolve().parent
+        for provider, names in BENCHMARK_PROVIDER_FINGERPRINT_FILES.items():
+            for name in names:
+                self.assertTrue(
+                    (package_dir / name).exists(),
+                    f"{provider} maps to missing source {name}",
+                )
+        for name in BENCHMARK_CORE_FINGERPRINT_FILES:
+            self.assertTrue((package_dir / name).exists(), f"missing core source {name}")
+
+    def test_comments_and_docstrings_do_not_change_the_fingerprint(self) -> None:
+        source = b'"""Doc."""\n# a comment\nX = 1\n'
+        same_behavior = b'"""Different doc."""\n# an entirely different comment\nX = 1\n'
+        different_behavior = b'"""Doc."""\n# a comment\nX = 2\n'
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sample.py"
+            path.write_bytes(source)
+            baseline = agent_world.benchmarks._behavior_source_uncached(path)
+            path.write_bytes(same_behavior)
+            self.assertEqual(
+                baseline, agent_world.benchmarks._behavior_source_uncached(path)
+            )
+            path.write_bytes(different_behavior)
+            self.assertNotEqual(
+                baseline, agent_world.benchmarks._behavior_source_uncached(path)
+            )
+
+    def test_unparsable_source_fails_closed_on_raw_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "broken.py"
+            path.write_bytes(b"def (:\n")
+            self.assertEqual(
+                agent_world.benchmarks._behavior_source_uncached(path), b"def (:\n"
+            )

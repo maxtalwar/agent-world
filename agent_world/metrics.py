@@ -285,6 +285,25 @@ def is_model_output_failure_message(
             "Codex decision failed: Codex decision was not a JSON object",
             "Invalid JSON response:",
         )
+    ) or _is_structured_output_exhaustion_message(message)
+
+
+def _is_structured_output_exhaustion_message(message: str) -> bool:
+    """Return whether a boundary failure was the provider's schema retries running out.
+
+    Scoring revision 2. Runs recorded before the adapter separated this case
+    logged it under the generic boundary prefix, which counted it as an
+    ambiguous failure and invalidated the trial. The provider validated every
+    attempt against the decision schema and exhausted its retries, so the fault
+    is the model's output contract. Matching the retained message reclassifies
+    those preserved ledgers from the raw evidence without re-running a trial or
+    changing any trial behavior. Attribution stays unverified, because no failed
+    payload was surfaced for the independent contract validator.
+    """
+
+    return (
+        message.startswith("Claude boundary failed:")
+        and "error_max_structured_output_retries" in message
     )
 
 
@@ -310,6 +329,9 @@ def is_ambiguous_boundary_failure_message(
     message: str | None,
 ) -> bool:
     if event_type != "agent_response" or not message:
+        return False
+    if _is_structured_output_exhaustion_message(message):
+        # Attributed to model output, not to an undiagnosable boundary.
         return False
     return message.startswith(
         (

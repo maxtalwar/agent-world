@@ -87,7 +87,7 @@ class SimulationSessionTests(unittest.TestCase):
                 brains={"agent-1": WaitBrain()},
                 lifecycle_metadata={
                     "benchmark_protocol": BENCHMARK_PROTOCOL_ID,
-                    "benchmark_code_fingerprint": benchmark_code_fingerprint(),
+                    "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"]),
                 },
                 benchmark_checkpoint_ticks=BENCHMARK_DIAGNOSTIC_TICKS,
                 report_stem=root / "run",

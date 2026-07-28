@@ -92,6 +92,8 @@ class ClaudeBrainTests(unittest.TestCase):
         self.assertEqual(decision.actions, [{"type": "move", "direction": "east"}])
         command = run.call_args.args[0]
         self.assertIn("--print", command)
+        # Provider-level schema enforcement keeps Claude on the same footing as
+        # Codex, whose API constrains tool-call arguments to the same contract.
         self.assertIn("--json-schema", command)
         self.assertIn("claude-sonnet-5", command)
         self.assertEqual(command[command.index("--tools") + 1], "")
@@ -185,6 +187,77 @@ class ClaudeBrainTests(unittest.TestCase):
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "ambiguous_boundary")
         self.assertEqual(record["failed_raw_provider_envelope"], envelope)
+
+    def test_structured_output_exhaustion_is_model_output_not_ambiguous(self) -> None:
+        result = {
+            "type": "result",
+            "subtype": "error_max_structured_output_retries",
+            "is_error": True,
+            "usage": {"input_tokens": 10, "output_tokens": 5},
+        }
+        envelope = json.dumps(result)
+        completed = subprocess.CompletedProcess(
+            ["claude"], 1, stdout=envelope, stderr=""
+        )
+        with patch(
+            "agent_world.claude_brain.subprocess.run",
+            return_value=completed,
+        ):
+            brain = ClaudeBrain(executable="claude")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("Claude model output failed:"))
+        record = brain.runtime.usage_records()[-1]
+        self.assertEqual(record["decision_failure_origin"], "model_output")
+        self.assertEqual(
+            record["decision_failure_class"], "structured_output_retries_exhausted"
+        )
+        # No payload is surfaced by the CLI, so the class is evidenced by the
+        # retained envelope but the contract is never independently re-checked.
+        self.assertEqual(
+            record["decision_failure_attribution_confidence"], "unverified"
+        )
+        self.assertIn("failed_raw_provider_envelope", record)
+
+    def test_stalled_stream_is_a_provider_failure(self) -> None:
+        result = {
+            "type": "result",
+            "subtype": "error",
+            "is_error": True,
+            "result": "API Error: Response stalled mid-stream. The response above may be incomplete.",
+        }
+        completed = subprocess.CompletedProcess(
+            ["claude"], 1, stdout=json.dumps(result), stderr=""
+        )
+        with patch(
+            "agent_world.claude_brain.subprocess.run",
+            return_value=completed,
+        ):
+            brain = ClaudeBrain(executable="claude")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        # Provider failures pause the run to a resumable checkpoint instead of
+        # recording a damaged tick as an undiagnosable boundary failure.
+        self.assertTrue(decision.intent.startswith("Claude provider unavailable:"))
+
+    def test_stateless_failure_is_retried_once(self) -> None:
+        failure = subprocess.CompletedProcess(
+            ["claude"], 1, stdout=json.dumps({"is_error": True, "result": "transient"}), stderr=""
+        )
+        success = subprocess.CompletedProcess(
+            ["claude"], 0, stdout=_successful_stdout(intent="recovered"), stderr=""
+        )
+        with patch(
+            "agent_world.claude_brain.subprocess.run",
+            side_effect=[failure, success],
+        ) as run:
+            brain = ClaudeBrain(executable="claude", conversation_mode="stateless")
+            decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        # The retry used to be gated on a resumed session, so it never fired in
+        # the stateless mode every benchmark run requires.
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(decision.intent, "recovered")
 
     def test_minimal_effort_maps_to_low_for_the_cli(self) -> None:
         completed = subprocess.CompletedProcess(["claude"], 0, stdout=_successful_stdout(), stderr="")
@@ -342,3 +415,43 @@ class ClaudeBrainTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ClaudeFencedOutputTests(unittest.TestCase):
+    """A markdown fence is a chat transport artifact, not a contract violation."""
+
+    def _stdout_with_text(self, text: str) -> str:
+        return json.dumps(
+            {
+                "type": "result",
+                "subtype": "success",
+                "is_error": False,
+                "result": text,
+                "usage": {"input_tokens": 10, "output_tokens": 5},
+            }
+        )
+
+    def test_fenced_json_is_accepted_not_scored_as_a_model_failure(self) -> None:
+        fenced = (
+            '```json\n{"intent":"gather","actions":[{"type":"gather",'
+            '"resource":"fiber"}],"messages":[],"memory_updates":[]}\n```'
+        )
+        completed = subprocess.CompletedProcess(
+            ["claude"], 0, stdout=self._stdout_with_text(fenced), stderr=""
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+            brain = ClaudeBrain(executable="claude")
+            decision = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(decision.actions, [{"type": "gather", "resource": "fiber"}])
+        self.assertFalse(decision.intent.startswith("Claude model output"))
+
+    def test_genuinely_malformed_output_still_fails(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["claude"], 0, stdout=self._stdout_with_text('```json\n{"intent":'), stderr=""
+        )
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+            brain = ClaudeBrain(executable="claude")
+            decision = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertTrue(decision.intent.startswith("Claude model output contract failed:"))

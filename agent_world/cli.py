@@ -22,6 +22,7 @@ from agent_world.benchmarks import (
     format_benchmark_leaderboard,
 )
 from agent_world.brain_factory import (
+    BRAIN_TYPE_PROVIDERS,
     BrainSpec,
     PopulationSpec,
     create_population_brains,
@@ -939,7 +940,12 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} requires private agent I/O logging."
         )
-    args.benchmark_code_fingerprint = benchmark_code_fingerprint()
+    # Scope the recorded fingerprint to the adapter this trial will actually
+    # invoke, so later edits to unrelated providers cannot invalidate it.
+    provider = BRAIN_TYPE_PROVIDERS.get(args.brain)
+    args.benchmark_code_fingerprint = benchmark_code_fingerprint(
+        [provider] if provider else None
+    )
 
 
 def _experiment(args: argparse.Namespace) -> None:

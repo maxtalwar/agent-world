@@ -34,8 +34,14 @@ from agent_world.decision_failure import (
     ambiguous_boundary_metadata,
     attribute_decision_failure,
     attributed_failure_message,
+    structured_output_exhaustion_metadata,
 )
-from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
+from agent_world.interface import (
+    _extract_json_object,
+    build_dynamic_observation,
+    build_static_context,
+    parse_agent_response,
+)
 from agent_world.models import AgentDecision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 
@@ -48,8 +54,11 @@ CLAUDE_HARNESS_INSTRUCTIONS = (
     "Return only the JSON object required by the output schema."
 )
 
-# The CLI validates structured output against a plain JSON schema, so the flat
-# action shape used by the API brain works directly (no wrapper needed).
+# The CLI enforces this schema, and the returned payload is validated against it
+# again here. The double check is deliberate: enforcement keeps Claude on the
+# same footing as Codex, whose API constrains tool-call arguments to the same
+# contract, while local validation still catches anything that slips through and
+# retains the raw response as evidence.
 CLAUDE_AGENT_DECISION_SCHEMA: dict[str, Any] = AGENT_DECISION_SCHEMA
 
 
@@ -148,12 +157,20 @@ class ClaudeBrain:
             result = _parse_result_json(completed.stdout)
             if completed.returncode != 0 or (isinstance(result, dict) and result.get("is_error")):
                 detail = _failure_detail(result, completed.stdout, completed.stderr)
-                if invocation.resumed and not (
+                # Retry once from canonical simulation state. This used to be
+                # gated on `invocation.resumed`, which made it unreachable in
+                # stateless mode - the mode every benchmark run requires - so a
+                # single transient hiccup cost a decision with no second attempt.
+                # Quota, auth, and provider faults are excluded: those pause the
+                # run to a resumable checkpoint instead of burning a retry.
+                if not (
                     _is_quota_error(detail)
                     or _is_auth_error(detail)
                     or _is_provider_error(detail)
                 ):
-                    self.boundary.reset("resume_failure")
+                    self.boundary.reset(
+                        "resume_failure" if invocation.resumed else "retry_after_failure"
+                    )
                     invocation = self.boundary.prepare()
                     user_prompt = full_user_prompt
                     fresh_session_id = str(uuid.uuid4())
@@ -194,6 +211,26 @@ class ClaudeBrain:
                         separators=(",", ":"),
                         sort_keys=True,
                     )
+                    if _is_structured_output_exhaustion(detail):
+                        self._record_usage(
+                            usage,
+                            response_model,
+                            {
+                                "agent_id": observation.get("self", {}).get("id"),
+                                "tick": observation.get("tick"),
+                                "duration_seconds": round(elapsed, 3),
+                                **self.boundary.usage_metadata(invocation),
+                                **structured_output_exhaustion_metadata(
+                                    envelope,
+                                    boundary_detail,
+                                ),
+                            },
+                        )
+                        if self.conversation_mode != "stateless":
+                            self.boundary.reset("model_output_failure")
+                        return _failure_decision(
+                            f"Claude model output failed: {boundary_detail}"
+                        )
                     self._record_usage(
                         usage,
                         response_model,
@@ -254,7 +291,7 @@ class ClaudeBrain:
                 return _failure_decision(f"Claude boundary failed: {detail}")
 
             attribution = attribute_decision_failure(
-                decision,
+                _unwrapped_decision_payload(decision),
                 CLAUDE_AGENT_DECISION_SCHEMA,
             )
             if attribution.origin == "model_output":
@@ -365,6 +402,13 @@ class ClaudeBrain:
             "--disable-slash-commands",
             "--setting-sources",
             "",
+            # Provider-level schema enforcement, kept for parity with the other
+            # brains rather than for convenience. Codex trials return tool-call
+            # arguments the API constrains to this same contract, which is why
+            # GPT-5.4 recorded zero output-contract failures across 946
+            # decisions. Dropping it here would not measure Claude the way Codex
+            # is measured; it would hand Claude a materially harder task and
+            # score the difference as if it were model quality.
             "--json-schema",
             json.dumps(CLAUDE_AGENT_DECISION_SCHEMA, sort_keys=True),
         ]
@@ -565,11 +609,55 @@ def _is_provider_error(detail: str) -> bool:
             "unable to connect to api",
             "connection refused",
             "connection closed mid-response",
+            # A stream that dies mid-response is the same transport failure as a
+            # closed connection; the CLI just words it differently. Without this
+            # marker the run records a damaged tick instead of pausing to a
+            # resumable checkpoint and redoing it.
+            "response stalled mid-stream",
+            "stalled mid-stream",
             "connection reset",
             "network error",
             "service unavailable",
         )
     )
+
+
+def _unwrapped_decision_payload(decision: dict[str, Any] | str) -> Any:
+    """Recover the decision object from chat-formatted text before validating.
+
+    The CLI returns the model's reply verbatim, and a chat model idiomatically
+    wraps JSON in a markdown fence. The production adapter already salvages that
+    (``parse_agent_response``), so the validator has to as well - otherwise it
+    reports a contract violation for output the simulation would have accepted,
+    inventing a model failure that never happened. Providers used by the other
+    brains cannot emit a fence at all: OpenRouter runs in JSON mode and Codex
+    returns tool-call arguments, so stripping it removes a transport artifact
+    rather than excusing the model. Genuinely malformed output still has no
+    recoverable object and still fails.
+    """
+
+    if not isinstance(decision, str):
+        return decision
+    try:
+        return json.loads(decision)
+    except json.JSONDecodeError:
+        salvaged = _extract_json_object(decision)
+        return decision if salvaged is None else salvaged
+
+
+def _is_structured_output_exhaustion(detail: str) -> bool:
+    """Return whether the CLI gave up after repeated schema-invalid model output.
+
+    The CLI validates each attempt against the decision schema and retries
+    internally; this error means every attempt failed validation. That is the
+    model failing the output contract, not a transport or harness fault, so it
+    belongs against the model rather than invalidating the trial. The failed
+    payloads are consumed inside the CLI and never surface, so the failure is
+    recorded as unverified: the class is evidenced by the retained envelope, but
+    no payload exists for the independent contract validator to re-check.
+    """
+
+    return "error_max_structured_output_retries" in detail.lower()
 
 
 @lru_cache(maxsize=1)

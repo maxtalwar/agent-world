@@ -65,6 +65,37 @@ def attribute_decision_failure(
     )
 
 
+def structured_output_exhaustion_metadata(
+    provider_envelope: str,
+    detail: str,
+) -> dict[str, Any]:
+    """Describe model output that failed the provider's own schema validation.
+
+    The provider validated every attempt against the decision schema and
+    exhausted its retries, so the fault is the model's output contract rather
+    than the transport or harness. The attempts are consumed inside the provider
+    and never reach us, so attribution is ``unverified``: the retained envelope
+    evidences the failure class, but no payload exists for the independent
+    contract validator to re-check.
+    """
+
+    return {
+        "decision_failure_origin": "model_output",
+        "decision_failure_class": "structured_output_retries_exhausted",
+        "decision_failure_detail": detail,
+        "decision_contract_validation": "not_tested",
+        "decision_contract_detail": (
+            "The provider enforced the decision schema and exhausted its "
+            "structured-output retries. No failed payload was surfaced, so the "
+            "violation is attributed to model output but not independently "
+            "reconfirmed."
+        ),
+        "decision_failure_attribution_confidence": "unverified",
+        "failed_raw_provider_envelope": provider_envelope,
+        "failed_raw_provider_envelope_sha256": _sha256(provider_envelope),
+    }
+
+
 def ambiguous_boundary_metadata(
     provider_envelope: str,
     detail: str,

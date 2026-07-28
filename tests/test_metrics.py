@@ -2,9 +2,48 @@ from __future__ import annotations
 
 import unittest
 
-from agent_world.metrics import compute_metrics
+from agent_world.metrics import (
+    compute_metrics,
+    is_ambiguous_boundary_failure_message,
+    is_confirmed_model_contract_failure_message,
+    is_model_output_failure_message,
+)
 from agent_world.models import AgentDecision, WorldConfig
 from agent_world.world import WorldEngine
+
+
+LEGACY_EXHAUSTION_MESSAGE = (
+    "Claude boundary failed: claude -p exited 1: error_max_structured_output_retries"
+)
+
+
+class DecisionFailureClassificationTests(unittest.TestCase):
+    def test_structured_output_exhaustion_counts_as_model_output(self) -> None:
+        # Scoring revision 2: preserved ledgers logged this under the generic
+        # boundary prefix, which invalidated the trial instead of charging the
+        # model. Reclassifying reproduces the correct score from raw evidence.
+        self.assertTrue(
+            is_model_output_failure_message("agent_response", LEGACY_EXHAUSTION_MESSAGE)
+        )
+        self.assertFalse(
+            is_ambiguous_boundary_failure_message(
+                "agent_response", LEGACY_EXHAUSTION_MESSAGE
+            )
+        )
+
+    def test_structured_output_exhaustion_is_not_independently_confirmed(self) -> None:
+        # The CLI consumes the failed payloads, so nothing is left for the
+        # independent contract validator to re-check.
+        self.assertFalse(
+            is_confirmed_model_contract_failure_message(
+                "agent_response", LEGACY_EXHAUSTION_MESSAGE
+            )
+        )
+
+    def test_other_boundary_failures_stay_ambiguous(self) -> None:
+        other = "Claude boundary failed: claude -p exited 1: something else entirely"
+        self.assertTrue(is_ambiguous_boundary_failure_message("agent_response", other))
+        self.assertFalse(is_model_output_failure_message("agent_response", other))
 
 
 class EconomicMetricsTests(unittest.TestCase):

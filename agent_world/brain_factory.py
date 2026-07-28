@@ -26,6 +26,12 @@ ALLOWED_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max"}
 SUPPORTED_BRAIN_TYPES = frozenset(
     {"survival", "openrouter", "codex", "claude", "cursor"}
 )
+BRAIN_TYPE_PROVIDERS: dict[str, str] = {
+    "openrouter": "openrouter",
+    "codex": "codex_cli",
+    "claude": "claude_cli",
+    "cursor": "cursor_cli",
+}
 
 
 @dataclass(frozen=True)
@@ -122,12 +128,7 @@ class BrainSpec:
 
     @property
     def provider(self) -> str | None:
-        return {
-            "openrouter": "openrouter",
-            "codex": "codex_cli",
-            "claude": "claude_cli",
-            "cursor": "cursor_cli",
-        }.get(self.type)
+        return BRAIN_TYPE_PROVIDERS.get(self.type)
 
     @property
     def billing_mode(self) -> str | None:

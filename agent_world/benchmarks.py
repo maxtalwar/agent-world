@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import math
 from collections import Counter
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -27,9 +29,34 @@ BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
 BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
-BENCHMARK_SCORING_REVISION = 1
+# Revision 2 reclassifies provider structured-output retry exhaustion as a model
+# output contract failure instead of an ambiguous boundary failure. It is a
+# telemetry correction: preserved ledgers reproduce it exactly, and no trial
+# behavior changes.
+BENCHMARK_SCORING_REVISION = 2
 BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
-BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
+
+# Reports whose stored fingerprint predates a scoring revision but whose numbers
+# the revision cannot change. Each entry is a specific recorded hash, never a
+# wildcard, and belongs here only when the changes since it was written are
+# provably outside the path that produced it.
+#
+# 2563b8f7... is the whole-file, all-adapter hash written at commit 974f497. The
+# GPT-5.4 and GPT-5.4-mini seed-11/41 pairs carry it, and everything that has changed since is
+# outside the Codex path those runs executed:
+#   - openai_brain.py was renamed to openrouter_brain.py. Codex trials never
+#     import it. Its SYSTEM_INSTRUCTIONS and AGENT_DECISION_SCHEMA are unchanged
+#     byte for byte, so no agent-visible text moved.
+#   - Scoring revision 2 reclassifies messages beginning "Claude boundary
+#     failed:". Codex trials cannot emit them.
+#   - The Claude adapter stopped delegating schema enforcement to its CLI. Codex
+#     trials do not use that adapter.
+# The world, interface, rules, and scoring formulas are untouched, and these
+# cohorts were already compliant on their own audited prior-trial entry. Without
+# this, a rename in an unrelated provider silently decertifies a finished trial.
+BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset(
+    {"2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc"}
+)
 
 # Trials run under an earlier protocol that are accepted as v4 evidence after
 # an audited review of every behavioral difference. This is deliberately a
@@ -199,24 +226,45 @@ NON_MATERIAL_FREE_ACTION_EVENTS = frozenset(
         "set_access_fee",
     }
 )
-BENCHMARK_FINGERPRINT_FILES = (
+# Sources every trial depends on regardless of which provider ran it: the world
+# and its rules, the agent-facing interface, the tick loop, the decision
+# plumbing, and the scoring itself.
+BENCHMARK_CORE_FINGERPRINT_FILES = (
     "benchmarks.py",
     "brain_boundary.py",
     "brain_runtime.py",
-    "claude_brain.py",
     "cli.py",
-    "codex_brain.py",
-    "cursor_brain.py",
     "decision_failure.py",
     "interface.py",
     "maps.py",
     "models.py",
-    "openrouter_brain.py",
     "rules.py",
     "run_report.py",
     "runner.py",
     "session.py",
     "world.py",
+)
+
+# Provider adapters are scoped to the run that actually invoked them. A Codex
+# trial cannot be changed by editing - or renaming - the Claude or OpenRouter
+# adapter, because that code never executes in it. Hashing every adapter into
+# every fingerprint made unrelated provider work invalidate finished, unrelated
+# trials, which is a false alarm rather than a safeguard. Anything an adapter
+# shares with others lives in the core list above, so a change with real reach
+# still moves every fingerprint.
+BENCHMARK_PROVIDER_FINGERPRINT_FILES: dict[str, tuple[str, ...]] = {
+    "claude_cli": ("claude_brain.py",),
+    "codex_cli": ("codex_brain.py",),
+    "cursor_cli": ("cursor_brain.py",),
+    "openrouter": ("openrouter_brain.py",),
+    "openai_compatible": ("openrouter_brain.py",),
+}
+
+BENCHMARK_FINGERPRINT_FILES = tuple(
+    sorted(
+        set(BENCHMARK_CORE_FINGERPRINT_FILES)
+        | {name for names in BENCHMARK_PROVIDER_FINGERPRINT_FILES.values() for name in names}
+    )
 )
 
 
@@ -309,14 +357,66 @@ def _as_int(value: Any) -> int | None:
         return None
 
 
-def benchmark_code_fingerprint() -> str:
-    """Hash benchmark formulas and behavior-defining world sources."""
+@lru_cache(maxsize=64)
+def _behavior_source_cached(path_text: str, mtime_ns: int, size: int) -> bytes:
+    return _behavior_source_uncached(Path(path_text))
+
+
+def _behavior_source(path: Path) -> bytes:
+    """Cache by path identity and mtime so repeated scoring does not reparse."""
+
+    stat = path.stat()
+    return _behavior_source_cached(str(path), stat.st_mtime_ns, stat.st_size)
+
+
+def _behavior_source_uncached(path: Path) -> bytes:
+    """Return a source form that ignores text which cannot change behavior.
+
+    Comments and docstrings are stripped and formatting is normalized by parsing
+    to a syntax tree. Every executable construct survives - names, constants,
+    control flow, and the prompt and rule strings agents actually receive - so a
+    real change still moves the fingerprint. Only inert prose stops doing so.
+    Falls back to raw bytes if a file cannot be parsed, which fails closed.
+    """
+
+    raw = path.read_bytes()
+    try:
+        tree = ast.parse(raw)
+    except SyntaxError:
+        return raw
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        body = getattr(node, "body", None)
+        if not body:
+            continue
+        first = body[0]
+        if isinstance(first, ast.Expr) and isinstance(first.value, ast.Constant) and isinstance(first.value.value, str):
+            node.body = body[1:] or [ast.Pass()]
+    return ast.dump(tree).encode("utf-8")
+
+
+def benchmark_code_fingerprint(providers: Iterable[str] | None = None) -> str:
+    """Hash benchmark formulas, world sources, and the adapters a trial used.
+
+    ``providers`` scopes which adapters are included. Passing ``None`` covers
+    every adapter, which is the right default when declaring the protocol or
+    launching a run before its population is resolved. Scoring a finished report
+    passes that report's providers so unrelated adapters cannot invalidate it.
+    """
 
     package_dir = Path(__file__).resolve().parent
+    if providers is None:
+        names = BENCHMARK_FINGERPRINT_FILES
+    else:
+        scoped: set[str] = set()
+        for provider in providers:
+            scoped.update(BENCHMARK_PROVIDER_FINGERPRINT_FILES.get(provider, ()))
+        names = tuple(sorted(set(BENCHMARK_CORE_FINGERPRINT_FILES) | scoped))
     digest = hashlib.sha256()
-    for name in BENCHMARK_FINGERPRINT_FILES:
+    for name in names:
         digest.update(name.encode("utf-8"))
-        digest.update((package_dir / name).read_bytes())
+        digest.update(_behavior_source(package_dir / name))
     return digest.hexdigest()
 
 
@@ -500,9 +600,21 @@ def build_benchmark_results(
             "diagnostics": _cohort_diagnostics(events, set(member_ids), raw),
         }
 
+    # Record the fingerprint scoped to the adapters these cohorts ran on, so the
+    # report is compared against the code that could actually have affected it.
+    report_providers = {
+        str(cohort.get("provider"))
+        for cohort in cohorts.values()
+        if cohort.get("provider")
+    }
+    protocol = benchmark_protocol()
+    protocol["code_fingerprint_sha256"] = benchmark_code_fingerprint(
+        report_providers or None
+    )
+
     return {
         "suite_id": BENCHMARK_SUITE_ID,
-        "protocol": benchmark_protocol(),
+        "protocol": protocol,
         "trial": {
             "declared_protocol": trial_protocol,
             "code_fingerprint_sha256": start_data.get(
@@ -760,12 +872,21 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _report_providers(benchmark: dict[str, Any]) -> set[str]:
+    """Return the provider adapters a scored report's cohorts actually invoked."""
+
+    return {
+        str(cohort.get("provider"))
+        for cohort in (benchmark.get("cohorts") or {}).values()
+        if cohort.get("provider")
+    }
+
+
 def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, Any]:
     """Pool protocol-compliant replication counts into model benchmark results."""
 
     grouped: dict[tuple[str, str, str], dict[str, Any]] = {}
     rejected: list[dict[str, Any]] = []
-    expected_fingerprint = benchmark_code_fingerprint()
     for report in reports:
         benchmark = report.get("benchmarks") or {}
         if benchmark.get("suite_id") != BENCHMARK_SUITE_ID:
@@ -779,6 +900,11 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
         report_protocol = benchmark.get("protocol") or {}
         report_fingerprint = report_protocol.get("code_fingerprint_sha256")
         source_revision = int(report_protocol.get("scoring_revision") or 1)
+        # Compare against a fingerprint scoped to the providers this report
+        # actually used, so an unrelated adapter cannot invalidate it.
+        expected_fingerprint = benchmark_code_fingerprint(
+            _report_providers(benchmark)
+        )
         compatible_prior_report = (
             source_revision < BENCHMARK_SCORING_REVISION
             and report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
@@ -1274,8 +1400,15 @@ def _trial_flags(
         and accepted_prior is None
     ):
         flags.append("benchmark_protocol_not_declared")
+    # Scoped to the providers these cohorts ran on, so editing an adapter this
+    # trial never invoked does not retroactively invalidate it.
+    trial_providers = {
+        str(cohort.get("provider"))
+        for cohort in cohorts.values()
+        if cohort.get("provider")
+    }
     if (
-        source_fingerprint != benchmark_code_fingerprint()
+        source_fingerprint != benchmark_code_fingerprint(trial_providers or None)
         and not compatible_source
         and accepted_prior is None
     ):
