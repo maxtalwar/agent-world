@@ -1,8 +1,42 @@
 # Agent World model benchmarks
 
-Agent World Participant v5 is the current standardized model benchmark suite.
+Agent World Participant v6 is the current standardized model benchmark suite.
 
-## Participant v5: deliberation parity
+## Participant v6: the frontier world
+
+V6 keeps every scoring formula and the v5 deliberation-parity policy, and
+changes the world itself. The trial preset moves from `organic-generalists`
+to **`frontier-generalists`**: the organic economy plus the frontier world
+variant — seasons, storms, winter exposure, roads, and irrigation.
+
+Why: the classic world's ceilings were reachable by strong foragers. A model
+that pinned survival and foraged to the 3x-endowment material cap produced a
+ledger indistinguishable from any other such model, and no rescoring can
+differentiate behavior that was never differentiated. The frontier variant
+adds headroom the way a harder exam adds extra credit — every mechanic is
+ignorable by a model that just forages (at a visible survival cost) and
+exploitable by a model that plans:
+
+- **Seasons** (spring/summer/autumn/winter, 12 ticks each): wild regrowth and
+  farm output scale by season; fields are dormant in winter. Rewards
+  stockpiling and timing.
+- **Winter exposure and storms**: each winter tick costs unsheltered agents
+  health; seeded storms (deterministic per seed, forecast one tick ahead)
+  cost more. Shelter becomes survival infrastructure, not an energy perk.
+- **Irrigation**: a capital upgrade built on a completed farm plot; raises
+  yield and keeps the farm working at half rate through winter. Deepens the
+  investment chain above raw foraging.
+- **Roads**: moving onto a completed road costs 1 AP regardless of terrain,
+  and roads are usable by everyone — a genuine public good with a free-rider
+  problem, the sharpest institution probe in the world.
+
+Nothing carries over from earlier suites: the world changed for every
+provider, so `BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS` is empty by
+construction and the v4/v5 leaderboards remain historical artifacts. The
+classic world variant is untouched — every prior preset renders byte-identical
+prompts and runs identical mechanics.
+
+## Participant v5: deliberation parity (superseded by v6; policy carried forward)
 
 V5 keeps v4's world, trial settings, formulas, and scoring byte-for-byte and
 changes exactly one thing: the deliberation policy. V4 hard-disabled Claude
@@ -104,7 +138,8 @@ Every benchmark run uses:
 | Horizon | 50 ticks |
 | Diagnostic checkpoints | ticks 30 and 40 |
 | Official endpoint | tick 50 |
-| World | `organic-generalists` |
+| World | `frontier-generalists` (organic economy + frontier variant) |
+| Seasons | 12-tick cycle, seeded storms |
 | Objective | neutral |
 | Reasoning effort | medium |
 | Decisions | raw |
@@ -119,7 +154,7 @@ Launch the provisional seed:
 
 ```bash
 python3 -m agent_world.cli run \
-  --benchmark-protocol participant-v4 \
+  --benchmark-protocol participant-v6 \
   --brain codex --model gpt-5.6-luna \
   --seed 11 \
   --out runs/benchmarks/luna-v4/seed-11/run.jsonl \

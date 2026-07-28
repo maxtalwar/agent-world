@@ -22,17 +22,18 @@ from agent_world.metrics import (
 from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 
 
-# Participant v5 keeps v4's world, formulas, and scoring unchanged. The suite
-# version exists for one harness change: deliberation parity. V4 hard-disabled
-# Claude extended thinking while Codex models were free to reason, an
-# asymmetric handicap. V5 gives every provider the same opportunity - native
-# adaptive deliberation inside a declared envelope - and reports what each
-# model actually spent. Spend is deliberately NOT equalized: no provider
-# exposes "spend exactly N" (budgets are ceilings, Codex has no token knob at
-# all), so equal-spend parity is unenforceable; allocation within an equal
-# envelope is treated as model policy and measured.
-BENCHMARK_SUITE_ID = "agent-world-participant-v5"
-BENCHMARK_PROTOCOL_ID = "participant-v5"
+# Participant v6 = v5's deliberation-parity policy on the FRONTIER world.
+# V5 (never campaigned) added deliberation parity: every provider runs its
+# native adaptive deliberation inside an equal declared envelope, with spend
+# measured and reported, never equalized. V6 keeps that policy and every
+# scoring formula, and changes the world: the frontier variant adds seasons,
+# storms, winter exposure, roads, and irrigation on top of the organic
+# economy. The upgrade exists to raise the behavioral ceiling before the
+# frontier-model campaign - the classic world's survival and material ceilings
+# were reachable by strong foragers, and top-model ledgers that pin every
+# ceiling cannot be differentiated by any later rescoring.
+BENCHMARK_SUITE_ID = "agent-world-participant-v6"
+BENCHMARK_PROTOCOL_ID = "participant-v6"
 # Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
 # Anthropic ships no per-effort token number to borrow: stock Claude Code
 # drives adaptive thinking from the effort dial with NO token cap (measured
@@ -51,9 +52,10 @@ BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
 BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
-# V5 revision 1 folds in v4's revisions 2 (structured-output retry exhaustion
-# counts as model output, not an ambiguous boundary) and 3 (acceptance
-# registries excluded from the code fingerprint).
+# V6 revision 1. Carries forward v4's revisions 2 (structured-output retry
+# exhaustion counts as model output, not an ambiguous boundary) and 3
+# (acceptance registries excluded from the code fingerprint); scoring formulas
+# are unchanged from v4/v5.
 BENCHMARK_SCORING_REVISION = 1
 # Launch-time fingerprints whose raw-ledger re-derivations stay compliant.
 # Empty under v5: fresh v5 runs record v5 fingerprints, and prior-suite results
@@ -66,59 +68,15 @@ BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
 # entries are preserved in git history.
 BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
 
-# Scored reports from an EARLIER SUITE accepted as current-suite evidence after
-# an audit showing the suite change cannot touch their numbers. Keyed by
-# (suite_id, stored report fingerprint); each entry names the providers the
-# audit covered - a cohort on any other provider stays rejected. V5's only
-# change from v4 is the Claude deliberation envelope (extended thinking enabled
-# under BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS, where v4 forced it off) plus
-# report-side telemetry; world, rules, interface, Codex adapter, and every
-# scoring formula are identical, and v4 revisions 2-3 never touched codex_cli
-# cohorts. A v4 codex report therefore scores identically under v5, while v4
-# CLAUDE results are NOT accepted - they ran without the deliberation
-# opportunity v5 exists to grant, so those pairs are re-run instead.
-#
-# 2563b8f7... - whole-file hash at commit 974f497: the GPT-5.4 pair (itself
-# certified via the audited v3 trial acceptance recorded in its report), the
-# natively-v4 GPT-5.4-mini pair, and the Spark v4 provisional rescore. The
-# same hash appears on v4 CLAUDE reports; the provider restriction is what
-# keeps those out.
-# cc7dab5e... - whole-file hash at 29da033/91d4a8c: the GPT-5.5 pair, launched
-# from a worktree pinned at 91d4a8c.
-BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS: dict[tuple[str, str], dict[str, Any]] = {
-    (
-        "agent-world-participant-v4",
-        "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc",
-    ): {
-        "providers": frozenset({"codex_cli"}),
-        "deviation": (
-            "scored_under_participant_v4: codex-side trial settings are "
-            "byte-identical between v4 and v5; only the Claude deliberation "
-            "envelope changed, which codex_cli cohorts never execute."
-        ),
-        "audited": (
-            "V5 alters MAX_THINKING_TOKENS for claude_cli runs only and adds "
-            "report telemetry; scoring formulas, world, rules, interface, and "
-            "the Codex adapter are unchanged, so v4 scores reproduce exactly."
-        ),
-    },
-    (
-        "agent-world-participant-v4",
-        "cc7dab5e7e243d0a45e9f8a2afec2f461708a5c81290e9c75272ea37d6655a00",
-    ): {
-        "providers": frozenset({"codex_cli"}),
-        "deviation": (
-            "scored_under_participant_v4: codex-side trial settings are "
-            "byte-identical between v4 and v5; only the Claude deliberation "
-            "envelope changed, which codex_cli cohorts never execute."
-        ),
-        "audited": (
-            "V5 alters MAX_THINKING_TOKENS for claude_cli runs only and adds "
-            "report telemetry; scoring formulas, world, rules, interface, and "
-            "the Codex adapter are unchanged, so v4 scores reproduce exactly."
-        ),
-    },
-}
+# Scored reports from an EARLIER SUITE accepted as current-suite evidence
+# after an audit showing the suite change cannot touch their numbers. Keyed by
+# (suite_id, stored report fingerprint) with a provider restriction. EMPTY for
+# v6 by construction: v6 changed the world itself (frontier variant), so every
+# prior trial - codex and claude alike - ran a different simulation and nothing
+# can carry over. The v5 registry entries that carried the v4 codex pairs are
+# preserved in git history, and the v4/v5 leaderboards remain historical
+# artifacts.
+BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS: dict[tuple[str, str], dict[str, Any]] = {}
 
 # Trials run under an earlier protocol that are accepted as v4 evidence after
 # an audited review of every behavioral difference. This is deliberately a
@@ -540,7 +498,9 @@ def benchmark_protocol() -> dict[str, Any]:
             "ticks": 50,
             "diagnostic_score_ticks": list(BENCHMARK_DIAGNOSTIC_TICKS),
             "official_score_tick": 50,
-            "preset": "organic-generalists",
+            "preset": "frontier-generalists",
+            "world_variant": "frontier",
+            "season_length_ticks": 12,
             "economy_mode": "organic",
             "geography_mode": "dispersed",
             "specialization_mode": "generalists",
@@ -1509,6 +1469,10 @@ def _trial_flags(
         "ticks": (run.get("target_ticks"), expected["ticks"]),
         "final_tick": (run.get("final_tick"), expected["ticks"]),
         "economy_mode": (config.get("economy_mode"), expected["economy_mode"]),
+        "world_variant": (
+            config.get("world_variant") or "classic",
+            expected["world_variant"],
+        ),
         "geography_mode": (config.get("geography_mode"), expected["geography_mode"]),
         "specialization_mode": (
             config.get("specialization_mode"),

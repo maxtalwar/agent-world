@@ -62,6 +62,7 @@ TOOL_MAX_DURABILITY = {"tool": 6, "advanced_tool": 16}
 # The baseline treatment deliberately leaves these limits inactive so old runs are
 # comparable with the original world.
 STRUCTURE_OPERATIONS: dict[str, dict[str, object]] = {
+    "irrigation": {"uses_per_tick": 0, "upkeep": {"wood": 1}, "upkeep_interval": 10},
     "farm_plot": {"uses_per_tick": 4, "upkeep": {"fiber": 1}, "upkeep_interval": 8},
     "well": {"uses_per_tick": 8, "upkeep": {"wood": 1}, "upkeep_interval": 10},
     "workshop": {"uses_per_tick": 4, "upkeep": {"wood": 1}, "upkeep_interval": 8},
@@ -74,6 +75,7 @@ STRUCTURE_OPERATIONS: dict[str, dict[str, object]] = {
 # but large enough to serve several agents.  This creates economies of scale
 # without requiring owners to share it or telling anyone to charge a price.
 ORGANIC_STRUCTURE_OPERATIONS: dict[str, dict[str, object]] = {
+    "irrigation": {"uses_per_tick": 0, "upkeep": {"wood": 1}, "upkeep_interval": 12},
     "farm_plot": {"uses_per_tick": 8, "upkeep": {"fiber": 1}, "upkeep_interval": 10},
     "well": {"uses_per_tick": 12, "upkeep": {"wood": 1}, "upkeep_interval": 12},
     "workshop": {"uses_per_tick": 8, "upkeep": {"wood": 1}, "upkeep_interval": 10},
@@ -266,13 +268,92 @@ def economy_features_enabled(economy_mode: str) -> bool:
     return economy_mode in {"commerce", "organic"}
 
 
-def recipes_for_mode(economy_mode: str) -> dict[str, Recipe]:
+# --- Frontier world variant -------------------------------------------------
+#
+# The frontier variant layers seasons, storms, exposure, roads, and irrigation
+# on top of the organic economy. It exists to raise the behavioral ceiling for
+# frontier models: every mechanic is ignorable by a model that just forages
+# (at a survival cost it can see coming), and exploitable by a model that
+# plans - stockpiling before winter, sheltering through storms, irrigating
+# farms, and building roads whose benefit accrues to everyone.
+
+SEASON_ORDER = ("spring", "summer", "autumn", "winter")
+# regen scales wild resource regrowth; farm scales farm-plot work and passive
+# growth (0 = fields dormant); storms is the per-tick storm probability.
+SEASONS: dict[str, dict[str, float]] = {
+    "spring": {"regen": 1.3, "farm": 1.25, "storms": 0.0},
+    "summer": {"regen": 1.0, "farm": 1.0, "storms": 0.0},
+    "autumn": {"regen": 0.7, "farm": 0.75, "storms": 0.15},
+    "winter": {"regen": 0.15, "farm": 0.0, "storms": 0.15},
+}
+
+ROAD_MOVE_COST = 1
+IRRIGATION_FARM_BONUS = 3
+IRRIGATION_PASSIVE_BONUS = 1
+# Irrigated farm plots keep operating at this fraction through winter.
+IRRIGATION_SEASON_FLOOR = 0.5
+
+FRONTIER_STRUCTURE_TYPES = {"road", "irrigation"}
+FRONTIER_RECIPES: dict[str, Recipe] = {
+    "road": Recipe(
+        inputs={"stone": 2, "wood": 1},
+        outputs={},
+        action_points=2,
+        energy=5,
+    ),
+    "irrigation": Recipe(
+        inputs={"wood": 4, "stone": 2, "fiber": 2},
+        outputs={},
+        action_points=3,
+        energy=8,
+        required_terrain=("plains", "forest"),
+    ),
+}
+
+
+def current_season(season_length_ticks: int, tick: int) -> str:
+    period = max(1, int(season_length_ticks))
+    return SEASON_ORDER[(tick // period) % len(SEASON_ORDER)]
+
+
+def season_ticks_remaining(season_length_ticks: int, tick: int) -> int:
+    period = max(1, int(season_length_ticks))
+    return period - (tick % period)
+
+
+def is_storm_tick(seed: int, season_length_ticks: int, tick: int) -> bool:
+    """Deterministic, resume-safe storm schedule.
+
+    Derived by hashing (seed, tick) rather than drawn from the engine RNG so
+    the schedule is identical regardless of how many other random draws have
+    happened - checkpoint resumes and feature-gated code paths cannot shift it.
+    """
+
+    probability = SEASONS[current_season(season_length_ticks, tick)]["storms"]
+    if probability <= 0:
+        return False
+    import hashlib as _hashlib
+
+    digest = _hashlib.sha256(f"{seed}:{tick}:storm".encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], "big") % 1000 < int(probability * 1000)
+
+
+def structure_types_for_variant(world_variant: str) -> set[str]:
+    if world_variant == "frontier":
+        return STRUCTURE_TYPES | FRONTIER_STRUCTURE_TYPES
+    return set(STRUCTURE_TYPES)
+
+
+def recipes_for_mode(economy_mode: str, world_variant: str = "classic") -> dict[str, Recipe]:
     if economy_mode != "organic":
-        return RECIPES
-    effective: dict[str, Recipe] = {}
-    for name, recipe in RECIPES.items():
-        override = ORGANIC_RECIPE_OVERRIDES.get(name)
-        effective[name] = recipe if override is None else replace(recipe, **override)
+        effective = dict(RECIPES)
+    else:
+        effective = {}
+        for name, recipe in RECIPES.items():
+            override = ORGANIC_RECIPE_OVERRIDES.get(name)
+            effective[name] = recipe if override is None else replace(recipe, **override)
+    if world_variant == "frontier":
+        effective.update(FRONTIER_RECIPES)
     return effective
 
 
@@ -317,6 +398,8 @@ GROUP_ADMIN_ACTION_TYPES = {
     "record_agreement",
 }
 STRUCTURE_CAPACITIES = {
+    "road": 0,
+    "irrigation": 0,
     "farm_plot": 0,
     "storage": 120,
     "shelter": 20,

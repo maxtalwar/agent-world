@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 import unittest
+import unittest.mock
 from argparse import Namespace
 from pathlib import Path
 
@@ -64,6 +65,7 @@ def _protocol_report(
         "config": {
             "seed": seed,
             "economy_mode": "organic",
+            "world_variant": "frontier",
             "geography_mode": "dispersed",
             "specialization_mode": "generalists",
             "objective_mode": "neutral",
@@ -212,7 +214,8 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.seed, 11)
         self.assertEqual(args.ticks, 50)
         self.assertEqual(args.agents, 10)
-        self.assertEqual(args.preset, "organic-generalists")
+        self.assertEqual(args.preset, "frontier-generalists")
+        self.assertEqual(args.world_variant, "frontier")
         self.assertEqual(args.reasoning_effort, "medium")
         self.assertEqual(args.connector_profile, "stateless-v3")
         # Scoped to the adapter this trial will invoke, not every adapter.
@@ -1173,10 +1176,29 @@ class FingerprintRegistryExemptionTests(unittest.TestCase):
 
 
 class PriorSuiteAcceptanceTests(unittest.TestCase):
-    """Audited v4 codex reports carry into the v5 pool; nothing else does."""
+    """The prior-suite registry mechanism, exercised with a patched entry.
+
+    The registry itself is empty for v6 - the world changed, so no earlier
+    trial can carry over - but the acceptance machinery stays tested so a
+    future suite that CAN carry results forward has a proven path.
+    """
 
     V4_SUITE = "agent-world-participant-v4"
     V4_FINGERPRINT = "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc"
+
+    def setUp(self) -> None:
+        patcher = unittest.mock.patch.dict(
+            agent_world.benchmarks.BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS,
+            {
+                (self.V4_SUITE, self.V4_FINGERPRINT): {
+                    "providers": frozenset({"codex_cli"}),
+                    "deviation": "scored_under_participant_v4: test entry.",
+                    "audited": "test audit note.",
+                }
+            },
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def _v4_report(self, seed: int, source: str, provider: str = "codex_cli") -> dict:
         report = _protocol_report(seed, source)

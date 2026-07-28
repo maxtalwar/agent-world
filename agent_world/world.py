@@ -32,7 +32,12 @@ from agent_world.rules import (
     COMMUNICATION_ACTION_TYPES,
     RESOURCE_WEIGHTS,
     REST_STRUCTURE_ENERGY_BONUS,
+    IRRIGATION_FARM_BONUS,
+    IRRIGATION_PASSIVE_BONUS,
+    IRRIGATION_SEASON_FLOOR,
     REST_STRUCTURE_TYPES,
+    ROAD_MOVE_COST,
+    SEASONS,
     STORAGE_STRUCTURE_TYPES,
     STRUCTURE_TYPES,
     TERRAIN_RULES,
@@ -44,8 +49,11 @@ from agent_world.rules import (
     WORK_ACTIONS,
     WORKSHOP_CRAFTING_ENERGY_DISCOUNT,
     economy_features_enabled,
+    current_season,
+    is_storm_tick,
     recipes_for_mode,
     structure_operations_for_mode,
+    structure_types_for_variant,
     structure_capacity_for_mode,
 )
 
@@ -359,8 +367,11 @@ class WorldEngine:
         if not self.in_bounds(destination):
             self._invalid(agent, action, "Destination is outside world bounds.")
             return action_points - 1
-        terrain = self.state.tile_at(destination).terrain
+        destination_tile = self.state.tile_at(destination)
+        terrain = destination_tile.terrain
         cost = TERRAIN_RULES[terrain].move_cost
+        if self._frontier() and self._tile_has_complete_structure(destination_tile, "road"):
+            cost = min(cost, ROAD_MOVE_COST)
         if action_points < cost:
             self._invalid(agent, action, f"Moving into {terrain} requires {cost} action points.")
             return 0
@@ -627,9 +638,19 @@ class WorldEngine:
         if room <= 0:
             self._invalid(agent, action, "This farm plot is already at its finite food capacity.")
             return action_points - cost
+        farm_factor = self._season_factor("farm")
+        irrigated = self._frontier() and self._tile_has_complete_structure(tile, "irrigation")
+        if irrigated:
+            farm_factor = max(farm_factor, IRRIGATION_SEASON_FLOOR)
+        if farm_factor <= 0:
+            self._invalid(agent, action, "Fields are dormant in winter; irrigation keeps a farm workable.")
+            return action_points - cost
         if not self._use_productive_structure(agent, farm_plot, action):
             return action_points - cost
-        quantity_added = min(room, self.state.config.farm_food_added + skill_yield_bonus + tool_yield_bonus)
+        base_yield = self.state.config.farm_food_added + skill_yield_bonus + tool_yield_bonus
+        if irrigated:
+            base_yield += IRRIGATION_FARM_BONUS
+        quantity_added = min(room, max(1, int(round(base_yield * farm_factor))))
         tile.resources["food"] += quantity_added
         agent.needs.energy = max(0, agent.needs.energy - energy)
         self._improve_skill(agent, "farming")
@@ -655,11 +676,11 @@ class WorldEngine:
 
     def _action_craft(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         recipe_name = str(action.get("recipe", ""))
-        recipe = recipes_for_mode(self.state.config.economy_mode).get(recipe_name)
+        recipe = self._recipes().get(recipe_name)
         if recipe is None:
             self._invalid(agent, action, f"Unknown recipe: {recipe_name}")
             return action_points - 1
-        if recipe_name in STRUCTURE_TYPES:
+        if recipe_name in self._structure_types():
             return self._action_build(agent, {"type": "build", "structure": recipe_name}, action_points)
         if action_points < recipe.action_points:
             self._invalid(agent, action, f"Crafting {recipe_name} requires {recipe.action_points} action points.")
@@ -1360,13 +1381,14 @@ class WorldEngine:
 
     def _action_build(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         structure_type = str(action.get("structure", ""))
-        recipe = recipes_for_mode(self.state.config.economy_mode).get(structure_type)
+        recipe = self._recipes().get(structure_type)
         owner_id = self._owner_for_action(agent, action)
         if owner_id is None:
             self._invalid(agent, action, "Agent is not a member of that group.")
             return action_points - 1
-        if structure_type not in STRUCTURE_TYPES or recipe is None:
-            self._invalid(agent, action, "Can only build farm_plot, storage, shelter, house, workshop, or well.")
+        if structure_type not in self._structure_types() or recipe is None:
+            buildable = ", ".join(sorted(self._structure_types()))
+            self._invalid(agent, action, f"Can only build {buildable}.")
             return action_points - 1
         if action_points < recipe.action_points:
             self._invalid(agent, action, f"Building {structure_type} requires {recipe.action_points} action points.")
@@ -1410,6 +1432,12 @@ class WorldEngine:
                 failure_type="contention_failure" if contention else "invalid_proposal",
                 contention_cause="structure_started_earlier_this_tick" if contention else None,
             )
+            return action_points - recipe.action_points
+        if structure_type == "irrigation" and not self._tile_has_complete_structure(tile, "irrigation") and not self._tile_has_complete_structure(tile, "farm_plot"):
+            self._invalid(agent, action, "Irrigation must be built on a tile with a completed farm plot.")
+            return action_points - recipe.action_points
+        if structure_type in {"road", "irrigation"} and self._tile_has_complete_structure(tile, structure_type):
+            self._invalid(agent, action, f"This tile already has a {structure_type}.")
             return action_points - recipe.action_points
         if tile.claimed_by and not self._controls_owner(agent, tile.claimed_by) and not self._has_access_grant(agent, tile.access):
             self._invalid(agent, action, "Cannot build on another agent's claimed tile without access.")
@@ -1602,7 +1630,7 @@ class WorldEngine:
     ) -> int:
         """Credit recipe completion without assigning market values to inputs."""
 
-        recipe = recipes_for_mode(self.state.config.economy_mode).get(structure.type)
+        recipe = self._recipes().get(structure.type)
         requirements = {
             str(item): int(quantity)
             for item, quantity in (getattr(recipe, "inputs", {}) or {}).items()
@@ -1923,21 +1951,41 @@ class WorldEngine:
             agent.needs.water -= water_decay
             agent.needs.energy -= 0 if shelter_bonus else energy_decay
             damage = 0
+            causes: list[str] = []
             if agent.needs.food <= 0:
                 damage += 3
+                causes.append("hunger")
             if agent.needs.water <= 0:
                 damage += 5
+                causes.append("thirst")
             if agent.needs.energy <= 0:
                 damage += self.state.config.exhaustion_damage
+                causes.append("exhaustion")
+            if self._frontier() and not shelter_bonus:
+                # Exposure: winter and storms hurt anyone not on a completed
+                # shelter or house tile. Shelter is survival infrastructure in
+                # the frontier variant, not just an energy perk.
+                if self._season_name() == "winter":
+                    damage += self.state.config.winter_exposure_damage
+                    causes.append("winter_exposure")
+                if self._is_storm():
+                    damage += self.state.config.storm_exposure_damage
+                    causes.append("storm_exposure")
             self._clamp_needs(agent)
             if damage:
                 agent.health = max(0, agent.health - damage)
+                cause_text = ", ".join(causes) if causes else "hardship"
                 self.log_event(
                     "survival_damage",
                     actor_id=agent.id,
                     position=agent.position,
-                    message=f"{agent.name} suffered survival damage.",
-                    data={"damage": damage, "health": agent.health, "reserves": agent.needs.as_dict()},
+                    message=f"{agent.name} suffered survival damage ({cause_text}).",
+                    data={
+                        "damage": damage,
+                        "causes": causes,
+                        "health": agent.health,
+                        "reserves": agent.needs.as_dict(),
+                    },
                     scope="private",
                     recipients={agent.id},
                 )
@@ -1983,11 +2031,12 @@ class WorldEngine:
         for row in self.state.tiles:
             for tile in row:
                 rule = TERRAIN_RULES[tile.terrain]
+                regen_factor = self._season_factor("regen")
                 for resource in rule.regen:
                     maximum = self._resource_regen_capacity(rule.base_resources.get(resource, 0))
                     if maximum <= 0 or tile.resources[resource] >= maximum:
                         continue
-                    if self.rng.random() < min(1.0, self.state.config.regen_rate_for(tile.terrain, resource)):
+                    if self.rng.random() < min(1.0, self.state.config.regen_rate_for(tile.terrain, resource) * regen_factor):
                         tile.resources[resource] += 1
                 if any(
                     self.state.structures[sid].type == "farm_plot"
@@ -1998,9 +2047,14 @@ class WorldEngine:
                     )
                     for sid in tile.structure_ids
                 ):
+                    passive_factor = self._season_factor("farm")
+                    passive_growth = self.state.config.farm_passive_food_growth
+                    if self._frontier() and self._tile_has_complete_structure(tile, "irrigation"):
+                        passive_factor = max(passive_factor, IRRIGATION_SEASON_FLOOR)
+                        passive_growth += IRRIGATION_PASSIVE_BONUS
                     tile.resources["food"] = min(
                         self.state.config.farm_food_capacity,
-                        tile.resources["food"] + self.state.config.farm_passive_food_growth,
+                        tile.resources["food"] + int(round(passive_growth * passive_factor)),
                     )
 
     def _expire_trades(self) -> None:
@@ -2431,6 +2485,41 @@ class WorldEngine:
         weight = max(1, RESOURCE_WEIGHTS.get(item, 1))
         return max(0, (agent.carry_capacity - agent.inventory_weight()) // weight)
 
+    def _recipes(self):
+        return recipes_for_mode(self.state.config.economy_mode, self.state.config.world_variant)
+
+    def _structure_types(self) -> set[str]:
+        return structure_types_for_variant(self.state.config.world_variant)
+
+    def _frontier(self) -> bool:
+        return self.state.config.world_variant == "frontier"
+
+    def _season_name(self, tick: int | None = None) -> str | None:
+        if not self._frontier():
+            return None
+        return current_season(self.state.config.season_length_ticks, self.state.tick if tick is None else tick)
+
+    def _season_factor(self, key: str) -> float:
+        season = self._season_name()
+        if season is None:
+            return 1.0
+        return float(SEASONS[season][key])
+
+    def _is_storm(self, tick: int | None = None) -> bool:
+        if not self._frontier():
+            return False
+        return is_storm_tick(
+            self.state.config.seed,
+            self.state.config.season_length_ticks,
+            self.state.tick if tick is None else tick,
+        )
+
+    def _tile_has_complete_structure(self, tile, structure_type: str) -> bool:
+        return any(
+            self.state.structures[sid].type == structure_type and self.state.structures[sid].is_complete
+            for sid in tile.structure_ids
+        )
+
     def _skill_modifiers(self, agent: Agent, skill: str) -> tuple[int, int]:
         level = max(1, agent.skills.get(skill, 1))
         yield_interval = max(1, self.state.config.skill_yield_interval)
@@ -2611,8 +2700,8 @@ class WorldEngine:
             tile = self.state.tile_at(agent.position)
             buildable: list[str] = []
             blockers: dict[str, Any] = {}
-            for structure_type in sorted(STRUCTURE_TYPES):
-                recipe = recipes_for_mode(self.state.config.economy_mode)[structure_type]
+            for structure_type in sorted(self._structure_types()):
+                recipe = self._recipes()[structure_type]
                 missing = self._missing(agent.inventory, recipe.inputs)
                 terrain_ok = not recipe.required_terrain or tile.terrain in recipe.required_terrain
                 energy_ok = agent.needs.energy >= recipe.energy

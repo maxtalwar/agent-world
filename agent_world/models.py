@@ -80,6 +80,12 @@ class WorldConfig:
     # society formation merely because the action budget is coarse.
     communication_action_cost: int | None = None
     group_admin_action_cost: int | None = None
+    # Frontier world variant: seasons, storms, exposure, roads, irrigation.
+    # "classic" leaves every prior preset byte-identical.
+    world_variant: str = "classic"
+    season_length_ticks: int = 12
+    winter_exposure_damage: int = 3
+    storm_exposure_damage: int = 4
     skill_yield_interval: int = 3
     skill_energy_interval: int = 4
     skill_bonus_cap: int = 2

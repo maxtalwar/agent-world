@@ -69,6 +69,16 @@ RUN_PRESETS = {
         "objective_mode": "neutral",
         "specialization_mode": "specialists",
     },
+    # The organic world plus the frontier variant: seasons, storms, exposure,
+    # roads, and irrigation. Built to raise the behavioral ceiling for frontier
+    # models without changing scoring.
+    "frontier-generalists": {
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "objective_mode": "neutral",
+        "specialization_mode": "generalists",
+        "world_variant": "frontier",
+    },
 }
 
 
@@ -452,6 +462,7 @@ def _run(args: argparse.Namespace) -> None:
         args.economy_mode = getattr(args, "economy_mode", None) or preset["economy_mode"]
         args.geography_mode = getattr(args, "geography_mode", None) or preset["geography_mode"]
         args.specialization_mode = getattr(args, "specialization_mode", None) or preset["specialization_mode"]
+        args.world_variant = getattr(args, "world_variant", None) or preset.get("world_variant", "classic")
         args.decision_mode = getattr(args, "decision_mode", None) or "raw"
         args.connector_profile = getattr(args, "connector_profile", None) or "stateless-v1"
         args.conversation_mode = getattr(args, "conversation_mode", None) or "stateless"
@@ -486,6 +497,7 @@ def _run(args: argparse.Namespace) -> None:
             geography_mode=getattr(args, "geography_mode", "shared_oasis"),
             specialization_mode=getattr(args, "specialization_mode", "generalists"),
             action_feedback_mode=getattr(args, "action_feedback_mode", None) or "baseline",
+            world_variant=getattr(args, "world_variant", None) or "classic",
         )
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
@@ -899,7 +911,8 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
     locked = {
         "ticks": 50,
         "agents": 10,
-        "preset": "organic-generalists",
+        "preset": "frontier-generalists",
+        "world_variant": "frontier",
         "objective_mode": "neutral",
         "economy_mode": "organic",
         "geography_mode": "dispersed",

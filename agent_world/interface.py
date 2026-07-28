@@ -12,7 +12,12 @@ from agent_world.rules import (
     GROUP_ADMIN_ACTION_TYPES,
     MECHANICS_SUMMARY,
     TERRAIN_RULES,
+    SEASONS,
+    SEASON_ORDER,
+    current_season,
+    is_storm_tick,
     recipes_for_mode,
+    season_ticks_remaining,
 )
 
 
@@ -73,7 +78,9 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         for contract in getattr(state, "contracts", {}).values()
         if agent.id in {contract.lender_id, contract.borrower_id}
     ]
-    effective_recipes = recipes_for_mode(state.config.economy_mode)
+    effective_recipes = recipes_for_mode(
+        state.config.economy_mode, getattr(state.config, "world_variant", "classic")
+    )
     disabled_actions = (
         {"offer_contract", "accept_contract", "repay_contract"}
         if state.config.economy_mode == "organic"
@@ -88,8 +95,20 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             for event in recent_events
             if not (event.get("actor_id") == agent.id and event.get("type") in ACTION_FAILURE_EVENT_TYPES)
         ]
+    season_payload = None
+    if getattr(state.config, "world_variant", "classic") == "frontier":
+        length = state.config.season_length_ticks
+        season_payload = {
+            "name": current_season(length, state.tick),
+            "ticks_remaining": season_ticks_remaining(length, state.tick),
+        }
+        if is_storm_tick(state.config.seed, length, state.tick):
+            season_payload["storm"] = True
+        if is_storm_tick(state.config.seed, length, state.tick + 1):
+            season_payload["storm_warning"] = True
     return {
         "tick": state.tick,
+        **({"season": season_payload} if season_payload else {}),
         "world": {
             "width": state.config.width,
             "height": state.config.height,
@@ -97,6 +116,10 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "action_points_per_tick": state.config.action_points_per_tick,
             "objective_mode": getattr(state.config, "objective_mode", "neutral"),
             "economy_mode": getattr(state.config, "economy_mode", "baseline"),
+            "world_variant": getattr(state.config, "world_variant", "classic"),
+            "season_length_ticks": getattr(state.config, "season_length_ticks", 12),
+            "winter_exposure_damage": getattr(state.config, "winter_exposure_damage", 3),
+            "storm_exposure_damage": getattr(state.config, "storm_exposure_damage", 4),
             "geography_mode": getattr(state.config, "geography_mode", "shared_oasis"),
             "specialization_mode": getattr(state.config, "specialization_mode", "generalists"),
             # Used only to construct the treatment-specific prompt. The compact
@@ -325,14 +348,47 @@ def build_static_context(world: dict[str, Any]) -> str:
     for name, rule in sorted(TERRAIN_RULES.items()):
         passable = "" if rule.passable else ", impassable"
         lines.append(f"- {name}: {rule.move_cost}/{rule.max_occupants}{passable}")
+    if world.get("world_variant") == "frontier":
+        length = world.get("season_length_ticks", 12)
+        winter_damage = world.get("winter_exposure_damage", 3)
+        storm_damage = world.get("storm_exposure_damage", 4)
+        lines.append("")
+        lines.append(f"SEASONS (cycle {'->'.join(SEASON_ORDER)}, {length} ticks each; current season is in your observation):")
+        for name in SEASON_ORDER:
+            factors = SEASONS[name]
+            storm_text = f", storms possible" if factors["storms"] > 0 else ""
+            lines.append(
+                f"- {name}: wild regrowth x{factors['regen']}, farm work/growth x{factors['farm']}{storm_text}"
+            )
+        lines.append(
+            f"- exposure: each winter tick costs {winter_damage} health, and each storm tick {storm_damage} more, unless you end the tick on a completed shelter or house tile."
+        )
+        lines.append(
+            "- storms strike only in autumn/winter; a storm_warning in your observation means a storm hits next tick."
+        )
+        lines.append(
+            "- road (structure): moving onto a tile with a completed road costs 1 ap/en regardless of terrain; roads are usable by everyone."
+        )
+        lines.append(
+            "- irrigation (structure): built on a tile with a completed farm plot; increases farm yield and keeps the farm working at half rate through winter."
+        )
     lines.append("")
     lines.append("ACTIONS (cost ap/en; omitted en=0):")
     disabled_actions = set(world.get("disabled_actions", []))
+    world_recipes = world.get("recipes", {})
+    recipe_names = list(world_recipes)
+    structure_names = [
+        name for name, recipe in world_recipes.items() if not recipe.get("outputs")
+    ]
     for action in ACTION_SCHEMA:
         if action.get("type") in disabled_actions:
             continue
         cost = action.get("cost", {})
         params = action.get("parameters", {})
+        if recipe_names and action.get("type") == "craft" and "recipe" in params:
+            params = {**params, "recipe": recipe_names}
+        if structure_names and action.get("type") == "build" and "structure" in params:
+            params = {**params, "structure": structure_names}
         param_text = (
             " {" + ",".join(f"{key}={_compact_parameter(value)}" for key, value in params.items()) + "}"
             if params
