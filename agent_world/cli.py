@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from dataclasses import asdict
 from datetime import datetime, timezone
 import json
@@ -15,6 +16,7 @@ from agent_world.ablation import format_table, run_ablation
 from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.benchmarks import (
     BENCHMARK_ALLOWED_SEEDS,
+    BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
     BENCHMARK_DIAGNOSTIC_TICKS,
     BENCHMARK_PROTOCOL_ID,
     aggregate_benchmark_reports,
@@ -593,6 +595,9 @@ def _run(args: argparse.Namespace) -> None:
         "benchmark_code_fingerprint": getattr(
             args, "benchmark_code_fingerprint", None
         ),
+        "claude_thinking_budget_tokens": getattr(
+            args, "claude_thinking_budget_tokens", None
+        ),
     }
 
     if not resumed:
@@ -940,6 +945,14 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} requires private agent I/O logging."
         )
+    # Participant v5 deliberation envelope: Claude runs get extended thinking
+    # up to the declared ceiling instead of the harness default of 0, matching
+    # the opportunity Codex models have always had. Codex settings are
+    # untouched, which is what keeps audited v4 codex reports comparable.
+    os.environ["CLAUDE_MAX_THINKING_TOKENS"] = str(
+        BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
+    )
+    args.claude_thinking_budget_tokens = BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
     # Scope the recorded fingerprint to the adapter this trial will actually
     # invoke, so later edits to unrelated providers cannot invalidate it.
     provider = BRAIN_TYPE_PROVIDERS.get(args.brain)

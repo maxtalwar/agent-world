@@ -1,6 +1,12 @@
 # Repository workflow
 
 - After making any workspace change, run the relevant validation, commit the change, and push the branch before handing work back to the user.
+- When a run, experiment, debug session, or benchmark surfaces something
+  genuinely interesting — a model quirk, a capability inversion, an emergent
+  behavior, a harness effect that masqueraded as model behavior — append a
+  dated, evidence-backed entry to `docs/insights.md` before finishing the
+  task. That file is the project's institutional memory; its header defines
+  the bar and the format. Routine scores do not qualify; surprises do.
 - Keep commits scoped and use clear, human-readable commit messages.
 - Never commit secrets, local credentials, or populated environment files.
 - Never launch a long-running model-backed simulation directly from the shared

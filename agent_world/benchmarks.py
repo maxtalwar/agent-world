@@ -22,75 +22,94 @@ from agent_world.metrics import (
 from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 
 
-BENCHMARK_SUITE_ID = "agent-world-participant-v4"
-BENCHMARK_PROTOCOL_ID = "participant-v4"
+# Participant v5 keeps v4's world, formulas, and scoring unchanged. The suite
+# version exists for one harness change: deliberation parity. V4 hard-disabled
+# Claude extended thinking while Codex models were free to reason, an
+# asymmetric handicap. V5 gives every provider the same opportunity - native
+# adaptive deliberation inside a declared envelope - and reports what each
+# model actually spent. Spend is deliberately NOT equalized: no provider
+# exposes "spend exactly N" (budgets are ceilings, Codex has no token knob at
+# all), so equal-spend parity is unenforceable; allocation within an equal
+# envelope is treated as model policy and measured.
+BENCHMARK_SUITE_ID = "agent-world-participant-v5"
+BENCHMARK_PROTOCOL_ID = "participant-v5"
+# Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
+# Codex-side settings are byte-identical to v4, which is what lets audited v4
+# codex reports carry over without re-running.
+BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS = 8192
 BENCHMARK_SEEDS = frozenset({11, 41})
 BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
 BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
-# Revision 2 reclassifies provider structured-output retry exhaustion as a model
-# output contract failure instead of an ambiguous boundary failure. Revision 3
-# excludes the historical acceptance registries from the code fingerprint (see
-# FINGERPRINT_EXEMPT_REGISTRIES). Both are telemetry corrections: preserved
-# ledgers reproduce identical scores, and no trial behavior changes.
-BENCHMARK_SCORING_REVISION = 3
-# Launch-time fingerprints recorded in raw ledgers by runs whose behavior is
-# identical to current code, so re-deriving a report from those ledgers stays
-# compliant. Same audits as the report list below: 2563b8f7 (whole-file hash at
-# 974f497; GPT-5.4-mini pair), cc7dab5e (whole-file hash at 29da033/91d4a8c;
-# GPT-5.5 pair), 0595c58f (claude-scoped hash after 3df8d67; Sonnet 4.6 and
-# Haiku 4.5 pairs).
-BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
-    {
-        "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc",
-        "cc7dab5e7e243d0a45e9f8a2afec2f461708a5c81290e9c75272ea37d6655a00",
-        "0595c58f5a1c8a0bb40873c97f01d5a45947a5cbe6603d85bccb2d2f739c878c",
-    }
-)
+# V5 revision 1 folds in v4's revisions 2 (structured-output retry exhaustion
+# counts as model output, not an ambiguous boundary) and 3 (acceptance
+# registries excluded from the code fingerprint).
+BENCHMARK_SCORING_REVISION = 1
+# Launch-time fingerprints whose raw-ledger re-derivations stay compliant.
+# Empty under v5: fresh v5 runs record v5 fingerprints, and prior-suite results
+# enter through BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS below instead. The v4-era
+# entries this list carried are preserved in git history.
+BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
 
-# Reports whose stored fingerprint predates a scoring revision but whose numbers
-# the revision cannot change. Each entry is a specific recorded hash, never a
-# wildcard, and belongs here only when the changes since it was written are
-# provably outside the path that produced it.
+# Same-suite reports whose stored fingerprint predates a scoring revision but
+# whose numbers the revision cannot change. Empty at v5 revision 1; the v4-era
+# entries are preserved in git history.
+BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
+
+# Scored reports from an EARLIER SUITE accepted as current-suite evidence after
+# an audit showing the suite change cannot touch their numbers. Keyed by
+# (suite_id, stored report fingerprint); each entry names the providers the
+# audit covered - a cohort on any other provider stays rejected. V5's only
+# change from v4 is the Claude deliberation envelope (extended thinking enabled
+# under BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS, where v4 forced it off) plus
+# report-side telemetry; world, rules, interface, Codex adapter, and every
+# scoring formula are identical, and v4 revisions 2-3 never touched codex_cli
+# cohorts. A v4 codex report therefore scores identically under v5, while v4
+# CLAUDE results are NOT accepted - they ran without the deliberation
+# opportunity v5 exists to grant, so those pairs are re-run instead.
 #
-# 2563b8f7... is the whole-file, all-adapter hash written at commit 974f497. The
-# GPT-5.4 and GPT-5.4-mini seed-11/41 pairs carry it, and everything that has changed since is
-# outside the Codex path those runs executed:
-#   - openai_brain.py was renamed to openrouter_brain.py. Codex trials never
-#     import it. Its SYSTEM_INSTRUCTIONS and AGENT_DECISION_SCHEMA are unchanged
-#     byte for byte, so no agent-visible text moved.
-#   - Scoring revision 2 reclassifies messages beginning "Claude boundary
-#     failed:". Codex trials cannot emit them.
-#   - The Claude adapter stopped delegating schema enforcement to its CLI. Codex
-#     trials do not use that adapter.
-# The world, interface, rules, and scoring formulas are untouched, and these
-# cohorts were already compliant on their own audited prior-trial entry. Without
-# this, a rename in an unrelated provider silently decertifies a finished trial.
-#
-# cc7dab5e... is the whole-file, all-adapter hash current at commits 29da033 and
-# 91d4a8c (post-rename, before fingerprints were provider-scoped and comment-
-# insensitive in 3df8d67). The GPT-5.5 seed-11/41 pair carries it, launched from
-# a worktree pinned at 91d4a8c. Everything that changed after is outside the
-# Codex path that pair executed: 3df8d67 touched the fingerprint machinery
-# itself, the Claude adapter, and classifiers that only match messages beginning
-# "Claude boundary failed:", which Codex trials cannot emit. The world,
-# interface, rules, and scoring formulas are identical between 91d4a8c and
-# current, so revision-2 scoring of these reports reproduces revision-1 numbers
-# exactly.
-# 0595c58f... is the claude_cli-scoped hash recorded by the Claude Sonnet 4.6
-# and Haiku 4.5 seed-11/41 pairs, written after 3df8d67 but before the registry
-# exclusion above existed. The only benchmarks.py changes since are a registry
-# entry addition (now hash-exempt) and the exclusion mechanism itself; the
-# world, adapters, and scoring formulas are byte-identical, so revision-3
-# scoring reproduces their numbers exactly.
-BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset(
-    {
+# 2563b8f7... - whole-file hash at commit 974f497: the GPT-5.4 pair (itself
+# certified via the audited v3 trial acceptance recorded in its report), the
+# natively-v4 GPT-5.4-mini pair, and the Spark v4 provisional rescore. The
+# same hash appears on v4 CLAUDE reports; the provider restriction is what
+# keeps those out.
+# cc7dab5e... - whole-file hash at 29da033/91d4a8c: the GPT-5.5 pair, launched
+# from a worktree pinned at 91d4a8c.
+BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS: dict[tuple[str, str], dict[str, Any]] = {
+    (
+        "agent-world-participant-v4",
         "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc",
+    ): {
+        "providers": frozenset({"codex_cli"}),
+        "deviation": (
+            "scored_under_participant_v4: codex-side trial settings are "
+            "byte-identical between v4 and v5; only the Claude deliberation "
+            "envelope changed, which codex_cli cohorts never execute."
+        ),
+        "audited": (
+            "V5 alters MAX_THINKING_TOKENS for claude_cli runs only and adds "
+            "report telemetry; scoring formulas, world, rules, interface, and "
+            "the Codex adapter are unchanged, so v4 scores reproduce exactly."
+        ),
+    },
+    (
+        "agent-world-participant-v4",
         "cc7dab5e7e243d0a45e9f8a2afec2f461708a5c81290e9c75272ea37d6655a00",
-        "0595c58f5a1c8a0bb40873c97f01d5a45947a5cbe6603d85bccb2d2f739c878c",
-    }
-)
+    ): {
+        "providers": frozenset({"codex_cli"}),
+        "deviation": (
+            "scored_under_participant_v4: codex-side trial settings are "
+            "byte-identical between v4 and v5; only the Claude deliberation "
+            "envelope changed, which codex_cli cohorts never execute."
+        ),
+        "audited": (
+            "V5 alters MAX_THINKING_TOKENS for claude_cli runs only and adds "
+            "report telemetry; scoring formulas, world, rules, interface, and "
+            "the Codex adapter are unchanged, so v4 scores reproduce exactly."
+        ),
+    },
+}
 
 # Trials run under an earlier protocol that are accepted as v4 evidence after
 # an audited review of every behavioral difference. This is deliberately a
@@ -413,6 +432,7 @@ FINGERPRINT_EXEMPT_REGISTRIES = frozenset(
     {
         "BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS",
         "BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS",
+        "BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS",
         "BENCHMARK_ACCEPTED_PRIOR_TRIALS",
         "BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES",
     }
@@ -517,6 +537,14 @@ def benchmark_protocol() -> dict[str, Any]:
             "specialization_mode": "generalists",
             "objective_mode": "neutral",
             "reasoning_effort": "medium",
+            "deliberation_policy": (
+                "Provider-native adaptive deliberation inside an equal declared "
+                "envelope; spend is measured and reported, never equalized. No "
+                "provider exposes 'spend exactly N' - budgets are ceilings and "
+                "the Codex CLI has no token knob - so allocation within the "
+                "envelope is model policy and is scored as such."
+            ),
+            "claude_thinking_budget_tokens": BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
             "decision_mode": "raw",
             "action_feedback_mode": "baseline",
             "connector_profile": "stateless-v3",
@@ -954,42 +982,61 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
     rejected: list[dict[str, Any]] = []
     for report in reports:
         benchmark = report.get("benchmarks") or {}
-        if benchmark.get("suite_id") != BENCHMARK_SUITE_ID:
-            rejected.append(
-                {
-                    "source": report.get("source"),
-                    "reason": "missing_or_incompatible_benchmark_suite",
-                }
-            )
-            continue
         report_protocol = benchmark.get("protocol") or {}
         report_fingerprint = report_protocol.get("code_fingerprint_sha256")
-        source_revision = int(report_protocol.get("scoring_revision") or 1)
-        # Compare against a fingerprint scoped to the providers this report
-        # actually used, so an unrelated adapter cannot invalidate it.
-        expected_fingerprint = benchmark_code_fingerprint(
-            _report_providers(benchmark)
-        )
-        compatible_prior_report = (
-            source_revision < BENCHMARK_SCORING_REVISION
-            and report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
-        )
-        if report_fingerprint != expected_fingerprint and not compatible_prior_report:
-            rejected.append(
-                {
-                    "source": report.get("source"),
-                    "reason": "benchmark_code_fingerprint_mismatch",
-                }
+        prior_suite = None
+        if benchmark.get("suite_id") != BENCHMARK_SUITE_ID:
+            prior_suite = BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS.get(
+                (str(benchmark.get("suite_id")), str(report_fingerprint))
             )
-            continue
+            if prior_suite is None:
+                rejected.append(
+                    {
+                        "source": report.get("source"),
+                        "reason": "missing_or_incompatible_benchmark_suite",
+                    }
+                )
+                continue
+        else:
+            source_revision = int(report_protocol.get("scoring_revision") or 1)
+            # Compare against a fingerprint scoped to the providers this report
+            # actually used, so an unrelated adapter cannot invalidate it.
+            expected_fingerprint = benchmark_code_fingerprint(
+                _report_providers(benchmark)
+            )
+            compatible_prior_report = (
+                source_revision < BENCHMARK_SCORING_REVISION
+                and report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
+            )
+            if report_fingerprint != expected_fingerprint and not compatible_prior_report:
+                rejected.append(
+                    {
+                        "source": report.get("source"),
+                        "reason": "benchmark_code_fingerprint_mismatch",
+                    }
+                )
+                continue
         trial = benchmark.get("trial") or {}
         seed = trial.get("seed")
+        report_usage = report.get("usage") or {}
         for cohort_id, cohort in (benchmark.get("cohorts") or {}).items():
             identity = (
                 str(cohort.get("brain") or "unknown"),
                 str(cohort.get("model") or "unknown"),
                 str(cohort.get("reasoning_effort") or "unknown"),
             )
+            if prior_suite is not None and cohort.get("provider") not in prior_suite["providers"]:
+                # The prior-suite audit covers specific providers only; a
+                # cohort on any other provider is not carried over.
+                rejected.append(
+                    {
+                        "source": report.get("source"),
+                        "cohort": cohort_id,
+                        "model": identity[1],
+                        "reason": "prior_suite_provider_not_audited",
+                    }
+                )
+                continue
             if not cohort.get("protocol_compliant"):
                 rejected.append(
                     {
@@ -1014,6 +1061,8 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                     "source_scoring_revisions": set(),
                     "declared_deviations": [],
                     "replications": [],
+                    "reasoning_tokens_total": 0,
+                    "llm_calls_total": 0,
                 },
             )
             row["seeds"].add(int(seed))
@@ -1022,6 +1071,20 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             row["source_scoring_revisions"].add(
                 int(report_protocol.get("scoring_revision") or 1)
             )
+            # Deliberation actually spent - benchmark runs are one uniform
+            # cohort, so run-level usage attributes cleanly to it.
+            row["reasoning_tokens_total"] += int(report_usage.get("reasoning_tokens") or 0)
+            row["llm_calls_total"] += int(report_usage.get("calls") or 0)
+            if prior_suite is not None:
+                row["declared_deviations"].append(
+                    {
+                        "seed": int(seed),
+                        "source": report.get("source"),
+                        "protocol": str(benchmark.get("suite_id")),
+                        "deviation": prior_suite["deviation"],
+                        "audited": prior_suite["audited"],
+                    }
+                )
             deviation = trial.get("accepted_prior_trial")
             if deviation:
                 row["declared_deviations"].append(
@@ -1114,6 +1177,11 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
         results.append(
             {
                 **row,
+                "mean_reasoning_tokens_per_call": (
+                    round(row["reasoning_tokens_total"] / row["llm_calls_total"], 1)
+                    if row["llm_calls_total"]
+                    else None
+                ),
                 "seeds": seeds,
                 "required_seeds": required_seeds,
                 "extended_seeds": extended_seeds,
@@ -1161,8 +1229,8 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
     lines = [
         f"# Agent World benchmark: {aggregate.get('suite_id')}",
         "",
-        "| Model | Seeds | Execution | Competence | Entrepreneurship | Invalid proposals | Status |",
-        "|---|---:|---:|---:|---:|---:|---|",
+        "| Model | Seeds | Execution | Competence | Entrepreneurship | Invalid proposals | Reasoning/decision | Status |",
+        "|---|---:|---:|---:|---:|---:|---:|---|",
     ]
     for row in aggregate.get("results") or []:
         scores = row.get("scores") or {}
@@ -1176,12 +1244,15 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
         )
         if row.get("extended_seeds"):
             seed_text += f" (+{len(row['extended_seeds'])} extended)"
+        reasoning = row.get("mean_reasoning_tokens_per_call")
+        reasoning_text = f"{reasoning:.0f} tok" if reasoning is not None else "n/a"
         lines.append(
             f"| {row.get('model')} | {seed_text} "
             f"| {_format_score(scores.get('effective_execution', {}).get('score'))} "
             f"| {_format_score(scores.get('sustained_competence', {}).get('score'))} "
             f"| {_format_score(scores.get('entrepreneurial_agency', {}).get('score'))} "
             f"| {_format_count_rate(raw.get('invalid_proposals'), raw.get('submitted_actions'))} "
+            f"| {reasoning_text} "
             f"| {status} |"
         )
     replications = [

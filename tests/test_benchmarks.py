@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import tempfile
 import unittest
 from argparse import Namespace
@@ -166,6 +167,37 @@ def _protocol_report(
 
 
 class BenchmarkTests(unittest.TestCase):
+    def setUp(self) -> None:
+        # _apply_benchmark_protocol sets the Claude deliberation envelope in
+        # process env; restore whatever was there so other tests see defaults.
+        self._saved_thinking = os.environ.get("CLAUDE_MAX_THINKING_TOKENS")
+        self.addCleanup(self._restore_thinking)
+
+    def _restore_thinking(self) -> None:
+        if self._saved_thinking is None:
+            os.environ.pop("CLAUDE_MAX_THINKING_TOKENS", None)
+        else:
+            os.environ["CLAUDE_MAX_THINKING_TOKENS"] = self._saved_thinking
+
+    def test_protocol_sets_claude_deliberation_envelope(self) -> None:
+        args = Namespace(
+            benchmark_protocol=BENCHMARK_PROTOCOL_ID,
+            population=None,
+            brain="claude",
+            sequential_decisions=False,
+            seed=None,
+        )
+
+        _apply_benchmark_protocol(args)
+
+        # V5's one harness change: Claude gets the same opportunity to think
+        # that Codex models have always had, inside a declared ceiling.
+        self.assertEqual(os.environ.get("CLAUDE_MAX_THINKING_TOKENS"), "8192")
+        self.assertEqual(args.claude_thinking_budget_tokens, 8192)
+        self.assertEqual(
+            benchmark_protocol()["trial"]["claude_thinking_budget_tokens"], 8192
+        )
+
     def test_protocol_flag_locks_comparable_run_settings(self) -> None:
         args = Namespace(
             benchmark_protocol=BENCHMARK_PROTOCOL_ID,
@@ -690,7 +722,7 @@ class BenchmarkTests(unittest.TestCase):
         protocol = benchmark_protocol()
 
         self.assertEqual(protocol["scoring_revision"], BENCHMARK_SCORING_REVISION)
-        self.assertEqual(BENCHMARK_SCORING_REVISION, 3)
+        self.assertEqual(BENCHMARK_SCORING_REVISION, 1)
         self.assertTrue(protocol["score_scale"]["metric_specific"])
         self.assertIsNone(protocol["score_scale"]["maximum"])
         self.assertEqual(
@@ -1138,3 +1170,59 @@ class FingerprintRegistryExemptionTests(unittest.TestCase):
             self.assertEqual(baseline, agent_world.benchmarks._behavior_source_uncached(path))
             path.write_text(behavior_change)
             self.assertNotEqual(baseline, agent_world.benchmarks._behavior_source_uncached(path))
+
+
+class PriorSuiteAcceptanceTests(unittest.TestCase):
+    """Audited v4 codex reports carry into the v5 pool; nothing else does."""
+
+    V4_SUITE = "agent-world-participant-v4"
+    V4_FINGERPRINT = "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc"
+
+    def _v4_report(self, seed: int, source: str, provider: str = "codex_cli") -> dict:
+        report = _protocol_report(seed, source)
+        report["benchmarks"]["suite_id"] = self.V4_SUITE
+        report["benchmarks"]["protocol"]["code_fingerprint_sha256"] = self.V4_FINGERPRINT
+        report["benchmarks"]["cohorts"]["cohort-1"]["provider"] = provider
+        report["usage"] = {"calls": 500, "reasoning_tokens": 400_000}
+        return report
+
+    def test_audited_v4_codex_pair_certifies_with_declared_deviation(self) -> None:
+        aggregate = aggregate_benchmark_reports(
+            [self._v4_report(11, "v4-seed11"), self._v4_report(41, "v4-seed41")]
+        )
+        self.assertEqual(aggregate["rejected"], [])
+        result = aggregate["results"][0]
+        self.assertTrue(result["certified"])
+        self.assertEqual(result["status"], "certified_with_declared_deviation")
+        self.assertTrue(
+            any(
+                "scored_under_participant_v4" in d.get("deviation", "")
+                for d in result["declared_deviations"]
+            )
+        )
+        # Deliberation spend pools across the pair: 800k tokens / 1000 calls.
+        self.assertEqual(result["mean_reasoning_tokens_per_call"], 800.0)
+        board = format_benchmark_leaderboard(aggregate)
+        self.assertIn("Reasoning/decision", board)
+        self.assertIn("800 tok", board)
+
+    def test_prior_suite_claude_cohorts_are_not_carried_over(self) -> None:
+        # V5 exists to give Claude the deliberation opportunity v4 denied it,
+        # so v4 claude results must re-run rather than carry over - even when
+        # the report fingerprint itself is in the audited registry.
+        aggregate = aggregate_benchmark_reports(
+            [self._v4_report(11, "v4-claude", provider="claude_cli")]
+        )
+        self.assertEqual(aggregate["results"], [])
+        self.assertEqual(
+            aggregate["rejected"][0]["reason"], "prior_suite_provider_not_audited"
+        )
+
+    def test_unknown_prior_suite_fingerprint_is_rejected(self) -> None:
+        report = self._v4_report(11, "v4-unknown")
+        report["benchmarks"]["protocol"]["code_fingerprint_sha256"] = "f" * 64
+        aggregate = aggregate_benchmark_reports([report])
+        self.assertEqual(
+            aggregate["rejected"][0]["reason"],
+            "missing_or_incompatible_benchmark_suite",
+        )

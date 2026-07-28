@@ -56,6 +56,7 @@ directory.
 - `agent_world/experiments.py`: reproducible multi-seed environment × objective experiments with provenance manifests and paired contrasts.
 - `tests/`: regression coverage for world rules, maps, observer, and provider adapters.
 - `docs/`: design notes and future handoff context.
+- `docs/insights.md`: the insights journal — dated, evidence-backed record of model quirks and emergent behaviors discovered across runs. Agents append to it whenever a result would surprise someone who has read every leaderboard.
 
 ## LLM Agents
 

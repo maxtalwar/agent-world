@@ -1,8 +1,45 @@
 # Agent World model benchmarks
 
-Agent World Participant v4 is the current standardized model benchmark suite.
-It keeps the deterministic protocol and evidence safeguards from v3 while
-correcting four construct-validity failures:
+Agent World Participant v5 is the current standardized model benchmark suite.
+
+## Participant v5: deliberation parity
+
+V5 keeps v4's world, trial settings, formulas, and scoring byte-for-byte and
+changes exactly one thing: the deliberation policy. V4 hard-disabled Claude
+extended thinking (`MAX_THINKING_TOKENS=0`, a cost decision) while Codex models
+were free to reason — an asymmetric handicap discovered when per-decision
+reasoning telemetry showed GPT-5.4 spending ~800 reasoning tokens per decision
+while every Claude cohort spent zero by force.
+
+The v5 policy is **equal opportunity, not equal spend**:
+
+- Every provider runs its native adaptive deliberation inside an equal declared
+  envelope. Claude runs get `MAX_THINKING_TOKENS=8192` per decision; Codex
+  settings are unchanged (`model_reasoning_effort=medium`).
+- Spend is measured and reported — the leaderboard carries a
+  **Reasoning/decision** column — but never equalized. No provider exposes
+  "spend exactly N": budgets are ceilings, the Codex CLI has no token knob, and
+  fixed thinking budgets are deprecated API-wide. Allocation inside the
+  envelope is model policy and is scored as such. (GPT-5.5 spending ~0
+  reasoning tokens at medium on this task shape — verified against a knob that
+  demonstrably binds — is a finding about GPT-5.5, not a harness artifact.)
+- Haiku 4.5 has no adaptive thinking mode; its envelope is a fixed manual
+  budget, recorded as a per-model note.
+
+Because the Codex side is byte-identical to v4, audited v4 codex reports carry
+into the v5 pool through `BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS` — a named,
+provider-restricted allowlist keyed by (suite, report fingerprint) — and are
+labelled *certified with declared deviation*. V4 **Claude** results are never
+carried over: they ran without the deliberation opportunity v5 exists to grant,
+so those pairs are re-run under v5.
+
+The v4 construct documentation below remains accurate for v5 — every formula,
+target, seed rule, and integrity rule is unchanged.
+
+## Participant v4 (superseded by v5; formulas unchanged)
+
+Participant v4 kept the deterministic protocol and evidence safeguards from v3
+while correcting four construct-validity failures:
 
 - an all-`wait` policy can no longer receive a perfect execution score, and
   neither can an all-`publish_rule` policy built from zero-cost actions;
