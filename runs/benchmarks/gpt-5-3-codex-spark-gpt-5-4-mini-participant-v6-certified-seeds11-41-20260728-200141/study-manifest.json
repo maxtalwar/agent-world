@@ -16,7 +16,9 @@
       "billing_mode": "chatgpt_plan",
       "model": "gpt-5.3-codex-spark",
       "reasoning_effort": "medium",
-      "seeds": [11]
+      "seeds": [
+        11
+      ]
     },
     "gpt-5.4-mini": {
       "brain": "codex",
@@ -24,14 +26,22 @@
       "billing_mode": "chatgpt_plan",
       "model": "gpt-5.4-mini",
       "reasoning_effort": "medium",
-      "seeds": [11, 41]
+      "seeds": [
+        11,
+        41
+      ]
     }
   },
   "result_tier": {
     "requested": "active_campaign",
     "required_seeds_by_model": {
-      "gpt-5.3-codex-spark": [11],
-      "gpt-5.4-mini": [11, 41]
+      "gpt-5.3-codex-spark": [
+        11
+      ],
+      "gpt-5.4-mini": [
+        11,
+        41
+      ]
     },
     "policy": "The active campaign intentionally uses one Spark seed-11 run because Spark usage is constrained. The paused Spark seed-41 cell is excluded from active certification and remains resumable from its checkpoint. The two Mini seeds remain the requested paired replication."
   },
@@ -49,11 +59,12 @@
         "seed": 41,
         "model": "gpt-5.3-codex-spark",
         "status": "paused",
-        "pause_reason": "User reduced Spark usage to seed 11 only.",
-        "paused_at_utc": "2026-07-28T20:17:57Z",
+        "pause_reason": "Quota-paused at tick 28. This reserve cell was resumed in error on 2026-07-28 by an assistant session recovering what it believed was a hung run; the resume ran ticks 9-28 before the Spark weekly bucket hit 100% (resets 2026-08-04T13:04 local). The checkpoint is clean and resumable; the original user decision to hold Spark to seed 11 stands.",
+        "paused_at_utc": "2026-07-28T22:49:10Z",
         "cohort": "spark53-v6-seed41",
         "screen": "aw-bench-spark53-v6-s41",
-        "target_tick": 50
+        "target_tick": 50,
+        "completed_tick": 28
       },
       "mini-seed-11": {
         "seed": 11,
@@ -76,7 +87,10 @@
   "locked_trial": {
     "agents": 10,
     "ticks": 50,
-    "diagnostic_score_ticks": [30, 40],
+    "diagnostic_score_ticks": [
+      30,
+      40
+    ],
     "official_score_tick": 50,
     "preset": "frontier-generalists",
     "world_variant": "frontier",
@@ -120,16 +134,104 @@
   },
   "commands": {
     "spark-seed-11": [
-      "scripts/run-isolated-cohort", "--cohort", "spark53-v6-seed11", "--commit", "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "codex", "--model", "gpt-5.3-codex-spark", "--seed", "11", "--out", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-11/run.jsonl", "--snapshot", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-11/run-snapshot.json", "--progress"
+      "scripts/run-isolated-cohort",
+      "--cohort",
+      "spark53-v6-seed11",
+      "--commit",
+      "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65",
+      "--",
+      "python3",
+      "-m",
+      "agent_world.cli",
+      "run",
+      "--benchmark-protocol",
+      "participant-v6",
+      "--brain",
+      "codex",
+      "--model",
+      "gpt-5.3-codex-spark",
+      "--seed",
+      "11",
+      "--out",
+      "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-11/run.jsonl",
+      "--snapshot",
+      "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-11/run-snapshot.json",
+      "--progress"
     ],
     "spark-seed-41": [
-      "scripts/run-isolated-cohort", "--cohort", "spark53-v6-seed41", "--commit", "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "codex", "--model", "gpt-5.3-codex-spark", "--seed", "41", "--out", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-41/run.jsonl", "--snapshot", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-41/run-snapshot.json", "--progress"
+      "scripts/run-isolated-cohort",
+      "--cohort",
+      "spark53-v6-seed41",
+      "--commit",
+      "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65",
+      "--",
+      "python3",
+      "-m",
+      "agent_world.cli",
+      "run",
+      "--benchmark-protocol",
+      "participant-v6",
+      "--brain",
+      "codex",
+      "--model",
+      "gpt-5.3-codex-spark",
+      "--seed",
+      "41",
+      "--out",
+      "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-41/run.jsonl",
+      "--snapshot",
+      "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-41/run-snapshot.json",
+      "--progress"
     ],
     "mini-seed-11": [
-      "scripts/run-isolated-cohort", "--cohort", "mini54-v6-seed11", "--commit", "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "codex", "--model", "gpt-5.4-mini", "--seed", "11", "--out", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-11/run.jsonl", "--snapshot", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-11/run-snapshot.json", "--progress"
+      "scripts/run-isolated-cohort",
+      "--cohort",
+      "mini54-v6-seed11",
+      "--commit",
+      "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65",
+      "--",
+      "python3",
+      "-m",
+      "agent_world.cli",
+      "run",
+      "--benchmark-protocol",
+      "participant-v6",
+      "--brain",
+      "codex",
+      "--model",
+      "gpt-5.4-mini",
+      "--seed",
+      "11",
+      "--out",
+      "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-11/run.jsonl",
+      "--snapshot",
+      "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-11/run-snapshot.json",
+      "--progress"
     ],
     "mini-seed-41": [
-      "scripts/run-isolated-cohort", "--cohort", "mini54-v6-seed41", "--commit", "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "codex", "--model", "gpt-5.4-mini", "--seed", "41", "--out", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-41/run.jsonl", "--snapshot", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-41/run-snapshot.json", "--progress"
+      "scripts/run-isolated-cohort",
+      "--cohort",
+      "mini54-v6-seed41",
+      "--commit",
+      "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65",
+      "--",
+      "python3",
+      "-m",
+      "agent_world.cli",
+      "run",
+      "--benchmark-protocol",
+      "participant-v6",
+      "--brain",
+      "codex",
+      "--model",
+      "gpt-5.4-mini",
+      "--seed",
+      "41",
+      "--out",
+      "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-41/run.jsonl",
+      "--snapshot",
+      "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-41/run-snapshot.json",
+      "--progress"
     ]
   },
   "outputs": [
