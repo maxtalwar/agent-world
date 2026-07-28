@@ -211,7 +211,7 @@ BENCHMARK_FINGERPRINT_FILES = (
     "interface.py",
     "maps.py",
     "models.py",
-    "openai_brain.py",
+    "openrouter_brain.py",
     "rules.py",
     "run_report.py",
     "runner.py",

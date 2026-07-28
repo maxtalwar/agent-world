@@ -12,12 +12,12 @@ python3 -m agent_world.cli view --events runs/live.jsonl --snapshot runs/live-sn
 
 Start runs from the browser at `http://127.0.0.1:8765`. The Run panel accepts:
 
-- brain: `survival` for deterministic infrastructure tests, `llm` for API-backed agents, or `codex` for ChatGPT-plan-backed Luna/Terra agents
+- brain: `survival` for deterministic infrastructure tests, `openrouter` for OpenRouter API agents, or `codex` for ChatGPT-plan-backed OpenAI models
 - agents: number of spawned agents
 - ticks: target ticks to run
 - seed: deterministic world/run seed
 - objective/economy/geography treatment modes
-- model: model used for provider-backed runs; `llm` defaults to `z-ai/glm-5.2`, while `codex` defaults to `gpt-5.6-luna`
+- model: model used for provider-backed runs; `openrouter` defaults to `z-ai/glm-5.2`, while `gpt-*` models default to the `codex` route
 - max workers: same-tick brain call concurrency; keep this at `1` for LLM runs unless rate limits allow more
 - agent IO log: whether to keep private observations and prompts in the JSONL audit log
 
@@ -26,7 +26,7 @@ The observatory writes each launched run to the watched `runs/live.jsonl` and `r
 Run a simulation from the terminal:
 
 ```bash
-python3 -m agent_world.cli run --brain llm --ticks 15 --agents 5 --progress --out runs/live.jsonl --snapshot runs/live-snapshot.json
+python3 -m agent_world.cli run --brain openrouter --ticks 15 --agents 5 --progress --out runs/live.jsonl --snapshot runs/live-snapshot.json
 ```
 
 Replay recent events in the terminal:
@@ -71,7 +71,7 @@ Checkpoints preserve the complete engine and random-number-generator state. They
 - `llm.decision_failures`
 - `llm.rate_limit_failures`
 
-Every extracted Codex, Claude, Cursor, or direct OpenAI decision is validated
+Every extracted Codex, Claude, Cursor, or OpenRouter decision is validated
 against its declared contract by code independent from the production adapter.
 Failure usage records store:
 
@@ -109,12 +109,12 @@ It is a watchable overhead view of the simulated world, but the purpose is obser
 
 ## Rate Limits
 
-LLM runs default to one OpenAI request at a time:
+OpenRouter runs default to one request at a time:
 
 ```dotenv
-OPENAI_MAX_PARALLEL_AGENTS=1
-OPENAI_MIN_REQUEST_INTERVAL_SECONDS=0.5
-OPENAI_MAX_RETRIES=4
+OPENROUTER_MAX_PARALLEL_AGENTS=1
+OPENROUTER_MIN_REQUEST_INTERVAL_SECONDS=0.5
+OPENROUTER_MAX_RETRIES=4
 CODEX_MAX_PARALLEL_AGENTS=1
 ```
 

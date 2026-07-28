@@ -34,7 +34,7 @@ from agent_world.decision_failure import (
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
-from agent_world.openai_brain import SYSTEM_INSTRUCTIONS
+from agent_world.openrouter_brain import SYSTEM_INSTRUCTIONS
 from agent_world.rules import ACTION_SCHEMA
 
 
@@ -679,6 +679,7 @@ def _plan_auth_environment() -> dict[str, str]:
     # them so both decisions and limit snapshots use the saved ChatGPT login.
     child_env.pop("CODEX_API_KEY", None)
     child_env.pop("OPENAI_API_KEY", None)
+    child_env.pop("OPENROUTER_API_KEY", None)
     child_env["NO_COLOR"] = "1"
     return child_env
 

@@ -1,7 +1,7 @@
 """Reproducible factorial experiments for Agent World.
 
 The experiment runner deliberately defaults to the local ``SurvivalBrain``. An
-LLM is only contacted when the caller explicitly selects ``brain="llm"``,
+LLM is only contacted when the caller explicitly selects ``brain="openrouter"``,
 ``brain="codex"``, ``brain="claude"``, or ``brain="cursor"``.
 Every cell gets its own directory, usage log, provenance manifest, report, and
 raw outputs so interrupted or mixed-provider batches remain auditable.
@@ -31,7 +31,7 @@ from agent_world.io import atomic_write_json as _atomic_write_json
 from agent_world.io import atomic_write_text as _atomic_write_text
 from agent_world.metrics import compute_metrics
 from agent_world.models import WorldConfig
-from agent_world.openai_brain import OpenAIBrain, SYSTEM_INSTRUCTIONS
+from agent_world.openrouter_brain import OpenRouterBrain, SYSTEM_INSTRUCTIONS
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.session import SimulationSession
 from agent_world.usage import summarize_codex_simulation_credits
@@ -159,8 +159,10 @@ def run_factorial_experiment(
         raise ValueError("ticks must be at least 1.")
     if agents < 1:
         raise ValueError("agents must be at least 1.")
-    if brain not in {"survival", "llm", "codex", "claude", "cursor"}:
-        raise ValueError("brain must be 'survival', 'llm', 'codex', 'claude', or 'cursor'.")
+    if brain not in {"survival", "openrouter", "codex", "claude", "cursor"}:
+        raise ValueError(
+            "brain must be 'survival', 'openrouter', 'codex', 'claude', or 'cursor'."
+        )
     if max_workers is not None and max_workers < 1:
         raise ValueError("max_workers must be at least 1.")
 
@@ -357,7 +359,11 @@ def _run_single(
             "directory": str(run_dir),
             "events": str(events_path),
             "snapshot": str(snapshot_path),
-            "usage": str(usage_path) if brain in {"llm", "codex", "claude", "cursor"} else None,
+            "usage": (
+                str(usage_path)
+                if brain in {"openrouter", "codex", "claude", "cursor"}
+                else None
+            ),
             "plan_usage": str(plan_usage_path) if brain == "codex" else None,
             "checkpoint": str(checkpoint_path),
             "report_json": str(report_json_path),
@@ -390,7 +396,7 @@ def _run_single(
         )
         brains = create_brains(engine, brain_spec, runtime)
         first_brain = next(iter(brains.values()), None)
-        if isinstance(first_brain, (OpenAIBrain, CodexBrain, ClaudeBrain, CursorBrain)):
+        if isinstance(first_brain, (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain)):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
             )
@@ -444,7 +450,7 @@ def _run_single(
             plan_usage_path=plan_usage_path if brain_spec.type == "codex" else None,
         )
         session.start()
-        if isinstance(first_brain, (OpenAIBrain, CodexBrain, ClaudeBrain, CursorBrain)):
+        if isinstance(first_brain, (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain)):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
             )
@@ -666,7 +672,9 @@ def _source_hashes() -> dict[str, str]:
         "rules_source_sha256": _sha256_file(module_dir / "rules.py"),
         "world_source_sha256": _sha256_file(module_dir / "world.py"),
         "interface_source_sha256": _sha256_file(module_dir / "interface.py"),
-        "openai_brain_source_sha256": _sha256_file(module_dir / "openai_brain.py"),
+        "openrouter_brain_source_sha256": _sha256_file(
+            module_dir / "openrouter_brain.py"
+        ),
         "codex_brain_source_sha256": _sha256_file(module_dir / "codex_brain.py"),
         "claude_brain_source_sha256": _sha256_file(module_dir / "claude_brain.py"),
         "cursor_brain_source_sha256": _sha256_file(module_dir / "cursor_brain.py"),
@@ -742,24 +750,33 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
             "billing_mode": "cursor_subscription",
             "timeout_seconds": int(os.environ.get("CURSOR_TIMEOUT_SECONDS", "300")),
         }
-    base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    base_url = os.environ.get(
+        "OPENROUTER_BASE_URL",
+        "https://openrouter.ai/api/v1",
+    ).rstrip("/")
     return {
-        "provider": _provider_name(base_url),
-        "model": model or os.environ.get("OPENAI_MODEL", "gpt-5.4-mini"),
-        "reasoning_effort": reasoning_effort or os.environ.get("OPENAI_REASONING_EFFORT", "medium"),
-        "api_style": os.environ.get("LLM_API_STYLE") or ("chat" if "openrouter.ai" in base_url else "responses"),
+        "provider": "openrouter",
+        "model": model or os.environ.get("OPENROUTER_MODEL", "z-ai/glm-5.2"),
+        "reasoning_effort": (
+            reasoning_effort
+            or os.environ.get("OPENROUTER_REASONING_EFFORT", "medium")
+        ),
+        "api_style": "chat",
         "base_url": _safe_base_url(base_url),
         "provider_order": [
             value.strip()
-            for value in os.environ.get("OPENAI_PROVIDER_ORDER", "").split(",")
+            for value in os.environ.get("OPENROUTER_PROVIDER_ORDER", "").split(",")
             if value.strip()
         ],
-        "max_output_tokens": int(os.environ.get("OPENAI_MAX_OUTPUT_TOKENS", "5000")),
+        "max_output_tokens": int(
+            os.environ.get("OPENROUTER_MAX_OUTPUT_TOKENS", "5000")
+        ),
     }
 
 
 def _brain_runtime_settings(
-    brain: OpenAIBrain | CodexBrain | ClaudeBrain | CursorBrain, max_workers: int
+    brain: OpenRouterBrain | CodexBrain | ClaudeBrain | CursorBrain,
+    max_workers: int,
 ) -> dict[str, Any]:
     if isinstance(brain, CodexBrain):
         return {
@@ -811,15 +828,15 @@ def _brain_runtime_settings(
             "session_max_turns": brain.session_max_turns,
         }
     return {
-        "type": "llm",
-        "provider": _provider_name(brain.base_url),
+        "type": "openrouter",
+        "provider": "openrouter",
         "model": brain.model,
         "reasoning_effort": brain.reasoning_effort,
         "api_style": brain.api_style,
         "base_url": _safe_base_url(brain.base_url),
         "provider_order": [
             value.strip()
-            for value in os.environ.get("OPENAI_PROVIDER_ORDER", "").split(",")
+            for value in os.environ.get("OPENROUTER_PROVIDER_ORDER", "").split(",")
             if value.strip()
         ],
         "max_output_tokens": brain.max_output_tokens,

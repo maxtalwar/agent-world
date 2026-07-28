@@ -28,7 +28,7 @@ AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_conte
 TUNED_OBSERVATORY_DEFAULTS = {
     "ticks": 20,
     "agents": 5,
-    "brain": "llm",
+    "brain": "openrouter",
     "seed": 11,
     "model": "z-ai/glm-5.2",
     "reasoning_effort": "medium",
@@ -254,8 +254,12 @@ class RunController:
 
 def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
     brain = str(payload.get("brain", TUNED_OBSERVATORY_DEFAULTS["brain"])).strip().lower()
-    if brain not in {"survival", "llm", "codex", "claude", "cursor"}:
-        raise ValueError("brain must be survival, llm, codex, claude, or cursor.")
+    if brain == "llm":
+        brain = "openrouter"
+    if brain not in {"survival", "openrouter", "codex", "claude", "cursor"}:
+        raise ValueError(
+            "brain must be survival, openrouter, codex, claude, or cursor."
+        )
     if brain == "codex":
         model = str(payload.get("model") or os.environ.get("CODEX_MODEL") or "gpt-5.6-luna").strip()
         default_effort = os.environ.get("CODEX_REASONING_EFFORT", "low")
@@ -266,8 +270,15 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         model = str(payload.get("model") or os.environ.get("CURSOR_MODEL") or "cursor-grok-4.5").strip()
         default_effort = os.environ.get("CURSOR_REASONING_EFFORT", "low")
     else:
-        model = str(payload.get("model") or os.environ.get("OPENAI_MODEL") or TUNED_OBSERVATORY_DEFAULTS["model"]).strip()
-        default_effort = os.environ.get("OPENAI_REASONING_EFFORT", TUNED_OBSERVATORY_DEFAULTS["reasoning_effort"])
+        model = str(
+            payload.get("model")
+            or os.environ.get("OPENROUTER_MODEL")
+            or TUNED_OBSERVATORY_DEFAULTS["model"]
+        ).strip()
+        default_effort = os.environ.get(
+            "OPENROUTER_REASONING_EFFORT",
+            TUNED_OBSERVATORY_DEFAULTS["reasoning_effort"],
+        )
     reasoning_effort = _parse_reasoning_effort(
         payload.get("reasoning_effort") or default_effort
     )
@@ -323,8 +334,16 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         ticks=_bounded_int(payload.get("ticks", TUNED_OBSERVATORY_DEFAULTS["ticks"]), "ticks", minimum=1, maximum=1000),
         agents=_bounded_int(payload.get("agents", TUNED_OBSERVATORY_DEFAULTS["agents"]), "agents", minimum=1, maximum=20),
         brain=brain,
-        model=model if brain in {"llm", "codex", "claude", "cursor"} else None,
-        reasoning_effort=reasoning_effort if brain in {"llm", "codex", "claude", "cursor"} else None,
+        model=(
+            model
+            if brain in {"openrouter", "codex", "claude", "cursor"}
+            else None
+        ),
+        reasoning_effort=(
+            reasoning_effort
+            if brain in {"openrouter", "codex", "claude", "cursor"}
+            else None
+        ),
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
         max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=20),
         connector_profile=_bounded_choice(

@@ -37,7 +37,7 @@ from agent_world.decision_failure import (
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
-from agent_world.openai_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
+from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 
 
 CLAUDE_HARNESS_INSTRUCTIONS = (

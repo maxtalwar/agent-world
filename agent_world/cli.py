@@ -37,7 +37,7 @@ from agent_world.io import atomic_write_json, atomic_write_text as _atomic_write
 from agent_world.maps import render_tiles
 from agent_world.metrics import compute_metrics
 from agent_world.models import WorldConfig
-from agent_world.openai_brain import OpenAIBrain
+from agent_world.openrouter_brain import OpenRouterBrain
 from agent_world.observer import serve_observer
 from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
 from agent_world.replay import format_event, read_events
@@ -84,8 +84,19 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default=None)
     run_parser.add_argument("--geography-mode", choices=["shared_oasis", "dispersed"], default=None)
     run_parser.add_argument("--specialization-mode", choices=["generalists", "specialists"], default=None)
-    run_parser.add_argument("--brain", choices=["survival", "llm", "codex", "claude", "cursor"], default=None)
-    run_parser.add_argument("--model", default=None, help="Model for --brain llm/codex/claude/cursor. Uses the selected brain's environment default.")
+    run_parser.add_argument(
+        "--brain",
+        choices=["survival", "openrouter", "codex", "claude", "cursor"],
+        default=None,
+    )
+    run_parser.add_argument(
+        "--model",
+        default=None,
+        help=(
+            "Model for --brain openrouter/codex/claude/cursor. "
+            "Uses the selected brain's environment default."
+        ),
+    )
     run_parser.add_argument(
         "--population",
         action="append",
@@ -101,7 +112,10 @@ def main(argv: list[str] | None = None) -> None:
         "--reasoning-effort",
         choices=["minimal", "low", "medium", "high", "xhigh", "max"],
         default=None,
-        help="Reasoning effort for --brain llm/codex/claude/cursor. Uses the selected brain's environment default.",
+        help=(
+            "Reasoning effort for --brain openrouter/codex/claude/cursor. "
+            "Uses the selected brain's environment default."
+        ),
     )
     run_parser.add_argument(
         "--connector-profile",
@@ -135,7 +149,18 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--codex-max-workers", type=int, default=None)
     run_parser.add_argument("--claude-max-workers", type=int, default=None)
     run_parser.add_argument("--cursor-max-workers", type=int, default=None)
-    run_parser.add_argument("--llm-max-workers", type=int, default=None)
+    run_parser.add_argument(
+        "--openrouter-max-workers",
+        dest="openrouter_max_workers",
+        type=int,
+        default=None,
+    )
+    run_parser.add_argument(
+        "--llm-max-workers",
+        dest="openrouter_max_workers",
+        type=int,
+        help=argparse.SUPPRESS,
+    )
     run_parser.add_argument("--assignment-strategy", choices=["ordered", "stratified"], default=None)
     run_parser.add_argument("--assignment-seed", type=int, default=None)
     run_parser.add_argument("--decision-mode", choices=["raw", "validated"], default=None)
@@ -200,7 +225,11 @@ def main(argv: list[str] | None = None) -> None:
     ablate_parser.add_argument("--agents", type=int, default=4)
     ablate_parser.add_argument("--ticks", type=int, default=30, help="Baseline tick count (horizon variants scale this).")
     ablate_parser.add_argument("--seed", type=int, default=11)
-    ablate_parser.add_argument("--brain", choices=["survival", "llm", "codex", "claude", "cursor"], default="survival")
+    ablate_parser.add_argument(
+        "--brain",
+        choices=["survival", "openrouter", "codex", "claude", "cursor"],
+        default="survival",
+    )
     ablate_parser.add_argument("--model", default=None)
     ablate_parser.add_argument("--reasoning-effort", choices=["minimal", "low", "medium", "high", "xhigh", "max"], default=None)
     ablate_parser.add_argument("--out", type=Path, default=None, help="Optional JSON output path for the rows.")
@@ -244,7 +273,7 @@ def main(argv: list[str] | None = None) -> None:
     experiment_parser.add_argument("--seeds", type=int, nargs="+", default=[11])
     experiment_parser.add_argument(
         "--brain",
-        choices=["survival", "llm", "codex", "claude", "cursor"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor"],
         default="survival",
         help="Defaults to the free local scripted brain. LLM calls occur only when explicitly selected.",
     )
@@ -396,11 +425,16 @@ def _run(args: argparse.Namespace) -> None:
             "codex_max_workers",
             "claude_max_workers",
             "cursor_max_workers",
-            "llm_max_workers",
+            "openrouter_max_workers",
             "decision_mode",
         ):
             if getattr(args, name, None) is None and saved.get(name) is not None:
                 setattr(args, name, saved[name])
+        if (
+            getattr(args, "openrouter_max_workers", None) is None
+            and saved.get("llm_max_workers") is not None
+        ):
+            args.openrouter_max_workers = saved["llm_max_workers"]
         saved_feedback_mode = getattr(engine.state.config, "action_feedback_mode", "baseline")
         requested_feedback_mode = getattr(args, "action_feedback_mode", None)
         if requested_feedback_mode is not None and requested_feedback_mode != saved_feedback_mode:
@@ -498,7 +532,9 @@ def _run(args: argparse.Namespace) -> None:
         "codex_cli": int(getattr(args, "codex_max_workers", None) or min(max_workers, 4)),
         "claude_cli": int(getattr(args, "claude_max_workers", None) or min(max_workers, 4)),
         "cursor_cli": int(getattr(args, "cursor_max_workers", None) or min(max_workers, 4)),
-        "openai_compatible": int(getattr(args, "llm_max_workers", None) or min(max_workers, 2)),
+        "openrouter": int(
+            getattr(args, "openrouter_max_workers", None) or min(max_workers, 2)
+        ),
     }
     decision_mode = args.decision_mode or "raw"
     startup_health_check_tick = getattr(args, "startup_health_check_tick", 5) or None
@@ -589,7 +625,7 @@ def _run(args: argparse.Namespace) -> None:
                 "codex_max_workers": provider_max_workers["codex_cli"],
                 "claude_max_workers": provider_max_workers["claude_cli"],
                 "cursor_max_workers": provider_max_workers["cursor_cli"],
-                "llm_max_workers": provider_max_workers["openai_compatible"],
+                "openrouter_max_workers": provider_max_workers["openrouter"],
                 "decision_mode": decision_mode,
                 "log_agent_io": not args.no_agent_io_log,
                 "sequential_decisions": args.sequential_decisions,
@@ -845,7 +881,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} uses one uniform model cohort; omit --population."
         )
-    if args.brain not in {"llm", "codex", "claude", "cursor"}:
+    if args.brain not in {"openrouter", "codex", "claude", "cursor"}:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} requires an explicit model-backed --brain."
         )
@@ -876,7 +912,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         "codex_max_workers": 4,
         "claude_max_workers": 4,
         "cursor_max_workers": 4,
-        "llm_max_workers": 4,
+        "openrouter_max_workers": 4,
         "startup_health_check_tick": 5,
         "startup_health_max_failure_rate": 0.2,
     }
@@ -985,8 +1021,12 @@ def _ablate(args: argparse.Namespace) -> None:
     runtime = BrainRuntime()
 
     def brain_factory(_agent_id: str) -> AgentBrain:
-        if args.brain == "llm":
-            return OpenAIBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
+        if args.brain == "openrouter":
+            return OpenRouterBrain(
+                model=args.model,
+                reasoning_effort=args.reasoning_effort,
+                runtime=runtime,
+            )
         if args.brain == "codex":
             return CodexBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         if args.brain == "claude":

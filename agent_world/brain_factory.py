@@ -18,12 +18,14 @@ from agent_world.brain_runtime import BrainRuntime
 from agent_world.claude_brain import ClaudeBrain
 from agent_world.codex_brain import CodexBrain
 from agent_world.cursor_brain import CursorBrain
-from agent_world.openai_brain import OpenAIBrain
+from agent_world.openrouter_brain import OpenRouterBrain
 from agent_world.world import WorldEngine
 
 
 ALLOWED_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max"})
-SUPPORTED_BRAIN_TYPES = frozenset({"survival", "llm", "codex", "claude", "cursor"})
+SUPPORTED_BRAIN_TYPES = frozenset(
+    {"survival", "openrouter", "codex", "claude", "cursor"}
+)
 
 
 @dataclass(frozen=True)
@@ -48,8 +50,12 @@ class BrainSpec:
         conversation_mode: str = "stateless",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ) -> "BrainSpec":
+        # Read old manifests/checkpoints, but never emit the ambiguous legacy name.
+        brain_type = "openrouter" if brain_type == "llm" else brain_type
         if brain_type not in SUPPORTED_BRAIN_TYPES:
-            raise ValueError("brain type must be survival, llm, codex, claude, or cursor")
+            raise ValueError(
+                "brain type must be survival, openrouter, codex, claude, or cursor"
+            )
         if max_workers is not None and max_workers < 1:
             raise ValueError("max_workers must be at least 1")
         if reasoning_effort is not None and reasoning_effort not in ALLOWED_EFFORTS:
@@ -71,7 +77,12 @@ class BrainSpec:
                 "bounded-session-v1 is supported only by codex, claude, and cursor brains"
             )
         defaults = {
-            "llm": ("OPENAI_MODEL", "z-ai/glm-5.2", "OPENAI_REASONING_EFFORT", "medium"),
+            "openrouter": (
+                "OPENROUTER_MODEL",
+                "z-ai/glm-5.2",
+                "OPENROUTER_REASONING_EFFORT",
+                "medium",
+            ),
             "codex": ("CODEX_MODEL", "gpt-5.6-luna", "CODEX_REASONING_EFFORT", "low"),
             "claude": ("CLAUDE_MODEL", "claude-sonnet-5", "CLAUDE_REASONING_EFFORT", "low"),
             "cursor": ("CURSOR_MODEL", "cursor-grok-4.5", "CURSOR_REASONING_EFFORT", "low"),
@@ -86,7 +97,7 @@ class BrainSpec:
             )
         model_env, model_default, effort_env, effort_default = defaults[brain_type]
         worker_env = {
-            "llm": "OPENAI_MAX_PARALLEL_AGENTS",
+            "openrouter": "OPENROUTER_MAX_PARALLEL_AGENTS",
             "codex": "CODEX_MAX_PARALLEL_AGENTS",
             "claude": "CLAUDE_MAX_PARALLEL_AGENTS",
             "cursor": "CURSOR_MAX_PARALLEL_AGENTS",
@@ -107,12 +118,12 @@ class BrainSpec:
 
     @property
     def model_backed(self) -> bool:
-        return self.type in {"llm", "codex", "claude", "cursor"}
+        return self.type in {"openrouter", "codex", "claude", "cursor"}
 
     @property
     def provider(self) -> str | None:
         return {
-            "llm": "openai_compatible",
+            "openrouter": "openrouter",
             "codex": "codex_cli",
             "claude": "claude_cli",
             "cursor": "cursor_cli",
@@ -121,7 +132,7 @@ class BrainSpec:
     @property
     def billing_mode(self) -> str | None:
         return {
-            "llm": "api",
+            "openrouter": "api",
             "codex": "chatgpt_plan",
             "claude": "claude_plan",
             "cursor": "cursor_subscription",
@@ -388,12 +399,17 @@ def _parse_population_group(
     parts = raw_target.strip().split(":")
     if parts[0] in SUPPORTED_BRAIN_TYPES:
         brain_type = parts.pop(0)
+    elif parts[0] == "llm":
+        brain_type = "openrouter"
+        parts.pop(0)
     else:
         brain_type = _infer_brain_type(parts[0])
     effort = default_effort
     if len(parts) > 1 and parts[-1] in ALLOWED_EFFORTS:
         effort = parts.pop()
     model = ":".join(parts) or None
+    if brain_type == "codex" and model and model.lower().startswith("openai/"):
+        model = model.split("/", 1)[1]
     if brain_type == "survival" and model not in {None, "survival"}:
         raise ValueError("survival population groups do not accept a model")
     brain = BrainSpec.resolve(
@@ -414,11 +430,11 @@ def _infer_brain_type(model: str) -> str:
         return "cursor"
     if normalized.startswith("claude-"):
         return "claude"
-    if normalized.startswith("gpt-5.6-"):
+    if normalized.startswith("gpt-") or normalized.startswith("openai/gpt-"):
         return "codex"
     if normalized == "survival":
         return "survival"
-    return "llm"
+    return "openrouter"
 
 
 def create_brains(
@@ -441,7 +457,7 @@ def create_population_brains(
     checkpoint_brain_states: dict[str, Any] | None = None,
 ) -> dict[str, AgentBrain]:
     constructors = {
-        "llm": OpenAIBrain,
+        "openrouter": OpenRouterBrain,
         "codex": CodexBrain,
         "claude": ClaudeBrain,
         "cursor": CursorBrain,

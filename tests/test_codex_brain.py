@@ -72,8 +72,10 @@ class CodexBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(["codex"], 0, stdout=_successful_stdout(), stderr="")
         old_api_key = os.environ.get("CODEX_API_KEY")
         old_openai_key = os.environ.get("OPENAI_API_KEY")
+        old_openrouter_key = os.environ.get("OPENROUTER_API_KEY")
         os.environ["CODEX_API_KEY"] = "must-not-leak"
         os.environ["OPENAI_API_KEY"] = "must-not-leak"
+        os.environ["OPENROUTER_API_KEY"] = "must-not-leak"
         try:
             with patch("agent_world.codex_brain.subprocess.run", return_value=completed) as run:
                 brain = CodexBrain(executable="/usr/local/bin/codex", model="gpt-5.6-luna", reasoning_effort="low")
@@ -87,6 +89,10 @@ class CodexBrainTests(unittest.TestCase):
                 os.environ.pop("OPENAI_API_KEY", None)
             else:
                 os.environ["OPENAI_API_KEY"] = old_openai_key
+            if old_openrouter_key is None:
+                os.environ.pop("OPENROUTER_API_KEY", None)
+            else:
+                os.environ["OPENROUTER_API_KEY"] = old_openrouter_key
 
         self.assertEqual(decision.actions, [{"type": "wait"}])
         command = run.call_args.args[0]
@@ -95,6 +101,7 @@ class CodexBrainTests(unittest.TestCase):
         self.assertIn("gpt-5.6-luna", command)
         self.assertEqual(run.call_args.kwargs["env"].get("CODEX_API_KEY"), None)
         self.assertEqual(run.call_args.kwargs["env"].get("OPENAI_API_KEY"), None)
+        self.assertEqual(run.call_args.kwargs["env"].get("OPENROUTER_API_KEY"), None)
         records = brain.runtime.usage_records()
         self.assertEqual(len(records), 1)
         self.assertEqual(records[0]["billing_mode"], "chatgpt_plan")
