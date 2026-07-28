@@ -114,6 +114,7 @@ class RunReportTests(unittest.TestCase):
         self.assertAlmostEqual(report["usage"]["total_cost_usd"], 0.03)
         self.assertEqual(report["usage"]["cache_hit_rate_pct"], 70.0)
         self.assertEqual(report["usage"]["efficiency"]["mean_uncached_input_tokens_per_call"], 300.0)
+        self.assertEqual(report["usage"]["efficiency"]["mean_reasoning_tokens_per_call"], 125.0)
         self.assertEqual(report["usage"]["efficiency"]["mean_agent_dynamic_observation_chars"], 2500.0)
 
     def test_codex_simulation_credits_are_run_scoped_and_exact(self) -> None:

@@ -198,6 +198,18 @@ def build_report(
             "mean_output_tokens_per_call": round(completion_tokens / len(usage_records), 1)
             if usage_records
             else 0.0,
+            # Deliberation actually spent, per decision. "Effort" settings are
+            # requests, not guarantees: models allocate reasoning adaptively and
+            # differently (GPT-5.5 at medium spent ~0 reasoning tokens per sim
+            # decision while GPT-5.4 at the same setting spent ~800), and a
+            # collapse like that is invisible unless the report surfaces it.
+            "mean_reasoning_tokens_per_call": round(
+                sum(record.get("reasoning_tokens") or 0 for record in usage_records)
+                / len(usage_records),
+                1,
+            )
+            if usage_records
+            else 0.0,
             "mean_agent_static_context_chars": _mean_record_field(
                 usage_records, "agent_static_context_chars"
             ),
@@ -1209,7 +1221,8 @@ def _render_efficiency_lines(efficiency: Any) -> list[str]:
     line = (
         f"- Per call: {efficiency.get('mean_prompt_tokens_per_call', 0)} input tokens "
         f"({efficiency.get('mean_uncached_input_tokens_per_call', 0)} uncached), "
-        f"{efficiency.get('mean_output_tokens_per_call', 0)} output tokens"
+        f"{efficiency.get('mean_output_tokens_per_call', 0)} output tokens, "
+        f"{efficiency.get('mean_reasoning_tokens_per_call', 0)} reasoning tokens"
     )
     static_chars = efficiency.get("mean_agent_static_context_chars")
     dynamic_chars = efficiency.get("mean_agent_dynamic_observation_chars")
