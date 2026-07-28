@@ -347,7 +347,14 @@ class ClaudeBrain:
                     )
                 )
             assert parsed_decision is not None
-            self._record_usage(usage, response_model, request_meta)
+            visible_text = result.get("result") if isinstance(result, dict) else None
+            if not isinstance(visible_text, str) or not visible_text:
+                visible_text = json.dumps(decision) if isinstance(decision, dict) else str(decision)
+            self._record_usage(
+                usage,
+                response_model,
+                {**request_meta, "visible_output_chars": len(visible_text)},
+            )
             self.boundary.commit(invocation, session_id)
             return parsed_decision
         except subprocess.TimeoutExpired:
@@ -442,6 +449,20 @@ class ClaudeBrain:
         input_tokens = int(usage.get("input_tokens") or 0)
         cache_read = int(usage.get("cache_read_input_tokens") or 0)
         cache_creation = int(usage.get("cache_creation_input_tokens") or 0)
+        completion_tokens = int(usage.get("output_tokens") or 0)
+        # The CLI's usage has no thinking-token split: extended thinking lands
+        # inside output_tokens with nothing marking it. When the caller supplies
+        # the visible response size, estimate deliberation as output minus the
+        # visible text's approximate token count (~4 chars/token; noise is small
+        # against real thinking, which runs hundreds to thousands of tokens).
+        # The record is labelled estimated so reports never pass it off as a
+        # provider-reported figure like Codex's reasoning_output_tokens.
+        reasoning_tokens = 0
+        reasoning_source = None
+        visible_chars = request_meta.get("visible_output_chars")
+        if visible_chars is not None and completion_tokens > 0:
+            reasoning_tokens = max(0, completion_tokens - max(1, int(visible_chars) // 4))
+            reasoning_source = "estimated_output_minus_visible"
         record = {
             "model": self.model,
             "response_model": response_model,
@@ -452,8 +473,9 @@ class ClaudeBrain:
             "reasoning_effort": self.reasoning_effort,
             "prompt_tokens": input_tokens + cache_read + cache_creation,
             "cached_tokens": cache_read,
-            "completion_tokens": int(usage.get("output_tokens") or 0),
-            "reasoning_tokens": 0,
+            "completion_tokens": completion_tokens,
+            "reasoning_tokens": reasoning_tokens,
+            "reasoning_tokens_source": reasoning_source,
             "cost": 0,
             "time": time.time(),
             **request_meta,

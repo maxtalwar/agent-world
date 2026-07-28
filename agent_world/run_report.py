@@ -180,6 +180,12 @@ def build_report(
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
         "reasoning_tokens": sum(record.get("reasoning_tokens") or 0 for record in usage_records),
+        # True when any record's deliberation figure is an adapter-side
+        # estimate (the Claude CLI reports no thinking-token split) rather
+        # than a provider-reported count.
+        "reasoning_tokens_estimated": any(
+            record.get("reasoning_tokens_source") for record in usage_records
+        ),
         "cache_hit_rate_pct": round(100 * cached_tokens / prompt_tokens, 1) if prompt_tokens else 0.0,
         "efficiency": {
             "mean_prompt_tokens_per_call": round(prompt_tokens / len(usage_records), 1)

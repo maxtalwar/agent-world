@@ -1063,6 +1063,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                     "replications": [],
                     "reasoning_tokens_total": 0,
                     "llm_calls_total": 0,
+                    "reasoning_tokens_estimated": False,
                 },
             )
             row["seeds"].add(int(seed))
@@ -1075,6 +1076,9 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             # cohort, so run-level usage attributes cleanly to it.
             row["reasoning_tokens_total"] += int(report_usage.get("reasoning_tokens") or 0)
             row["llm_calls_total"] += int(report_usage.get("calls") or 0)
+            row["reasoning_tokens_estimated"] = row["reasoning_tokens_estimated"] or bool(
+                report_usage.get("reasoning_tokens_estimated")
+            )
             if prior_suite is not None:
                 row["declared_deviations"].append(
                     {
@@ -1245,7 +1249,12 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
         if row.get("extended_seeds"):
             seed_text += f" (+{len(row['extended_seeds'])} extended)"
         reasoning = row.get("mean_reasoning_tokens_per_call")
-        reasoning_text = f"{reasoning:.0f} tok" if reasoning is not None else "n/a"
+        if reasoning is None:
+            reasoning_text = "n/a"
+        else:
+            # "~" marks adapter-side estimates (Claude CLI has no thinking split).
+            prefix = "~" if row.get("reasoning_tokens_estimated") else ""
+            reasoning_text = f"{prefix}{reasoning:.0f} tok"
         lines.append(
             f"| {row.get('model')} | {seed_text} "
             f"| {_format_score(scores.get('effective_execution', {}).get('score'))} "

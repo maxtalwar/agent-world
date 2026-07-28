@@ -455,3 +455,40 @@ class ClaudeFencedOutputTests(unittest.TestCase):
             decision = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
 
         self.assertTrue(decision.intent.startswith("Claude model output contract failed:"))
+
+
+class ClaudeThinkingEstimateTests(unittest.TestCase):
+    def test_successful_decision_records_estimated_deliberation(self) -> None:
+        # The CLI reports no thinking-token split; the adapter estimates
+        # deliberation as output tokens minus the visible text's share and
+        # labels the figure estimated so reports never present it as exact.
+        raw = json.dumps(
+            {
+                "intent": "wait",
+                "actions": [{"type": "wait"}],
+                "messages": [],
+                "memory_updates": [],
+            }
+        )
+        stdout = json.dumps(
+            {
+                "type": "result",
+                "subtype": "success",
+                "is_error": False,
+                "result": raw,
+                "structured_output": json.loads(raw),
+                "usage": {"input_tokens": 10, "output_tokens": 1000},
+            }
+        )
+        completed = subprocess.CompletedProcess(["claude"], 0, stdout=stdout, stderr="")
+        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+            brain = ClaudeBrain(executable="claude")
+            brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        record = brain.runtime.usage_records()[-1]
+        expected = 1000 - max(1, len(raw) // 4)
+        self.assertEqual(record["reasoning_tokens"], expected)
+        self.assertEqual(
+            record["reasoning_tokens_source"], "estimated_output_minus_visible"
+        )
+        self.assertEqual(record["visible_output_chars"], len(raw))
