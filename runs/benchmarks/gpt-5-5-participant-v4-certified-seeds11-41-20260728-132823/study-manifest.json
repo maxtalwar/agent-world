@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
   "study_id": "gpt-5-5-participant-v4-certified-seeds11-41-20260728-132823",
-  "status": "running_replicated",
+  "status": "paused",
   "created_at_utc": "2026-07-28T13:28:23Z",
   "started_at_utc": "2026-07-28T13:31:26Z",
+  "paused_at_utc": "2026-07-28T13:40:16Z",
   "suite_id": "agent-world-participant-v4",
   "benchmark_protocol": "participant-v4",
   "benchmark_code_fingerprint_sha256": "cc7dab5e7e243d0a45e9f8a2afec2f461708a5c81290e9c75272ea37d6655a00",
@@ -24,19 +25,28 @@
     "cells": {
       "seed-11": {
         "seed": 11,
-        "status": "running",
+        "status": "paused",
         "cohort": "gpt55-v4-seed11",
         "screen": "aw-bench-gpt55-v4-s11",
-        "target_tick": 50
+        "target_tick": 50,
+        "paused_snapshot_tick": 12
       },
       "seed-41": {
         "seed": 41,
-        "status": "running",
+        "status": "paused",
         "cohort": "gpt55-v4-seed41",
         "screen": "aw-bench-gpt55-v4-s41",
-        "target_tick": 50
+        "target_tick": 50,
+        "paused_snapshot_tick": 14
       }
     }
+  },
+  "pause": {
+    "method": "SIGSTOP to the simulation Python processes",
+    "screen_sessions_retained": true,
+    "checkpoints_retained": true,
+    "resume_cohorts": ["gpt55-v4-seed11", "gpt55-v4-seed41"],
+    "resume_commit": "91d4a8cc2c8c852b44ba1bc2415b277ab5aed55e"
   },
   "locked_trial": {
     "agents": 10,
