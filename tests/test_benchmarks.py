@@ -690,7 +690,7 @@ class BenchmarkTests(unittest.TestCase):
         protocol = benchmark_protocol()
 
         self.assertEqual(protocol["scoring_revision"], BENCHMARK_SCORING_REVISION)
-        self.assertEqual(BENCHMARK_SCORING_REVISION, 2)
+        self.assertEqual(BENCHMARK_SCORING_REVISION, 3)
         self.assertTrue(protocol["score_scale"]["metric_specific"])
         self.assertIsNone(protocol["score_scale"]["maximum"])
         self.assertEqual(
@@ -1121,3 +1121,20 @@ class BenchmarkFingerprintScopeTests(unittest.TestCase):
             self.assertEqual(
                 agent_world.benchmarks._behavior_source_uncached(path), b"def (:\n"
             )
+
+
+class FingerprintRegistryExemptionTests(unittest.TestCase):
+    def test_registry_edits_do_not_move_the_fingerprint(self) -> None:
+        # Accepting an old report must not orphan current ones: registry
+        # constants are metadata about history, not behavior.
+        base = 'BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset({"a"})\nX = 1\n'
+        edited = 'BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset({"a", "b"})\nX = 1\n'
+        behavior_change = 'BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset({"a"})\nX = 2\n'
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "sample.py"
+            path.write_text(base)
+            baseline = agent_world.benchmarks._behavior_source_uncached(path)
+            path.write_text(edited)
+            self.assertEqual(baseline, agent_world.benchmarks._behavior_source_uncached(path))
+            path.write_text(behavior_change)
+            self.assertNotEqual(baseline, agent_world.benchmarks._behavior_source_uncached(path))

@@ -30,11 +30,24 @@ BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
 # Revision 2 reclassifies provider structured-output retry exhaustion as a model
-# output contract failure instead of an ambiguous boundary failure. It is a
-# telemetry correction: preserved ledgers reproduce it exactly, and no trial
-# behavior changes.
-BENCHMARK_SCORING_REVISION = 2
-BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
+# output contract failure instead of an ambiguous boundary failure. Revision 3
+# excludes the historical acceptance registries from the code fingerprint (see
+# FINGERPRINT_EXEMPT_REGISTRIES). Both are telemetry corrections: preserved
+# ledgers reproduce identical scores, and no trial behavior changes.
+BENCHMARK_SCORING_REVISION = 3
+# Launch-time fingerprints recorded in raw ledgers by runs whose behavior is
+# identical to current code, so re-deriving a report from those ledgers stays
+# compliant. Same audits as the report list below: 2563b8f7 (whole-file hash at
+# 974f497; GPT-5.4-mini pair), cc7dab5e (whole-file hash at 29da033/91d4a8c;
+# GPT-5.5 pair), 0595c58f (claude-scoped hash after 3df8d67; Sonnet 4.6 and
+# Haiku 4.5 pairs).
+BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
+    {
+        "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc",
+        "cc7dab5e7e243d0a45e9f8a2afec2f461708a5c81290e9c75272ea37d6655a00",
+        "0595c58f5a1c8a0bb40873c97f01d5a45947a5cbe6603d85bccb2d2f739c878c",
+    }
+)
 
 # Reports whose stored fingerprint predates a scoring revision but whose numbers
 # the revision cannot change. Each entry is a specific recorded hash, never a
@@ -54,8 +67,29 @@ BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
 # The world, interface, rules, and scoring formulas are untouched, and these
 # cohorts were already compliant on their own audited prior-trial entry. Without
 # this, a rename in an unrelated provider silently decertifies a finished trial.
+#
+# cc7dab5e... is the whole-file, all-adapter hash current at commits 29da033 and
+# 91d4a8c (post-rename, before fingerprints were provider-scoped and comment-
+# insensitive in 3df8d67). The GPT-5.5 seed-11/41 pair carries it, launched from
+# a worktree pinned at 91d4a8c. Everything that changed after is outside the
+# Codex path that pair executed: 3df8d67 touched the fingerprint machinery
+# itself, the Claude adapter, and classifiers that only match messages beginning
+# "Claude boundary failed:", which Codex trials cannot emit. The world,
+# interface, rules, and scoring formulas are identical between 91d4a8c and
+# current, so revision-2 scoring of these reports reproduces revision-1 numbers
+# exactly.
+# 0595c58f... is the claude_cli-scoped hash recorded by the Claude Sonnet 4.6
+# and Haiku 4.5 seed-11/41 pairs, written after 3df8d67 but before the registry
+# exclusion above existed. The only benchmarks.py changes since are a registry
+# entry addition (now hash-exempt) and the exclusion mechanism itself; the
+# world, adapters, and scoring formulas are byte-identical, so revision-3
+# scoring reproduces their numbers exactly.
 BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset(
-    {"2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc"}
+    {
+        "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc",
+        "cc7dab5e7e243d0a45e9f8a2afec2f461708a5c81290e9c75272ea37d6655a00",
+        "0595c58f5a1c8a0bb40873c97f01d5a45947a5cbe6603d85bccb2d2f739c878c",
+    }
 )
 
 # Trials run under an earlier protocol that are accepted as v4 evidence after
@@ -369,14 +403,40 @@ def _behavior_source(path: Path) -> bytes:
     return _behavior_source_cached(str(path), stat.st_mtime_ns, stat.st_size)
 
 
+# Historical acceptance registries are excluded from the behavior hash. They
+# record which OLD reports remain valid; they cannot change any new trial's
+# behavior or any report's numbers. Hashing them created a treadmill: accepting
+# one old report edited this file, which moved every current fingerprint, which
+# orphaned every report recorded since - each acceptance manufacturing the next
+# round of false mismatches.
+FINGERPRINT_EXEMPT_REGISTRIES = frozenset(
+    {
+        "BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS",
+        "BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS",
+        "BENCHMARK_ACCEPTED_PRIOR_TRIALS",
+        "BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES",
+    }
+)
+
+
+def _registry_assignment_name(node: ast.stmt) -> str | None:
+    if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+        return node.targets[0].id
+    if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+        return node.target.id
+    return None
+
+
 def _behavior_source_uncached(path: Path) -> bytes:
     """Return a source form that ignores text which cannot change behavior.
 
     Comments and docstrings are stripped and formatting is normalized by parsing
-    to a syntax tree. Every executable construct survives - names, constants,
-    control flow, and the prompt and rule strings agents actually receive - so a
-    real change still moves the fingerprint. Only inert prose stops doing so.
-    Falls back to raw bytes if a file cannot be parsed, which fails closed.
+    to a syntax tree. Module-level assignments to the historical acceptance
+    registries are dropped for the reason on FINGERPRINT_EXEMPT_REGISTRIES.
+    Every other executable construct survives - names, constants, control flow,
+    and the prompt and rule strings agents actually receive - so a real change
+    still moves the fingerprint. Falls back to raw bytes if a file cannot be
+    parsed, which fails closed.
     """
 
     raw = path.read_bytes()
@@ -384,6 +444,11 @@ def _behavior_source_uncached(path: Path) -> bytes:
         tree = ast.parse(raw)
     except SyntaxError:
         return raw
+    tree.body = [
+        node
+        for node in tree.body
+        if _registry_assignment_name(node) not in FINGERPRINT_EXEMPT_REGISTRIES
+    ]
     for node in ast.walk(tree):
         if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
