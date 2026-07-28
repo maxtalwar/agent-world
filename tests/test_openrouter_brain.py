@@ -8,31 +8,45 @@ from unittest.mock import patch
 
 from agent_world.env import load_dotenv
 from agent_world.interface import build_static_context
-from agent_world.openai_brain import OpenAIBrain, OpenAIQuotaError, extract_chat_text, extract_output_text
+from agent_world.openrouter_brain import (
+    OpenRouterBrain,
+    OpenRouterQuotaError,
+    extract_chat_text,
+)
 
 
-class CapturingBrain(OpenAIBrain):
+class CapturingBrain(OpenRouterBrain):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.api_style = "responses"  # this mock returns a Responses-API shaped reply
         self.last_payload = None
 
     def _post_json_with_retries(self, path, payload):
         self.last_payload = payload
-        return {"output_text": '{"intent":"wait","actions":[],"messages":[],"memory_updates":[]}'}
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            '{"intent":"wait","actions":[],"messages":[],'
+                            '"memory_updates":[]}'
+                        )
+                    }
+                }
+            ]
+        }
 
 
-class QuotaBrain(OpenAIBrain):
+class QuotaBrain(OpenRouterBrain):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.calls = 0
 
     def _post_json(self, path, payload):
         self.calls += 1
-        raise OpenAIQuotaError("OpenAI quota unavailable: insufficient_quota")
+        raise OpenRouterQuotaError("OpenRouter quota unavailable: insufficient_quota")
 
 
-class CapturingChatBrain(OpenAIBrain):
+class CapturingChatBrain(OpenRouterBrain):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.last_path = None
@@ -53,14 +67,10 @@ class CapturingChatBrain(OpenAIBrain):
         }
 
 
-class MalformedOpenAIBrain(OpenAIBrain):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.api_style = "responses"
-
+class MalformedOpenRouterBrain(OpenRouterBrain):
     def _post_json_with_retries(self, path, payload):
         return {
-            "output_text": '{"intent":"move"',
+            "choices": [{"message": {"content": '{"intent":"move"'}}],
             "usage": {
                 "prompt_tokens": 100,
                 "completion_tokens": 10,
@@ -68,15 +78,11 @@ class MalformedOpenAIBrain(OpenAIBrain):
         }
 
 
-class MissingOutputOpenAIBrain(OpenAIBrain):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.api_style = "responses"
-
+class MissingOutputOpenRouterBrain(OpenRouterBrain):
     def _post_json_with_retries(self, path, payload):
         return {
             "status": "incomplete",
-            "output": [],
+            "choices": [],
             "usage": {
                 "prompt_tokens": 100,
                 "completion_tokens": 10,
@@ -84,13 +90,9 @@ class MissingOutputOpenAIBrain(OpenAIBrain):
         }
 
 
-class OpenAIBrainTests(unittest.TestCase):
-    def test_extract_output_text_from_output_text(self) -> None:
-        response = {"output_text": '{"intent":"wait","actions":[],"messages":[],"memory_updates":[]}'}
-        self.assertIn('"intent"', extract_output_text(response))
-
+class OpenRouterBrainTests(unittest.TestCase):
     def test_hard_deadline_does_not_wait_for_stuck_worker_shutdown(self) -> None:
-        brain = OpenAIBrain(
+        brain = OpenRouterBrain(
             api_key="test",
             timeout_seconds=0.01,
             hard_deadline_grace_seconds=0.01,
@@ -100,34 +102,10 @@ class OpenAIBrainTests(unittest.TestCase):
         with patch.object(brain, "_post_json_blocking", side_effect=lambda *_: time.sleep(0.25)):
             started = time.monotonic()
             with self.assertRaisesRegex(OSError, "hard deadline"):
-                brain._post_json("/responses", {})
+                brain._post_json("/chat/completions", {})
             elapsed = time.monotonic() - started
 
         self.assertLess(elapsed, 0.15)
-
-    def test_extract_output_text_from_nested_response_content(self) -> None:
-        response = {
-            "output": [
-                {
-                    "content": [
-                        {
-                            "type": "output_text",
-                            "text": '{"intent":"wait","actions":[],"messages":[],"memory_updates":[]}',
-                        }
-                    ]
-                }
-            ]
-        }
-        self.assertIn('"actions"', extract_output_text(response))
-
-    def test_extract_output_text_reports_incomplete_response_details(self) -> None:
-        response = {
-            "status": "incomplete",
-            "incomplete_details": {"reason": "max_output_tokens"},
-            "output": [],
-        }
-        with self.assertRaisesRegex(ValueError, "max_output_tokens"):
-            extract_output_text(response)
 
     def test_dotenv_loader_sets_missing_values(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -138,14 +116,17 @@ class OpenAIBrainTests(unittest.TestCase):
             load_dotenv(path)
             self.assertEqual(os.environ["AGENT_WORLD_TEST_ENV"], "loaded")
 
-    def test_openai_brain_requires_key(self) -> None:
-        old_key = os.environ.pop("OPENAI_API_KEY", None)
+    def test_openrouter_brain_requires_key(self) -> None:
+        old_openrouter_key = os.environ.pop("OPENROUTER_API_KEY", None)
+        old_legacy_key = os.environ.pop("OPENAI_API_KEY", None)
         try:
             with self.assertRaises(ValueError):
-                OpenAIBrain()
+                OpenRouterBrain()
         finally:
-            if old_key is not None:
-                os.environ["OPENAI_API_KEY"] = old_key
+            if old_openrouter_key is not None:
+                os.environ["OPENROUTER_API_KEY"] = old_openrouter_key
+            if old_legacy_key is not None:
+                os.environ["OPENAI_API_KEY"] = old_legacy_key
 
     def test_reasoning_effort_is_sent_in_response_payload(self) -> None:
         brain = CapturingBrain(
@@ -159,7 +140,7 @@ class OpenAIBrainTests(unittest.TestCase):
         self.assertEqual(brain.last_payload["reasoning"], {"effort": "high"})
 
     def test_malformed_model_output_is_preserved_with_failure_metadata(self) -> None:
-        brain = MalformedOpenAIBrain(
+        brain = MalformedOpenRouterBrain(
             api_key="test-key",
             min_request_interval_seconds=0,
         )
@@ -167,7 +148,7 @@ class OpenAIBrainTests(unittest.TestCase):
 
         self.assertEqual(decision.actions, [{"type": "wait"}])
         self.assertTrue(
-            decision.intent.startswith("OpenAI model output contract failed:")
+            decision.intent.startswith("OpenRouter model output contract failed:")
         )
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "model_output")
@@ -181,38 +162,38 @@ class OpenAIBrainTests(unittest.TestCase):
             min_request_interval_seconds=0,
         )
         with patch(
-            "agent_world.openai_brain.parse_agent_response",
+            "agent_world.openrouter_brain.parse_agent_response",
             side_effect=ValueError("adapter regression"),
         ):
             decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
 
-        self.assertTrue(decision.intent.startswith("OpenAI harness failed:"))
+        self.assertTrue(decision.intent.startswith("OpenRouter harness failed:"))
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "harness")
         self.assertEqual(record["decision_contract_validation"], "valid")
 
     def test_payload_extraction_failure_preserves_provider_envelope(self) -> None:
-        brain = MissingOutputOpenAIBrain(
+        brain = MissingOutputOpenRouterBrain(
             api_key="test-key",
             min_request_interval_seconds=0,
         )
         decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
 
-        self.assertTrue(decision.intent.startswith("OpenAI boundary failed:"))
+        self.assertTrue(decision.intent.startswith("OpenRouter boundary failed:"))
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "ambiguous_boundary")
         self.assertEqual(record["decision_contract_validation"], "not_tested")
         self.assertIn('"status":"incomplete"', record["failed_raw_provider_envelope"])
 
     def test_default_max_output_tokens_allow_medium_reasoning_headroom(self) -> None:
-        old_value = os.environ.pop("OPENAI_MAX_OUTPUT_TOKENS", None)
+        old_value = os.environ.pop("OPENROUTER_MAX_OUTPUT_TOKENS", None)
         try:
             brain = CapturingBrain(api_key="test-key", min_request_interval_seconds=0)
             brain.decide({"tick": 0, "valid_actions": []})
-            self.assertEqual(brain.last_payload["max_output_tokens"], 5000)
+            self.assertEqual(brain.last_payload["max_tokens"], 5000)
         finally:
             if old_value is not None:
-                os.environ["OPENAI_MAX_OUTPUT_TOKENS"] = old_value
+                os.environ["OPENROUTER_MAX_OUTPUT_TOKENS"] = old_value
 
     def test_openrouter_base_url_uses_chat_completions(self) -> None:
         brain = CapturingChatBrain(
@@ -267,7 +248,7 @@ class OpenAIBrainTests(unittest.TestCase):
         self.assertEqual(len({neutral, collective, individual}), 3)
 
     def test_chat_payload_pins_openrouter_providers_when_configured(self) -> None:
-        os.environ["OPENAI_PROVIDER_ORDER"] = "Z.AI, Alibaba"
+        os.environ["OPENROUTER_PROVIDER_ORDER"] = "Z.AI, Alibaba"
         try:
             brain = CapturingChatBrain(
                 api_key="test-key",
@@ -277,17 +258,22 @@ class OpenAIBrainTests(unittest.TestCase):
             brain.decide({"tick": 0, "valid_actions": []})
             self.assertEqual(brain.last_payload["provider"], {"order": ["Z.AI", "Alibaba"], "allow_fallbacks": True})
         finally:
-            del os.environ["OPENAI_PROVIDER_ORDER"]
+            del os.environ["OPENROUTER_PROVIDER_ORDER"]
 
     def test_extract_chat_text_reads_message_content(self) -> None:
         text = extract_chat_text({"choices": [{"message": {"content": '{"intent":"x"}'}}]})
         self.assertIn('"intent"', text)
 
-    def test_default_base_url_uses_responses_style(self) -> None:
-        saved = {key: os.environ.pop(key, None) for key in ("OPENAI_BASE_URL", "LLM_API_STYLE")}
+    def test_defaults_to_openrouter_glm_and_chat(self) -> None:
+        saved = {
+            key: os.environ.pop(key, None)
+            for key in ("OPENROUTER_BASE_URL", "OPENROUTER_MODEL")
+        }
         try:
-            brain = OpenAIBrain(api_key="test-key", min_request_interval_seconds=0)
-            self.assertEqual(brain.api_style, "responses")
+            brain = OpenRouterBrain(api_key="test-key", min_request_interval_seconds=0)
+            self.assertEqual(brain.api_style, "chat")
+            self.assertEqual(brain.base_url, "https://openrouter.ai/api/v1")
+            self.assertEqual(brain.model, "z-ai/glm-5.2")
         finally:
             for key, value in saved.items():
                 if value is not None:
@@ -304,8 +290,8 @@ class OpenAIBrainTests(unittest.TestCase):
         second_decision = brain.decide({"tick": 1, "valid_actions": []})
 
         self.assertEqual(brain.calls, 1)
-        self.assertEqual(first_decision.intent, "OpenAI quota unavailable: insufficient_quota")
-        self.assertEqual(second_decision.intent, "OpenAI quota unavailable: insufficient_quota")
+        self.assertEqual(first_decision.intent, "OpenRouter quota unavailable: insufficient_quota")
+        self.assertEqual(second_decision.intent, "OpenRouter quota unavailable: insufficient_quota")
         self.assertEqual(first_decision.actions, [{"type": "wait"}])
 
 

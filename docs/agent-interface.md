@@ -84,9 +84,11 @@ Invalid:
 { "type": "move", "fields": { "direction": "east" } }
 ```
 
-## OpenAI Adapter
+## OpenRouter Adapter
 
-`agent_world/openai_brain.py` calls either OpenAI's Responses API or an OpenAI-compatible Chat Completions API such as OpenRouter. It uses:
+`agent_world/openrouter_brain.py` calls OpenRouter's Chat Completions API.
+OpenAI `gpt-*` models route through `CodexBrain` by default instead. The
+OpenRouter connector uses:
 
 - compact JSON prompt formatting to remove whitespace only
 - structured JSON output schema

@@ -46,13 +46,15 @@ New agent-facing actions include:
 
 ## Reproducible Runs
 
-The experiment runner defaults to the local scripted brain. LLM calls happen only with an explicit `--brain llm`.
+The experiment runner defaults to the local scripted brain. Provider calls
+happen only with an explicit model-backed brain such as `--brain openrouter`
+or `--brain codex`.
 
 Run the full 2x2 design on several seeds:
 
 ```bash
 python3 -m agent_world.cli experiment \
-  --brain llm \
+  --brain openrouter \
   --model z-ai/glm-5.2 \
   --agents 5 \
   --ticks 60 \
@@ -67,7 +69,7 @@ Run one treatment cell:
 
 ```bash
 python3 -m agent_world.cli experiment \
-  --brain llm \
+  --brain openrouter \
   --model z-ai/glm-5.2 \
   --agents 5 \
   --ticks 60 \
@@ -82,8 +84,8 @@ Run the neutral organic treatment with GPT-5.6 Luna:
 
 ```bash
 python3 -m agent_world.cli experiment \
-  --brain llm \
-  --model openai/gpt-5.6-luna \
+  --brain codex \
+  --model gpt-5.6-luna \
   --agents 5 --ticks 40 --seeds 29 \
   --environment organic --objective neutral \
   --out-dir runs/experiments/gpt56-luna-organic-neutral-seed29 \

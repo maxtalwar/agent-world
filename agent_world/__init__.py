@@ -9,7 +9,7 @@ from agent_world.cursor_brain import CursorBrain
 from agent_world.interface import build_agent_prompt, build_observation, parse_agent_response
 from agent_world.metrics import compute_metrics
 from agent_world.models import Agent, AgentDecision, Position, WorldConfig
-from agent_world.openai_brain import OpenAIBrain
+from agent_world.openrouter_brain import OpenRouterBrain
 from agent_world.runner import SimulationRunner
 from agent_world.session import SimulationSession
 from agent_world.world import WorldEngine
@@ -26,7 +26,7 @@ __all__ = [
     "CodexBrain",
     "CursorBrain",
     "NullBrain",
-    "OpenAIBrain",
+    "OpenRouterBrain",
     "Position",
     "SimulationRunner",
     "SimulationSession",

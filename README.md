@@ -14,7 +14,7 @@ python3 -m agent_world.cli replay runs/example.jsonl --last 30
 python3 -m agent_world.cli prompt --seed 7 --agents 2 --agent agent-1
 python3 -m agent_world.cli ablate --agents 4 --ticks 30 --seed 11
 python3 -m agent_world.cli experiment --agents 5 --ticks 20 --seeds 11 --environment all --objective all --progress
-python3 -m agent_world.cli experiment --brain llm --model openai/gpt-5.6-luna --environment organic --objective neutral --ticks 40 --agents 5 --seeds 29 --progress
+python3 -m agent_world.cli experiment --brain codex --model gpt-5.4-mini --environment organic --objective neutral --ticks 40 --agents 5 --seeds 29 --progress
 python3 -m agent_world.cli run --brain codex --model gpt-5.6-luna --reasoning-effort low --ticks 3 --agents 2 --progress
 python3 -m agent_world.cli run --brain claude --model claude-sonnet-5 --reasoning-effort low --ticks 3 --agents 2 --progress
 ```
@@ -27,7 +27,7 @@ explicitly for a paid LLM run, for example:
 
 ```bash
 python3 -m agent_world.cli experiment \
-  --brain llm --environment commerce --objective individual \
+  --brain openrouter --environment commerce --objective individual \
   --seeds 21 --ticks 60 --agents 5 --progress \
   --out-dir runs/experiments/commerce-individual-glm
 ```
@@ -46,7 +46,7 @@ directory.
 - `agent_world/rules.py`: resources, terrain, recipes, action schema, and structure rules.
 - `agent_world/maps.py`: canonical handcrafted 16x16 world map.
 - `agent_world/interface.py`: per-agent observation and neutral prompt construction.
-- `agent_world/openai_brain.py`: OpenAI-backed `AgentBrain` with retry/throttle handling.
+- `agent_world/openrouter_brain.py`: OpenRouter-backed `AgentBrain` with retry/throttle handling.
 - `agent_world/codex_brain.py`: ChatGPT-plan-backed `AgentBrain` using isolated `codex exec` decisions.
 - `agent_world/claude_brain.py`: Claude-plan-backed `AgentBrain` using isolated headless `claude -p` decisions.
 - `agent_world/runner.py`: observe -> decide -> validate simulation orchestration.
@@ -54,53 +54,60 @@ directory.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
 - `agent_world/run_report.py`: per-run structured data export (`-report.json`/`-report.md`) and cross-run comparison.
 - `agent_world/experiments.py`: reproducible multi-seed environment × objective experiments with provenance manifests and paired contrasts.
-- `tests/`: regression coverage for world rules, maps, observer, and OpenAI adapter helpers.
+- `tests/`: regression coverage for world rules, maps, observer, and provider adapters.
 - `docs/`: design notes and future handoff context.
 
 ## LLM Agents
 
-Agents are driven through an OpenAI-compatible API. The default configuration uses **OpenRouter** running **GLM-5.2** (open weights, strong long-horizon agentic performance at a fraction of frontier-model cost). Copy `.env.example` to `.env` and fill in your key:
+`OpenRouterBrain` uses OpenRouter's OpenAI-compatible Chat Completions API and
+defaults to **GLM-5.2**. OpenAI models do not use this connector by default:
+`gpt-*` model names infer `CodexBrain`, while `CursorBrain` remains an explicit
+subscription-backed alternative. Copy `.env.example` to `.env` and fill in
+your OpenRouter key:
 
 ```bash
 cp .env.example .env
 ```
 
 ```dotenv
-OPENAI_API_KEY=sk-or-v1-your-openrouter-key-here
-OPENAI_MODEL=z-ai/glm-5.2
-OPENAI_BASE_URL=https://openrouter.ai/api/v1
-OPENAI_TIMEOUT_SECONDS=180
-OPENAI_MAX_OUTPUT_TOKENS=8000
-OPENAI_REASONING_EFFORT=medium
-OPENAI_MAX_RETRIES=4
-OPENAI_MIN_REQUEST_INTERVAL_SECONDS=0.5
-OPENAI_MAX_PARALLEL_AGENTS=1
+OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key-here
+OPENROUTER_MODEL=z-ai/glm-5.2
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_TIMEOUT_SECONDS=180
+OPENROUTER_MAX_OUTPUT_TOKENS=8000
+OPENROUTER_REASONING_EFFORT=medium
+OPENROUTER_MAX_RETRIES=4
+OPENROUTER_MIN_REQUEST_INTERVAL_SECONDS=0.5
+OPENROUTER_MAX_PARALLEL_AGENTS=1
 SSL_CERT_FILE=/etc/ssl/cert.pem
 ```
 
-`OpenAIBrain` auto-selects the request style from the base URL: the standard **Chat Completions** API (`/chat/completions`, used by OpenRouter and most providers) when the base URL is OpenRouter, or OpenAI's **Responses** API (`/responses`) for `api.openai.com`. Force it with `LLM_API_STYLE=chat|responses`. To use OpenAI instead, set `OPENAI_BASE_URL=https://api.openai.com/v1` and `OPENAI_MODEL=gpt-5.4-mini`.
-
-LLM runs default to one request at a time to avoid token-per-minute bursts. Increase `OPENAI_MAX_PARALLEL_AGENTS` or pass `--max-workers` only if your rate limits can handle it. Cost knobs: lower `OPENAI_REASONING_EFFORT` (minimal/low) and `OPENAI_MAX_OUTPUT_TOKENS` to reduce spend per tick.
+OpenRouter runs default to one request at a time to avoid token-per-minute
+bursts. Increase `OPENROUTER_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
+if your rate limits can handle it. Cost knobs include
+`OPENROUTER_REASONING_EFFORT` and `OPENROUTER_MAX_OUTPUT_TOKENS`.
 If the API returns hard quota/credit exhaustion, the run stops early and reports `quota_failures` so the log is not mistaken for agent behavior.
 
 Then run a tiny LLM simulation:
 
 ```bash
-python3 -m agent_world.cli run --brain llm --ticks 10 --agents 3 --seed 7 --progress --out runs/llm.jsonl --snapshot runs/llm-snapshot.json
+python3 -m agent_world.cli run --brain openrouter --ticks 10 --agents 3 --seed 7 --progress --out runs/openrouter.jsonl --snapshot runs/openrouter-snapshot.json
 ```
 
 You can override the model and reasoning effort per run:
 
 ```bash
-python3 -m agent_world.cli run --brain llm --model z-ai/glm-5.2 --reasoning-effort medium --ticks 5 --agents 2
+python3 -m agent_world.cli run --brain openrouter --model z-ai/glm-5.2 --reasoning-effort medium --ticks 5 --agents 2
 ```
 
 To connect a different provider or local agent policy, implement the `AgentBrain` protocol in `agent_world/agents.py`: receive an observation dictionary, return the same JSON shape described in the prompt, and let `WorldEngine` validate everything.
 
 ### Codex plan agents
 
-`CodexBrain` runs Luna or Terra through the locally installed Codex CLI and its
-saved ChatGPT login. It does not use `OPENAI_API_KEY` or `CODEX_API_KEY`, and it
+`CodexBrain` runs OpenAI models, including GPT-5.4 Mini, Luna, and Terra,
+through the locally installed Codex CLI and its
+saved ChatGPT login. It does not use `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, or
+`CODEX_API_KEY`, and it
 records each call with `provider=codex_cli`, `billing_mode=chatgpt_plan`, token
 usage, prompt hashes, and zero marginal API cost. Codex runs also sample the
 account's plan limits before the first decision and at the terminal state. The
@@ -393,7 +400,7 @@ Then visit `http://127.0.0.1:8765`. The observatory can now launch runs directly
 You can still run simulations from the terminal if you want a scriptable batch run:
 
 ```bash
-python3 -m agent_world.cli run --brain llm --ticks 25 --agents 3 --progress --out runs/live.jsonl --snapshot runs/live-snapshot.json
+python3 -m agent_world.cli run --brain openrouter --ticks 25 --agents 3 --progress --out runs/live.jsonl --snapshot runs/live-snapshot.json
 ```
 
 The observatory renders the world as an illustrated overhead map — drawn terrain (forests visibly thin out as wood is depleted), hand-drawn structures (houses, farms, wells, storage, shelters, workshops, dashed construction sites), agent figures with per-agent colors, and gravestones where agents died. Hovering a tile shows its resources and occupants; clicking opens a tile inspector with structure status, remaining build inputs, and stored goods. A civilization panel charts population, completed structures, accepted trades, and speech over ticks, alongside structure counts and a filterable event chronicle.

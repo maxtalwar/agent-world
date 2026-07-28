@@ -131,11 +131,14 @@ class ObserverTests(unittest.TestCase):
     def test_model_selector_is_dropdown_with_recommended_models(self) -> None:
         self.assertIn('<select id="run-model" class="lock">', HTML)
         self.assertNotIn('<input id="run-model" type="text"', HTML)
-        for model in ["z-ai/glm-5.2", "openai/gpt-5.6-luna", "gpt-5.6-luna", "gpt-5.6-terra", "cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro", "z-ai/glm-5.1", "z-ai/glm-4.7", "z-ai/glm-4.5-air"]:
+        for model in ["z-ai/glm-5.2", "gpt-5.4-mini", "gpt-5.6-luna", "gpt-5.6-terra", "cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro", "z-ai/glm-5.1", "z-ai/glm-4.7", "z-ai/glm-4.5-air"]:
             self.assertIn(f'value="{model}"', HTML)
+        self.assertNotIn('value="openai/gpt-5.6-luna"', HTML)
         self.assertIn('<option value="codex">codex plan</option>', HTML)
         self.assertIn('<option value="cursor">cursor subscription</option>', HTML)
         self.assertIn('<option value="z-ai/glm-5.2" selected>', HTML)
+        self.assertIn('if (model.startsWith("gpt-"))', HTML)
+        self.assertIn('brain.value = "codex"', HTML)
         self.assertIn('<select id="run-reasoning" class="lock">', HTML)
         self.assertIn('<option value="medium" selected>', HTML)
         self.assertIn('reasoning_effort: document.getElementById("run-reasoning").value', HTML)
@@ -182,7 +185,10 @@ class ObserverTests(unittest.TestCase):
         self.assertIn('id="cfg-plains-food"', HTML)
         self.assertIn('id="cfg-forest-wood"', HTML)
         self.assertIn('id="cfg-water-water"', HTML)
-        self.assertIn('<option value="llm" selected>llm</option>', HTML)
+        self.assertIn(
+            '<option value="openrouter" selected>OpenRouter API</option>',
+            HTML,
+        )
         self.assertIn('id="run-ticks" class="lock" type="number" min="1" max="1000" value="20"', HTML)
         self.assertIn('id="run-seed" class="lock" type="number" min="0" value="11"', HTML)
         self.assertIn('action_points_per_tick: numberValue("cfg-action-points")', HTML)
@@ -257,7 +263,7 @@ class ObserverTests(unittest.TestCase):
 
     def test_observatory_default_run_matches_latest_tuned_profile(self) -> None:
         config = _parse_run_config({})
-        self.assertEqual(config.brain, "llm")
+        self.assertEqual(config.brain, "openrouter")
         self.assertEqual(config.ticks, 20)
         self.assertEqual(config.agents, 5)
         self.assertEqual(config.model, "z-ai/glm-5.2")
@@ -292,12 +298,12 @@ class ObserverTests(unittest.TestCase):
                 "carried_food_spoil_interval": 9,
                 "carried_food_spoil_quantity": 2,
                 "farm_food_added": 8,
-                "brain": "llm",
+                "brain": "codex",
                 "model": "gpt-5.4-mini",
                 "reasoning_effort": "high",
             }
         )
-        self.assertEqual(config.brain, "llm")
+        self.assertEqual(config.brain, "codex")
         self.assertEqual(config.model, "gpt-5.4-mini")
         self.assertEqual(config.reasoning_effort, "high")
         self.assertEqual(config.world_config.action_points_per_tick, 4)
@@ -347,7 +353,9 @@ class ObserverTests(unittest.TestCase):
 
     def test_run_config_rejects_invalid_reasoning_effort(self) -> None:
         with self.assertRaises(ValueError):
-            _parse_run_config({"brain": "llm", "reasoning_effort": "maximum"})
+            _parse_run_config(
+                {"brain": "openrouter", "reasoning_effort": "maximum"}
+            )
 
     def test_run_controller_starts_survival_run_and_writes_live_files(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

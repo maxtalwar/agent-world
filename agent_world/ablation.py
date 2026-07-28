@@ -6,7 +6,7 @@ be attributed. Run the same seed/agents across variants and diff the metrics.
 Survival-pressure signals (median_lifespan, spare capacity) are model-independent
 and meaningful even with the deterministic ``survival`` brain. The investment
 signals (builds, ever_buildable) require agents that actually try to build, so use
-``--brain llm`` for those columns.
+``--brain openrouter`` for those columns.
 """
 
 from __future__ import annotations

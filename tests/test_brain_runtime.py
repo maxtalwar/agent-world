@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
+import os
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -42,7 +43,19 @@ class BrainRuntimeTests(unittest.TestCase):
 
     def test_bounded_sessions_reject_brains_without_cli_session_support(self) -> None:
         with self.assertRaisesRegex(ValueError, "supported only"):
-            BrainSpec.resolve("llm", conversation_mode="bounded-session-v1")
+            BrainSpec.resolve("openrouter", conversation_mode="bounded-session-v1")
+
+    def test_openrouter_default_is_glm_and_ignores_openai_model_env(self) -> None:
+        with patch.dict(
+            os.environ,
+            {"OPENAI_MODEL": "gpt-5.4-mini"},
+            clear=True,
+        ):
+            spec = BrainSpec.resolve("openrouter")
+
+        self.assertEqual(spec.type, "openrouter")
+        self.assertEqual(spec.model, "z-ai/glm-5.2")
+        self.assertEqual(spec.provider, "openrouter")
 
     def test_usage_and_quota_are_isolated_between_runs(self) -> None:
         first = BrainRuntime()
@@ -112,6 +125,29 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(population.groups[0].brain.type, "claude")
         self.assertEqual(population.groups[1].brain.type, "codex")
         self.assertEqual(population.groups[0].brain.model, "claude-sonnet-5")
+
+    def test_population_parser_routes_openai_models_to_codex_by_default(self) -> None:
+        population = PopulationSpec.parse_many(
+            ["2@gpt-5.4-mini", "2@openai/gpt-5.4-mini"]
+        )
+
+        self.assertEqual(
+            [group.brain.type for group in population.groups],
+            ["codex", "codex"],
+        )
+        self.assertEqual(
+            [group.brain.model for group in population.groups],
+            ["gpt-5.4-mini", "gpt-5.4-mini"],
+        )
+
+    def test_population_parser_allows_explicit_openrouter_override(self) -> None:
+        population = PopulationSpec.parse_many(
+            ["2@openrouter:openai/gpt-5.4-mini"]
+        )
+
+        brain = population.groups[0].brain
+        self.assertEqual(brain.type, "openrouter")
+        self.assertEqual(brain.model, "openai/gpt-5.4-mini")
 
     def test_population_parser_accepts_explicit_future_claude_model(self) -> None:
         population = PopulationSpec.parse_many(["3@claude:claude-fable-future:high"])

@@ -107,8 +107,8 @@ class FactorialExperimentTests(unittest.TestCase):
             self.assertTrue((output / "summary.json").exists())
             self.assertTrue((output / "summary.md").exists())
 
-    def test_llm_cells_use_isolated_run_scoped_usage(self) -> None:
-        class FakeOpenAIBrain:
+    def test_openrouter_cells_use_isolated_run_scoped_usage(self) -> None:
+        class FakeOpenRouterBrain:
             instances = 0
 
             def __init__(self, model=None, reasoning_effort=None, runtime=None):
@@ -140,7 +140,7 @@ class FactorialExperimentTests(unittest.TestCase):
         os.environ["AGENT_WORLD_USAGE_LOG"] = "/tmp/original-agent-world-usage.jsonl"
         try:
             with tempfile.TemporaryDirectory() as temp_dir, patch(
-                "agent_world.brain_factory.OpenAIBrain", FakeOpenAIBrain
+                "agent_world.brain_factory.OpenRouterBrain", FakeOpenRouterBrain
             ):
                 manifest = run_factorial_experiment(
                     out_dir=Path(temp_dir) / "experiment",
@@ -149,10 +149,10 @@ class FactorialExperimentTests(unittest.TestCase):
                     agents=1,
                     environments=["baseline", "commerce"],
                     objectives=["individual"],
-                    brain="llm",
+                    brain="openrouter",
                     model="fake-model",
                 )
-                self.assertEqual(FakeOpenAIBrain.instances, 2)
+                self.assertEqual(FakeOpenRouterBrain.instances, 2)
                 self.assertEqual(manifest["aggregate_summary"]["total_llm_cost_usd"], 0.02)
                 for run in manifest["runs"]:
                     usage_path = Path(json.loads(Path(run["manifest"]).read_text())["outputs"]["usage"])
@@ -288,8 +288,8 @@ class FactorialExperimentTests(unittest.TestCase):
             self.assertEqual(event_types.count("run_resumed"), 1)
             self.assertEqual(event_types.count("run_completed"), 2)
 
-    def test_ordinary_llm_run_uses_run_scoped_usage_state(self) -> None:
-        class FakeOpenAIBrain:
+    def test_ordinary_openrouter_run_uses_run_scoped_usage_state(self) -> None:
+        class FakeOpenRouterBrain:
             instances = 0
 
             def __init__(self, model=None, reasoning_effort=None, runtime=None):
@@ -317,22 +317,27 @@ class FactorialExperimentTests(unittest.TestCase):
                 seed=5,
                 width=16,
                 height=16,
-                brain="llm",
+                brain="openrouter",
                 model="fake",
                 reasoning_effort="low",
-                out=root / "ordinary-llm.jsonl",
-                snapshot=root / "ordinary-llm-snapshot.json",
+                out=root / "ordinary-openrouter.jsonl",
+                snapshot=root / "ordinary-openrouter-snapshot.json",
                 no_agent_io_log=True,
                 sequential_decisions=True,
                 max_workers=1,
                 progress=False,
             )
-            with patch("agent_world.brain_factory.OpenAIBrain", FakeOpenAIBrain), patch("builtins.print"):
+            with patch(
+                "agent_world.brain_factory.OpenRouterBrain",
+                FakeOpenRouterBrain,
+            ), patch("builtins.print"):
                 _run(args)
-            self.assertEqual(FakeOpenAIBrain.instances, 1)
+            self.assertEqual(FakeOpenRouterBrain.instances, 1)
             usage = [
                 json.loads(line)
-                for line in (root / "ordinary-llm-usage.jsonl").read_text().splitlines()
+                for line in (
+                    root / "ordinary-openrouter-usage.jsonl"
+                ).read_text().splitlines()
                 if line
             ]
             self.assertEqual(len(usage), 1)

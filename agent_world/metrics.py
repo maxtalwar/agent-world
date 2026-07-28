@@ -189,6 +189,13 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
         return False
     return message.startswith(
         (
+            "OpenRouter decision failed:",
+            "OpenRouter harness failed:",
+            "OpenRouter boundary failed:",
+            "OpenRouter model output failed:",
+            "OpenRouter model output contract failed:",
+            "OpenRouter quota unavailable:",
+            "OpenRouter provider unavailable:",
             "OpenAI decision failed:",
             "OpenAI harness failed:",
             "OpenAI boundary failed:",
@@ -228,6 +235,7 @@ def is_quota_failure_message(event_type: str | None, message: str | None) -> boo
     return (
         message.startswith(
             (
+                "OpenRouter quota unavailable:",
                 "OpenAI quota unavailable:",
                 "Codex quota unavailable:",
                 "Claude quota unavailable:",
@@ -243,6 +251,7 @@ def is_provider_failure_message(event_type: str | None, message: str | None) -> 
         return False
     return message.startswith(
         (
+            "OpenRouter provider unavailable:",
             "Claude provider unavailable:",
             "Codex provider unavailable:",
             "Cursor provider unavailable:",
@@ -261,6 +270,8 @@ def is_model_output_failure_message(
         return False
     return message.startswith(
         (
+            "OpenRouter model output failed:",
+            "OpenRouter model output contract failed:",
             "OpenAI model output failed:",
             "OpenAI model output contract failed:",
             "Codex model output failed:",
@@ -285,6 +296,7 @@ def is_confirmed_model_contract_failure_message(
         return False
     return message.startswith(
         (
+            "OpenRouter model output contract failed:",
             "OpenAI model output contract failed:",
             "Codex model output contract failed:",
             "Claude model output contract failed:",
@@ -301,6 +313,7 @@ def is_ambiguous_boundary_failure_message(
         return False
     return message.startswith(
         (
+            "OpenRouter boundary failed:",
             "OpenAI boundary failed:",
             "Codex boundary failed:",
             "Claude boundary failed:",
@@ -317,6 +330,8 @@ def is_harness_failure_message(
         return False
     return message.startswith(
         (
+            "OpenRouter harness failed:",
+            "OpenRouter decision failed:",
             "OpenAI harness failed:",
             "Codex harness failed:",
             "Claude harness failed:",

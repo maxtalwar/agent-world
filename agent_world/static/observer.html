@@ -848,7 +848,7 @@
           <label for="run-brain">Brain</label>
           <select id="run-brain" class="lock">
             <option value="survival">survival</option>
-            <option value="llm" selected>llm</option>
+            <option value="openrouter" selected>OpenRouter API</option>
             <option value="codex">codex plan</option>
             <option value="claude">claude plan</option>
             <option value="cursor">cursor subscription</option>
@@ -870,7 +870,7 @@
           <label for="run-model">Model</label>
           <select id="run-model" class="lock">
             <option value="z-ai/glm-5.2" selected>GLM-5.2</option>
-            <option value="openai/gpt-5.6-luna">GPT-5.6 Luna (OpenRouter)</option>
+            <option value="gpt-5.4-mini">GPT-5.4 Mini (Codex plan)</option>
             <option value="gpt-5.6-luna">GPT-5.6 Luna (Codex plan)</option>
             <option value="gpt-5.6-terra">GPT-5.6 Terra (Codex plan)</option>
             <option value="claude-haiku-4-5">Claude Haiku 4.5 (Claude plan)</option>
@@ -1925,8 +1925,8 @@
       const brain = document.getElementById("run-brain").value;
       const model = document.getElementById("run-model");
       const reasoning = document.getElementById("run-reasoning");
-      if (!forceDisabled && brain === "codex" && !model.value.startsWith("gpt-5.6-")) {
-        model.value = "gpt-5.6-luna";
+      if (!forceDisabled && brain === "codex" && !model.value.startsWith("gpt-")) {
+        model.value = "gpt-5.4-mini";
         reasoning.value = "low";
       } else if (!forceDisabled && brain === "claude" && !model.value.startsWith("claude-")) {
         model.value = "claude-sonnet-5";
@@ -1934,7 +1934,7 @@
       } else if (!forceDisabled && brain === "cursor" && !["cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro"].includes(model.value)) {
         model.value = "cursor-grok-4.5";
         reasoning.value = "low";
-      } else if (!forceDisabled && brain === "llm" && (["gpt-5.6-luna", "gpt-5.6-terra", "cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro"].includes(model.value) || model.value.startsWith("claude-"))) {
+      } else if (!forceDisabled && brain === "openrouter" && (model.value.startsWith("gpt-") || ["cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro"].includes(model.value) || model.value.startsWith("claude-"))) {
         model.value = "z-ai/glm-5.2";
         reasoning.value = "medium";
       }
@@ -2093,6 +2093,20 @@
     });
     document.getElementById("tick-live").addEventListener("click", () => setViewTick(null));
     document.getElementById("run-brain").addEventListener("change", () => syncModelControl(false));
+    document.getElementById("run-model").addEventListener("change", event => {
+      const model = event.target.value;
+      const brain = document.getElementById("run-brain");
+      if (model.startsWith("gpt-")) {
+        brain.value = "codex";
+      } else if (model.startsWith("claude-")) {
+        brain.value = "claude";
+      } else if (["cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro"].includes(model)) {
+        brain.value = "cursor";
+      } else {
+        brain.value = "openrouter";
+      }
+      syncModelControl(false);
+    });
     document.querySelectorAll(".dtab").forEach(button => {
       button.addEventListener("click", () => switchDrawerTab(button.dataset.panel));
     });

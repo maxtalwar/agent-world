@@ -10,7 +10,7 @@ from agent_world.decision_failure import (
     attribute_decision_failure,
     validate_decision_contract,
 )
-from agent_world.openai_brain import AGENT_DECISION_SCHEMA
+from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA
 
 
 def _standard_decision() -> dict:
