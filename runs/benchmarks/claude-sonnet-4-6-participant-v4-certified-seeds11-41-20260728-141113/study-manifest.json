@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "study_id": "claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113",
+  "status": "planned",
+  "created_at_utc": "2026-07-28T14:11:13Z",
+  "suite_id": "agent-world-participant-v4",
+  "benchmark_protocol": "participant-v4",
+  "benchmark_code_fingerprint_sha256": "0595c58f5a1c8a0bb40873c97f01d5a45947a5cbe6603d85bccb2d2f739c878c",
+  "benchmark_scoring_revision": 2,
+  "target": {
+    "brain": "claude",
+    "provider": "claude_cli",
+    "billing_mode": "claude_plan",
+    "model": "claude-sonnet-4-6",
+    "reasoning_effort": "medium"
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds": [11, 41],
+    "policy": "One clean complete run on each required seed, 11 and 41, is a replicated certified Participant v4 benchmark."
+  },
+  "replications": {
+    "cells": {
+      "seed-11": {
+        "seed": 11,
+        "status": "planned",
+        "cohort": "claude46-v4-seed11",
+        "screen": "aw-bench-claude46-v4-s11",
+        "target_tick": 50
+      },
+      "seed-41": {
+        "seed": 41,
+        "status": "planned",
+        "cohort": "claude46-v4-seed41",
+        "screen": "aw-bench-claude46-v4-s41",
+        "target_tick": 50
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "organic-generalists",
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  },
+  "quality_policy": {
+    "certified": "Both runs must complete tick 50 with clean benchmark integrity, complete usage coverage, distinct required seeds, and matching Participant v4 fingerprints.",
+    "diagnostic": "An early stop, external provider or quota failure, adapter or harness failure, ambiguous-boundary failure, protocol mismatch, or incomplete usage prevents certification but remains reportable."
+  },
+  "provenance": {
+    "git_branch": "main",
+    "git_sha_at_launch": "67fe0087f91bbf8509ae08706e094a0627688fab",
+    "launcher": "scripts/run-isolated-cohort",
+    "claude_executable": "/Users/maxtalwar/.local/bin/claude",
+    "claude_cli_version": "2.1.201"
+  },
+  "commands": {
+    "seed-11": [
+      "scripts/run-isolated-cohort",
+      "--cohort",
+      "claude46-v4-seed11",
+      "--commit",
+      "67fe0087f91bbf8509ae08706e094a0627688fab",
+      "--",
+      "python3",
+      "-m",
+      "agent_world.cli",
+      "run",
+      "--benchmark-protocol",
+      "participant-v4",
+      "--brain",
+      "claude",
+      "--model",
+      "claude-sonnet-4-6",
+      "--seed",
+      "11",
+      "--out",
+      "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-11/run.jsonl",
+      "--snapshot",
+      "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-11/run-snapshot.json",
+      "--progress"
+    ],
+    "seed-41": [
+      "scripts/run-isolated-cohort",
+      "--cohort",
+      "claude46-v4-seed41",
+      "--commit",
+      "67fe0087f91bbf8509ae08706e094a0627688fab",
+      "--",
+      "python3",
+      "-m",
+      "agent_world.cli",
+      "run",
+      "--benchmark-protocol",
+      "participant-v4",
+      "--brain",
+      "claude",
+      "--model",
+      "claude-sonnet-4-6",
+      "--seed",
+      "41",
+      "--out",
+      "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-41/run.jsonl",
+      "--snapshot",
+      "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-41/run-snapshot.json",
+      "--progress"
+    ]
+  },
+  "outputs": [
+    "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-11/run.jsonl",
+    "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-11/run-snapshot.json",
+    "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-11/run-report.json",
+    "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-41/run.jsonl",
+    "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-41/run-snapshot.json",
+    "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/seed-41/run-report.json",
+    "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/leaderboard.json",
+    "runs/benchmarks/claude-sonnet-4-6-participant-v4-certified-seeds11-41-20260728-141113/leaderboard.md"
+  ]
+}
