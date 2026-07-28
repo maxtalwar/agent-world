@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
   "study_id": "gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141",
-  "status": "running_replicated",
+  "status": "running_adjusted",
   "created_at_utc": "2026-07-28T20:01:41Z",
   "started_at_utc": "2026-07-28T20:03:49.704888Z",
+  "active_plan": "One gpt-5.3-codex-spark seed-11 cell plus both gpt-5.4-mini cells are active. Spark seed 41 is retained as a paused reserve cell and is excluded from the requested active Spark usage.",
   "suite_id": "agent-world-participant-v6",
   "benchmark_protocol": "participant-v6",
   "benchmark_code_fingerprint_sha256": "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
@@ -15,7 +16,7 @@
       "billing_mode": "chatgpt_plan",
       "model": "gpt-5.3-codex-spark",
       "reasoning_effort": "medium",
-      "seeds": [11, 41]
+      "seeds": [11]
     },
     "gpt-5.4-mini": {
       "brain": "codex",
@@ -27,9 +28,12 @@
     }
   },
   "result_tier": {
-    "requested": "replicated_certified",
-    "required_seeds_per_model": [11, 41],
-    "policy": "Each model requires integrity-clean, complete runs on both seeds 11 and 41 for replicated Participant v6 certification. Individual clean completed cells remain provisional until the paired seed is complete."
+    "requested": "active_campaign",
+    "required_seeds_by_model": {
+      "gpt-5.3-codex-spark": [11],
+      "gpt-5.4-mini": [11, 41]
+    },
+    "policy": "The active campaign intentionally uses one Spark seed-11 run because Spark usage is constrained. The paused Spark seed-41 cell is excluded from active certification and remains resumable from its checkpoint. The two Mini seeds remain the requested paired replication."
   },
   "replications": {
     "cells": {
@@ -44,7 +48,9 @@
       "spark-seed-41": {
         "seed": 41,
         "model": "gpt-5.3-codex-spark",
-        "status": "running",
+        "status": "paused",
+        "pause_reason": "User reduced Spark usage to seed 11 only.",
+        "paused_at_utc": "2026-07-28T20:17:57Z",
         "cohort": "spark53-v6-seed41",
         "screen": "aw-bench-spark53-v6-s41",
         "target_tick": 50
