@@ -174,3 +174,24 @@ because of this: equal declared envelopes with measured spend is the only
 honest cross-provider deliberation policy available today.
 Evidence: participant-v5 design notes in `docs/model-benchmarks.md`,
 2026-07-28 probe data.
+
+## 2026-07-28 — The frontier world separates models by planning horizon, exactly as designed
+
+**On the first participant-v6 runs, the seasonal world split the field
+cleanly along survival planning: GPT-5.6 Sol kept 10/10 agents alive through
+winter (7 farms plus 2 shelters built before the cold, net value created
+213.25, entrepreneurship 74.5 — the first nonzero score since the metric was
+introduced), while GPT-5.4-mini kept 2/10 alive and GPT-5.3-codex-spark
+1/10, both with zero completed structures.** The v4/v5 worlds had compressed
+these models into a ~15-point competence band; v6 spreads the same models
+across 78.8 vs 26.6 vs 19.9. The discriminating skill appears to be acting
+on forecastable future state (winter is announced in the rulebook and the
+season payload every tick) rather than reacting to present scarcity — the
+small models farmed competently in autumn and then starved in a winter they
+had been told was coming. Sol also broke the models-don't-trade pattern
+(1 trade, 9 gifts, enterprise supply 26.0 per 100 agent-ticks vs the 0.6–1.8
+historical band). A low floor was accepted deliberately (ARC-AGI-3 style):
+small-model collapse is signal, not failure.
+Evidence: `runs/benchmarks/leaderboard-v6-20260728.md`,
+`runs/benchmarks/gpt-5-6-sol-participant-v6-provisional-seed11-20260728-195329`,
+`runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141`.
