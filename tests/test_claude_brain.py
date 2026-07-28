@@ -486,7 +486,7 @@ class ClaudeThinkingEstimateTests(unittest.TestCase):
             brain.decide({"tick": 1, "self": {"id": "agent-1"}})
 
         record = brain.runtime.usage_records()[-1]
-        expected = 1000 - max(1, len(raw) // 4)
+        expected = 1000 - max(1, round(len(raw) / 0.97))
         self.assertEqual(record["reasoning_tokens"], expected)
         self.assertEqual(
             record["reasoning_tokens_source"], "estimated_output_minus_visible"

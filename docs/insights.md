@@ -24,6 +24,40 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-28 — OpenAI's deliberation spend falls monotonically across model generations
+
+**On identical benchmark decisions at the same effort setting, reasoning
+tokens per decision fall strictly with model recency: Spark ~5,011 >
+GPT-5.4-mini ~1,260 > GPT-5.4 ~785 > GPT-5.5 ~32.** This tracks OpenAI's
+public token-efficiency push — GPT-5.5's launch materials emphasized
+efficiency — and looks like its tradeoff surface: each generation buys its
+efficiency by trusting its own judgment about when thinking is unnecessary,
+and 5.5 overshoots on this task (see the misallocation entry below). Newer ≠
+more deliberate; the frontier is moving toward thinking less, not more.
+Evidence: participant-v5 leaderboard Reasoning/decision column
+(provider-reported figures).
+
+## 2026-07-28 — Claude reasons without limit unless capped, and Anthropic ships no token cap at all
+
+**Stock Claude Code drives adaptive thinking purely from the effort dial with
+no token ceiling — uncapped, Sonnet 4.6 at medium spent 5,129 output tokens
+on a single small puzzle — and the token cap that does exist
+(`MAX_THINKING_TOKENS`) is deprecated in the CLI in favor of effort.** The
+labs have diverged on control surfaces: OpenAI exposes discrete effort levels
+that newer models increasingly interpret as "barely think" (see the
+monotonic-efficiency entry above), while Anthropic exposes effort levels that
+scale an uncapped adaptive budget. Practical consequences: (1) no
+cross-provider effort label means the same spend; (2) a benchmark that
+uncapped Claude would let it outspend every current-generation OpenAI model
+by an order of magnitude — participant-v5 caps the envelope at 2,048 tokens
+for this reason; (3) measuring Claude's spend requires estimation, because
+the CLI reports no thinking-token split and its streamed thinking blocks are
+display summaries whose length is unrelated to billed tokens (measured: 4,527
+summary chars against ~5,000 billed thinking tokens).
+Evidence: `claude` CLI 2.1.201 stream-json probes 2026-07-28; binary string
+"takes precedence over the deprecated maxThinkingTokens"; calibration in
+`agent_world/claude_brain.py`.
+
 ## 2026-07-28 — GPT-5.5 is smart but misallocates deliberation: at medium effort it simply doesn't think
 
 **GPT-5.5 spent ~0 reasoning tokens on 92% of its benchmark decisions at

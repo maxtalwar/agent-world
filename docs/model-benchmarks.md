@@ -14,8 +14,13 @@ while every Claude cohort spent zero by force.
 The v5 policy is **equal opportunity, not equal spend**:
 
 - Every provider runs its native adaptive deliberation inside an equal declared
-  envelope. Claude runs get `MAX_THINKING_TOKENS=8192` per decision; Codex
-  settings are unchanged (`model_reasoning_effort=medium`).
+  envelope. Claude runs get `MAX_THINKING_TOKENS=2048` per decision; Codex
+  settings are unchanged (`model_reasoning_effort=medium`). The ceiling is
+  deliberate: Anthropic's stock control is the effort dial with *no* token
+  cap (an uncapped Sonnet 4.6 spent 5k+ output tokens on one prompt), so an
+  uncapped envelope would let Claude outspend every current-generation model
+  by an order of magnitude; 2048 sits above Claude's median on-task
+  allocation and in the same band as codex-side spend at medium.
 - Spend is measured and reported — the leaderboard carries a
   **Reasoning/decision** column — but never equalized. No provider exposes
   "spend exactly N": budgets are ceilings, the Codex CLI has no token knob, and

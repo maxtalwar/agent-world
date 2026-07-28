@@ -61,6 +61,11 @@ CLAUDE_HARNESS_INSTRUCTIONS = (
 # retains the raw response as evidence.
 CLAUDE_AGENT_DECISION_SCHEMA: dict[str, Any] = AGENT_DECISION_SCHEMA
 
+# Measured on 1,720 thinking-off decisions from the v4 benchmark ledgers:
+# structured JSON decisions tokenize at ~0.97 visible characters per completion
+# token in this pipeline (nothing like prose's ~4 chars/token).
+CLAUDE_VISIBLE_CHARS_PER_OUTPUT_TOKEN = 0.97
+
 
 class ClaudeBrain:
     """Agent brain that spends saved Claude plan capacity, not API credits."""
@@ -451,17 +456,22 @@ class ClaudeBrain:
         cache_creation = int(usage.get("cache_creation_input_tokens") or 0)
         completion_tokens = int(usage.get("output_tokens") or 0)
         # The CLI's usage has no thinking-token split: extended thinking lands
-        # inside output_tokens with nothing marking it. When the caller supplies
-        # the visible response size, estimate deliberation as output minus the
-        # visible text's approximate token count (~4 chars/token; noise is small
-        # against real thinking, which runs hundreds to thousands of tokens).
-        # The record is labelled estimated so reports never pass it off as a
-        # provider-reported figure like Codex's reasoning_output_tokens.
+        # inside output_tokens with nothing marking it (and the stream's
+        # thinking blocks are display summaries, so their length cannot be
+        # used either). When the caller supplies the visible response size,
+        # estimate deliberation as output tokens minus the visible text's
+        # token count at the measured density for this pipeline's structured
+        # decisions: 0.97 visible chars per completion token, calibrated
+        # against 1,720 thinking-off decisions from the v4 Sonnet 4.6 and
+        # Haiku 4.5 ledgers. The record is labelled estimated so reports never
+        # pass it off as a provider-reported figure like Codex's
+        # reasoning_output_tokens.
         reasoning_tokens = 0
         reasoning_source = None
         visible_chars = request_meta.get("visible_output_chars")
         if visible_chars is not None and completion_tokens > 0:
-            reasoning_tokens = max(0, completion_tokens - max(1, int(visible_chars) // 4))
+            visible_tokens = max(1, round(int(visible_chars) / CLAUDE_VISIBLE_CHARS_PER_OUTPUT_TOKEN))
+            reasoning_tokens = max(0, completion_tokens - visible_tokens)
             reasoning_source = "estimated_output_minus_visible"
         record = {
             "model": self.model,

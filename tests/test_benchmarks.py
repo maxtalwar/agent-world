@@ -192,10 +192,10 @@ class BenchmarkTests(unittest.TestCase):
 
         # V5's one harness change: Claude gets the same opportunity to think
         # that Codex models have always had, inside a declared ceiling.
-        self.assertEqual(os.environ.get("CLAUDE_MAX_THINKING_TOKENS"), "8192")
-        self.assertEqual(args.claude_thinking_budget_tokens, 8192)
+        self.assertEqual(os.environ.get("CLAUDE_MAX_THINKING_TOKENS"), "2048")
+        self.assertEqual(args.claude_thinking_budget_tokens, 2048)
         self.assertEqual(
-            benchmark_protocol()["trial"]["claude_thinking_budget_tokens"], 8192
+            benchmark_protocol()["trial"]["claude_thinking_budget_tokens"], 2048
         )
 
     def test_protocol_flag_locks_comparable_run_settings(self) -> None:

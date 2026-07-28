@@ -34,9 +34,18 @@ from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 BENCHMARK_SUITE_ID = "agent-world-participant-v5"
 BENCHMARK_PROTOCOL_ID = "participant-v5"
 # Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
-# Codex-side settings are byte-identical to v4, which is what lets audited v4
-# codex reports carry over without re-running.
-BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS = 8192
+# Anthropic ships no per-effort token number to borrow: stock Claude Code
+# drives adaptive thinking from the effort dial with NO token cap (measured
+# 5k+ output tokens on one hard prompt), and the env cap is deprecated though
+# still honored by CLI 2.1.201. An uncapped envelope would let Claude outspend
+# every current-generation model by an order of magnitude, so the ceiling is
+# set at 2048: above Claude's own median on-task allocation (~400 estimated
+# thinking tokens per sim decision under a permissive cap) and in the same
+# band as codex-side spend at medium (GPT-5.4 ~785 provider-reported tokens
+# per decision), while cutting the pathological tail. Codex-side settings are
+# byte-identical to v4, which is what lets audited v4 codex reports carry over
+# without re-running.
+BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS = 2048
 BENCHMARK_SEEDS = frozenset({11, 41})
 BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
 BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
