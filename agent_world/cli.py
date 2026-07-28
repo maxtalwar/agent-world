@@ -47,7 +47,10 @@ from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
 from agent_world.replay import format_event, read_events
 from agent_world.run_report import format_comparison, load_run_files, write_report
 from agent_world.session import SimulationSession
-from agent_world.usage import summarize_codex_simulation_credits
+from agent_world.usage import (
+    append_usage_records,
+    summarize_codex_simulation_credits,
+)
 from agent_world.world import WorldEngine
 
 
@@ -598,7 +601,31 @@ def _run(args: argparse.Namespace) -> None:
         usage_path = args.out.with_name(args.out.stem + "-usage.jsonl")
         usage_path.parent.mkdir(parents=True, exist_ok=True)
         if resumed:
-            initial_usage = _read_jsonl_records(usage_path)
+            loaded_usage = _read_jsonl_records(usage_path)
+            # A hard-killed run leaves usage rows for the tick it died in,
+            # while the checkpoint rolls the world back to the last completed
+            # tick. Those rows describe discarded work: folding them into the
+            # ledger would push usage coverage past 100% and corrupt per-call
+            # means. Quarantine them in the same partial-tick audit file a
+            # graceful pause would have written, exactly as rollback_usage
+            # does.
+            initial_usage = []
+            orphaned_usage = []
+            for record in loaded_usage:
+                tick = record.get("tick")
+                if isinstance(tick, int) and tick >= engine.state.tick:
+                    orphaned_usage.append(record)
+                else:
+                    initial_usage.append(record)
+            if orphaned_usage:
+                partial_path = usage_path.with_name(
+                    f"{usage_path.stem}-partial-tick-{engine.state.tick}{usage_path.suffix}"
+                )
+                append_usage_records(orphaned_usage, partial_path)
+                print(
+                    f"Quarantined {len(orphaned_usage)} usage record(s) from "
+                    f"discarded tick(s) >= {engine.state.tick} to {partial_path}"
+                )
             _atomic_write_text(
                 usage_path,
                 "".join(json.dumps(record, sort_keys=True) + "\n" for record in initial_usage),
