@@ -59,20 +59,62 @@ reflected in the status label.
 | GPT-5.4 | 41 | 50/50 | 88.35 | 70.85 | 21.72 | certified (declared deviation) |
 | GPT-5.4 | 11 | 50/50 | 85.27 | 72.13 | 25.16 | certified (declared deviation) |
 | GPT-5.4 | 11 | 40/40 | 86.14 | 70.35 | 24.45 | diagnostic — 40-tick horizon |
-| Spark | 11 | 50/50 | 71.46 | 30.22 | 0.00 | diagnostic — older fingerprint |
+| Spark | 11 | 50/50 | 71.46 | 30.22 | 0.00 | diagnostic — unverifiable failure attribution |
 | Spark | 41 | 32/40 | 70.44 | 48.75 | 0.00 | diagnostic — quota-terminated |
 | Spark | 11 | 34/40 | 72.45 | 43.74 | 0.00 | diagnostic — quota-terminated |
 
 An aborted 1-tick GPT-5.4 run is omitted.
 
-### Why Spark is not promoted
+### Why Spark is not promoted (audited 2026-07-26)
 
 Its complete 50-tick seed-11 run — the Saturday 2026-07-25 trial, artifacts
-written 21:37 — carries fingerprint `a79d5045…`, which is *older* than the
-GPT-5.4 pair's. It predates the independent decision-contract validator, a
-change on the decision path rather than a prompt wording difference, and would
-require its own audit. It is also seed-11 only, so it could reach provisional
-status at best.
+written 21:37 — ran at fingerprint `a79d5045…` (commit `60c4143`), which is
+*older* than the GPT-5.4 pair's. Every difference between that code state and
+current was examined:
+
+| Difference | Binds? |
+|---|---|
+| `interface.py`: ore mechanics text | **Yes** — same one-line deviation as GPT-5.4 |
+| `world.py`: construction contributor shares | No — the run built **zero** structures, so the rule never fired |
+| `world.py`: engine trade value removed from events | No — verified at `60c4143` itself, `_slim_event` exposed only tick/type/actor/message and `_slim_market_transaction` was already filtered to give/receive bundles |
+| `rules.py`: `RESOURCE_VALUES` → `ACCOUNTING_VALUES` | No — rename and comments only, no value changed |
+| `models.py`, `cli.py` | No — a comment and seed-validation text |
+| `codex_brain.py` + `decision_failure.py`: independent contract validator | **Yes, and blocking** |
+
+The validator does not change the prompt, so the model faced the same world.
+What it changes is how a failed decision is attributed, and that is where the
+run fails.
+
+Spark logged two decision failures, at tick 7 and tick 28:
+
+```
+Codex decision failed: Codex action arguments_json is invalid:
+  Expecting value: line 1 column 1 (char 0)
+```
+
+That message is the *production adapter's* own parse error. v4 requires an
+independent validator to check the isolated payload against the declared
+contract before the adapter runs, precisely so that two very different events
+can be told apart: a model emitting invalid JSON, which is scored against the
+model, and an adapter rejecting valid output, which invalidates the trial. The
+run predates that validator, and its usage ledger retains only
+`request_sha256` and `request_payload_bytes` — no response payload survives.
+The attribution is therefore unrecoverable, and the cohort raises
+`unverified_model_output_attribution`.
+
+Allowlisting the fingerprint would not help. That flag is raised per cohort,
+independently of the protocol and fingerprint checks, so it would survive.
+
+The score impact is negligible — scoring both failures against the model gives
+effective execution 71.46, excluding them entirely gives 71.54 — but v4 treats
+an unattributable failure as disqualifying regardless of magnitude, because the
+question is whether the harness was behaving, not how many points moved. The
+v3 suite carried a hardcoded exemption for exactly this run
+(`_legacy_spark_attribution_exception`); v4 deliberately dropped it, and this
+audit does not reinstate it.
+
+**Path to a Spark v4 number:** one fresh seed-11 run under `participant-v4`
+earns provisional status. That is a single trial, not a re-run of everything.
 
 ## Model comparison
 

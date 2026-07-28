@@ -340,10 +340,14 @@ so the construction contributor-share change is inert. Engine-declared trade
 values never reached agents, because market history was already filtered to
 give/receive bundles and event rendering never exposed event data at all.
 
-The Spark seed-11 trial is **not** accepted. It carries an older fingerprint
-that predates the independent decision-contract validator, which is a harness
-change on the decision path rather than a prompt wording difference, and it
-would only reach provisional status in any case.
+The Spark seed-11 trial was audited and **not** accepted. Its two decision
+failures record only the production adapter's own parse error, and no response
+payload was retained, so there is no way to tell whether the model emitted
+invalid JSON or the adapter rejected valid output. The first is scored against
+the model; the second invalidates the trial. Allowlisting its fingerprint would
+not change this: `unverified_model_output_attribution` is a cohort flag raised
+independently of the protocol and fingerprint checks. The full audit is in the
+[retrospective rescore](participant-v4-retrospective-rescore.md).
 
 ## Reporting standard
 

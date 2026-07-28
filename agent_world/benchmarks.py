@@ -37,6 +37,15 @@ BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
 # so it appears in every artifact rather than being silently absorbed. An
 # entry is only justified when the surviving differences have been checked
 # against the actual ledgers and shown not to bind.
+# Audited and rejected. Kept so the work is not repeated. The Spark v3 seed-11
+# trial (fingerprint a79d5045..., commit 60c4143) predates the independent
+# decision-contract validator. Its two decision failures record only the
+# production adapter's own parse error, and no response payload was retained,
+# so there is no way to tell whether the model emitted invalid JSON or the
+# adapter rejected valid output. The first is scored against the model; the
+# second invalidates the trial. Note that allowlisting its fingerprint would
+# not promote it anyway: unverified_model_output_attribution is a cohort flag
+# raised independently of protocol and fingerprint checks.
 BENCHMARK_ACCEPTED_PRIOR_TRIALS: dict[str, dict[str, str]] = {
     "3b4d69526653673e094ff4e08ca72929f3d13d7b5ba269993f58649572beaede": {
         "protocol": "participant-v3",
