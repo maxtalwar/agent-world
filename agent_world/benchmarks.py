@@ -58,15 +58,34 @@ BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
 # are unchanged from v4/v5.
 BENCHMARK_SCORING_REVISION = 1
 # Launch-time fingerprints whose raw-ledger re-derivations stay compliant.
-# Empty under v5: fresh v5 runs record v5 fingerprints, and prior-suite results
-# enter through BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS below instead. The v4-era
-# entries this list carried are preserved in git history.
-BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
+# Each entry is a hand-audited statement that the code change separating that
+# fingerprint from the current one cannot alter agent-visible behavior or any
+# scored number.
+#
+# b524845f... is the codex-scoped v6 fingerprint at commit 7bbff8d, under which
+# the first four v6 trials ran (sol seed 11; mini seeds 11+41; spark seed 11)
+# and the spark seed-41 checkpoint was written. The only benchmark-file change
+# since is the cli.py checkpoint-resume guard fix: the guard previously
+# compared a checkpoint's provider-scoped fingerprint against the UNSCOPED
+# hash, so every benchmark resume was wrongly rejected. The fix replaces that
+# comparison (extracted into _check_resume_fingerprint) and is only reachable
+# from the resume branch of _run; no agent-facing code, no scoring code, and
+# no launch path changed.
+BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
+    {
+        "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
+    }
+)
 
-# Same-suite reports whose stored fingerprint predates a scoring revision but
-# whose numbers the revision cannot change. Empty at v5 revision 1; the v4-era
-# entries are preserved in git history.
-BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
+# Same-suite reports whose stored fingerprint predates a code change that
+# cannot change their numbers. Membership is the audit: an entry is only added
+# after checking the intervening diff against the scoring path. Same entry and
+# rationale as BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS above.
+BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset(
+    {
+        "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
+    }
+)
 
 # Scored reports from an EARLIER SUITE accepted as current-suite evidence
 # after an audit showing the suite change cannot touch their numbers. Keyed by
@@ -967,15 +986,18 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 )
                 continue
         else:
-            source_revision = int(report_protocol.get("scoring_revision") or 1)
             # Compare against a fingerprint scoped to the providers this report
             # actually used, so an unrelated adapter cannot invalidate it.
             expected_fingerprint = benchmark_code_fingerprint(
                 _report_providers(benchmark)
             )
+            # Membership alone decides: the registry entry is the audit that
+            # the code separating the stored fingerprint from the current one
+            # cannot move this report's numbers. A revision comparison would
+            # wrongly reject a resumed run, which reports at the current
+            # revision but keeps its launch-time fingerprint.
             compatible_prior_report = (
-                source_revision < BENCHMARK_SCORING_REVISION
-                and report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
+                report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
             )
             if report_fingerprint != expected_fingerprint and not compatible_prior_report:
                 rejected.append(

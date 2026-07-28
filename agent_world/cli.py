@@ -17,6 +17,7 @@ from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.benchmarks import (
     BENCHMARK_ALLOWED_SEEDS,
     BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
+    BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS,
     BENCHMARK_DIAGNOSTIC_TICKS,
     BENCHMARK_PROTOCOL_ID,
     aggregate_benchmark_reports,
@@ -347,6 +348,30 @@ def main(argv: list[str] | None = None) -> None:
         _experiment(args)
 
 
+def _check_resume_fingerprint(
+    saved_benchmark: Any, saved_fingerprint: Any, providers: list[str] | None
+) -> None:
+    """Refuse a benchmark resume if benchmark-defining code changed.
+
+    Compares against the same provider-scoped fingerprint that launch
+    recorded; the unscoped hash covers every adapter and would reject valid
+    resumes whenever an unrelated provider's code differs. Fingerprints in
+    BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS are audited as behaviorally
+    identical to the current code and remain resumable.
+    """
+
+    if saved_benchmark is None:
+        return
+    if saved_fingerprint == benchmark_code_fingerprint(providers or None):
+        return
+    if saved_fingerprint in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS:
+        return
+    raise ValueError(
+        "The benchmark-defining code changed after this checkpoint; "
+        f"resume would not be a valid {BENCHMARK_PROTOCOL_ID} replication."
+    )
+
+
 def _run(args: argparse.Namespace) -> None:
     load_dotenv()
     resume_checkpoint = getattr(args, "resume_checkpoint", None)
@@ -414,14 +439,25 @@ def _run(args: argparse.Namespace) -> None:
         args.benchmark_code_fingerprint = saved.get(
             "benchmark_code_fingerprint"
         )
-        if (
-            saved_benchmark is not None
-            and args.benchmark_code_fingerprint != benchmark_code_fingerprint()
-        ):
-            raise ValueError(
-                "The benchmark-defining code changed after this checkpoint; "
-                f"resume would not be a valid {BENCHMARK_PROTOCOL_ID} replication."
+        # A population checkpoint leaves args.brain unset, so derive the
+        # provider scope from the saved population itself, falling back to
+        # the saved brain type for older uniform checkpoints.
+        if population_spec is not None:
+            resume_providers = sorted(
+                {
+                    group.brain.provider
+                    for group in population_spec.groups
+                    if group.brain.provider
+                }
             )
+        else:
+            provider = BRAIN_TYPE_PROVIDERS.get(
+                args.brain or saved.get("brain")
+            )
+            resume_providers = [provider] if provider else []
+        _check_resume_fingerprint(
+            saved_benchmark, args.benchmark_code_fingerprint, resume_providers
+        )
         args.ticks = args.ticks if args.ticks is not None else int(saved.get("target_ticks") or engine.state.tick)
         args.agents = len(engine.state.agents)
         if args.out is None and saved.get("events_path"):

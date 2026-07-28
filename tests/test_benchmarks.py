@@ -1158,6 +1158,51 @@ class BenchmarkFingerprintScopeTests(unittest.TestCase):
             )
 
 
+class ResumeFingerprintGuardTests(unittest.TestCase):
+    """The resume guard must use the same provider scoping launch records.
+
+    Regression: the guard originally compared a checkpoint's provider-scoped
+    fingerprint against the unscoped hash, so every benchmark resume was
+    rejected even at the exact launch commit — which would have broken every
+    rate-limit pause/resume mid-campaign.
+    """
+
+    def test_resume_accepts_the_scoped_launch_fingerprint(self) -> None:
+        from agent_world.cli import _check_resume_fingerprint
+
+        scoped = benchmark_code_fingerprint(["codex_cli"])
+        self.assertNotEqual(scoped, benchmark_code_fingerprint())
+        # Must not raise: same code, same provider scope as launch recorded.
+        _check_resume_fingerprint("participant-v6", scoped, ["codex_cli"])
+
+    def test_resume_rejects_a_changed_fingerprint(self) -> None:
+        from agent_world.cli import _check_resume_fingerprint
+
+        with self.assertRaises(ValueError):
+            _check_resume_fingerprint(
+                "participant-v6", "not-a-real-hash", ["codex_cli"]
+            )
+
+    def test_resume_accepts_an_audited_compatible_fingerprint(self) -> None:
+        from agent_world.cli import _check_resume_fingerprint
+
+        import agent_world.cli as cli_module
+
+        with unittest.mock.patch.object(
+            cli_module,
+            "BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS",
+            frozenset({"audited-old-hash"}),
+        ):
+            _check_resume_fingerprint(
+                "participant-v6", "audited-old-hash", ["codex_cli"]
+            )
+
+    def test_non_benchmark_resume_is_unguarded(self) -> None:
+        from agent_world.cli import _check_resume_fingerprint
+
+        _check_resume_fingerprint(None, "anything", ["codex_cli"])
+
+
 class FingerprintRegistryExemptionTests(unittest.TestCase):
     def test_registry_edits_do_not_move_the_fingerprint(self) -> None:
         # Accepting an old report must not orphan current ones: registry
