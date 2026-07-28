@@ -510,7 +510,9 @@ def _specialization_metrics(state: WorldState) -> dict[str, Any]:
 
 
 def _productive_asset_metrics(state: WorldState, inventory_wealth: dict[str, int]) -> dict[str, Any]:
-    recipes = recipes_for_mode(state.config.economy_mode)
+    recipes = recipes_for_mode(
+        state.config.economy_mode, getattr(state.config, "world_variant", "classic")
+    )
     owner_values: Counter[str] = Counter()
     structure_values: dict[str, int] = {}
     for structure in state.structures.values():
@@ -547,7 +549,9 @@ def _build_readiness(state: WorldState) -> dict[str, Any]:
     "instant build" signal; staged progress shows up in the construction metrics instead.
     """
     ready_counts: Counter[str] = Counter()
-    recipes = recipes_for_mode(state.config.economy_mode)
+    recipes = recipes_for_mode(
+        state.config.economy_mode, getattr(state.config, "world_variant", "classic")
+    )
     for agent in state.agents.values():
         if not agent.alive:
             continue

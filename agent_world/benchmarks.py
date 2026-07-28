@@ -1628,6 +1628,7 @@ def _terminal_economic_value(
             _structure_replacement_value(
                 str(structure.get("type") or ""),
                 str(config.get("economy_mode") or "baseline"),
+                str(config.get("world_variant") or "classic"),
             )
         )
         asset_value += _book_value(structure.get("inventory"))
@@ -1822,8 +1823,13 @@ def _initial_endowment_value(config: dict[str, Any]) -> float:
     return _book_value(inventory)
 
 
-def _structure_replacement_value(structure_type: str, economy_mode: str) -> float:
-    recipe = recipes_for_mode(economy_mode).get(structure_type)
+def _structure_replacement_value(
+    structure_type: str, economy_mode: str, world_variant: str = "classic"
+) -> float:
+    # Variant-aware: without this, frontier structures (road, irrigation)
+    # valued at zero, silently penalizing exactly the capital formation the
+    # frontier world exists to reward.
+    recipe = recipes_for_mode(economy_mode, world_variant).get(structure_type)
     return _book_value(getattr(recipe, "inputs", {})) if recipe is not None else 0.0
 
 

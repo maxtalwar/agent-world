@@ -217,3 +217,59 @@ class FrontierEngineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FrontierScoringPipelineTests(unittest.TestCase):
+    """Frontier structures must flow through every scoring path without crashes
+    or silent zero-valuation - the bug class that only surfaces mid-campaign."""
+
+    def _engine_with_frontier_assets(self) -> WorldEngine:
+        engine = WorldEngine.create(_frontier_config(season_length_ticks=12), agent_names=["A1", "A2"])
+        agent = engine.state.agents["agent-1"]
+        _place_structure(engine, "farm_plot", agent.position, agent.id)
+        _place_structure(engine, "irrigation", agent.position, agent.id)
+        _place_structure(engine, "road", engine.state.agents["agent-2"].position, agent.id)
+        engine.tick({aid: AgentDecision(actions=[{"type": "wait"}]) for aid in engine.state.agents})
+        return engine
+
+    def test_offline_metrics_value_frontier_structures(self) -> None:
+        from agent_world.metrics import compute_metrics
+
+        engine = self._engine_with_frontier_assets()
+        metrics = compute_metrics(engine.state)
+        assets = metrics["productive_assets"]
+        # irrigation (4 wood + 2 stone + 2 fiber) and road (2 stone + 1 wood)
+        # must carry nonzero replacement value for agent-1.
+        self.assertGreater(assets["agent_wealth_including_asset_shares"]["agent-1"], 0)
+
+    def test_run_report_and_benchmarks_value_frontier_structures(self) -> None:
+        from agent_world.run_report import build_report
+        from agent_world.run_report import _structure_replacement_value as report_value
+        from agent_world.benchmarks import _structure_replacement_value as bench_value
+
+        self.assertGreater(report_value("road", "organic", "frontier"), 0)
+        self.assertGreater(report_value("irrigation", "organic", "frontier"), 0)
+        self.assertGreater(bench_value("road", "organic", "frontier"), 0)
+        self.assertGreater(bench_value("irrigation", "organic", "frontier"), 0)
+        # Classic worlds still value nothing they cannot build.
+        self.assertEqual(bench_value("road", "organic", "classic"), 0.0)
+
+        engine = self._engine_with_frontier_assets()
+        events = [json.loads(line) for line in engine.export_events_jsonl().splitlines() if line.strip()]
+        report = build_report(events, engine.snapshot(), [], target_ticks=50)
+        owners = report["economy"]["construction"]["assets"]["by_owner"]
+        agent1 = owners.get("agent-1") or {}
+        self.assertGreater(agent1.get("replacement_cost_value", 0), 0)
+        # The benchmarks section must build without error on a frontier snapshot.
+        self.assertIn("benchmarks", report)
+
+    def test_benchmark_raw_metrics_credit_frontier_capital(self) -> None:
+        from agent_world.run_report import build_report
+
+        engine = self._engine_with_frontier_assets()
+        events = [json.loads(line) for line in engine.export_events_jsonl().splitlines() if line.strip()]
+        report = build_report(events, engine.snapshot(), [], target_ticks=50)
+        cohorts = (report.get("benchmarks") or {}).get("cohorts") or {}
+        if cohorts:
+            raw = next(iter(cohorts.values())).get("raw") or {}
+            self.assertGreater(raw.get("living_terminal_economic_value", 0), 0)
