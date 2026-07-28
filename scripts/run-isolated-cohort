@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/run-isolated-cohort --cohort ID [--commit REV] [--prepare-only] -- COMMAND [ARGS...]
+
+Creates or reuses a detached worktree pinned to one commit, then runs COMMAND
+inside it. Relative runs/... arguments are rewritten to the canonical checkout
+so artifacts remain easy to find while source code stays immutable.
+
+Examples:
+  screen -dmS luna-s11 scripts/run-isolated-cohort \
+    --cohort luna-v4-seed11 -- \
+    python3 -m agent_world.cli run \
+      --benchmark-protocol participant-v4 \
+      --brain codex --model gpt-5.6-luna --seed 11 \
+      --out runs/benchmarks/luna-v4/seed-11/run.jsonl \
+      --snapshot runs/benchmarks/luna-v4/seed-11/run-snapshot.json
+
+  screen -dmS luna-s11-resume scripts/run-isolated-cohort \
+    --cohort luna-v4-seed11 --commit LAUNCH_SHA -- \
+    python3 -m agent_world.cli run \
+      --resume-checkpoint runs/benchmarks/luna-v4/seed-11/run-checkpoint.pkl \
+      --ticks 50 --progress
+EOF
+}
+
+cohort_id=""
+revision="HEAD"
+revision_explicit=false
+prepare_only=false
+
+while (($#)); do
+  case "$1" in
+    --cohort)
+      [[ $# -ge 2 ]] || { echo "--cohort requires a value" >&2; exit 2; }
+      cohort_id="$2"
+      shift 2
+      ;;
+    --commit)
+      [[ $# -ge 2 ]] || { echo "--commit requires a value" >&2; exit 2; }
+      revision="$2"
+      revision_explicit=true
+      shift 2
+      ;;
+    --prepare-only)
+      prepare_only=true
+      shift
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+[[ -n "$cohort_id" ]] || { echo "--cohort is required" >&2; exit 2; }
+[[ "$cohort_id" =~ ^[a-zA-Z0-9][a-zA-Z0-9._-]*$ ]] || {
+  echo "Cohort ID may contain only letters, numbers, dots, underscores, and hyphens." >&2
+  exit 2
+}
+
+canonical_root="$(git rev-parse --show-toplevel)"
+
+if [[ "$revision_explicit" == false ]] \
+  && [[ -n "$(git -C "$canonical_root" status --porcelain --untracked-files=no)" ]]; then
+  echo "Refusing to launch from a dirty tracked worktree." >&2
+  echo "Commit the intended source state, or pass --commit with an explicit clean revision." >&2
+  exit 1
+fi
+
+launch_commit="$(git -C "$canonical_root" rev-parse "${revision}^{commit}")"
+short_commit="${launch_commit:0:12}"
+worktree_root="$canonical_root/.worktrees/run-cohorts"
+worktree_path="$worktree_root/$cohort_id-$short_commit"
+
+mkdir -p "$worktree_root"
+if [[ -e "$worktree_path" ]]; then
+  existing_commit="$(git -C "$worktree_path" rev-parse HEAD 2>/dev/null || true)"
+  if [[ "$existing_commit" != "$launch_commit" ]]; then
+    echo "Existing cohort worktree does not match requested commit: $worktree_path" >&2
+    exit 1
+  fi
+else
+  git -C "$canonical_root" worktree add --detach "$worktree_path" "$launch_commit"
+fi
+
+if [[ -f "$canonical_root/.env" && ! -e "$worktree_path/.env" ]]; then
+  ln -s "$canonical_root/.env" "$worktree_path/.env"
+fi
+
+if [[ "$prepare_only" == true ]]; then
+  printf '%s\n' "$worktree_path"
+  exit 0
+fi
+
+[[ $# -gt 0 ]] || {
+  echo "COMMAND is required unless --prepare-only is used." >&2
+  exit 2
+}
+
+resolved_command=()
+for argument in "$@"; do
+  case "$argument" in
+    runs/*)
+      resolved_command+=("$canonical_root/$argument")
+      ;;
+    --*=runs/*)
+      option_name="${argument%%=*}"
+      option_path="${argument#*=}"
+      resolved_command+=("$option_name=$canonical_root/$option_path")
+      ;;
+    *)
+      resolved_command+=("$argument")
+      ;;
+  esac
+done
+
+cd "$worktree_path"
+exec "${resolved_command[@]}"
