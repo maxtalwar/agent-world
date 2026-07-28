@@ -17,9 +17,9 @@ silently rescored or mixed into a v4 leaderboard.
 
 The [Participant v4 retrospective rescore](participant-v4-retrospective-rescore.md)
 applies the v4 formulas to every preserved Spark and GPT-5.4 ledger without
-re-running a simulation. The GPT-5.4 seed-11/41 pair is certified from that
-evidence under an audited declared deviation; every other rescored run remains
-diagnostic.
+re-running a simulation. The GPT-5.4 seed-11/41 pair is certified and the Spark
+seed-11 trial is provisional on that evidence, both under audited declared
+deviations; the remaining rescored runs are diagnostic.
 
 Preserved examples include the
 [GPT-5.4 v2 report](gpt-5-4-benchmark.md), the
@@ -31,6 +31,8 @@ Preserved examples include the
 - **Diagnostic:** any run, including mixed populations, stopped runs, degraded
   runs, historical protocols, and nonstandard seeds.
 - **Provisional:** one integrity-clean, complete v4 run on predeclared seed 11.
+  A trial run under an earlier protocol may qualify the same way certification
+  does, and is labelled *provisional with declared deviation*.
 - **Replicated certified:** one integrity-clean, complete v4 run on each
   required seed: 11 and 41. A trial run under an earlier protocol may qualify
   only through an audited entry in `BENCHMARK_ACCEPTED_PRIOR_TRIALS`, and is
@@ -340,13 +342,18 @@ so the construction contributor-share change is inert. Engine-declared trade
 values never reached agents, because market history was already filtered to
 give/receive bundles and event rendering never exposed event data at all.
 
-The Spark seed-11 trial was audited and **not** accepted. Its two decision
-failures record only the production adapter's own parse error, and no response
-payload was retained, so there is no way to tell whether the model emitted
-invalid JSON or the adapter rejected valid output. The first is scored against
-the model; the second invalidates the trial. Allowlisting its fingerprint would
-not change this: `unverified_model_output_attribution` is a cohort flag raised
-independently of the protocol and fingerprint checks. The full audit is in the
+The Spark seed-11 trial is accepted as provisional under two declared
+deviations: the same static-context difference, plus an entry in
+`BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES`.
+
+That second list is the one place the suite trades a bright-line integrity
+check for a judgment call, and it is deliberately awkward to use. An override
+covers unverifiable model-output attribution only, matches on model, seed,
+source fingerprint, and the exact count of unverifiable failures, and must
+record both the measured sensitivity and who accepted it. A rescore yielding a
+different count stops matching and the flag returns. It is an allowlist, never
+a relaxation of the rule: any cohort outside it still fails on
+`unverified_model_output_attribution`. The full audit is in the
 [retrospective rescore](participant-v4-retrospective-rescore.md).
 
 ## Reporting standard

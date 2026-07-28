@@ -4,8 +4,9 @@ This applies the Participant v4 formulas to the preserved event ledgers of
 every homogeneous GPT-5.3-Codex-Spark and GPT-5.4 run on record. No simulation
 was re-run.
 
-The GPT-5.4 seed-11/41 pair is **certified with a declared deviation** on this
-evidence. Everything else here is diagnostic.
+On this evidence the GPT-5.4 seed-11/41 pair is **certified with a declared
+deviation**, and the Spark seed-11 trial is **provisional with declared
+deviations**. The remaining runs are diagnostic.
 
 ## Method
 
@@ -59,62 +60,65 @@ reflected in the status label.
 | GPT-5.4 | 41 | 50/50 | 88.35 | 70.85 | 21.72 | certified (declared deviation) |
 | GPT-5.4 | 11 | 50/50 | 85.27 | 72.13 | 25.16 | certified (declared deviation) |
 | GPT-5.4 | 11 | 40/40 | 86.14 | 70.35 | 24.45 | diagnostic — 40-tick horizon |
-| Spark | 11 | 50/50 | 71.46 | 30.22 | 0.00 | diagnostic — unverifiable failure attribution |
+| Spark | 11 | 50/50 | 71.46 | 30.22 | 0.00 | provisional (2 declared deviations) |
 | Spark | 41 | 32/40 | 70.44 | 48.75 | 0.00 | diagnostic — quota-terminated |
 | Spark | 11 | 34/40 | 72.45 | 43.74 | 0.00 | diagnostic — quota-terminated |
 
 An aborted 1-tick GPT-5.4 run is omitted.
 
-### Why Spark is not promoted (audited 2026-07-26)
+### Spark: audited 2026-07-26, promoted under an explicit override
 
 Its complete 50-tick seed-11 run — the Saturday 2026-07-25 trial, artifacts
-written 21:37 — ran at fingerprint `a79d5045…` (commit `60c4143`), which is
-*older* than the GPT-5.4 pair's. Every difference between that code state and
-current was examined:
+written 21:37 — ran at fingerprint `a79d5045…` (commit `60c4143`). Every
+difference between that code state and current was examined:
 
 | Difference | Binds? |
 |---|---|
-| `interface.py`: ore mechanics text | **Yes** — same one-line deviation as GPT-5.4 |
+| `interface.py`: ore mechanics text | **Yes** — same one-line deviation accepted for GPT-5.4 |
 | `world.py`: construction contributor shares | No — the run built **zero** structures, so the rule never fired |
 | `world.py`: engine trade value removed from events | No — verified at `60c4143` itself, `_slim_event` exposed only tick/type/actor/message and `_slim_market_transaction` was already filtered to give/receive bundles |
 | `rules.py`: `RESOURCE_VALUES` → `ACCOUNTING_VALUES` | No — rename and comments only, no value changed |
 | `models.py`, `cli.py` | No — a comment and seed-validation text |
-| `codex_brain.py` + `decision_failure.py`: independent contract validator | **Yes, and blocking** |
+| `codex_brain.py` + `decision_failure.py`: contract validator | **Yes** — resolved by explicit override, below |
 
 The validator does not change the prompt, so the model faced the same world.
-What it changes is how a failed decision is attributed, and that is where the
-run fails.
+What it changes is how a failed decision is attributed.
 
-Spark logged two decision failures, at tick 7 and tick 28:
+Spark logged two decision failures, at ticks 7 and 28:
 
 ```
 Codex decision failed: Codex action arguments_json is invalid:
   Expecting value: line 1 column 1 (char 0)
 ```
 
-That message is the *production adapter's* own parse error. v4 requires an
-independent validator to check the isolated payload against the declared
-contract before the adapter runs, precisely so that two very different events
-can be told apart: a model emitting invalid JSON, which is scored against the
-model, and an adapter rejecting valid output, which invalidates the trial. The
-run predates that validator, and its usage ledger retains only
-`request_sha256` and `request_payload_bytes` — no response payload survives.
-The attribution is therefore unrecoverable, and the cohort raises
-`unverified_model_output_attribution`.
+That is the *production adapter's* own parse error. v4 normally requires an
+independent validator to check the isolated payload before the adapter runs,
+so that malformed model output (scored against the model) can be told apart
+from an adapter rejecting valid output (which voids the trial). This trial
+predates that validator and its usage ledger retained only `request_sha256`
+and `request_payload_bytes`, so no response payload survives and the
+attribution is unrecoverable.
 
-Allowlisting the fingerprint would not help. That flag is raised per cohort,
-independently of the protocol and fingerprint checks, so it would survive.
+**This was overridden by explicit owner decision on 2026-07-26.** The measured
+sensitivity is 0.08 points — effective execution is 71.46 if both failures are
+scored against the model and 71.54 if both are excluded, across 1,331
+submitted actions — and Spark inference is usage constrained, so a full 50-tick
+re-run is not a proportionate way to resolve a gap of that size.
 
-The score impact is negligible — scoring both failures against the model gives
-effective execution 71.46, excluding them entirely gives 71.54 — but v4 treats
-an unattributable failure as disqualifying regardless of magnitude, because the
-question is whether the harness was behaving, not how many points moved. The
-v3 suite carried a hardcoded exemption for exactly this run
-(`_legacy_spark_attribution_exception`); v4 deliberately dropped it, and this
-audit does not reinstate it.
+State the residual risk plainly: if those two failures were adapter rejections
+of contract-valid output rather than malformed model output, the harness
+misbehaved during the trial and the run would normally be void. The evidence
+does not exclude that. It is judged immaterial at this magnitude, not
+disproven.
 
-**Path to a Spark v4 number:** one fresh seed-11 run under `participant-v4`
-earns provisional status. That is a single trial, not a re-run of everything.
+The override lives in `BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES` and matches on
+model, seed, source fingerprint, **and the exact count of unverifiable
+failures**. A rescore that produced a third such failure would stop matching
+and the flag would return, so the entry cannot quietly widen to cover failures
+nobody examined. Both deviations print in full on the leaderboard and in the
+study manifest.
+
+Promotion to replicated certification still requires a clean seed-41 run.
 
 ## Model comparison
 

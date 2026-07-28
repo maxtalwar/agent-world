@@ -1,0 +1,50 @@
+{
+ "schema_version": 1,
+ "study_id": "gpt-5-3-codex-spark-participant-v4-provisional-20260726",
+ "status": "completed_provisional_with_declared_deviation",
+ "created_at_utc": "2026-07-26T19:00:00Z",
+ "suite_id": "agent-world-participant-v4",
+ "benchmark_protocol": "participant-v4",
+ "benchmark_scoring_revision": 1,
+ "scoring_code_fingerprint_sha256": "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc",
+ "trial_source_fingerprint_sha256": "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948",
+ "derivation": {
+  "method": "retrospective_rescore_from_preserved_ledger",
+  "note": "No simulation was re-run. Every v4 metric was recomputed from the preserved event ledger and terminal snapshot of the source trial.",
+  "source_runs": [
+   "runs/benchmarks/gpt-5-3-codex-spark-participant-v3-provisional-seed11-20260726-011031/seed-11"
+  ]
+ },
+ "accepted_prior_trial": {
+  "protocol": "participant-v3",
+  "deviation": "static_context_mechanics_text: ore was described as a 'high-value raw material' rather than as smeltable into an ingot. Same one-line static-context difference accepted for the GPT-5.4 pair. See also the attribution override recorded in BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES for this trial.",
+  "audited": "Every difference from commit 60c4143 to v4 was examined. The run built zero structures, so the contributor-share change never fired. Engine trade values never reached agents, verified at 60c4143 itself. The ACCOUNTING_VALUES rename changed no value. The models.py and cli.py edits are a comment and seed-validation text. The decision-contract validator does not alter the prompt, so the model faced the same world; it alters failure attribution only, which is covered by the separate attribution override."
+ },
+ "accepted_attribution_override": {
+  "model": "gpt-5.3-codex-spark",
+  "seed": 11,
+  "unverified_model_output_failures": 2,
+  "deviation": "unverified_model_output_attribution: two decision failures at ticks 7 and 28 record only the production adapter's parse error. The trial predates the independent contract validator and no response payload was retained, so malformed model output cannot be distinguished from adapter rejection of valid output.",
+  "sensitivity": "Scoring both failures against the model gives effective execution 71.46; excluding them entirely gives 71.54. The disputed span is 0.08 points over 1,331 submitted actions.",
+  "accepted_because": "Owner decision, 2026-07-26: Spark inference is usage constrained, and a 0.08-point gap does not justify spending a full 50-tick trial to resolve it."
+ },
+ "target": {
+  "brain": "codex",
+  "model": "gpt-5.3-codex-spark",
+  "reasoning_effort": "medium"
+ },
+ "result_tier": {
+  "granted": "provisional_with_declared_deviation",
+  "required_seed": 11,
+  "promotion_seed": 41,
+  "policy": "Seed 11 completed 50 ticks. Promotion to replicated certification still requires a clean seed-41 run. Two declared deviations apply: the prior-protocol static-context difference, and an explicit owner override of unverifiable model-output attribution."
+ },
+ "replications": {
+  "cells": {
+   "seed-11": {
+    "seed": 11,
+    "status": "provisional"
+   }
+  }
+ }
+}

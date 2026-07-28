@@ -37,15 +37,6 @@ BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
 # so it appears in every artifact rather than being silently absorbed. An
 # entry is only justified when the surviving differences have been checked
 # against the actual ledgers and shown not to bind.
-# Audited and rejected. Kept so the work is not repeated. The Spark v3 seed-11
-# trial (fingerprint a79d5045..., commit 60c4143) predates the independent
-# decision-contract validator. Its two decision failures record only the
-# production adapter's own parse error, and no response payload was retained,
-# so there is no way to tell whether the model emitted invalid JSON or the
-# adapter rejected valid output. The first is scored against the model; the
-# second invalidates the trial. Note that allowlisting its fingerprint would
-# not promote it anyway: unverified_model_output_attribution is a cohort flag
-# raised independently of protocol and fingerprint checks.
 BENCHMARK_ACCEPTED_PRIOR_TRIALS: dict[str, dict[str, str]] = {
     "3b4d69526653673e094ff4e08ca72929f3d13d7b5ba269993f58649572beaede": {
         "protocol": "participant-v3",
@@ -65,7 +56,68 @@ BENCHMARK_ACCEPTED_PRIOR_TRIALS: dict[str, dict[str, str]] = {
             "all match v4 exactly."
         ),
     },
+    "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948": {
+        "protocol": "participant-v3",
+        "deviation": (
+            "static_context_mechanics_text: ore was described as a "
+            "'high-value raw material' rather than as smeltable into an "
+            "ingot. Same one-line static-context difference accepted for the "
+            "GPT-5.4 pair. See also the attribution override recorded in "
+            "BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES for this trial."
+        ),
+        "audited": (
+            "Every difference from commit 60c4143 to v4 was examined. The "
+            "run built zero structures, so the contributor-share change never "
+            "fired. Engine trade values never reached agents, verified at "
+            "60c4143 itself. The ACCOUNTING_VALUES rename changed no value. "
+            "The models.py and cli.py edits are a comment and seed-validation "
+            "text. The decision-contract validator does not alter the prompt, "
+            "so the model faced the same world; it alters failure attribution "
+            "only, which is covered by the separate attribution override."
+        ),
+    },
 }
+
+# Cohorts whose model-output attribution cannot be independently reverified,
+# accepted anyway by explicit owner decision. This is the one place the suite
+# trades a bright-line integrity check for a judgment call, so the bar is
+# deliberately awkward: every field must match exactly, including the failure
+# count. A rescore that yields a different count stops matching and the flag
+# returns, which is the point - the entry cannot quietly widen to cover
+# failures nobody looked at.
+#
+# What is being accepted, stated plainly: if these failures were adapter
+# rejections of contract-valid output rather than malformed model output, the
+# harness misbehaved during the trial and the run should have been void. That
+# possibility is not excluded by evidence - it is judged immaterial given the
+# measured sensitivity. Every artifact carries this text.
+BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES: tuple[dict[str, Any], ...] = (
+    {
+        "model": "gpt-5.3-codex-spark",
+        "seed": 11,
+        "source_fingerprint": (
+            "a79d5045623351a9d29b7ff90e0b7fc5630db139e659e7b86edc42a1f0625948"
+        ),
+        "unverified_model_output_failures": 2,
+        "deviation": (
+            "unverified_model_output_attribution: two decision failures at "
+            "ticks 7 and 28 record only the production adapter's parse error. "
+            "The trial predates the independent contract validator and no "
+            "response payload was retained, so malformed model output cannot "
+            "be distinguished from adapter rejection of valid output."
+        ),
+        "sensitivity": (
+            "Scoring both failures against the model gives effective "
+            "execution 71.46; excluding them entirely gives 71.54. The "
+            "disputed span is 0.08 points over 1,331 submitted actions."
+        ),
+        "accepted_because": (
+            "Owner decision, 2026-07-26: Spark inference is usage "
+            "constrained, and a 0.08-point gap does not justify spending a "
+            "full 50-tick trial to resolve it."
+        ),
+    },
+)
 
 # These are mechanics-anchored "excellent" targets, not population percentiles.
 # Versioning the suite freezes them so later runs remain directly comparable.
@@ -223,6 +275,38 @@ def accepted_prior_trial(
     if entry is None or entry["protocol"] != str(declared_protocol):
         return None
     return entry
+
+
+def accepted_attribution_override(
+    *,
+    model: Any,
+    seed: Any,
+    source_fingerprint: Any,
+    unverified_failures: int,
+) -> dict[str, Any] | None:
+    """Return an explicit override for unverifiable model-output attribution.
+
+    Every field must match exactly, the failure count included. A cohort that
+    develops a third unattributable failure stops matching and is flagged
+    again, so an override can never silently widen past what was audited.
+    """
+
+    for entry in BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES:
+        if (
+            str(entry["model"]) == str(model)
+            and _as_int(seed) == entry["seed"]
+            and str(entry["source_fingerprint"]) == str(source_fingerprint)
+            and entry["unverified_model_output_failures"] == unverified_failures
+        ):
+            return entry
+    return None
+
+
+def _as_int(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def benchmark_code_fingerprint() -> str:
@@ -388,10 +472,22 @@ def build_benchmark_results(
             for event in events
             if event.get("actor_id") in member_set
         )
-        if raw["model_output_failures"] > confirmed_contract_failures:
-            cohort_flags.append("unverified_model_output_attribution")
+        unverified_failures = (
+            raw["model_output_failures"] - confirmed_contract_failures
+        )
+        attribution_override = None
+        if unverified_failures > 0:
+            attribution_override = accepted_attribution_override(
+                model=cohort.get("model"),
+                seed=config.get("seed"),
+                source_fingerprint=start_data.get("benchmark_code_fingerprint"),
+                unverified_failures=unverified_failures,
+            )
+            if attribution_override is None:
+                cohort_flags.append("unverified_model_output_attribution")
         scores = score_benchmark_counts(raw)
         scored[str(cohort_id)] = {
+            "attribution_override": attribution_override,
             "brain": cohort.get("brain"),
             "model": cohort.get("model"),
             "reasoning_effort": cohort.get("reasoning_effort"),
@@ -740,6 +836,24 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 row["declared_deviations"].append(
                     {"seed": int(seed), "source": report.get("source"), **deviation}
                 )
+            override = cohort.get("attribution_override")
+            if override:
+                row["declared_deviations"].append(
+                    {
+                        "seed": int(seed),
+                        "source": report.get("source"),
+                        "protocol": trial.get("declared_protocol"),
+                        "deviation": override.get("deviation"),
+                        "audited": " ".join(
+                            part
+                            for part in (
+                                override.get("sensitivity"),
+                                override.get("accepted_because"),
+                            )
+                            if part
+                        ),
+                    }
+                )
             row["replications"].append(
                 {
                     "seed": int(seed),
@@ -940,16 +1054,26 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
     if deviating:
         lines += ["", "## Declared deviations", ""]
         for row in deviating:
-            seeds = ", ".join(
-                str(item.get("seed")) for item in row["declared_deviations"]
-            )
-            first = row["declared_deviations"][0]
-            lines += [
-                f"- **{row.get('model')}** (seeds {seeds}) ran under "
-                f"`{first.get('protocol')}`, accepted as v4 evidence after audit.",
-                f"  - Deviation: {first.get('deviation')}",
-                f"  - Audit: {first.get('audited')}",
-            ]
+            # Group identical deviations so a two-seed pair reads as one entry,
+            # but never collapse distinct ones: a cohort can carry both a
+            # prior-protocol deviation and an attribution override, and both
+            # have to be visible.
+            grouped: dict[tuple[Any, ...], list[int]] = {}
+            for item in row["declared_deviations"]:
+                key = (
+                    item.get("protocol"),
+                    item.get("deviation"),
+                    item.get("audited"),
+                )
+                grouped.setdefault(key, []).append(item.get("seed"))
+            for (protocol, deviation, audited), seeds in grouped.items():
+                seed_text = ", ".join(str(seed) for seed in sorted(seeds))
+                lines += [
+                    f"- **{row.get('model')}** (seed {seed_text}) ran under "
+                    f"`{protocol}`, accepted as v4 evidence after audit.",
+                    f"  - Deviation: {deviation}",
+                    f"  - Audit: {audited}",
+                ]
     if aggregate.get("rejected"):
         lines += [
             "",

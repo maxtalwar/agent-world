@@ -17,6 +17,6 @@ Descriptive spread:
 
 ## Declared deviations
 
-- **gpt-5.4** (seeds 11, 41) ran under `participant-v3`, accepted as v4 evidence after audit.
+- **gpt-5.4** (seed 11, 41) ran under `participant-v3`, accepted as v4 evidence after audit.
   - Deviation: static_context_mechanics_text: ore was described as a 'high-value raw material' rather than as smeltable into an ingot. One line of a 6,430-character static context.
   - Audit: The other two differences introduced with v4 were checked against these ledgers and do not bind. No structure in any run had more than one contributor, so the construction contributor-share change is inert. Engine-declared trade values never reached agents: market history was already filtered to give/receive bundles and event rendering never exposed event data. Trial settings, horizon, integrity, and usage coverage all match v4 exactly.

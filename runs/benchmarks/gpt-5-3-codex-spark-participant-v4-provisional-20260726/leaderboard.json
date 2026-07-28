@@ -1,0 +1,535 @@
+{
+  "protocol": {
+    "accounting_values": {
+      "method": "Start from the world book-value table and raise each single-output recipe's output to exactly its input total divided by the output quantity. Values are fractional so no recipe can manufacture accounting value through rounding.",
+      "values": {
+        "advanced_tool": 43.0,
+        "coin": 2.375,
+        "fiber": 2.0,
+        "food": 2.0,
+        "ingot": 19.0,
+        "ore": 8.0,
+        "stone": 4.0,
+        "tool": 12.0,
+        "water": 1.0,
+        "wood": 3.0
+      }
+    },
+    "aggregation": "For a provisional result, apply the frozen formulas to the clean seed-11 raw counts. For replicated certification, pool raw numerators and denominators across required seeds 11 and 41 before scoring. Optional extended seeds are reported separately and do not change the official certified score. Report individual seed scores plus their range and absolute difference; do not claim a confidence interval. Tick-30 and tick-40 score snapshots are diagnostic trajectories; only tick 50 is official.",
+    "code_fingerprint_sha256": "2563b8f7166f071bbc6b48e372c96793252cc4d188317d0f6f724ef1708617bc",
+    "id": "participant-v4",
+    "replications": {
+      "minimum": 2,
+      "optional_extended_seeds": [
+        73,
+        101,
+        137
+      ],
+      "policy": "One clean complete seed-11 run is a provisional benchmark. Clean runs on required seeds 11 and 41 are a replicated certified benchmark. Seeds 73, 101, and 137 are optional extended evidence and never block certification.",
+      "provisional_minimum": 1,
+      "provisional_seed": 11,
+      "required_seeds": [
+        11,
+        41
+      ]
+    },
+    "score_scale": {
+      "details": "See score_scales for per-benchmark bounds.",
+      "higher_is_better": true,
+      "maximum": null,
+      "metric_specific": true,
+      "minimum": 0.0
+    },
+    "score_scales": {
+      "economic_productivity": {
+        "diagnostic": true,
+        "higher_is_better": true,
+        "maximum": null,
+        "minimum": 0.0,
+        "reference_target": 100.0
+      },
+      "effective_execution": {
+        "higher_is_better": true,
+        "maximum": 100.0,
+        "minimum": 0.0
+      },
+      "entrepreneurial_agency": {
+        "higher_is_better": true,
+        "maximum": null,
+        "minimum": 0.0,
+        "reference_target": 100.0
+      },
+      "sustained_competence": {
+        "higher_is_better": true,
+        "maximum": 100.0,
+        "minimum": 0.0
+      }
+    },
+    "scoring_revision": 1,
+    "suite_id": "agent-world-participant-v4",
+    "targets": {
+      "enterprise_supply_per_100_agent_ticks": 20.0,
+      "net_value_created_per_100_agent_ticks": 20.0,
+      "terminal_endowment_multiple": 3.0,
+      "venture_initiatives_per_100_agent_ticks": 5.0
+    },
+    "trial": {
+      "action_feedback_mode": "baseline",
+      "agent_io_log": true,
+      "agents": 10,
+      "connector_profile": "stateless-v3",
+      "conversation_mode": "stateless",
+      "decision_mode": "raw",
+      "diagnostic_score_ticks": [
+        30,
+        40,
+        50
+      ],
+      "economy_mode": "organic",
+      "geography_mode": "dispersed",
+      "global_max_workers": 4,
+      "model_output_failure_policy": "Independently validate each extracted decision against the declared contract. Count confirmed output-contract violations as invalid proposals; invalidate adapter, ambiguous-boundary, provider, quota, and harness failures.",
+      "objective_mode": "neutral",
+      "official_score_tick": 50,
+      "population": "one uniform model cohort",
+      "preset": "organic-generalists",
+      "provider_max_workers": 4,
+      "reasoning_effort": "medium",
+      "specialization_mode": "generalists",
+      "ticks": 50,
+      "turn_resolution": "simultaneous"
+    }
+  },
+  "rejected": [],
+  "results": [
+    {
+      "brain": "codex",
+      "certification_flags": [
+        "missing_required_seeds"
+      ],
+      "certified": false,
+      "declared_deviations": [
+        {
+          "audited": "Every difference from commit 60c4143 to v4 was examined. The run built zero structures, so the contributor-share change never fired. Engine trade values never reached agents, verified at 60c4143 itself. The ACCOUNTING_VALUES rename changed no value. The models.py and cli.py edits are a comment and seed-validation text. The decision-contract validator does not alter the prompt, so the model faced the same world; it alters failure attribution only, which is covered by the separate attribution override.",
+          "deviation": "static_context_mechanics_text: ore was described as a 'high-value raw material' rather than as smeltable into an ingot. Same one-line static-context difference accepted for the GPT-5.4 pair. See also the attribution override recorded in BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES for this trial.",
+          "protocol": "participant-v3",
+          "seed": 11,
+          "source": "runs/benchmarks/gpt-5-3-codex-spark-participant-v3-provisional-seed11-20260726-011031/seed-11/run-report.json"
+        },
+        {
+          "audited": "Scoring both failures against the model gives effective execution 71.46; excluding them entirely gives 71.54. The disputed span is 0.08 points over 1,331 submitted actions. Owner decision, 2026-07-26: Spark inference is usage constrained, and a 0.08-point gap does not justify spending a full 50-tick trial to resolve it.",
+          "deviation": "unverified_model_output_attribution: two decision failures at ticks 7 and 28 record only the production adapter's parse error. The trial predates the independent contract validator and no response payload was retained, so malformed model output cannot be distinguished from adapter rejection of valid output.",
+          "protocol": "participant-v3",
+          "seed": 11,
+          "source": "runs/benchmarks/gpt-5-3-codex-spark-participant-v3-provisional-seed11-20260726-011031/seed-11/run-report.json"
+        }
+      ],
+      "extended_raw": null,
+      "extended_replications": [],
+      "extended_score_spread": null,
+      "extended_scores": null,
+      "extended_seeds": [],
+      "model": "gpt-5.3-codex-spark",
+      "provisional": true,
+      "raw": {
+        "action_point_overruns": 44,
+        "contention_failures": 5,
+        "decision_failures": 2,
+        "decisions": 415,
+        "endpoint_health_capacity": 1000,
+        "endpoint_health_points": 94.0,
+        "engine_invalid_proposals": 442,
+        "enterprise_supply_by_source": {
+          "net_goods_supplied_to_others": 3.0,
+          "net_service_income": 0.0
+        },
+        "enterprise_supply_value": 3.0,
+        "external_decision_failures": 0,
+        "initial_agents": 10,
+        "initial_endowment_value": 135.0,
+        "invalid_proposals": 444,
+        "living_agents": 2,
+        "living_terminal_economic_value": 56.0,
+        "model_output_failures": 2,
+        "observed_agent_ticks": 500,
+        "own_capital_output_value": 0.0,
+        "possible_agent_ticks": 500,
+        "purposeful_agent_ticks": 318,
+        "submitted_actions": 1336,
+        "submitted_actions_excluding_contention": 1331,
+        "terminal_economic_value": 276.0,
+        "venture_initiatives": 3,
+        "venture_initiatives_by_type": {
+          "offer_trade": 3
+        }
+      },
+      "reasoning_effort": "medium",
+      "replications": [
+        {
+          "raw": {
+            "action_point_overruns": 44,
+            "contention_failures": 5,
+            "decision_failures": 2,
+            "decisions": 415,
+            "endpoint_health_capacity": 1000,
+            "endpoint_health_points": 94.0,
+            "engine_invalid_proposals": 442,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 3.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 3.0,
+            "external_decision_failures": 0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 444,
+            "living_agents": 2,
+            "living_terminal_economic_value": 56.0,
+            "model_output_failures": 2,
+            "observed_agent_ticks": 500,
+            "own_capital_output_value": 0.0,
+            "possible_agent_ticks": 500,
+            "purposeful_agent_ticks": 318,
+            "submitted_actions": 1336,
+            "submitted_actions_excluding_contention": 1331,
+            "terminal_economic_value": 276.0,
+            "venture_initiatives": 3,
+            "venture_initiatives_by_type": {
+              "offer_trade": 3
+            }
+          },
+          "scores": {
+            "economic_productivity": {
+              "components": {
+                "initial_endowment_value": 135.0,
+                "living_terminal_economic_value": 56.0,
+                "net_value_created": 0.0,
+                "net_value_created_per_100_agent_ticks": 0.0
+              },
+              "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "effective_execution": {
+              "components": {
+                "action_feasibility_pct": 66.64,
+                "action_point_overruns": 44,
+                "contention_excluded": 5,
+                "decision_opportunities": 415,
+                "engine_invalid_proposals": 442,
+                "invalid_proposals": 444,
+                "model_output_failures": 2,
+                "purposeful_agent_tick_pct": 76.63,
+                "purposeful_agent_ticks": 318,
+                "submitted_actions": 1336
+              },
+              "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)",
+              "score": 71.46
+            },
+            "entrepreneurial_agency": {
+              "components": {
+                "enterprise_supply_by_source": {
+                  "net_goods_supplied_to_others": 3.0,
+                  "net_service_income": 0.0
+                },
+                "enterprise_supply_per_100_agent_ticks": 0.6,
+                "enterprise_supply_score": 3.0,
+                "enterprise_supply_value": 3.0,
+                "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score.",
+                "initiative_score": 12.0,
+                "net_value_created": 0.0,
+                "net_value_created_per_100_agent_ticks": 0.0,
+                "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+                "own_capital_output_value": 0.0,
+                "value_creation_score": 0.0,
+                "venture_initiatives": 3,
+                "venture_initiatives_per_100_agent_ticks": 0.6
+              },
+              "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "sustained_competence": {
+              "components": {
+                "effective_execution": 71.46,
+                "endpoint_population_health_pct": 9.4,
+                "initial_agents": 10,
+                "initial_endowment_value": 135.0,
+                "living_agents": 2,
+                "living_terminal_economic_value": 56.0,
+                "material_outcome_pct": 13.83,
+                "material_target_value": 405.0,
+                "survival_continuity_pct": 27.93,
+                "survival_exposure_pct": 83.0,
+                "total_terminal_economic_value": 276.0
+              },
+              "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)",
+              "score": 30.22
+            }
+          },
+          "seed": 11,
+          "source": "runs/benchmarks/gpt-5-3-codex-spark-participant-v3-provisional-seed11-20260726-011031/seed-11/run-report.json"
+        }
+      ],
+      "required_replications": [
+        {
+          "raw": {
+            "action_point_overruns": 44,
+            "contention_failures": 5,
+            "decision_failures": 2,
+            "decisions": 415,
+            "endpoint_health_capacity": 1000,
+            "endpoint_health_points": 94.0,
+            "engine_invalid_proposals": 442,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 3.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 3.0,
+            "external_decision_failures": 0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 444,
+            "living_agents": 2,
+            "living_terminal_economic_value": 56.0,
+            "model_output_failures": 2,
+            "observed_agent_ticks": 500,
+            "own_capital_output_value": 0.0,
+            "possible_agent_ticks": 500,
+            "purposeful_agent_ticks": 318,
+            "submitted_actions": 1336,
+            "submitted_actions_excluding_contention": 1331,
+            "terminal_economic_value": 276.0,
+            "venture_initiatives": 3,
+            "venture_initiatives_by_type": {
+              "offer_trade": 3
+            }
+          },
+          "scores": {
+            "economic_productivity": {
+              "components": {
+                "initial_endowment_value": 135.0,
+                "living_terminal_economic_value": 56.0,
+                "net_value_created": 0.0,
+                "net_value_created_per_100_agent_ticks": 0.0
+              },
+              "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "effective_execution": {
+              "components": {
+                "action_feasibility_pct": 66.64,
+                "action_point_overruns": 44,
+                "contention_excluded": 5,
+                "decision_opportunities": 415,
+                "engine_invalid_proposals": 442,
+                "invalid_proposals": 444,
+                "model_output_failures": 2,
+                "purposeful_agent_tick_pct": 76.63,
+                "purposeful_agent_ticks": 318,
+                "submitted_actions": 1336
+              },
+              "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)",
+              "score": 71.46
+            },
+            "entrepreneurial_agency": {
+              "components": {
+                "enterprise_supply_by_source": {
+                  "net_goods_supplied_to_others": 3.0,
+                  "net_service_income": 0.0
+                },
+                "enterprise_supply_per_100_agent_ticks": 0.6,
+                "enterprise_supply_score": 3.0,
+                "enterprise_supply_value": 3.0,
+                "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score.",
+                "initiative_score": 12.0,
+                "net_value_created": 0.0,
+                "net_value_created_per_100_agent_ticks": 0.0,
+                "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+                "own_capital_output_value": 0.0,
+                "value_creation_score": 0.0,
+                "venture_initiatives": 3,
+                "venture_initiatives_per_100_agent_ticks": 0.6
+              },
+              "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "sustained_competence": {
+              "components": {
+                "effective_execution": 71.46,
+                "endpoint_population_health_pct": 9.4,
+                "initial_agents": 10,
+                "initial_endowment_value": 135.0,
+                "living_agents": 2,
+                "living_terminal_economic_value": 56.0,
+                "material_outcome_pct": 13.83,
+                "material_target_value": 405.0,
+                "survival_continuity_pct": 27.93,
+                "survival_exposure_pct": 83.0,
+                "total_terminal_economic_value": 276.0
+              },
+              "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)",
+              "score": 30.22
+            }
+          },
+          "seed": 11,
+          "source": "runs/benchmarks/gpt-5-3-codex-spark-participant-v3-provisional-seed11-20260726-011031/seed-11/run-report.json"
+        }
+      ],
+      "required_seeds": [
+        11
+      ],
+      "score_spread": {
+        "economic_productivity": {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "n": 1,
+          "range_width": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "effective_execution": {
+          "maximum": 71.46,
+          "minimum": 71.46,
+          "n": 1,
+          "range_width": 0.0,
+          "values": [
+            71.46
+          ]
+        },
+        "entrepreneurial_agency": {
+          "maximum": 0.0,
+          "minimum": 0.0,
+          "n": 1,
+          "range_width": 0.0,
+          "values": [
+            0.0
+          ]
+        },
+        "sustained_competence": {
+          "maximum": 30.22,
+          "minimum": 30.22,
+          "n": 1,
+          "range_width": 0.0,
+          "values": [
+            30.22
+          ]
+        }
+      },
+      "scores": {
+        "economic_productivity": {
+          "components": {
+            "initial_endowment_value": 135.0,
+            "living_terminal_economic_value": 56.0,
+            "net_value_created": 0.0,
+            "net_value_created_per_100_agent_ticks": 0.0
+          },
+          "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+          "scale": {
+            "higher_is_better": true,
+            "maximum": null,
+            "minimum": 0.0,
+            "reference_target": 100.0
+          },
+          "score": 0.0
+        },
+        "effective_execution": {
+          "components": {
+            "action_feasibility_pct": 66.64,
+            "action_point_overruns": 44,
+            "contention_excluded": 5,
+            "decision_opportunities": 415,
+            "engine_invalid_proposals": 442,
+            "invalid_proposals": 444,
+            "model_output_failures": 2,
+            "purposeful_agent_tick_pct": 76.63,
+            "purposeful_agent_ticks": 318,
+            "submitted_actions": 1336
+          },
+          "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)",
+          "score": 71.46
+        },
+        "entrepreneurial_agency": {
+          "components": {
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 3.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_per_100_agent_ticks": 0.6,
+            "enterprise_supply_score": 3.0,
+            "enterprise_supply_value": 3.0,
+            "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score.",
+            "initiative_score": 12.0,
+            "net_value_created": 0.0,
+            "net_value_created_per_100_agent_ticks": 0.0,
+            "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+            "own_capital_output_value": 0.0,
+            "value_creation_score": 0.0,
+            "venture_initiatives": 3,
+            "venture_initiatives_per_100_agent_ticks": 0.6
+          },
+          "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+          "scale": {
+            "higher_is_better": true,
+            "maximum": null,
+            "minimum": 0.0,
+            "reference_target": 100.0
+          },
+          "score": 0.0
+        },
+        "sustained_competence": {
+          "components": {
+            "effective_execution": 71.46,
+            "endpoint_population_health_pct": 9.4,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "living_agents": 2,
+            "living_terminal_economic_value": 56.0,
+            "material_outcome_pct": 13.83,
+            "material_target_value": 405.0,
+            "survival_continuity_pct": 27.93,
+            "survival_exposure_pct": 83.0,
+            "total_terminal_economic_value": 276.0
+          },
+          "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)",
+          "score": 30.22
+        }
+      },
+      "scoring_revision": 1,
+      "seeds": [
+        11
+      ],
+      "source_scoring_revisions": [
+        1
+      ],
+      "sources": [
+        "runs/benchmarks/gpt-5-3-codex-spark-participant-v3-provisional-seed11-20260726-011031/seed-11/run-report.json"
+      ],
+      "status": "provisional_with_declared_deviation"
+    }
+  ],
+  "suite_id": "agent-world-participant-v4"
+}

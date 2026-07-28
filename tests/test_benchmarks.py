@@ -10,12 +10,14 @@ from agent_world.benchmarks import (
     BENCHMARK_SEEDS,
     BENCHMARK_SCORING_REVISION,
     BENCHMARK_SUITE_ID,
+    BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES,
     BENCHMARK_ACCEPTED_PRIOR_TRIALS,
     NON_MATERIAL_FREE_ACTION_EVENTS,
     PURPOSEFUL_ACTION_EVENTS,
     _benchmark_trajectory,
     _cohort_raw_metrics,
     _enterprise_supply,
+    accepted_attribution_override,
     accepted_prior_trial,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
@@ -34,6 +36,7 @@ def _protocol_report(
     *,
     model_output_failure: bool = False,
     harness_failure: bool = False,
+    unverified_failure: bool = False,
 ) -> dict:
     agents = [f"agent-{index}" for index in range(1, 11)]
     cohort = {
@@ -112,6 +115,13 @@ def _protocol_report(
         responses[0]["message"] = (
             "Codex harness failed: adapter rejected contract-valid output"
         )
+    if unverified_failure:
+        # Shape of a pre-validator failure: the production adapter's own parse
+        # error, with nothing proving whether the model or the adapter erred.
+        responses[0]["message"] = (
+            "Codex decision failed: Codex action arguments_json is invalid: "
+            "Expecting value: line 1 column 1 (char 0)"
+        )
     snapshot = {
         "tick": 50,
         "agents": {
@@ -136,7 +146,9 @@ def _protocol_report(
             "data": {},
         }
         for agent_id in agents[
-            1 if model_output_failure or harness_failure else 0:
+            1
+            if model_output_failure or harness_failure or unverified_failure
+            else 0:
         ]
     ]
     report["benchmarks"] = build_benchmark_results(
@@ -591,6 +603,52 @@ class BenchmarkTests(unittest.TestCase):
 
         self.assertEqual(supply["own_capital_output"], 20.0)
         self.assertEqual(supply["total"], 0.0)
+
+    def test_attribution_override_requires_every_field_to_match(self) -> None:
+        """The one judgment call in the suite must not be able to widen."""
+
+        entry = BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES[0]
+        exact = {
+            "model": entry["model"],
+            "seed": entry["seed"],
+            "source_fingerprint": entry["source_fingerprint"],
+            "unverified_failures": entry["unverified_model_output_failures"],
+        }
+        self.assertIsNotNone(accepted_attribution_override(**exact))
+
+        # One more unattributable failure than was audited must not be covered.
+        self.assertIsNone(
+            accepted_attribution_override(
+                **{**exact, "unverified_failures": exact["unverified_failures"] + 1}
+            )
+        )
+        self.assertIsNone(
+            accepted_attribution_override(**{**exact, "model": "gpt-5.4"})
+        )
+        self.assertIsNone(accepted_attribution_override(**{**exact, "seed": 41}))
+        self.assertIsNone(
+            accepted_attribution_override(
+                **{**exact, "source_fingerprint": "deadbeef"}
+            )
+        )
+
+        # Every override must state its magnitude and who accepted it.
+        for record in BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES:
+            self.assertTrue(record.get("deviation"))
+            self.assertTrue(record.get("sensitivity"))
+            self.assertTrue(record.get("accepted_because"))
+
+    def test_unaudited_model_output_failure_still_flags(self) -> None:
+        """The override is an allowlist, not a relaxation of the rule."""
+
+        report = _protocol_report(11, "unaudited", unverified_failure=True)
+        cohort = report["benchmarks"]["cohorts"]["cohort-1"]
+
+        self.assertIn(
+            "unverified_model_output_attribution", cohort["quality_flags"]
+        )
+        self.assertFalse(cohort["protocol_compliant"])
+        self.assertIsNone(cohort["attribution_override"])
 
     def test_entrepreneurship_score_has_no_upper_bound(self) -> None:
         scores = score_benchmark_counts(
