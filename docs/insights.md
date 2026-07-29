@@ -24,6 +24,25 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-28 — The planning gap inside Claude is portfolio selection, not willingness to invest
+
+**Haiku 4.5 and Sonnet 4.6 both formed capital aggressively, but Sonnet
+allocated it to winter survival and shared access: Sonnet completed 14 assets,
+including five shelters, organized seven cooperative builds, issued 24 access
+grants, and kept 17/20 agents alive; Haiku completed nine assets, built no
+shelter, and lost 20/20.** This is not a simple activity or generosity gap.
+Haiku even produced a genuinely co-financed storage structure, while Sonnet's
+commercial market remained inefficient (three accepted trades from 46 offers).
+The decisive difference was institutional planning: Sonnet began shelter
+construction before winter, assigned contributors proportional ownership
+shares, opened privately anchored farms and shelters to other agents, and used
+targeted gifts to cover immediate food and water shortfalls. Closely related
+Claude models therefore displayed similar willingness to build and cooperate
+but radically different ability to choose the right capital portfolio and
+translate cooperation into survival.
+Evidence:
+`runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549`.
+
 ## 2026-07-28 — Capital formation can be actively misleading when the portfolio is wrong
 
 **Haiku 4.5 built nine completed productive assets across its two frontier
