@@ -24,6 +24,27 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-29 — Opus 4.6 deliberated far less than Sonnet 4.6 and built a weaker society
+
+**Under the same Participant v6 medium-effort envelope, Opus 4.6 used about
+216 estimated reasoning tokens per decision versus Sonnet 4.6's 1,765, then
+finished substantially behind Sonnet in competence (47.3 versus 71.6),
+entrepreneurship (0.0 versus 53.6), survival (14/20 versus 17/20), and capital
+formation (four finished structures versus 14).** Opus was not socially inert:
+it created the campaign's ForestAlliance, organized three cooperative builds,
+issued 15 access grants, and executed 12 gifts. But its formal organization
+did not become a productive institution, and none of its 28 trade offers
+settled. The provider reports clean model decisions and estimates Claude
+reasoning because the CLI does not expose thinking-token usage directly, so
+the absolute token counts are less certain than the behavioral ledger. The
+within-provider comparison nevertheless uses the same estimator and envelope.
+This is therefore evidence that the nominally larger Claude model allocated
+less adaptive deliberation on this task, not evidence that Opus was artificially
+given a smaller configured budget.
+Evidence:
+`runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735`,
+`runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549`.
+
 ## 2026-07-28 — The planning gap inside Claude is portfolio selection, not willingness to invest
 
 **Haiku 4.5 and Sonnet 4.6 both formed capital aggressively, but Sonnet
