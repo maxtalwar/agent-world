@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "study_id": "claude-fable-5-participant-v6-provisional-seed11-20260729-220002",
-  "status": "running_provisional",
+  "status": "planned_replicated",
+  "expanded_to_replication_at_utc": "2026-07-29T23:28:58Z",
   "created_at_utc": "2026-07-29T22:00:02Z",
   "suite_id": "agent-world-participant-v6",
   "benchmark_protocol": "participant-v6",
@@ -14,25 +15,36 @@
     "provider": "claude_cli",
     "billing_mode": "claude_plan",
     "model": "claude-fable-5",
-    "reasoning_effort": "medium"
+    "reasoning_effort": "medium",
+    "seeds": [11, 41]
   },
   "result_tier": {
-    "requested": "provisional",
+    "requested": "replicated_certified",
     "provisional_seed": 11,
     "required_seeds_for_replicated_certification": [11, 41],
-    "policy": "One integrity-clean, complete seed-11 run earns provisional evidence. Replicated Participant v6 certification requires a clean run on both seeds 11 and 41; this request launches seed 11 only."
+    "policy": "The user expanded the Fable study to the required seed-41 replication. Certification requires integrity-clean, complete runs on both seeds 11 and 41; the seed-41 cell must remain checkpoint-resumable if the Claude weekly limit intervenes."
   },
   "replications": {
     "cells": {
       "fable5-seed-11": {
         "seed": 11,
         "model": "claude-fable-5",
-        "status": "running",
+        "status": "completed",
         "cohort": "fable5-v6-seed11",
         "screen": "aw-bench-fable5-v6-s11",
         "target_tick": 50,
         "started_at_utc": "2026-07-29T22:01:26.179596+00:00",
-        "resolved_model_confirmed": "claude-fable-5"
+        "resolved_model_confirmed": "claude-fable-5",
+        "completed_at_utc": "2026-07-29T22:57:24.534496+00:00",
+        "completed_tick": 50
+      },
+      "fable5-seed-41": {
+        "seed": 41,
+        "model": "claude-fable-5",
+        "status": "planned",
+        "cohort": "fable5-v6-seed41",
+        "screen": "aw-bench-fable5-v6-s41",
+        "target_tick": 50
       }
     }
   },
@@ -116,11 +128,39 @@
     "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-snapshot.json",
     "--progress"
   ],
+  "replication_command": [
+    "scripts/run-isolated-cohort",
+    "--cohort",
+    "fable5-v6-seed41",
+    "--commit",
+    "a86d06f0612692b3a122f9d1c06af3d5ddf07144",
+    "--",
+    "python3",
+    "-m",
+    "agent_world.cli",
+    "run",
+    "--benchmark-protocol",
+    "participant-v6",
+    "--brain",
+    "claude",
+    "--model",
+    "claude-fable-5",
+    "--seed",
+    "41",
+    "--out",
+    "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41/run.jsonl",
+    "--snapshot",
+    "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41/run-snapshot.json",
+    "--progress"
+  ],
   "outputs": [
     "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11"
   ],
   "rate_limit_policy": {
+    "user_reported_starting_usage_percent": 92,
+    "user_requested_stop_at_usage_percent": 99,
+    "live_percentage_telemetry": "Claude Code local auth and usage records do not expose the weekly percentage; exact 99% cannot be independently observed by the worker.",
     "checkpoint": "The CLI writes run-checkpoint.pkl and pauses at a completed tick if Claude quota/rate limit becomes unavailable.",
-    "recovery": "Resume only from the recorded checkpoint with cohort fable5-v6-seed11 and the pinned launch commit; never relaunch from scratch or substitute another model."
+    "recovery": "Resume only from the recorded checkpoint with the same Fable cohort and pinned launch commit; never relaunch from scratch or substitute another model."
   }
 }
