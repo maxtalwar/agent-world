@@ -24,6 +24,26 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-29 — Gift counts can hide an informal market for scarce services
+
+**Opus 4.8 recorded only one accepted trade and zero access-fee revenue, yet
+three transfers classified as gifts followed explicit shelter-access bargains,
+including two delivered services and one unfulfilled advance.** In seed 11,
+Agent 9 agreed to pay four coins plus three fiber for Agent 1's winter shelter;
+its fiber-maintenance and gift attempts failed, but Agent 1 granted access and
+Agent 9 successfully transferred the four coins, saying they were settled.
+Agent 4 separately paid Agent 5 four coins plus one fiber in advance for a
+place in shelter 4, but the structure remained one stone short and no access
+was delivered. In seed 41, critically injured Agent 2 promised four coins plus
+four fiber if Agent 3 yielded a storm shelter position; Agent 3 stepped off,
+Agent 2 entered and paid, then died the next tick from accumulated damage.
+These are materially different from unconditional aid. The event ledger
+correctly records the primitive actions, but a metric that equates `gift` with
+noncommercial generosity and only recognizes formal access fees will miss
+negotiated service purchases, advances, and default-like outcomes.
+Evidence:
+`runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748`.
+
 ## 2026-07-29 — Opus 4.7 spontaneously formed a two-stage food supply chain
 
 **Without an assigned commercial objective, Opus 4.7 produced a ledger-backed
