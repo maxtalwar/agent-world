@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "study_id": "claude-fable-5-participant-v6-provisional-seed11-20260729-220002",
+  "status": "planned_provisional",
+  "created_at_utc": "2026-07-29T22:00:02Z",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_code_fingerprints": {
+    "claude_cli": "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6"
+  },
+  "benchmark_scoring_revision": 1,
+  "target": {
+    "brain": "claude",
+    "provider": "claude_cli",
+    "billing_mode": "claude_plan",
+    "model": "claude-fable-5",
+    "reasoning_effort": "medium"
+  },
+  "result_tier": {
+    "requested": "provisional",
+    "provisional_seed": 11,
+    "required_seeds_for_replicated_certification": [11, 41],
+    "policy": "One integrity-clean, complete seed-11 run earns provisional evidence. Replicated Participant v6 certification requires a clean run on both seeds 11 and 41; this request launches seed 11 only."
+  },
+  "replications": {
+    "cells": {
+      "fable5-seed-11": {
+        "seed": 11,
+        "model": "claude-fable-5",
+        "status": "planned",
+        "cohort": "fable5-v6-seed11",
+        "screen": "aw-bench-fable5-v6-s11",
+        "target_tick": 50
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "frontier_features": [
+      "seasons",
+      "seeded_storms",
+      "winter_exposure",
+      "irrigation",
+      "roads"
+    ],
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "session_max_turns": 10,
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  },
+  "provider_compatibility": {
+    "provider": "claude_cli",
+    "billing_mode": "claude_plan",
+    "model_identifier": "claude-fable-5",
+    "claude_executable": "/Users/maxtalwar/.local/bin/claude",
+    "claude_cli_version": "2.1.201",
+    "auth_method": "claude.ai",
+    "subscription_type": "max",
+    "preflight": "authenticated"
+  },
+  "quality_policy": {
+    "provisional": "The run must complete tick 50 with clean benchmark integrity, complete usage coverage, and a matching Participant v6 fingerprint.",
+    "diagnostic": "An early stop, external provider or quota/rate-limit failure, adapter or harness failure, ambiguous-boundary failure, protocol mismatch, or incomplete usage prevents provisional status but remains reportable. A quota stop must remain checkpoint-resumable.",
+    "prior_suite_policy": "Participant v4 and v5 reports are historical only; Participant v6 changed the world variant and carries no prior-suite evidence forward."
+  },
+  "provenance": {
+    "git_branch": "main",
+    "git_sha_at_launch": "a86d06f0612692b3a122f9d1c06af3d5ddf07144",
+    "launcher": "scripts/run-isolated-cohort",
+    "claude_executable": "/Users/maxtalwar/.local/bin/claude",
+    "claude_cli_version": "2.1.201"
+  },
+  "command": [
+    "scripts/run-isolated-cohort",
+    "--cohort",
+    "fable5-v6-seed11",
+    "--commit",
+    "a86d06f0612692b3a122f9d1c06af3d5ddf07144",
+    "--",
+    "python3",
+    "-m",
+    "agent_world.cli",
+    "run",
+    "--benchmark-protocol",
+    "participant-v6",
+    "--brain",
+    "claude",
+    "--model",
+    "claude-fable-5",
+    "--seed",
+    "11",
+    "--out",
+    "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run.jsonl",
+    "--snapshot",
+    "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-snapshot.json",
+    "--progress"
+  ],
+  "outputs": [
+    "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11"
+  ],
+  "rate_limit_policy": {
+    "checkpoint": "The CLI writes run-checkpoint.pkl and pauses at a completed tick if Claude quota/rate limit becomes unavailable.",
+    "recovery": "Resume only from the recorded checkpoint with cohort fable5-v6-seed11 and the pinned launch commit; never relaunch from scratch or substitute another model."
+  }
+}
