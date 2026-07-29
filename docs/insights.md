@@ -24,6 +24,29 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-28 — Capital formation can be actively misleading when the portfolio is wrong
+
+**Haiku 4.5 built nine completed productive assets across its two frontier
+worlds—more than Mini and Spark combined, including the campaign's only
+genuinely co-financed structure among those three model cohorts—and still lost
+all 20 agents because every completed asset was a farm or storage rather than
+winter shelter.** Seed 11
+produced two farms and a storage co-built by agents 4 and 9 (ownership shares
+87.5%/12.5%); seed 41 produced five farms and a storage. Yet the farms yielded
+only 8 accounting units across both worlds, upkeep was missed 26 times, no
+shelter was completed, and both populations reached zero before tick 44. By
+contrast, Mini retained 4/20 agents and Spark 1/10 despite completing no
+structures. The model plainly understood the seasonal vocabulary—it repeatedly
+described farms and shelters as winter preparation—but optimized the visible
+spring production opportunity, treated storage as protection, and deferred the
+actual exposure countermeasure until seed 11's first shelter attempt at tick 37;
+its owner died that same tick. Capital quantity is therefore not a proxy for
+planning horizon: locally sensible investment can accelerate commitment to the
+wrong strategy.
+Evidence:
+`runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549`,
+`runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141`.
+
 ## 2026-07-28 — OpenAI's deliberation spend falls monotonically across model generations
 
 **On identical benchmark decisions at the same effort setting, reasoning
