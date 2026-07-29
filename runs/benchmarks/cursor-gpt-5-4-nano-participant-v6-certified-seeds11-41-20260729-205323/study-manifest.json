@@ -1,0 +1,114 @@
+{
+  "schema_version": 1,
+  "study_id": "cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323",
+  "status": "planned_replicated",
+  "created_at_utc": "2026-07-29T20:53:23Z",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_code_fingerprints": {
+    "cursor_cli": "42a840ac279b1f4d35b32a7b1a4301c7c0d9c81b4380bf945b6215298e06ac87"
+  },
+  "benchmark_scoring_revision": 1,
+  "targets": {
+    "gpt-5.4-nano": {
+      "brain": "cursor",
+      "provider": "cursor_cli",
+      "billing_mode": "cursor_subscription",
+      "model": "gpt-5.4-nano",
+      "resolved_model_expected": "gpt-5.4-nano-medium",
+      "reasoning_effort": "medium",
+      "seeds": [11, 41]
+    }
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds_per_model": [11, 41],
+    "policy": "The model requires integrity-clean, complete runs on both seeds 11 and 41 for replicated Participant v6 certification. A clean completed cell remains provisional until its paired seed is complete."
+  },
+  "replications": {
+    "cells": {
+      "gpt54-nano-seed-11": {
+        "seed": 11,
+        "model": "gpt-5.4-nano",
+        "status": "planned",
+        "cohort": "gpt54nano-v6-seed11",
+        "screen": "aw-bench-gpt54nano-v6-s11",
+        "target_tick": 50
+      },
+      "gpt54-nano-seed-41": {
+        "seed": 41,
+        "model": "gpt-5.4-nano",
+        "status": "planned",
+        "cohort": "gpt54nano-v6-seed41",
+        "screen": "aw-bench-gpt54nano-v6-s41",
+        "target_tick": 50
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "frontier_features": [
+      "seasons",
+      "seeded_storms",
+      "winter_exposure",
+      "irrigation",
+      "roads"
+    ],
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "session_max_turns": 10,
+    "population": "one uniform model cohort per cell",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  },
+  "provider_compatibility": {
+    "provider": "cursor_cli",
+    "billing_mode": "cursor_subscription",
+    "models": ["gpt-5.4-nano-medium"],
+    "cursor_executable": "/Users/maxtalwar/.local/bin/cursor-agent",
+    "cursor_cli_version": "2026.07.20-8cc9c0b",
+    "auth_preflight": "Logged in as mnt47@georgetown.edu",
+    "catalog_preflight": "gpt-5.4-nano-medium available"
+  },
+  "quality_policy": {
+    "replicated_certified": "Both cells must complete ticks 0 through 50 with clean benchmark integrity, complete usage coverage, matching Participant v6 fingerprint, and confirmed Cursor response-model resolution.",
+    "diagnostic": "An early stop, external provider or quota failure, adapter or harness failure, ambiguous-boundary failure, protocol mismatch, unresolved response model, or incomplete usage prevents certification but remains reportable.",
+    "prior_suite_policy": "Participant v4 and v5 reports are historical only; Participant v6 changed the world variant and carries no prior-suite evidence forward."
+  },
+  "provenance": {
+    "git_branch": "main",
+    "git_sha_at_launch": "4555ae7d7693ab96f24b49ff059358500a4c96f3",
+    "launcher": "scripts/run-isolated-cohort",
+    "cursor_executable": "/Users/maxtalwar/.local/bin/cursor-agent",
+    "cursor_cli_version": "2026.07.20-8cc9c0b"
+  },
+  "commands": {
+    "gpt54-nano-seed-11": [
+      "scripts/run-isolated-cohort", "--cohort", "gpt54nano-v6-seed11", "--commit", "4555ae7d7693ab96f24b49ff059358500a4c96f3", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "cursor", "--model", "gpt-5.4-nano", "--seed", "11", "--out", "runs/benchmarks/cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323/gpt54nano-v6-seed11/run.jsonl", "--snapshot", "runs/benchmarks/cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323/gpt54nano-v6-seed11/run-snapshot.json", "--progress"
+    ],
+    "gpt54-nano-seed-41": [
+      "scripts/run-isolated-cohort", "--cohort", "gpt54nano-v6-seed41", "--commit", "4555ae7d7693ab96f24b49ff059358500a4c96f3", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "cursor", "--model", "gpt-5.4-nano", "--seed", "41", "--out", "runs/benchmarks/cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323/gpt54nano-v6-seed41/run.jsonl", "--snapshot", "runs/benchmarks/cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323/gpt54nano-v6-seed41/run-snapshot.json", "--progress"
+    ]
+  },
+  "outputs": [
+    "runs/benchmarks/cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323/gpt54nano-v6-seed11",
+    "runs/benchmarks/cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323/gpt54nano-v6-seed41"
+  ]
+}
