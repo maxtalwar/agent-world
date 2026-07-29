@@ -24,6 +24,23 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-29 — Opus 4.7 spontaneously formed a two-stage food supply chain
+
+**Without an assigned commercial objective, Opus 4.7 produced a ledger-backed
+producer-to-intermediary-to-consumer chain: farm owner Agent 1 sold five food
+to Agent 6 at tick 45, and Agent 6 resold two food to Agent 7 at tick 49 after
+the buyer explicitly advertised the deal as "free profit."** Agent 1 had
+harvested 13 food from its farm and received four coins plus three fiber for
+five food. Agent 6 consumed part of that inventory, then received three fiber
+for two food; at frozen book values, its acquisition cost on those two units
+was four and its resale proceeds were six. These were separate settled trades,
+not gifts or conversational promises. The chain was short-lived and driven by
+winter scarcity rather than a formal firm—there were no contracts, access
+fees, or dividends—but it demonstrates emergent inventory intermediation and
+resale under the organic economy.
+Evidence:
+`runs/benchmarks/claude-opus-4-7-participant-v6-seeds11-41-20260729-072905/opus-seed-41`.
+
 ## 2026-07-29 — Opus 4.6 deliberated far less than Sonnet 4.6 and built a weaker society
 
 **Under the same Participant v6 medium-effort envelope, Opus 4.6 used about
