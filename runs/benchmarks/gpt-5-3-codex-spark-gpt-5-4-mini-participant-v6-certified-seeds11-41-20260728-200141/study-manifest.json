@@ -16,9 +16,7 @@
       "billing_mode": "chatgpt_plan",
       "model": "gpt-5.3-codex-spark",
       "reasoning_effort": "medium",
-      "seeds": [
-        11
-      ]
+      "seeds": [11, 41]
     },
     "gpt-5.4-mini": {
       "brain": "codex",
@@ -35,15 +33,13 @@
   "result_tier": {
     "requested": "active_campaign",
     "required_seeds_by_model": {
-      "gpt-5.3-codex-spark": [
-        11
-      ],
+      "gpt-5.3-codex-spark": [11, 41],
       "gpt-5.4-mini": [
         11,
         41
       ]
     },
-    "policy": "The active campaign intentionally uses one Spark seed-11 run because Spark usage is constrained. The paused Spark seed-41 cell is excluded from active certification and remains resumable from its checkpoint. The two Mini seeds remain the requested paired replication."
+    "policy": "The user explicitly expanded the Spark campaign to finish the paused seed-41 replication. Spark seeds 11 and 41 now form the requested pair; the two Mini seeds remain the paired replication. Certification still requires clean terminal outcomes and matching integrity evidence."
   },
   "replications": {
     "cells": {
@@ -58,13 +54,16 @@
       "spark-seed-41": {
         "seed": 41,
         "model": "gpt-5.3-codex-spark",
-        "status": "paused",
-        "pause_reason": "Quota-paused at tick 28. This reserve cell was resumed in error on 2026-07-28 by an assistant session recovering what it believed was a hung run; the resume ran ticks 9-28 before the Spark weekly bucket hit 100% (resets 2026-08-04T13:04 local). The checkpoint is clean and resumable; the original user decision to hold Spark to seed 11 stands.",
+        "status": "running",
+        "pause_reason": "Previously quota-paused at tick 28; resumed from the clean checkpoint by explicit user request.",
         "paused_at_utc": "2026-07-28T22:49:10Z",
         "cohort": "spark53-v6-seed41",
         "screen": "aw-bench-spark53-v6-s41",
         "target_tick": 50,
-        "completed_tick": 28
+        "completed_tick": 28,
+        "resumed_at_utc": "2026-07-29T20:53:21.079180+00:00",
+        "resume_commit": "865240aeaec4439032ab2f6136ce30250d930e41",
+        "checkpoint": "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-41/run-checkpoint.pkl"
       },
       "mini-seed-11": {
         "seed": 11,
@@ -182,6 +181,9 @@
       "--snapshot",
       "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-41/run-snapshot.json",
       "--progress"
+    ],
+    "spark-seed-41-resume": [
+      "scripts/run-isolated-cohort", "--cohort", "spark53-v6-seed41", "--commit", "865240aeaec4439032ab2f6136ce30250d930e41", "--", "python3", "-m", "agent_world.cli", "run", "--resume-checkpoint", "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-41/run-checkpoint.pkl", "--ticks", "50", "--progress"
     ],
     "mini-seed-11": [
       "scripts/run-isolated-cohort",
