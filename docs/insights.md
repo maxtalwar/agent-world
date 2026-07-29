@@ -91,10 +91,16 @@ spends ~516 tokens. But at medium on the big structured decision prompt, 5.5
 adaptively judges the task easy and answers cold every time, while 5.4 at the
 identical setting deliberates ~1,000 tokens. The failure profile matches
 rushing, not weakness: 29–32 action-point budget overruns per run vs 2 for
-5.4. Effort labels are promises about *ceilings*, not spend, and their
-semantics shift between model generations of the same family.
+5.4. Participant v6 reproduced and widened the inversion: 5.4 spent 799
+reasoning tokens per decision and scored 88.5 execution / 58.4 competence /
+20.8 entrepreneurship with 12/20 survivors and 11 completed structures; 5.5
+spent 19 and scored 84.6 / 34.7 / 0.0 with 7/20 survivors and 3 structures.
+Effort labels are promises about *ceilings*, not spend, and their semantics
+shift between model generations of the same family.
 Evidence: `runs/benchmarks/gpt-5-5-participant-v4-certified-seeds11-41-20260728-132823`
-(reasoning/decision 31–34 vs 760–811 for GPT-5.4), controlled probes 2026-07-28.
+(reasoning/decision 31–34 vs 760–811 for GPT-5.4), controlled probes 2026-07-28,
+`runs/benchmarks/gpt-5-5-participant-v6-certified-seeds11-41-20260729-005319`,
+`runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549`.
 
 ## 2026-07-28 — Reasoning spend and score are wildly decoupled across models
 
