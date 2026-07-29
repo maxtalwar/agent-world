@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
   "study_id": "claude-opus-4-8-participant-v6-certified-seeds11-41-20260729-155748",
-  "status": "planned_replicated",
+  "status": "running_replicated",
   "created_at_utc": "2026-07-29T15:57:48Z",
   "suite_id": "agent-world-participant-v6",
   "benchmark_protocol": "participant-v6",
   "benchmark_code_fingerprints": {
-    "claude_cli": "c8ac4b327bb2ba76de5917718dd257323483eaa7b0fcf0cf2cdbcbca02a6281c"
+    "claude_cli": "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6"
   },
   "benchmark_scoring_revision": 1,
   "targets": {
@@ -29,7 +29,7 @@
       "opus-seed-11": {
         "seed": 11,
         "model": "claude-opus-4-8",
-        "status": "planned",
+        "status": "running",
         "cohort": "opus48-v6-seed11",
         "screen": "aw-bench-opus48-v6-s11",
         "target_tick": 50
@@ -37,7 +37,7 @@
       "opus-seed-41": {
         "seed": 41,
         "model": "claude-opus-4-8",
-        "status": "planned",
+        "status": "running",
         "cohort": "opus48-v6-seed41",
         "screen": "aw-bench-opus48-v6-s41",
         "target_tick": 50
@@ -101,14 +101,14 @@
   },
   "commands": {
     "opus-seed-11": [
-      "scripts/run-isolated-cohort", "--cohort", "opus48-v6-seed11", "--commit", "d7aa73f821079d87276b93914b556371c7284328", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "claude", "--model", "claude-opus-4-8", "--seed", "11", "--out", "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus-seed-11/run.jsonl", "--snapshot", "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus-seed-11/run-snapshot.json", "--progress"
+      "scripts/run-isolated-cohort", "--cohort", "opus48-v6-seed11", "--commit", "d7aa73f821079d87276b93914b556371c7284328", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "claude", "--model", "claude-opus-4-8", "--seed", "11", "--out", "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus48-v6-seed11/run.jsonl", "--snapshot", "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus48-v6-seed11/run-snapshot.json", "--progress"
     ],
     "opus-seed-41": [
-      "scripts/run-isolated-cohort", "--cohort", "opus48-v6-seed41", "--commit", "d7aa73f821079d87276b93914b556371c7284328", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "claude", "--model", "claude-opus-4-8", "--seed", "41", "--out", "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus-seed-41/run.jsonl", "--snapshot", "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus-seed-41/run-snapshot.json", "--progress"
+      "scripts/run-isolated-cohort", "--cohort", "opus48-v6-seed41", "--commit", "d7aa73f821079d87276b93914b556371c7284328", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v6", "--brain", "claude", "--model", "claude-opus-4-8", "--seed", "41", "--out", "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus48-v6-seed41/run.jsonl", "--snapshot", "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus48-v6-seed41/run-snapshot.json", "--progress"
     ]
   },
   "outputs": [
-    "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus-seed-11",
-    "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus-seed-41"
+    "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus48-v6-seed11",
+    "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus48-v6-seed41"
   ]
 }
