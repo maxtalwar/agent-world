@@ -24,6 +24,23 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-30 — A liquid spot market did not compensate for missing survival capital
+
+**GPT-5-mini settled 21 trades and executed 35 gifts across two worlds—far
+more exchange than the stronger Sonnet and Opus cohorts—yet lost all 20 agents
+because it built four farms and no shelters.** The exchange was ledger-real:
+79 units of enterprise supply moved to other agents, including repeated
+food-water, fiber-food, coin-resource, and wood-water swaps. Some early trades
+were circular reversals, so volume overstated durable commerce, but the market
+was not merely conversational. The agents also produced 106 units of own farm
+output and left 466.25 units of terminal value in their estates. None remained
+living-accessible after extinction. This separates allocation from liquidity:
+agents can find counterparties, settle exchanges, and practice mutual aid
+while collectively failing to finance the one asset class needed to survive
+winter.
+Evidence:
+`runs/benchmarks/cursor-gpt-5-mini-participant-v6-certified-seeds11-41-20260729-181911`.
+
 ## 2026-07-29 — Gift counts can hide an informal market for scarce services
 
 **Opus 4.8 recorded only one accepted trade and zero access-fee revenue, yet
