@@ -24,6 +24,29 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-30 — Sonnet 5 formed more capital than Sonnet 4.6 but chose a strictly worse portfolio
+
+**Sonnet 5 completed 20 structures across two clean Participant v6 worlds—six
+more than Sonnet 4.6—but built no shelters, settled no trades or gifts, and
+finished with only 11/20 survivors versus Sonnet 4.6's 17/20.** Every Sonnet 5
+asset was a farm or storage structure. The worlds looked strong at tick 30:
+all 20 agents were alive and seed competence was 83.0/88.6, with living value
+334.0/370.25. By tick 50, competence had fallen to 53.6/45.2 and nine agents
+had died; every death occurred at zero water, usually under compounding winter
+or storm exposure. This was not inactivity or a provider failure. Both runs
+had clean model output and full usage coverage, and the agents generated 610
+communications, 24 venture initiatives, four trade offers, three access
+grants, and one genuinely co-financed storage build. The failure was conversion
+and portfolio choice: all trade offers expired, both attempted gifts were
+invalid, shared-access farms produced no enterprise supply, and repeated
+promises to share resources did not become transfers. The newer model therefore
+showed greater willingness to invest but substantially weaker institutional
+execution than Sonnet 4.6, which built five shelters and converted cooperation
+into 53.6 entrepreneurship.
+Evidence:
+`runs/benchmarks/claude-sonnet-5-participant-v6-certified-seeds11-41-20260729-164053`,
+`runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549`.
+
 ## 2026-07-30 — A liquid spot market did not compensate for missing survival capital
 
 **GPT-5-mini settled 21 trades and executed 35 gifts across two worlds—far
