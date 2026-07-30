@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "study_id": "claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421",
+  "status": "planned_replicated",
+  "created_at_utc": "2026-07-30T23:34:21Z",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_code_fingerprints": {
+    "claude_cli": "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6"
+  },
+  "benchmark_scoring_revision": 1,
+  "target": {
+    "brain": "claude",
+    "provider": "claude_cli",
+    "billing_mode": "claude_plan",
+    "model": "claude-opus-5",
+    "reasoning_effort": "medium",
+    "seeds": [11, 41]
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds": [11, 41],
+    "policy": "Certification requires integrity-clean, complete Participant-v6 runs on both required seeds with complete usage coverage and matching provenance/fingerprint."
+  },
+  "replications": {
+    "cells": {
+      "opus5-seed-11": {
+        "seed": 11,
+        "model": "claude-opus-5",
+        "status": "planned",
+        "cohort": "opus5-v6-seed11",
+        "screen": "aw-bench-opus5-v6-s11",
+        "target_tick": 50
+      },
+      "opus5-seed-41": {
+        "seed": 41,
+        "model": "claude-opus-5",
+        "status": "planned",
+        "cohort": "opus5-v6-seed41",
+        "screen": "aw-bench-opus5-v6-s41",
+        "target_tick": 50
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "frontier_features": ["seasons", "seeded_storms", "winter_exposure", "irrigation", "roads"],
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "session_max_turns": 10,
+    "population": "one uniform model cohort per cell",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  },
+  "provider_compatibility": {
+    "provider": "claude_cli",
+    "billing_mode": "claude_plan",
+    "model_identifier": "claude-opus-5",
+    "claude_executable": "/Users/maxtalwar/.local/bin/claude",
+    "claude_cli_version": "2.1.201",
+    "auth_method": "claude.ai",
+    "subscription_type": "max",
+    "preflight": "authenticated"
+  },
+  "provenance": {
+    "git_branch": "main",
+    "git_sha_at_launch": "2c2a46f63b83db3f6c76f1accff51e2b2c7d3840",
+    "launcher": "scripts/run-isolated-cohort",
+    "claude_executable": "/Users/maxtalwar/.local/bin/claude",
+    "claude_cli_version": "2.1.201"
+  },
+  "command": [
+    "scripts/run-isolated-cohort",
+    "--cohort",
+    "opus5-v6-seed11",
+    "--commit",
+    "2c2a46f63b83db3f6c76f1accff51e2b2c7d3840",
+    "--",
+    "python3",
+    "-m",
+    "agent_world.cli",
+    "run",
+    "--benchmark-protocol",
+    "participant-v6",
+    "--brain",
+    "claude",
+    "--model",
+    "claude-opus-5",
+    "--seed",
+    "11",
+    "--out",
+    "runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421/opus5-v6-seed11/run.jsonl",
+    "--snapshot",
+    "runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421/opus5-v6-seed11/run-snapshot.json",
+    "--progress"
+  ],
+  "replication_commands": [
+    [
+      "scripts/run-isolated-cohort",
+      "--cohort",
+      "opus5-v6-seed41",
+      "--commit",
+      "2c2a46f63b83db3f6c76f1accff51e2b2c7d3840",
+      "--",
+      "python3",
+      "-m",
+      "agent_world.cli",
+      "run",
+      "--benchmark-protocol",
+      "participant-v6",
+      "--brain",
+      "claude",
+      "--model",
+      "claude-opus-5",
+      "--seed",
+      "41",
+      "--out",
+      "runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421/opus5-v6-seed41/run.jsonl",
+      "--snapshot",
+      "runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421/opus5-v6-seed41/run-snapshot.json",
+      "--progress"
+    ]
+  ],
+  "outputs": [
+    "runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421/opus5-v6-seed11",
+    "runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421/opus5-v6-seed41"
+  ],
+  "quality_policy": {
+    "provisional": "Each cell must complete tick 50 with clean benchmark integrity, complete usage coverage, and a matching Participant-v6 fingerprint.",
+    "diagnostic": "An early stop, quota/rate-limit failure, adapter or harness failure, protocol mismatch, or incomplete usage prevents certification but remains reportable.",
+    "certification": "Do not call the two-seed study certified until both cells independently pass the integrity checks and reach tick 50."
+  },
+  "rate_limit_policy": {
+    "checkpoint": "If Claude quota or rate limits become unavailable, the incomplete tick is discarded and the run remains paused_checkpoint with run-checkpoint.pkl.",
+    "recovery": "Resume only from the recorded checkpoint with the same cohort ID and pinned launch commit; never relaunch from scratch or substitute another model."
+  }
+}
