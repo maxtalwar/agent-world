@@ -370,3 +370,157 @@ class SimulationSessionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class QuotaWaitAndResumeTests(unittest.TestCase):
+    """A rate limit must suspend a run, never damage or abandon it.
+
+    Regression for the Fable seed-41 trial: the Claude weekly-limit message was
+    not recognized as quota, so every agent's failure became a fabricated wait
+    action and the world advanced eighteen ticks against a provider refusing
+    every call.
+    """
+
+    WEEKLY_LIMIT = (
+        "Claude quota unavailable: claude -p exited 1: You've hit your weekly "
+        "limit · resets 2pm (America/Los_Angeles)"
+    )
+
+    def _session(self, brains, *, target_ticks, quota_wait_max_seconds, slept):
+        engine = WorldEngine.create(
+            WorldConfig(seed=7), agent_names=list(brains)
+        )
+        return engine, SimulationSession(
+            engine=engine,
+            brain_spec=BrainSpec.resolve("survival"),
+            runtime=BrainRuntime(),
+            writer=IncrementalRunWriter(None, None, fsync=False),
+            target_ticks=target_ticks,
+            brains={f"agent-{index + 1}": brain for index, brain in enumerate(brains.values())},
+            log_agent_io=False,
+            startup_health_check_tick=None,
+            quota_wait_max_seconds=quota_wait_max_seconds,
+            sleep=slept.append,
+        )
+
+    def test_run_waits_out_the_limit_and_finishes_without_advancing_the_world(self) -> None:
+        class LimitedBrain:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def decide(self, _observation):
+                self.calls += 1
+                # Exhausted for the first tick's attempt, healthy afterwards.
+                if self.calls <= 1:
+                    return AgentDecision(
+                        intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
+                    )
+                return AgentDecision(intent="wait", actions=[{"type": "wait"}])
+
+        slept: list[float] = []
+        brains = {"A1": LimitedBrain(), "A2": LimitedBrain()}
+        engine, session = self._session(
+            brains, target_ticks=2, quota_wait_max_seconds=86400, slept=slept
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "completed")
+        self.assertEqual(result.final_tick, 2)
+        self.assertTrue(slept, "the run should have waited for the cap to reset")
+        waits = [e for e in engine.state.events if e.type == "run_quota_wait"]
+        retries = [e for e in engine.state.events if e.type == "run_quota_retry"]
+        self.assertEqual(len(waits), 1)
+        self.assertEqual(len(retries), 1)
+        # The wait is logged at the completed-tick boundary: the discarded tick
+        # never reached the world.
+        self.assertEqual(waits[0].data["completed_tick"], 0)
+        self.assertEqual(waits[0].data["wait_source"], "provider_reset_time")
+
+    def test_exhausting_the_wait_budget_pauses_to_a_resumable_checkpoint(self) -> None:
+        class AlwaysLimitedBrain:
+            def decide(self, _observation):
+                return AgentDecision(
+                    intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
+                )
+
+        slept: list[float] = []
+        brains = {"A1": AlwaysLimitedBrain(), "A2": AlwaysLimitedBrain()}
+        engine, session = self._session(
+            brains, target_ticks=5, quota_wait_max_seconds=3600, slept=slept
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "paused_checkpoint")
+        self.assertEqual(result.stop_reason, "insufficient_quota")
+        self.assertEqual(result.final_tick, 0)
+        self.assertLessEqual(sum(slept), 3600)
+
+    def test_waiting_disabled_keeps_the_original_pause_behavior(self) -> None:
+        class AlwaysLimitedBrain:
+            def decide(self, _observation):
+                return AgentDecision(
+                    intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
+                )
+
+        slept: list[float] = []
+        brains = {"A1": AlwaysLimitedBrain(), "A2": AlwaysLimitedBrain()}
+        _engine, session = self._session(
+            brains, target_ticks=5, quota_wait_max_seconds=0, slept=slept
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "paused_checkpoint")
+        self.assertEqual(result.stop_reason, "insufficient_quota")
+        self.assertEqual(slept, [])
+
+    def test_unrecognized_systemic_boundary_failure_pauses_instead_of_waiting(self) -> None:
+        # The catch-all: a provider phrasing no classifier knows must still
+        # never be laundered into wait actions.
+        class UnknownFailureBrain:
+            def decide(self, _observation):
+                return AgentDecision(
+                    intent="Claude boundary failed: claude -p exited 1: novel outage text",
+                    actions=[],
+                )
+
+        slept: list[float] = []
+        brains = {"A1": UnknownFailureBrain(), "A2": UnknownFailureBrain()}
+        engine, session = self._session(
+            brains, target_ticks=5, quota_wait_max_seconds=0, slept=slept
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "paused_checkpoint")
+        self.assertEqual(result.stop_reason, "decisions_unusable")
+        self.assertEqual(result.final_tick, 0)
+        paused = [e for e in engine.state.events if e.type == "run_paused"]
+        self.assertEqual(paused[0].data["affected_agents"], 2)
+
+    def test_one_agent_failing_alone_does_not_halt_the_run(self) -> None:
+        # Only a whole-population identical failure is conclusive; a single
+        # agent's boundary failure is ordinary and must be scored as such.
+        class FlakyBrain:
+            def decide(self, _observation):
+                return AgentDecision(
+                    intent="Claude boundary failed: claude -p exited 1: novel outage text",
+                    actions=[],
+                )
+
+        class HealthyBrain:
+            def decide(self, _observation):
+                return AgentDecision(intent="wait", actions=[{"type": "wait"}])
+
+        slept: list[float] = []
+        brains = {"A1": FlakyBrain(), "A2": HealthyBrain()}
+        _engine, session = self._session(
+            brains, target_ticks=2, quota_wait_max_seconds=0, slept=slept
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "completed")
+        self.assertEqual(result.final_tick, 2)

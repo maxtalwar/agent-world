@@ -24,6 +24,171 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-31 — An unrecognized rate-limit message let the harness fabricate 18 ticks of agent behavior
+
+**A Claude weekly-limit error the quota classifier did not recognize was
+handled as an ordinary decision failure, so the harness substituted a `wait`
+action for every agent and kept advancing the world for 18 ticks (144 failed
+decisions, ticks 32-49) against a provider refusing every call.** The
+adapter's marker list checked for "usage limit", "session limit", and "rate
+limit"; the CLI emitted "You've hit your weekly limit · resets 2pm
+(America/Los_Angeles)", which matches none of them. Three adapters each
+carried their own near-duplicate copy of that list, so the gap existed in one
+of them only. The failure was silent by construction: a fabricated `wait` is
+indistinguishable from a chosen `wait` in the action stream, and the run
+reported `completed 50/50`.
+
+Two lessons beyond the bug. First, the integrity layer worked where the
+adapter failed — the run was caught as `run_integrity_not_clean` /
+diagnostic_only on ambiguous-boundary-failure volume, which is why nothing
+corrupt reached a leaderboard. Defense in depth is what made an undetected
+provider phrasing recoverable rather than silently score-changing. Second, a
+substituted default action is the most dangerous possible failure mode for an
+agent benchmark, because it is *valid* — it type-checks, it costs no action
+points, and it looks like patience. Any harness that fills in a default on
+provider failure is fabricating the very thing it measures.
+
+Fixed by centralizing quota recognition in `agent_world/provider_limits.py`
+(shared by all adapters, pattern-based rather than a marker list), by pausing
+whenever an entire living population fails identically at the boundary
+regardless of whether any classifier recognizes the text, and by waiting out
+the reset and retrying the same tick instead of stopping.
+Evidence: `runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41`
+(144 `agent_response` events carrying the weekly-limit text, ticks 32-49;
+seed 11 of the same pair is clean at 89.6/85.1/55.8). Audit of all 37 v6
+ledgers found this the only run in which the corrected code path was
+reachable.
+
+## 2026-07-31 — Opus 5 converted a small reasoning budget into the strongest society yet
+
+**Claude Opus 5 averaged only 287 estimated reasoning tokens per decision—about
+the same as Sonnet 5 and 76% fewer than Opus 4.8—yet became the first current
+participant-v6 cohort to lead execution (91.4), competence (79.2), and
+entrepreneurship (71.8) simultaneously.** It kept 20/20 agents alive, created
+312.25 net living-accessible value, and generated 66 units of enterprise
+supply across the matched seeds. The difference was not verbosity: Opus 5
+organized five completed shelters plus a storage asset, five cooperative
+builds, 18 access grants, and a real procurement chain in which one agent
+bought stone and used it to finish another agent's shelter. In seed 41, Agent
+2 answered an advertised stone bounty, mined and hauled the final input,
+received a contributor ownership share and permanent shelter access, then
+collected coin, fiber, and food from the two co-owners. Both runs had clean
+model, provider, and harness integrity with zero decision failures and full
+usage coverage. This is a model-behavior result and a counterexample to the
+idea that the recent benchmark regressions are explained by lower test-time
+token spend alone: strategy and coordination quality can improve sharply at
+the same measured spend.
+Evidence:
+`runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421`,
+`runs/benchmarks/claude-sonnet-5-participant-v6-certified-seeds11-41-20260729-164053`,
+`runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748`.
+
+## 2026-07-31 — More reasoning within the 5.6 family did not buy better long-horizon planning
+
+**GPT-5.6-Terra used 226 reasoning tokens per decision—less than half Luna's
+474—yet finished ahead in competence (43.6 versus 35.5) because it formed five
+assets including a shelter, while Luna completed only one farm.** Immediate
+execution was nearly identical (82.0 Terra versus 81.6 Luna), and the advantage
+did not come from richer coordination: Terra produced only 42 communications,
+zero gifts, and one accepted trade across both worlds, compared with Luna's
+212 communications, 14 gifts, and two accepted trades. Terra instead retained
+9/20 agents versus Luna's 8/20 and finished with 262.0 living-accessible value
+versus 176.25. Its shelter was still late and private, and both models scored
+zero entrepreneurship, so Terra was not broadly capable at institution
+building. The result is nevertheless a within-generation counterexample to
+reasoning volume as the dominant explanation: how a model allocates actions
+into durable capital can matter more than doubling its measured deliberation.
+Both Terra runs had clean model, provider, and harness integrity, while Luna's
+seed 41 had one isolated malformed decision that is too small to explain the
+gap.
+Evidence:
+`runs/benchmarks/gpt-5-6-terra-gpt-5-6-sol-participant-v6-seeds11-41-20260729-155943`,
+`runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735`.
+
+## 2026-07-30 — Devin's Luna family name silently overrode the requested reasoning effort
+
+**A Devin run declared as `model=gpt-5.6-luna` and
+`reasoning_effort=low` completed successfully with
+`response_model=gpt-5-6-luna-medium`, so the friendly family name does not
+preserve the experiment's requested effort.** The clean one-agent, one-tick
+smoke completed in 10.184 seconds with one valid decision, zero decision
+failures, 100% usage-record coverage, and a four-action response that gathered
+fiber, built a farm plot, gathered food, and waited. Its usage ledger nevertheless
+reported `resolved_reasoning_effort=null` and the medium model variant. A
+separate no-prompt ACP session using the explicit
+`gpt-5-6-luna-low` model ID reported that exact low variant, confirming the
+issue is family-alias resolution at the connector boundary rather than the
+account lacking Luna Low. Until the connector maps family plus effort onto an
+exact account variant, benchmark launches should use explicit Devin model IDs
+or treat declared effort as unverified. Devin ACP also exposed context
+occupancy (13,466 of 1,000,000 tokens) but no per-turn input, output, reasoning,
+or cost counters, so usage coverage is complete at the call-record level while
+token accounting remains unavailable.
+Evidence:
+`runs/devin-luna-smoke-20260730/run-usage.jsonl`,
+`runs/devin-luna-smoke-20260730/run-report.json`,
+`runs/devin-luna-smoke-20260730/run-manifest.json`.
+
+## 2026-07-30 — The apparent Windsurf CLI was an editor launcher, not an agent boundary
+
+**A direct “Windsurf connector” would have silently targeted the wrong
+interface: the installed `windsurf` command exposed only editor-launch flags,
+while its supported headless successor was the Devin CLI's versioned ACP
+server.** During connector discovery, `windsurf --help` contained no
+noninteractive Cascade or prompt command and the desktop updater migrated the
+installed application to Devin Desktop. The bundled `devin` executable exposed
+both single-turn automation and `devin acp`; a live protocol probe returned ACP
+version 1, `agentInfo.name=affogato`, session create/load support, Ask-mode
+configuration, and the account model option. This is a harness distinction,
+not a model result: editor automation or a private Cascade endpoint would have
+made provenance and failure semantics unauditable. The implemented connector
+therefore names the connector after its actual runtime and records
+`provider=devin_cli` with `connector_runtime=devin_cli`; its deterministic tests cover the ACP
+handshake, saved-login isolation, streamed usage, malformed output, timeout,
+quota/auth failures, and bounded-session continuation.
+Evidence: `agent_world/devin_brain.py`, `tests/test_devin_brain.py`,
+`README.md` (“Devin subscription agents”).
+
+## 2026-07-30 — Sonnet 5 formed more capital than Sonnet 4.6 but chose a strictly worse portfolio
+
+**Sonnet 5 completed 20 structures across two clean Participant v6 worlds—six
+more than Sonnet 4.6—but built no shelters, settled no trades or gifts, and
+finished with only 11/20 survivors versus Sonnet 4.6's 17/20.** Every Sonnet 5
+asset was a farm or storage structure. The worlds looked strong at tick 30:
+all 20 agents were alive and seed competence was 83.0/88.6, with living value
+334.0/370.25. By tick 50, competence had fallen to 53.6/45.2 and nine agents
+had died; every death occurred at zero water, usually under compounding winter
+or storm exposure. This was not inactivity or a provider failure. Both runs
+had clean model output and full usage coverage, and the agents generated 610
+communications, 24 venture initiatives, four trade offers, three access
+grants, and one genuinely co-financed storage build. The failure was conversion
+and portfolio choice: all trade offers expired, both attempted gifts were
+invalid, shared-access farms produced no enterprise supply, and repeated
+promises to share resources did not become transfers. The newer model therefore
+showed greater willingness to invest but substantially weaker institutional
+execution than Sonnet 4.6, which built five shelters and converted cooperation
+into 53.6 entrepreneurship.
+Evidence:
+`runs/benchmarks/claude-sonnet-5-participant-v6-certified-seeds11-41-20260729-164053`,
+`runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549`.
+
+## 2026-07-30 — A liquid spot market did not compensate for missing survival capital
+
+**GPT-5-mini settled 21 trades and executed 35 gifts across two worlds—far
+more exchange than the stronger Sonnet and Opus cohorts—yet lost all 20 agents
+because it built four farms and no shelters.** The exchange was ledger-real:
+79 units of enterprise supply moved to other agents, including repeated
+food-water, fiber-food, coin-resource, and wood-water swaps. Some early trades
+were circular reversals, so volume overstated durable commerce, but the market
+was not merely conversational. The agents also produced 106 units of own farm
+output and left 466.25 units of terminal value in their estates. None remained
+living-accessible after extinction. This separates allocation from liquidity:
+agents can find counterparties, settle exchanges, and practice mutual aid
+while collectively failing to finance the one asset class needed to survive
+winter.
+Evidence:
+`runs/benchmarks/cursor-gpt-5-mini-participant-v6-certified-seeds11-41-20260729-181911`.
+
 ## 2026-07-29 — Gift counts can hide an informal market for scarce services
 
 **Opus 4.8 recorded only one accepted trade and zero access-fee revenue, yet

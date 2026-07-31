@@ -20,6 +20,7 @@ from agent_world.benchmarks import (
     BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS,
     BENCHMARK_DIAGNOSTIC_TICKS,
     BENCHMARK_PROTOCOL_ID,
+    BENCHMARK_QUOTA_WAIT_HOURS,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
     format_benchmark_leaderboard,
@@ -199,6 +200,17 @@ def main(argv: list[str] | None = None) -> None:
         type=float,
         default=0.2,
         help="Stop when a model cohort exceeds this decision-failure rate at the startup check.",
+    )
+    run_parser.add_argument(
+        "--quota-wait-hours",
+        type=float,
+        default=None,
+        help=(
+            "On a provider rate limit, wait up to this many hours for the cap to reset "
+            "and retry the same tick instead of stopping. The world does not advance "
+            "while waiting. Defaults to 0 (stop immediately) for ad-hoc runs and to "
+            f"{BENCHMARK_QUOTA_WAIT_HOURS} for {BENCHMARK_PROTOCOL_ID} trials."
+        ),
     )
     run_parser.add_argument(
         "--benchmark-protocol",
@@ -592,6 +604,7 @@ def _run(args: argparse.Namespace) -> None:
     }
     decision_mode = args.decision_mode or "raw"
     startup_health_check_tick = getattr(args, "startup_health_check_tick", 5) or None
+    quota_wait_hours = max(0.0, float(getattr(args, "quota_wait_hours", None) or 0.0))
     startup_health_max_failure_rate = getattr(
         args, "startup_health_max_failure_rate", 0.2
     )
@@ -673,6 +686,7 @@ def _run(args: argparse.Namespace) -> None:
         "claude_thinking_budget_tokens": getattr(
             args, "claude_thinking_budget_tokens", None
         ),
+        "quota_wait_hours": quota_wait_hours,
     }
 
     if not resumed:
@@ -787,6 +801,7 @@ def _run(args: argparse.Namespace) -> None:
         ),
         startup_health_check_tick=startup_health_check_tick,
         startup_health_max_failure_rate=startup_health_max_failure_rate,
+        quota_wait_max_seconds=quota_wait_hours * 3600.0,
     )
     result = session.run()
 
@@ -1029,6 +1044,10 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
     )
     args.claude_thinking_budget_tokens = BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
+    # A rate limit should suspend a trial, never damage it. Waiting keeps the
+    # world frozen at a completed tick, so this is scheduling policy only.
+    if getattr(args, "quota_wait_hours", None) is None:
+        args.quota_wait_hours = BENCHMARK_QUOTA_WAIT_HOURS
     # Scope the recorded fingerprint to the adapter this trial will actually
     # invoke, so later edits to unrelated providers cannot invalidate it.
     provider = BRAIN_TYPE_PROVIDERS.get(args.brain)
