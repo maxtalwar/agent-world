@@ -597,6 +597,51 @@ class BenchmarkTests(unittest.TestCase):
         )
         self.assertEqual(wash["total"], 0.0)
 
+    def test_declared_payment_kind_scores_without_an_artifact(self) -> None:
+        """V7: agents self-classify; scoring trusts the declaration."""
+
+        events = [
+            {
+                "type": "gift",
+                "tick": 1,
+                "actor_id": "agent-1",
+                "data": {"to": "agent-2", "items": {"fiber": 3}, "kind": "payment"},
+            }
+        ]
+        supply = _enterprise_supply(events, {"agent-1", "agent-2"})
+        self.assertEqual(supply["by_source"]["net_service_income"], 6.0)
+        self.assertEqual(supply["total"], 6.0)
+
+    def test_undeclared_or_gift_kind_forfeits_the_credit(self) -> None:
+        """Strict liability: misfiling a payment as a gift is the model's loss."""
+
+        for data in (
+            {"to": "agent-2", "items": {"fiber": 3}},
+            {"to": "agent-2", "items": {"fiber": 3}, "kind": "gift"},
+        ):
+            supply = _enterprise_supply(
+                [{"type": "gift", "tick": 1, "actor_id": "agent-1", "data": data}],
+                {"agent-1", "agent-2"},
+            )
+            self.assertEqual(supply["total"], 0.0)
+            self.assertEqual(supply["informal_transfers"], 6.0)
+
+    def test_artifact_verdict_overrides_declared_kind(self) -> None:
+        """Frozen judge artifacts (v6 rescores) outrank self-declarations."""
+
+        events = [
+            {
+                "type": "gift",
+                "tick": 1,
+                "actor_id": "agent-1",
+                "data": {"to": "agent-2", "items": {"fiber": 3}, "kind": "payment"},
+            }
+        ]
+        supply = _enterprise_supply(
+            events, {"agent-1", "agent-2"}, {0: "unrequited_transfer"}
+        )
+        self.assertEqual(supply["total"], 0.0)
+
     def test_wash_trading_creates_no_enterprise_supply(self) -> None:
         """Value that returns to its origin must score nothing."""
 
@@ -818,7 +863,7 @@ class BenchmarkTests(unittest.TestCase):
         protocol = benchmark_protocol()
 
         self.assertEqual(protocol["scoring_revision"], BENCHMARK_SCORING_REVISION)
-        self.assertEqual(BENCHMARK_SCORING_REVISION, 2)
+        self.assertEqual(BENCHMARK_SCORING_REVISION, 1)
         self.assertTrue(protocol["score_scale"]["metric_specific"])
         self.assertIsNone(protocol["score_scale"]["maximum"])
         self.assertEqual(

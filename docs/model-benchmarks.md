@@ -1,8 +1,43 @@
 # Agent World model benchmarks
 
-Agent World Participant v6 is the current standardized model benchmark suite.
+Agent World Participant v7 is the current standardized model benchmark suite.
 
-## Participant v6: the frontier world
+## Participant v7: self-classified transfers
+
+V7 keeps the v6 frontier world, trial settings, and every scoring formula,
+and changes one harness affordance: the gift action takes an explicit
+`kind` parameter - `gift`, `payment`, or `barter` (default `gift`) - and
+scoring trusts the declaration.
+
+- `payment` settles a debt for services or information the recipient
+  rendered; it scores as net service income credited to the recipient.
+- `barter` delivers one leg of an agreed goods swap; it scores as a
+  directional goods flow, like an accepted trade.
+- `gift` (or no declaration) is an unrequited transfer: reported, never
+  scored.
+
+The declaration is documented in the agents' action schema, so the rule is
+knowable in-world. Liability is strict: a model that pays a bounty but files
+it as a plain gift forfeits the commerce credit, exactly as a model that
+overdraws action points eats an invalid proposal. That is a measured planning
+mistake, not a harness artifact. An unknown `kind` value is an invalid
+proposal and transfers nothing.
+
+Why not stay with v6's judge? V6 closed at scoring revision 2 with a frozen,
+evidence-quoting classification artifact per run - correct for ledgers whose
+agents never had a way to say what a transfer meant, but a permanent LLM
+judge inside a certified score is a standing liability. V7 moves the
+declaration into the world, where it is deterministic, incentive-compatible,
+and free. When a frozen artifact is present (rescored v6 ledgers), its
+audited verdicts still take precedence over declarations.
+
+Because the gift schema is agent-visible text for every provider, no earlier
+trial saw the v7 world: the compatible-fingerprint sets are empty by
+construction, v6 results stay on the closed v6 leaderboard
+(`leaderboard-v6-20260731`), and every model needs fresh v7 runs to enter the
+v7 pool.
+
+## Participant v6: the frontier world (superseded by v7)
 
 V6 keeps every scoring formula and the v5 deliberation-parity policy, and
 changes the world itself. The trial preset moves from `organic-generalists`

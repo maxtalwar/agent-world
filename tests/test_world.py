@@ -17,6 +17,67 @@ class WorldEngineTests(unittest.TestCase):
         config = WorldConfig(seed=3)
         return WorldEngine.create(config=config, agent_names=[f"A{i + 1}" for i in range(agents)])
 
+    def test_gift_kind_is_validated_and_recorded(self) -> None:
+        engine = self.make_engine(2)
+        giver = engine.state.agents["agent-1"]
+        target = engine.state.agents["agent-2"]
+        target.position = Position(giver.position.x, giver.position.y)
+        giver.inventory["water"] = 3
+
+        engine.tick(
+            {
+                "agent-1": AgentDecision(
+                    actions=[
+                        {
+                            "type": "gift",
+                            "to": "agent-2",
+                            "items": {"water": 1},
+                            "kind": "payment",
+                        }
+                    ]
+                )
+            }
+        )
+        gift = next(e for e in engine.state.events if e.type == "gift")
+        self.assertEqual(gift.data["kind"], "payment")
+        self.assertIn("paid items to", gift.message)
+
+        # Default kind is gift; an unknown kind is an invalid proposal and
+        # transfers nothing.
+        engine.tick(
+            {
+                "agent-1": AgentDecision(
+                    actions=[
+                        {"type": "gift", "to": "agent-2", "items": {"water": 1}}
+                    ]
+                )
+            }
+        )
+        gifts = [e for e in engine.state.events if e.type == "gift"]
+        self.assertEqual(gifts[-1].data["kind"], "gift")
+        before = dict(target.inventory)
+        engine.tick(
+            {
+                "agent-1": AgentDecision(
+                    actions=[
+                        {
+                            "type": "gift",
+                            "to": "agent-2",
+                            "items": {"water": 1},
+                            "kind": "bribe",
+                        }
+                    ]
+                )
+            }
+        )
+        self.assertTrue(
+            any(
+                e.type == "invalid_action" and "kind" in str(e.message).lower()
+                for e in engine.state.events
+            )
+        )
+        self.assertEqual(dict(target.inventory), before)
+
     def test_move_is_validated_and_updates_position(self) -> None:
         engine = self.make_engine(1)
         agent = engine.state.agents["agent-1"]

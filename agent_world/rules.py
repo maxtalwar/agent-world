@@ -364,6 +364,13 @@ def structure_operations_for_mode(economy_mode: str) -> dict[str, dict[str, obje
         return STRUCTURE_OPERATIONS
     return {}
 
+# Self-declared transfer kinds for the gift action. "payment" settles a debt
+# for services or information the recipient rendered; "barter" is one leg of
+# an agreed two-way goods exchange; "gift" is an unrequited transfer.
+# Benchmark scoring trusts the declaration: only payment and barter can earn
+# enterprise-supply credit, so misfiling a payment as a gift forfeits it.
+TRANSFER_KINDS = {"gift", "payment", "barter"}
+
 STRUCTURE_TYPES = {"farm_plot", "storage", "shelter", "house", "workshop", "well"}
 STORAGE_STRUCTURE_TYPES = {"storage", "house", "workshop"}
 REST_STRUCTURE_TYPES = {"shelter", "house"}
@@ -582,8 +589,23 @@ ACTION_SCHEMA: list[dict[str, object]] = [
     },
     {
         "type": "gift",
-        "parameters": {"to": "agent_id", "items": "item counts"},
-        "example": {"type": "gift", "to": "agent-2", "items": {"water": 1}},
+        "parameters": {
+            "to": "agent_id",
+            "items": "item counts",
+            "kind": "gift|payment|barter (default gift)",
+        },
+        "example": {
+            "type": "gift",
+            "to": "agent-2",
+            "items": {"water": 1},
+            "kind": "payment",
+        },
+        "note": (
+            "Declare kind honestly: 'payment' settles a debt for services or "
+            "information the recipient provided; 'barter' delivers one leg "
+            "of an agreed goods swap; 'gift' is an unrequited transfer. Only "
+            "payment and barter count toward commerce metrics."
+        ),
     },
     {
         "type": "claim_tile",

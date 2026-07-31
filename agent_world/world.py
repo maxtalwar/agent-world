@@ -55,6 +55,7 @@ from agent_world.rules import (
     structure_operations_for_mode,
     structure_types_for_variant,
     structure_capacity_for_mode,
+    TRANSFER_KINDS,
 )
 
 
@@ -1302,6 +1303,14 @@ class WorldEngine:
         return action_points
 
     def _action_gift(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
+        kind = str(action.get("kind") or "gift").strip().lower()
+        if kind not in TRANSFER_KINDS:
+            self._invalid(
+                agent,
+                action,
+                "Gift kind must be one of: gift, payment, barter.",
+            )
+            return action_points - 1
         target = self.state.agents.get(str(action.get("to", "")))
         if target is None or not target.alive:
             self._invalid(agent, action, "Gift target does not exist or is not alive.")
@@ -1323,12 +1332,17 @@ class WorldEngine:
             agent.inventory[item] -= qty
             target.inventory[item] += qty
         target.relationships[agent.id] = target.relationships.get(agent.id, 0) + 1
+        kind_phrase = {
+            "gift": "gifted items to",
+            "payment": "paid items to",
+            "barter": "delivered barter items to",
+        }[kind]
         self.log_event(
             "gift",
             actor_id=agent.id,
             position=agent.position,
-            message=f"{agent.name} gifted items to {target.name}.",
-            data={"to": target.id, "items": dict(items)},
+            message=f"{agent.name} {kind_phrase} {target.name}.",
+            data={"to": target.id, "items": dict(items), "kind": kind},
             recipients={target.id},
         )
         return action_points - 1

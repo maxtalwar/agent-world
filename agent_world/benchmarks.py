@@ -32,8 +32,8 @@ from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 # frontier-model campaign - the classic world's survival and material ceilings
 # were reachable by strong foragers, and top-model ledgers that pin every
 # ceiling cannot be differentiated by any later rescoring.
-BENCHMARK_SUITE_ID = "agent-world-participant-v6"
-BENCHMARK_PROTOCOL_ID = "participant-v6"
+BENCHMARK_SUITE_ID = "agent-world-participant-v7"
+BENCHMARK_PROTOCOL_ID = "participant-v7"
 # Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
 # Anthropic ships no per-effort token number to borrow: stock Claude Code
 # drives adaptive thinking from the effort dial with NO token cap (measured
@@ -52,23 +52,18 @@ BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
 BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
-# V6 revision 1 carried forward v4's revisions 2 (structured-output retry
-# exhaustion counts as model output, not an ambiguous boundary) and 3
-# (acceptance registries excluded from the code fingerprint); scoring formulas
-# were unchanged from v4/v5.
-#
-# V6 revision 2 stops scoring raw gift events as enterprise supply. Revision 1
-# credited every gift's sender with "net goods supplied to others", which let
-# one-directional transfers - charity and improvised bounty payments alike -
-# fill the commerce half of entrepreneurial agency (100% of the Opus 5 seed-41
-# supply term was gifts). Gifts are now routed through a frozen, per-run
-# classification artifact (gift-classifications.json, judged from ledger
-# evidence and committed with the study): barter settlements remain goods
-# flows, payments for service become service income credited to the RECIPIENT
-# (the vendor - revision 1 credited the paying side), and unrequited or
-# unclassifiable transfers are reported but unscored. Without an artifact,
-# every gift is unscored: ambiguity can never inflate a certified number.
-BENCHMARK_SCORING_REVISION = 2
+# V7 revision 1. One harness change over v6: agents self-classify transfers.
+# The gift action takes kind = gift | payment | barter (default gift), the
+# declaration is recorded in the event, and scoring TRUSTS it - payment is
+# service income credited to the recipient, barter is a directional goods
+# flow, and gift is an unrequited transfer, reported but never scored.
+# Strict liability: misfiling a payment as a gift forfeits the credit, which
+# is a scored planning mistake, not a harness problem. V6 closed at its
+# scoring revision 2, where a frozen judge artifact
+# (gift-classifications.json) classified historical gifts from ledger
+# evidence; when such an artifact is present it still takes precedence over
+# declarations, so rescored v6 ledgers keep their audited verdicts.
+BENCHMARK_SCORING_REVISION = 1
 
 GIFT_VERDICT_PAYMENT = "payment_for_service"
 GIFT_VERDICT_BARTER = "barter_settlement"
@@ -96,33 +91,15 @@ GIFT_VERDICTS = frozenset(
 # comparison (extracted into _check_resume_fingerprint) and is only reachable
 # from the resume branch of _run; no agent-facing code, no scoring code, and
 # no launch path changed.
-# The three fingerprints below b524845f... are the provider-scoped v6 values
-# (codex, claude, cursor) that every completed v6 trial launched under before
-# scoring revision 2. Revision 2 changes gift scoring only: no agent-visible
-# text, no world mechanics, and no launch path differ, and the ledgers contain
-# every input the new scoring needs, so raw-ledger re-derivations from these
-# fingerprints remain compliant.
-BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
-    {
-        "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
-        "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
-        "cb7b19c6d4549b43aa82f867ef6559369cd231d3ce8a5ca3315fd1e8755606db",
-        "42a840ac279b1f4d35b32a7b1a4301c7c0d9c81b4380bf945b6215298e06ac87",
-    }
-)
+# Empty for v7 by construction: the gift-kind schema change is agent-visible
+# text for every provider, so no earlier trial saw the v7 world.
+BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
 
 # Same-suite reports whose stored fingerprint predates a code change that
 # cannot change their numbers. Membership is the audit: an entry is only added
 # after checking the intervening diff against the scoring path. Same entry and
 # rationale as BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS above.
-BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset(
-    {
-        "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
-        "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
-        "cb7b19c6d4549b43aa82f867ef6559369cd231d3ce8a5ca3315fd1e8755606db",
-        "42a840ac279b1f4d35b32a7b1a4301c7c0d9c81b4380bf945b6215298e06ac87",
-    }
-)
+BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
 
 # Scored reports from an EARLIER SUITE accepted as current-suite evidence
 # after an audit showing the suite change cannot touch their numbers. Keyed by
@@ -1853,6 +1830,13 @@ def _enterprise_supply(
             giver = str(event.get("actor_id") or "")
             recipient = str(data.get("to") or "")
             verdict = verdicts.get(gift_ordinal)
+            if verdict is None:
+                # V7 self-classification: trust the sender's declared kind.
+                declared = str(data.get("kind") or "").strip().lower()
+                if declared == "payment":
+                    verdict = GIFT_VERDICT_PAYMENT
+                elif declared == "barter":
+                    verdict = GIFT_VERDICT_BARTER
             if verdict == GIFT_VERDICT_BARTER:
                 _flow(giver, recipient, data.get("items"))
             elif verdict == GIFT_VERDICT_PAYMENT:
