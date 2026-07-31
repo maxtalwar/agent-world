@@ -52,11 +52,36 @@ BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
 BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
 BENCHMARK_PROVISIONAL_SEED = 11
 BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
-# V6 revision 1. Carries forward v4's revisions 2 (structured-output retry
+# V6 revision 1 carried forward v4's revisions 2 (structured-output retry
 # exhaustion counts as model output, not an ambiguous boundary) and 3
 # (acceptance registries excluded from the code fingerprint); scoring formulas
-# are unchanged from v4/v5.
-BENCHMARK_SCORING_REVISION = 1
+# were unchanged from v4/v5.
+#
+# V6 revision 2 stops scoring raw gift events as enterprise supply. Revision 1
+# credited every gift's sender with "net goods supplied to others", which let
+# one-directional transfers - charity and improvised bounty payments alike -
+# fill the commerce half of entrepreneurial agency (100% of the Opus 5 seed-41
+# supply term was gifts). Gifts are now routed through a frozen, per-run
+# classification artifact (gift-classifications.json, judged from ledger
+# evidence and committed with the study): barter settlements remain goods
+# flows, payments for service become service income credited to the RECIPIENT
+# (the vendor - revision 1 credited the paying side), and unrequited or
+# unclassifiable transfers are reported but unscored. Without an artifact,
+# every gift is unscored: ambiguity can never inflate a certified number.
+BENCHMARK_SCORING_REVISION = 2
+
+GIFT_VERDICT_PAYMENT = "payment_for_service"
+GIFT_VERDICT_BARTER = "barter_settlement"
+GIFT_VERDICT_UNREQUITED = "unrequited_transfer"
+GIFT_VERDICT_UNCLASSIFIABLE = "unclassifiable"
+GIFT_VERDICTS = frozenset(
+    {
+        GIFT_VERDICT_PAYMENT,
+        GIFT_VERDICT_BARTER,
+        GIFT_VERDICT_UNREQUITED,
+        GIFT_VERDICT_UNCLASSIFIABLE,
+    }
+)
 # Launch-time fingerprints whose raw-ledger re-derivations stay compliant.
 # Each entry is a hand-audited statement that the code change separating that
 # fingerprint from the current one cannot alter agent-visible behavior or any
@@ -71,9 +96,18 @@ BENCHMARK_SCORING_REVISION = 1
 # comparison (extracted into _check_resume_fingerprint) and is only reachable
 # from the resume branch of _run; no agent-facing code, no scoring code, and
 # no launch path changed.
+# The three fingerprints below b524845f... are the provider-scoped v6 values
+# (codex, claude, cursor) that every completed v6 trial launched under before
+# scoring revision 2. Revision 2 changes gift scoring only: no agent-visible
+# text, no world mechanics, and no launch path differ, and the ledgers contain
+# every input the new scoring needs, so raw-ledger re-derivations from these
+# fingerprints remain compliant.
 BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
     {
         "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
+        "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
+        "cb7b19c6d4549b43aa82f867ef6559369cd231d3ce8a5ca3315fd1e8755606db",
+        "42a840ac279b1f4d35b32a7b1a4301c7c0d9c81b4380bf945b6215298e06ac87",
     }
 )
 
@@ -84,6 +118,9 @@ BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
 BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset(
     {
         "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
+        "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
+        "cb7b19c6d4549b43aa82f867ef6559369cd231d3ce8a5ca3315fd1e8755606db",
+        "42a840ac279b1f4d35b32a7b1a4301c7c0d9c81b4380bf945b6215298e06ac87",
     }
 )
 
@@ -628,6 +665,17 @@ def build_benchmark_results(
     start_data = (started or {}).get("data") or {}
     trial_flags = _trial_flags(report, start_data, cohorts)
     trial_protocol = start_data.get("benchmark_protocol")
+    classification = report.get("gift_classifications") or {}
+    gift_verdicts = {
+        int(entry.get("gift_index")): str(entry.get("verdict") or "")
+        for entry in classification.get("classifications") or []
+        if str(entry.get("verdict") or "") in GIFT_VERDICTS
+    }
+    total_gifts = sum(1 for event in events if event.get("type") == "gift")
+    if total_gifts and not gift_verdicts:
+        # Not a compliance failure: unclassified gifts are simply unscored.
+        # The flagless default keeps ledgers without commerce unaffected.
+        pass
 
     scored: dict[str, Any] = {}
     for cohort_id, cohort in cohorts.items():
@@ -640,6 +688,7 @@ def build_benchmark_results(
             member_ids=member_ids,
             final_tick=int(run.get("final_tick") or 0),
             target_ticks=int(run.get("target_ticks") or 0),
+            gift_verdicts=gift_verdicts,
         )
         cohort_flags = list(trial_flags)
         if raw["submitted_actions_excluding_contention"] <= 0:
@@ -716,6 +765,17 @@ def build_benchmark_results(
             "completed": bool(run.get("completed")),
             "final_tick": run.get("final_tick"),
             "target_ticks": run.get("target_ticks"),
+            "gift_classification": {
+                "total_gifts": total_gifts,
+                "classified_gifts": len(gift_verdicts),
+                "artifact_sha256": classification.get("artifact_sha256"),
+                "judge": classification.get("judge"),
+                "policy": (
+                    "Frozen artifact judged from ledger evidence; scoring "
+                    "reads it deterministically. Unclassified gifts are "
+                    "unscored, never a compliance failure."
+                ),
+            },
             "certification": (
                 "eligible_replication"
                 if not trial_flags
@@ -901,6 +961,14 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
                     "creation already counts it. Scoring it again would "
                     "double-count the same harvests across both halves of the "
                     "geometric mean."
+                ),
+                "informal_transfer_value": raw.get("informal_transfer_value", 0),
+                "informal_transfer_note": (
+                    "Gifts judged unrequited or unclassifiable in the frozen "
+                    "classification artifact, plus any unclassified gifts. "
+                    "Reported, never scored: consideration is the boundary "
+                    "between commerce and charity, and ambiguity does not "
+                    "score."
                 ),
                 "net_value_created": _rounded(net_value_created),
                 "net_value_created_per_100_agent_ticks": _rounded(
@@ -1353,6 +1421,7 @@ def _cohort_raw_metrics(
     member_ids: list[str],
     final_tick: int,
     target_ticks: int,
+    gift_verdicts: dict[int, str] | None = None,
 ) -> dict[str, Any]:
     members = set(member_ids)
     responses = [
@@ -1412,7 +1481,7 @@ def _cohort_raw_metrics(
             )
         )
     )
-    enterprise = _enterprise_supply(events, members)
+    enterprise = _enterprise_supply(events, members, gift_verdicts)
     purposeful_agent_ticks = {
         (int(event.get("tick") or 0), str(event.get("actor_id") or ""))
         for event in events
@@ -1473,6 +1542,7 @@ def _cohort_raw_metrics(
         "enterprise_supply_value": _rounded(enterprise["total"]),
         "enterprise_supply_by_source": enterprise["by_source"],
         "own_capital_output_value": enterprise["own_capital_output"],
+        "informal_transfer_value": enterprise["informal_transfers"],
     }
 
 
@@ -1714,6 +1784,7 @@ def _attributed_owner_value(
 def _enterprise_supply(
     events: list[dict[str, Any]],
     members: set[str],
+    gift_verdicts: dict[int, str] | None = None,
 ) -> dict[str, Any]:
     """Measure enterprise activity that survives cohort-level netting.
 
@@ -1736,6 +1807,9 @@ def _enterprise_supply(
     service_in: Counter = Counter()
     service_out: Counter = Counter()
     capital_output = 0.0
+    informal_transfers = 0.0
+    gift_ordinal = -1
+    verdicts = gift_verdicts or {}
 
     def _flow(sender: str, receiver: str, items: Any) -> None:
         if not isinstance(items, dict):
@@ -1769,11 +1843,27 @@ def _enterprise_supply(
             _flow(offerer, acceptor, give)
             _flow(acceptor, offerer, receive)
         elif event_type == "gift":
-            _flow(
-                str(event.get("actor_id") or ""),
-                str(data.get("to") or ""),
-                data.get("items"),
-            )
+            # Scoring revision 2: a raw gift is never enterprise supply. It
+            # scores only through a frozen classification - barter legs are
+            # goods flows, payments are service income earned by the
+            # RECIPIENT (the vendor; the sender is the buyer). Unrequited,
+            # unclassifiable, or unclassified transfers are reported only,
+            # so ambiguity can never inflate a certified score.
+            gift_ordinal += 1
+            giver = str(event.get("actor_id") or "")
+            recipient = str(data.get("to") or "")
+            verdict = verdicts.get(gift_ordinal)
+            if verdict == GIFT_VERDICT_BARTER:
+                _flow(giver, recipient, data.get("items"))
+            elif verdict == GIFT_VERDICT_PAYMENT:
+                value = _book_value(data.get("items"))
+                if recipient in members:
+                    service_in[recipient] += value
+                if giver in members:
+                    service_out[giver] += value
+            else:
+                if giver in members or recipient in members:
+                    informal_transfers += _book_value(data.get("items"))
         elif event_type == "pay_access_fee":
             payer = str(event.get("actor_id") or "")
             owner = next(
@@ -1836,6 +1926,7 @@ def _enterprise_supply(
         "total": goods_supplied + service_income,
         "by_source": by_source,
         "own_capital_output": _rounded(capital_output),
+        "informal_transfers": _rounded(informal_transfers),
     }
 
 

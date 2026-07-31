@@ -179,6 +179,34 @@ official two-seed score.
 The benchmark flag locks every other setting. A conflicting option fails
 before a model call.
 
+## Scoring revision 2: gift classification
+
+Revision 1 credited every gift's sender with "net goods supplied to others."
+That let one-directional transfers - charity and improvised bounty payments
+alike - fill the commerce half of entrepreneurial agency; in the Opus 5
+seed-41 trial, 100% of the supply term was gifts. Revision 2 replaces this
+with evidence-judged classification:
+
+- Each run with gifts carries a frozen `gift-classifications.json` produced
+  once by a Codex (gpt-5.6-sol) judge from ledger evidence. Every scoring
+  verdict quotes a verbatim ledger line showing the consideration; quotes are
+  machine-verified against the ledger. The artifact's hash, judge model, and
+  prompt hash are recorded in the trial block, and scoring reads the artifact
+  deterministically - re-judging requires a new scoring revision.
+- `barter_settlement` gifts remain directional goods flows, like accepted
+  trades.
+- `payment_for_service` gifts become net service income credited to the
+  RECIPIENT - the vendor who earned them. Revision 1 credited the payer's
+  outflow, which rewarded spending rather than earning.
+- `unrequited_transfer`, `unclassifiable`, and unclassified gifts are
+  reported as informal transfers but never scored: consideration is the
+  boundary between commerce and charity, and ambiguity does not score.
+
+Across the 24 v6 cells with gifts, the judges classified 158 gifts: 23
+payments, 13 barter settlements, 91 unrequited, 31 unclassifiable. The
+corpus leaderboard was regenerated as `leaderboard-v6-20260731`; the
+revision-1 leaderboard remains a historical artifact.
+
 ## Scores
 
 Higher is better. Effective execution and sustained competence range from 0

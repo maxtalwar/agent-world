@@ -504,6 +504,99 @@ class BenchmarkTests(unittest.TestCase):
         self.assertAlmostEqual(values["ingot"], 8 * values["coin"])
         self.assertAlmostEqual(smelt_inputs, 8 * values["coin"])
 
+    def test_unclassified_gifts_never_score_as_supply(self) -> None:
+        """Scoring revision 2: a raw gift is reported, not scored."""
+
+        events = [
+            {
+                "type": "gift",
+                "tick": 1,
+                "actor_id": "agent-1",
+                "data": {"to": "agent-2", "items": {"food": 3}},
+            }
+        ]
+        supply = _enterprise_supply(events, {"agent-1", "agent-2"})
+        self.assertEqual(supply["total"], 0.0)
+        self.assertEqual(supply["informal_transfers"], 6.0)
+
+    def test_payment_verdict_credits_the_recipient_as_vendor(self) -> None:
+        """A classified bounty payment is service income earned by the scout,
+        never goods supplied by the payer."""
+
+        events = [
+            {
+                "type": "gift",
+                "tick": 1,
+                "actor_id": "agent-1",
+                "data": {"to": "agent-2", "items": {"fiber": 3}},
+            }
+        ]
+        supply = _enterprise_supply(
+            events, {"agent-1", "agent-2"}, {0: "payment_for_service"}
+        )
+        self.assertEqual(supply["by_source"]["net_service_income"], 6.0)
+        self.assertEqual(supply["by_source"]["net_goods_supplied_to_others"], 0.0)
+        self.assertEqual(supply["total"], 6.0)
+        self.assertEqual(supply["informal_transfers"], 0.0)
+
+        # The payer's outlay nets against income they earn elsewhere, exactly
+        # like access fees: paying for services is spending, not vending.
+        both_ways = _enterprise_supply(
+            events
+            + [
+                {
+                    "type": "gift",
+                    "tick": 2,
+                    "actor_id": "agent-2",
+                    "data": {"to": "agent-1", "items": {"fiber": 3}},
+                }
+            ],
+            {"agent-1", "agent-2"},
+            {0: "payment_for_service", 1: "payment_for_service"},
+        )
+        self.assertEqual(both_ways["total"], 0.0)
+
+    def test_barter_verdict_keeps_goods_flow_semantics(self) -> None:
+        events = [
+            {
+                "type": "gift",
+                "tick": 1,
+                "actor_id": "agent-1",
+                "data": {"to": "agent-2", "items": {"wood": 2}},
+            },
+            {
+                "type": "gift",
+                "tick": 2,
+                "actor_id": "agent-2",
+                "data": {"to": "agent-1", "items": {"food": 3}},
+            },
+        ]
+        verdicts = {0: "barter_settlement", 1: "barter_settlement"}
+        supply = _enterprise_supply(events, {"agent-1", "agent-2"}, verdicts)
+        # Two-way exchange of different goods: both directional flows are real
+        # supply, same as an accepted trade of wood for food.
+        self.assertEqual(supply["by_source"]["net_goods_supplied_to_others"], 12.0)
+        # A barter wash of the SAME good still cancels via per-agent netting.
+        wash = _enterprise_supply(
+            [
+                {
+                    "type": "gift",
+                    "tick": 1,
+                    "actor_id": "agent-1",
+                    "data": {"to": "agent-2", "items": {"wood": 2}},
+                },
+                {
+                    "type": "gift",
+                    "tick": 2,
+                    "actor_id": "agent-2",
+                    "data": {"to": "agent-1", "items": {"wood": 2}},
+                },
+            ],
+            {"agent-1", "agent-2"},
+            verdicts,
+        )
+        self.assertEqual(wash["total"], 0.0)
+
     def test_wash_trading_creates_no_enterprise_supply(self) -> None:
         """Value that returns to its origin must score nothing."""
 
@@ -725,7 +818,7 @@ class BenchmarkTests(unittest.TestCase):
         protocol = benchmark_protocol()
 
         self.assertEqual(protocol["scoring_revision"], BENCHMARK_SCORING_REVISION)
-        self.assertEqual(BENCHMARK_SCORING_REVISION, 1)
+        self.assertEqual(BENCHMARK_SCORING_REVISION, 2)
         self.assertTrue(protocol["score_scale"]["metric_specific"])
         self.assertIsNone(protocol["score_scale"]["maximum"])
         self.assertEqual(
