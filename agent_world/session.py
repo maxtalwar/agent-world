@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from collections import Counter
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import os
 from pathlib import Path
+import time
 from typing import Any, Callable
 
 from agent_world.agents import AgentBrain
@@ -20,7 +22,9 @@ from agent_world.metrics import (
 )
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.run_report import build_report, write_report
+from agent_world.provider_limits import quota_reset_at
 from agent_world.runner import (
+    ModelDecisionsUnusableError,
     ModelProviderUnavailableError,
     ModelQuotaUnavailableError,
     SimulationRunner,
@@ -70,6 +74,9 @@ class SimulationSession:
         benchmark_checkpoint_ticks: tuple[int, ...] = (),
         startup_health_check_tick: int | None = 5,
         startup_health_max_failure_rate: float = 0.2,
+        quota_wait_max_seconds: float = 0.0,
+        quota_wait_poll_max_seconds: float = 1800.0,
+        sleep: Callable[[float], None] = time.sleep,
     ):
         if target_ticks < engine.state.tick:
             raise ValueError(
@@ -115,6 +122,13 @@ class SimulationSession:
             raise ValueError("startup health failure rate must be between 0 and 1")
         self.startup_health_check_tick = startup_health_check_tick
         self.startup_health_max_failure_rate = startup_health_max_failure_rate
+        if quota_wait_max_seconds < 0:
+            raise ValueError("quota wait budget cannot be negative")
+        self.quota_wait_max_seconds = float(quota_wait_max_seconds)
+        self.quota_wait_poll_max_seconds = float(quota_wait_poll_max_seconds)
+        self._sleep = sleep
+        self._quota_wait_used = 0.0
+        self._quota_backoff_seconds = 300.0
         self.runner = SimulationRunner(
             engine,
             self.brains,
@@ -157,6 +171,11 @@ class SimulationSession:
                         usage_checkpoint, attempted_tick=self.engine.state.tick
                     )
                     self.reset_brain_conversations("discarded_partial_tick")
+                    # The world is back at a completed-tick boundary, so waiting
+                    # for the cap to lift and retrying the same tick is exactly
+                    # a checkpoint resume without the process restart.
+                    if self._wait_for_quota_reset(exc.messages):
+                        continue
                     status = "paused_checkpoint"
                     stop_reason = "insufficient_quota"
                     self.engine.log_event(
@@ -170,6 +189,36 @@ class SimulationSession:
                             "target_ticks": self.target_ticks,
                             "completed_tick": self.engine.state.tick,
                             "provider_messages": exc.messages,
+                            "quota_wait_seconds_used": round(self._quota_wait_used, 1),
+                            "partial_usage_path": (
+                                str(partial_usage_path.resolve()) if partial_usage_path else None
+                            ),
+                        },
+                        scope="public",
+                    )
+                    self.flush()
+                    break
+                except ModelDecisionsUnusableError as exc:
+                    partial_usage_path = self.runtime.rollback_usage(
+                        usage_checkpoint, attempted_tick=self.engine.state.tick
+                    )
+                    self.reset_brain_conversations("discarded_partial_tick")
+                    status = "paused_checkpoint"
+                    stop_reason = "decisions_unusable"
+                    self.engine.log_event(
+                        "run_paused",
+                        message=(
+                            "Every living agent failed identically at the model boundary, so the "
+                            "fault is external; the incomplete tick was discarded and this "
+                            "completed-tick checkpoint can be resumed."
+                        ),
+                        data={
+                            "reason": stop_reason,
+                            "target_ticks": self.target_ticks,
+                            "completed_tick": self.engine.state.tick,
+                            "provider_messages": exc.messages,
+                            "affected_agents": exc.agents,
+                            "consecutive_ticks": exc.consecutive_ticks,
                             "partial_usage_path": (
                                 str(partial_usage_path.resolve()) if partial_usage_path else None
                             ),
@@ -332,6 +381,84 @@ class SimulationSession:
         if self.on_terminal is not None:
             self.on_terminal(self, result)
         return result
+
+    def _wait_for_quota_reset(self, messages: list[str]) -> bool:
+        """Sleep until the provider cap lifts. Return whether to retry the tick.
+
+        Waiting is the correct response to a rate limit: the run is not broken,
+        it is early. The alternative the harness used to take - substituting
+        wait actions and advancing the world - destroys the trial, and simply
+        exiting throws away a run that only needed patience.
+
+        When the provider states a reset time the wait is a single sleep to
+        that instant. Otherwise it backs off, because every probe costs one
+        real failed call per agent.
+        """
+
+        if self.quota_wait_max_seconds <= 0:
+            return False
+        remaining = self.quota_wait_max_seconds - self._quota_wait_used
+        if remaining <= 0:
+            return False
+
+        now = datetime.now(timezone.utc)
+        reset_at = next(
+            (
+                parsed
+                for message in messages
+                if (parsed := quota_reset_at(message, now=now)) is not None
+            ),
+            None,
+        )
+        if reset_at is not None:
+            # A minute of slack: provider clocks and ours are not identical,
+            # and retrying one second early wastes the whole wait.
+            delay = (reset_at - now).total_seconds() + 60
+            source = "provider_reset_time"
+        else:
+            delay = min(self._quota_backoff_seconds, self.quota_wait_poll_max_seconds)
+            self._quota_backoff_seconds = min(
+                self._quota_backoff_seconds * 2, self.quota_wait_poll_max_seconds
+            )
+            source = "backoff"
+        delay = max(60.0, min(delay, remaining))
+
+        self.engine.log_event(
+            "run_quota_wait",
+            message=(
+                f"Model quota is exhausted; waiting {round(delay / 60)} minute(s) for it to "
+                "reset, then retrying the same tick. The world has not advanced."
+            ),
+            data={
+                "reason": "insufficient_quota",
+                "completed_tick": self.engine.state.tick,
+                "target_ticks": self.target_ticks,
+                "wait_seconds": round(delay, 1),
+                "wait_source": source,
+                "provider_reset_at_utc": reset_at.isoformat() if reset_at else None,
+                "waited_seconds_total": round(self._quota_wait_used + delay, 1),
+                "wait_budget_seconds": self.quota_wait_max_seconds,
+                "provider_messages": messages,
+            },
+            scope="public",
+        )
+        self.flush()
+        self._sleep(delay)
+        self._quota_wait_used += delay
+        # Clear the cached quota flag so the retry makes a real call instead of
+        # short-circuiting on the message that triggered this wait.
+        self.runtime.clear_quota_unavailable()
+        self.engine.log_event(
+            "run_quota_retry",
+            message="Retrying the tick after the quota wait.",
+            data={
+                "completed_tick": self.engine.state.tick,
+                "waited_seconds_total": round(self._quota_wait_used, 1),
+            },
+            scope="public",
+        )
+        self.flush()
+        return True
 
     def start(self) -> None:
         if self._started:

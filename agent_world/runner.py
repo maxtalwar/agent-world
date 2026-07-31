@@ -15,7 +15,11 @@ from agent_world.interface import (
     build_static_context,
     parse_agent_response,
 )
-from agent_world.metrics import is_provider_failure_message, is_quota_failure_message
+from agent_world.metrics import (
+    is_ambiguous_boundary_failure_message,
+    is_provider_failure_message,
+    is_quota_failure_message,
+)
 from agent_world.models import AgentDecision
 from agent_world.world import WorldEngine
 
@@ -50,6 +54,7 @@ class SimulationRunner:
             provider: threading.BoundedSemaphore(limit)
             for provider, limit in self.provider_max_workers.items()
         }
+        self._systemic_boundary_streak = 0
         self._logged_static_contexts: set[str] = {
             str(event.data.get("static_context_sha256"))
             for event in self.engine.state.events
@@ -82,9 +87,48 @@ class SimulationRunner:
         )
         if provider_messages:
             raise ModelProviderUnavailableError(provider_messages)
+        self._guard_systemic_boundary_failure(decisions)
         for agent_id, observation in observations.items():
             self._log_agent_input(agent_id, observation)
         return self.engine.tick(decisions)
+
+    def _guard_systemic_boundary_failure(
+        self, decisions: dict[str, AgentDecision]
+    ) -> None:
+        """Halt when every living agent fails identically at the boundary.
+
+        The quota and provider classifiers match known message text, so a
+        provider phrasing nobody has seen yet slips through and each agent's
+        failure becomes a fabricated wait action while the world advances. That
+        is how a Claude weekly-limit trial burned eighteen ticks against a
+        provider refusing every call.
+
+        Independent subprocesses do not produce byte-identical failure text by
+        coincidence, so an identical message across a whole population is
+        external by construction. One such tick is conclusive with a population;
+        with a single survivor left it could be a transient, so that case has to
+        persist before it counts.
+        """
+
+        failures = [
+            decision.intent
+            for decision in decisions.values()
+            if is_ambiguous_boundary_failure_message("agent_response", decision.intent)
+        ]
+        messages = set(failures)
+        every_agent_failed_alike = (
+            bool(decisions) and len(failures) == len(decisions) and len(messages) == 1
+        )
+        if not every_agent_failed_alike:
+            self._systemic_boundary_streak = 0
+            return
+        self._systemic_boundary_streak += 1
+        if len(decisions) >= 2 or self._systemic_boundary_streak >= 3:
+            raise ModelDecisionsUnusableError(
+                sorted(messages),
+                agents=len(decisions),
+                consecutive_ticks=self._systemic_boundary_streak,
+            )
 
     def _collect_decisions(
         self,
@@ -192,6 +236,21 @@ class ModelProviderUnavailableError(RuntimeError):
     def __init__(self, messages: list[str]):
         super().__init__(messages[0] if messages else "Model provider unavailable")
         self.messages = list(messages)
+
+
+class ModelDecisionsUnusableError(RuntimeError):
+    """Raised before world resolution when a whole population fails identically.
+
+    The catch-all for external faults no message classifier recognizes. Handled
+    exactly like a provider outage: discard the partial tick and pause to a
+    resumable checkpoint rather than advance the world on fabricated actions.
+    """
+
+    def __init__(self, messages: list[str], *, agents: int, consecutive_ticks: int):
+        super().__init__(messages[0] if messages else "Model decisions unusable")
+        self.messages = list(messages)
+        self.agents = agents
+        self.consecutive_ticks = consecutive_ticks
 
 
 def _truncate_to_declared_action_budget(

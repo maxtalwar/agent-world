@@ -21,6 +21,7 @@ import tempfile
 import time
 from typing import Any
 
+from agent_world.provider_limits import is_quota_detail
 from agent_world.brain_boundary import (
     DEFAULT_SESSION_MAX_TURNS,
     ConversationBoundary,
@@ -809,21 +810,10 @@ def _credits_delta(before: Any, after: Any) -> dict[str, Any] | None:
 
 
 def _is_quota_error(detail: str) -> bool:
-    lowered = detail.lower()
-    return any(
-        marker in lowered
-        for marker in (
-            "usage limit",
-            "session limit",
-            "rate limit",
-            "out of usage credits",
-            "insufficient_quota",
-            "quota unavailable",
-            "credits exhausted",
-            "credit balance is too low",
-            "limit reached",
-        )
-    )
+    # One shared classifier for every adapter. Per-adapter marker lists drifted
+    # apart and Claude's silently omitted "weekly limit", which turned a hard
+    # rate limit into fabricated wait actions for eighteen ticks.
+    return is_quota_detail(detail)
 
 
 def _is_provider_error(detail: str) -> bool:
