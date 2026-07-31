@@ -483,6 +483,7 @@ class ClaudeBrain:
             "reasoning_effort": self.reasoning_effort,
             "prompt_tokens": input_tokens + cache_read + cache_creation,
             "cached_tokens": cache_read,
+            "cache_write_tokens": cache_creation,
             "completion_tokens": completion_tokens,
             "reasoning_tokens": reasoning_tokens,
             "reasoning_tokens_source": reasoning_source,

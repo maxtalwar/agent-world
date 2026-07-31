@@ -23,7 +23,7 @@ from agent_world.metrics import (
     is_quota_failure_message,
 )
 from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
-from agent_world.usage import summarize_codex_simulation_credits
+from agent_world.usage import summarize_codex_simulation_credits, summarize_usd_cost
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
 SUBSISTENCE_ITEMS = frozenset({"food", "water"})
@@ -224,6 +224,7 @@ def build_report(
             ),
             "mean_request_payload_bytes": _mean_record_field(usage_records, "request_payload_bytes"),
         },
+        "estimated_cost": summarize_usd_cost(usage_records),
         "simulation_credits": summarize_codex_simulation_credits(usage_records),
         "plan_limits": plan_usage,
         "dynamic_input_components": _dynamic_input_components(events),
@@ -415,6 +416,7 @@ def _summarize_population(
                 "prompt_tokens": prompt_tokens,
                 "cached_tokens": sum(record.get("cached_tokens") or 0 for record in cohort_usage),
                 "completion_tokens": completion_tokens,
+                "estimated_cost": summarize_usd_cost(cohort_usage),
                 "simulation_credits": summarize_codex_simulation_credits(cohort_usage),
                 "resolved_models": dict(resolved_models),
             },
@@ -1224,6 +1226,21 @@ def _render_simulation_credit_lines(simulation_credits: Any) -> list[str]:
     ]
 
 
+def _render_estimated_cost_lines(estimated_cost: Any) -> list[str]:
+    if not isinstance(estimated_cost, dict):
+        return []
+    cost = estimated_cost.get("cost_usd") or {}
+    if not estimated_cost.get("available"):
+        unknown = ", ".join(estimated_cost.get("unknown_models") or [])
+        return [f"- Estimated LLM cost: unavailable — no USD rates for model(s): {unknown}"]
+    return [
+        f"- Estimated LLM cost: ${cost.get('total', 0)} at API list rates"
+        f" (input {cost.get('uncached_input', 0)} + cached {cost.get('cached_input', 0)}"
+        f" + cache write {cost.get('cache_write', 0)} + output {cost.get('output', 0)})"
+        " — token-derived estimate, not a provider charge"
+    ]
+
+
 def _render_efficiency_lines(efficiency: Any) -> list[str]:
     if not isinstance(efficiency, dict):
         return []
@@ -1272,6 +1289,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         if usage["calls"]
         else "- Brain: scripted (no LLM usage)",
         *(_render_efficiency_lines(usage.get("efficiency")) if usage["calls"] else []),
+        *(_render_estimated_cost_lines(usage.get("estimated_cost")) if usage["calls"] else []),
         *_render_simulation_credit_lines(usage.get("simulation_credits")),
         *_render_plan_usage_lines(usage.get("plan_limits")),
         *(["", "## Model cohorts", *cohort_lines] if len(cohort_lines) > 1 else []),
@@ -1629,6 +1647,7 @@ COMPARISON_ROWS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("invalid actions", ("actions", "invalid_total")),
     ("wealth gini", ("wealth_gini",)),
     ("LLM cost usd", ("usage", "total_cost_usd")),
+    ("LLM est cost usd", ("usage", "estimated_cost", "cost_usd", "total")),
 )
 
 

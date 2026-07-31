@@ -435,6 +435,7 @@ class CursorBrain:
                 "reasoning_effort": self.reasoning_effort,
                 "prompt_tokens": input_tokens + cache_read + cache_write,
                 "cached_tokens": cache_read,
+                "cache_write_tokens": cache_write,
                 "completion_tokens": int(usage.get("outputTokens") or usage.get("output_tokens") or 0),
                 "reasoning_tokens": 0,
                 "cost": 0,
