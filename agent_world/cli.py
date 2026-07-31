@@ -47,7 +47,7 @@ from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
 from agent_world.replay import format_event, read_events
 from agent_world.run_report import format_comparison, load_run_files, write_report
 from agent_world.session import SimulationSession
-from agent_world.windsurf_brain import WindsurfBrain
+from agent_world.devin_brain import DevinBrain
 from agent_world.usage import (
     append_usage_records,
     summarize_codex_simulation_credits,
@@ -104,14 +104,14 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--specialization-mode", choices=["generalists", "specialists"], default=None)
     run_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "windsurf"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin"],
         default=None,
     )
     run_parser.add_argument(
         "--model",
         default=None,
         help=(
-            "Model for --brain openrouter/codex/claude/cursor/windsurf. "
+            "Model for --brain openrouter/codex/claude/cursor/devin. "
             "Uses the selected brain's environment default."
         ),
     )
@@ -131,7 +131,7 @@ def main(argv: list[str] | None = None) -> None:
         choices=["minimal", "low", "medium", "high", "xhigh", "max"],
         default=None,
         help=(
-            "Reasoning effort for --brain openrouter/codex/claude/cursor/windsurf. "
+            "Reasoning effort for --brain openrouter/codex/claude/cursor/devin. "
             "Uses the selected brain's environment default."
         ),
     )
@@ -167,7 +167,7 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--codex-max-workers", type=int, default=None)
     run_parser.add_argument("--claude-max-workers", type=int, default=None)
     run_parser.add_argument("--cursor-max-workers", type=int, default=None)
-    run_parser.add_argument("--windsurf-max-workers", type=int, default=None)
+    run_parser.add_argument("--devin-max-workers", type=int, default=None)
     run_parser.add_argument(
         "--openrouter-max-workers",
         dest="openrouter_max_workers",
@@ -246,7 +246,7 @@ def main(argv: list[str] | None = None) -> None:
     ablate_parser.add_argument("--seed", type=int, default=11)
     ablate_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "windsurf"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin"],
         default="survival",
     )
     ablate_parser.add_argument("--model", default=None)
@@ -292,7 +292,7 @@ def main(argv: list[str] | None = None) -> None:
     experiment_parser.add_argument("--seeds", type=int, nargs="+", default=[11])
     experiment_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "windsurf"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin"],
         default="survival",
         help="Defaults to the free local scripted brain. LLM calls occur only when explicitly selected.",
     )
@@ -479,7 +479,7 @@ def _run(args: argparse.Namespace) -> None:
             "codex_max_workers",
             "claude_max_workers",
             "cursor_max_workers",
-            "windsurf_max_workers",
+            "devin_max_workers",
             "openrouter_max_workers",
             "decision_mode",
         ):
@@ -589,8 +589,8 @@ def _run(args: argparse.Namespace) -> None:
         "codex_cli": int(getattr(args, "codex_max_workers", None) or min(max_workers, 4)),
         "claude_cli": int(getattr(args, "claude_max_workers", None) or min(max_workers, 4)),
         "cursor_cli": int(getattr(args, "cursor_max_workers", None) or min(max_workers, 4)),
-        "windsurf_cli": int(
-            getattr(args, "windsurf_max_workers", None) or min(max_workers, 4)
+        "devin_cli": int(
+            getattr(args, "devin_max_workers", None) or min(max_workers, 4)
         ),
         "openrouter": int(
             getattr(args, "openrouter_max_workers", None) or min(max_workers, 2)
@@ -712,7 +712,7 @@ def _run(args: argparse.Namespace) -> None:
                 "codex_max_workers": provider_max_workers["codex_cli"],
                 "claude_max_workers": provider_max_workers["claude_cli"],
                 "cursor_max_workers": provider_max_workers["cursor_cli"],
-                "windsurf_max_workers": provider_max_workers["windsurf_cli"],
+                "devin_max_workers": provider_max_workers["devin_cli"],
                 "openrouter_max_workers": provider_max_workers["openrouter"],
                 "decision_mode": decision_mode,
                 "log_agent_io": not args.no_agent_io_log,
@@ -969,7 +969,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} uses one uniform model cohort; omit --population."
         )
-    if args.brain not in {"openrouter", "codex", "claude", "cursor", "windsurf"}:
+    if args.brain not in {"openrouter", "codex", "claude", "cursor", "devin"}:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} requires an explicit model-backed --brain."
         )
@@ -1001,7 +1001,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         "codex_max_workers": 4,
         "claude_max_workers": 4,
         "cursor_max_workers": 4,
-        "windsurf_max_workers": 4,
+        "devin_max_workers": 4,
         "openrouter_max_workers": 4,
         "startup_health_check_tick": 5,
         "startup_health_max_failure_rate": 0.2,
@@ -1136,8 +1136,8 @@ def _ablate(args: argparse.Namespace) -> None:
             return ClaudeBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         if args.brain == "cursor":
             return CursorBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
-        if args.brain == "windsurf":
-            return WindsurfBrain(
+        if args.brain == "devin":
+            return DevinBrain(
                 model=args.model,
                 reasoning_effort=args.reasoning_effort,
                 runtime=runtime,

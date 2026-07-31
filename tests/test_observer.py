@@ -136,7 +136,7 @@ class ObserverTests(unittest.TestCase):
         self.assertNotIn('value="openai/gpt-5.6-luna"', HTML)
         self.assertIn('<option value="codex">codex plan</option>', HTML)
         self.assertIn('<option value="cursor">cursor subscription</option>', HTML)
-        self.assertIn('<option value="windsurf">Windsurf / Devin subscription</option>', HTML)
+        self.assertIn('<option value="devin">Devin subscription</option>', HTML)
         self.assertIn('<option value="z-ai/glm-5.2" selected>', HTML)
         self.assertIn('if (model.startsWith("gpt-"))', HTML)
         self.assertIn('brain.value = "codex"', HTML)
@@ -348,15 +348,15 @@ class ObserverTests(unittest.TestCase):
         self.assertEqual(config.model, "cursor-grok-4.5")
         self.assertEqual(config.reasoning_effort, "high")
 
-    def test_run_config_accepts_windsurf_subscription_brain(self) -> None:
+    def test_run_config_accepts_devin_subscription_brain(self) -> None:
         config = _parse_run_config(
             {
-                "brain": "windsurf",
+                "brain": "devin",
                 "model": "swe-1-6-fast",
                 "reasoning_effort": "low",
             }
         )
-        self.assertEqual(config.brain, "windsurf")
+        self.assertEqual(config.brain, "devin")
         self.assertEqual(config.model, "swe-1-6-fast")
         self.assertEqual(config.reasoning_effort, "low")
 

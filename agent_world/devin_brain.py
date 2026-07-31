@@ -1,10 +1,9 @@
-"""Windsurf-subscription-backed AgentBrain implemented through Devin CLI ACP.
+"""Devin-subscription-backed AgentBrain implemented through Devin CLI ACP.
 
-Windsurf's supported local-agent surface is now the Devin CLI bundled with
-Devin Desktop (the successor to Windsurf Desktop).  The connector uses its
-documented Agent Client Protocol server instead of editor automation or private
-Cascade endpoints.  Decisions are tool-less, stateless by default, and use the
-user's saved subscription login rather than provider API keys.
+The connector uses Devin CLI's documented Agent Client Protocol server instead
+of editor automation or private endpoints. Decisions are tool-less, stateless
+by default, and use the user's saved subscription login rather than provider
+API keys.
 """
 
 from __future__ import annotations
@@ -44,7 +43,7 @@ from agent_world.models import AgentDecision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 
 
-WINDSURF_HARNESS_INSTRUCTIONS = (
+DEVIN_HARNESS_INSTRUCTIONS = (
     "This is a simulation decision, not a software-engineering task. "
     "Do not inspect files, run commands, browse, call tools, or delegate. "
     "Choose exactly one tick of behavior from the supplied rulebook and private observation. "
@@ -52,8 +51,8 @@ WINDSURF_HARNESS_INSTRUCTIONS = (
     "Return only one JSON object matching the supplied output schema, with no markdown."
 )
 
-WINDSURF_AGENT_CONFIG = {
-    "system_instructions": f"{WINDSURF_HARNESS_INSTRUCTIONS}\n\n{SYSTEM_INSTRUCTIONS}",
+DEVIN_AGENT_CONFIG = {
+    "system_instructions": f"{DEVIN_HARNESS_INSTRUCTIONS}\n\n{SYSTEM_INSTRUCTIONS}",
     "allowed_tools": [],
     "permissions": {"allow": [], "deny": [], "ask": []},
 }
@@ -112,7 +111,7 @@ class AcpTurnResult:
 
 
 class AcpProtocolError(RuntimeError):
-    """A JSON-RPC or subprocess failure at the Windsurf/Devin boundary."""
+    """A JSON-RPC or subprocess failure at the Devin boundary."""
 
     def __init__(self, message: str, *, transcript: list[dict[str, Any]] | None = None):
         super().__init__(message)
@@ -126,8 +125,8 @@ class AcpProtocolError(RuntimeError):
         )
 
 
-class WindsurfBrain:
-    """Agent brain that spends saved Windsurf/Devin subscription capacity."""
+class DevinBrain:
+    """Agent brain that spends saved Devin subscription capacity."""
 
     def __init__(
         self,
@@ -151,30 +150,29 @@ class WindsurfBrain:
         self.connector_profile = connector_profile
         self.conversation_mode = conversation_mode
         self.session_max_turns = session_max_turns
-        self.model = model or os.environ.get("WINDSURF_MODEL", "swe-1-6-fast")
+        self.model = model or os.environ.get("DEVIN_MODEL", "swe-1-6-fast")
         self.reasoning_effort = reasoning_effort or os.environ.get(
-            "WINDSURF_REASONING_EFFORT", "low"
+            "DEVIN_REASONING_EFFORT", "low"
         )
         self.timeout_seconds = timeout_seconds or int(
-            os.environ.get("WINDSURF_TIMEOUT_SECONDS", "300")
+            os.environ.get("DEVIN_TIMEOUT_SECONDS", "300")
         )
         self.timeout_retries = max(
-            0, int(os.environ.get("WINDSURF_TIMEOUT_RETRIES", "1"))
+            0, int(os.environ.get("DEVIN_TIMEOUT_RETRIES", "1"))
         )
         self.executable = (
             executable
-            or os.environ.get("WINDSURF_EXECUTABLE")
-            or _resolve_windsurf_executable()
+            or os.environ.get("DEVIN_EXECUTABLE")
+            or _resolve_devin_executable()
         )
         self.resolved_model = self.model
         if not self.executable:
             raise ValueError(
-                "WindsurfBrain requires Devin CLI, Windsurf's supported local-agent "
-                "runtime, but no 'devin' executable was found. Install Devin CLI or "
-                "set WINDSURF_EXECUTABLE."
+                "DevinBrain requires Devin CLI, but no 'devin' executable was "
+                "found. Install Devin CLI or set DEVIN_EXECUTABLE."
             )
         self._stable_work_dir = (
-            _windsurf_decision_working_directory(connector_profile)
+            _devin_decision_working_directory(connector_profile)
             if connector_profile in {"stateless-v2", "stateless-v3"}
             or conversation_mode != "stateless"
             else None
@@ -195,7 +193,7 @@ class WindsurfBrain:
             detail = f"{status.stdout}\n{status.stderr}".strip()
             if status.returncode != 0 or "not logged in" in detail.lower():
                 return (
-                    "Windsurf provider unavailable: Devin CLI is not logged in; "
+                    "Devin provider unavailable: Devin CLI is not logged in; "
                     "run `devin auth login`. Legacy Windsurf Enterprise users can "
                     "select the Windsurf login option."
                 )
@@ -209,26 +207,26 @@ class WindsurfBrain:
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
             return (
-                "Windsurf provider unavailable: authentication/model preflight "
+                "Devin provider unavailable: authentication/model preflight "
                 f"failed: {exc}"
             )
         if listed.returncode != 0:
             return (
-                "Windsurf provider unavailable: could not list subscription "
+                "Devin provider unavailable: could not list subscription "
                 f"models: {_failure_detail(listed.stdout, listed.stderr)}"
             )
         try:
             catalog = json.loads(listed.stdout)
         except json.JSONDecodeError as exc:
             return (
-                "Windsurf provider unavailable: model catalog was not valid JSON: "
+                "Devin provider unavailable: model catalog was not valid JSON: "
                 f"{exc}"
             )
-        available = parse_windsurf_model_catalog(catalog)
-        resolved = resolve_windsurf_model(self.model, available)
+        available = parse_devin_model_catalog(catalog)
+        resolved = resolve_devin_model(self.model, available)
         if resolved is None:
             return (
-                f"Windsurf provider unavailable: model {self.model!r} is not "
+                f"Devin provider unavailable: model {self.model!r} is not "
                 "available on this account; run `devin models list`."
             )
         self.resolved_model = resolved
@@ -237,13 +235,13 @@ class WindsurfBrain:
     def copy_preflight_state_from(self, other: Any) -> None:
         """Reuse account/model resolution from an equivalent checked brain."""
 
-        if not isinstance(other, WindsurfBrain):
-            raise TypeError("Windsurf preflight state must come from another WindsurfBrain")
+        if not isinstance(other, DevinBrain):
+            raise TypeError("Devin preflight state must come from another DevinBrain")
         if (self.model, self.reasoning_effort) != (
             other.model,
             other.reasoning_effort,
         ):
-            raise ValueError("Windsurf preflight state requires matching model and effort")
+            raise ValueError("Devin preflight state requires matching model and effort")
         self.resolved_model = other.resolved_model
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
@@ -257,12 +255,12 @@ class WindsurfBrain:
             separators=(",", ":"),
             sort_keys=True,
         )
-        full_prompt = build_windsurf_prompt(static_context, dynamic_json)
+        full_prompt = build_devin_prompt(static_context, dynamic_json)
         invocation = self.boundary.prepare()
         prompt = (
             full_prompt
             if invocation.full_context
-            else build_windsurf_continuation_prompt(dynamic_json)
+            else build_devin_continuation_prompt(dynamic_json)
         )
         started_at = time.monotonic()
         request_meta = {
@@ -314,7 +312,7 @@ class WindsurfBrain:
                 )
                 if self.conversation_mode != "stateless":
                     self.boundary.reset("forbidden_tool_call")
-                return _failure_decision(f"Windsurf boundary failed: {detail}")
+                return _failure_decision(f"Devin boundary failed: {detail}")
 
             if turn.stop_reason != "end_turn":
                 detail = f"ACP turn stopped with {turn.stop_reason!r}"
@@ -327,7 +325,7 @@ class WindsurfBrain:
                 )
                 if self.conversation_mode != "stateless":
                     self.boundary.reset("ambiguous_boundary_failure")
-                return _failure_decision(f"Windsurf boundary failed: {detail}")
+                return _failure_decision(f"Devin boundary failed: {detail}")
 
             raw_response = turn.response_text.strip()
             if not raw_response:
@@ -341,7 +339,7 @@ class WindsurfBrain:
                 )
                 if self.conversation_mode != "stateless":
                     self.boundary.reset("ambiguous_boundary_failure")
-                return _failure_decision(f"Windsurf boundary failed: {detail}")
+                return _failure_decision(f"Devin boundary failed: {detail}")
 
             payload: dict[str, Any] | str = raw_response
             try:
@@ -369,7 +367,7 @@ class WindsurfBrain:
                 if self.conversation_mode != "stateless":
                     self.boundary.reset("model_output_failure")
                 return _failure_decision(
-                    attributed_failure_message("Windsurf", attribution, adapter_detail)
+                    attributed_failure_message("Devin", attribution, adapter_detail)
                 )
 
             adapter_detail: str | None = None
@@ -394,7 +392,7 @@ class WindsurfBrain:
                 if self.conversation_mode != "stateless":
                     self.boundary.reset(f"{attribution.origin}_failure")
                 return _failure_decision(
-                    attributed_failure_message("Windsurf", attribution, adapter_detail)
+                    attributed_failure_message("Devin", attribution, adapter_detail)
                 )
 
             assert parsed_decision is not None
@@ -403,7 +401,7 @@ class WindsurfBrain:
             return parsed_decision
         except subprocess.TimeoutExpired:
             message = (
-                f"Windsurf provider unavailable: exceeded {self.timeout_seconds}s timeout"
+                f"Devin provider unavailable: exceeded {self.timeout_seconds}s timeout"
             )
             self._record_failed_boundary(
                 message,
@@ -423,16 +421,16 @@ class WindsurfBrain:
                 transcript=exc.transcript,
             )
             if _is_quota_error(detail):
-                message = f"Windsurf quota unavailable: {detail}"
+                message = f"Devin quota unavailable: {detail}"
                 self.runtime.mark_quota_unavailable(message)
                 return _failure_decision(message)
             if _is_auth_error(detail) or _is_provider_error(detail):
-                message = f"Windsurf provider unavailable: {detail}"
+                message = f"Devin provider unavailable: {detail}"
                 self.runtime.mark_quota_unavailable(message)
                 return _failure_decision(message)
             if self.conversation_mode != "stateless":
                 self.boundary.reset("ambiguous_boundary_failure")
-            return _failure_decision(f"Windsurf boundary failed: {detail}")
+            return _failure_decision(f"Devin boundary failed: {detail}")
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             self._record_failed_boundary(
                 f"{type(exc).__name__}: {exc}",
@@ -442,7 +440,7 @@ class WindsurfBrain:
             )
             if self.conversation_mode != "stateless":
                 self.boundary.reset("decision_failure")
-            return _failure_decision(f"Windsurf decision failed: {exc}")
+            return _failure_decision(f"Devin decision failed: {exc}")
 
     def _execute(
         self,
@@ -452,7 +450,7 @@ class WindsurfBrain:
         invocation = invocation or ConversationInvocation(None, True, 0, 1)
         if self._stable_work_dir is not None:
             return self._run_turn(prompt, invocation, self._stable_work_dir)
-        with tempfile.TemporaryDirectory(prefix="agent-world-windsurf-") as temp_dir:
+        with tempfile.TemporaryDirectory(prefix="agent-world-devin-") as temp_dir:
             return self._run_turn(prompt, invocation, temp_dir)
 
     def _run_turn(
@@ -462,7 +460,7 @@ class WindsurfBrain:
         workspace: str,
     ) -> AcpTurnResult:
         config_path = _write_agent_config(Path(workspace))
-        return run_windsurf_acp_turn(
+        return run_devin_acp_turn(
             command=self._command(config_path),
             cwd=workspace,
             prompt=prompt,
@@ -486,17 +484,17 @@ class WindsurfBrain:
 
     def export_checkpoint_state(self) -> dict[str, Any]:
         return self.boundary.export_state() | {
-            "provider": "windsurf_cli",
+            "provider": "devin_cli",
             "connector_runtime": "devin_cli_acp",
             "model": self.model,
             "resolved_model": self.resolved_model,
         }
 
     def restore_checkpoint_state(self, state: dict[str, Any]) -> None:
-        if state.get("provider") not in {None, "windsurf_cli"}:
-            raise ValueError("checkpoint brain state is not for Windsurf")
+        if state.get("provider") not in {None, "devin_cli"}:
+            raise ValueError("checkpoint brain state is not for Devin")
         if state.get("model") not in {None, self.model}:
-            raise ValueError("checkpoint Windsurf model does not match")
+            raise ValueError("checkpoint Devin model does not match")
         self.boundary.restore_checkpoint_metadata(state)
 
     def reset_conversation(self, reason: str) -> None:
@@ -514,12 +512,12 @@ class WindsurfBrain:
             {
                 "model": self.model,
                 "response_model": turn.response_model or self.resolved_model,
-                "provider": "windsurf_cli",
+                "provider": "devin_cli",
                 "connector_runtime": "devin_cli",
                 "api_style": "agent_client_protocol",
                 "acp_protocol_version": 1,
                 "base_url": None,
-                "billing_mode": "windsurf_or_devin_subscription",
+                "billing_mode": "devin_subscription",
                 "reasoning_effort": self.reasoning_effort,
                 "resolved_reasoning_effort": turn.resolved_reasoning_effort,
                 "prompt_tokens": _nonnegative_int(usage.get("input_tokens")),
@@ -534,12 +532,12 @@ class WindsurfBrain:
                 "committed_acu_cost": usage.get("committed_acu_cost"),
                 "cost": 0,
                 "time": time.time(),
-                "windsurf_session_id": turn.session_id,
-                "windsurf_request_id": usage.get("request_id"),
-                "windsurf_stop_reason": turn.stop_reason,
-                "windsurf_agent_name": turn.agent_info.get("name"),
-                "windsurf_agent_version": turn.agent_info.get("version"),
-                "windsurf_tool_call_count": len(turn.tool_calls),
+                "devin_session_id": turn.session_id,
+                "devin_request_id": usage.get("request_id"),
+                "devin_stop_reason": turn.stop_reason,
+                "devin_agent_name": turn.agent_info.get("name"),
+                "devin_agent_version": turn.agent_info.get("version"),
+                "devin_tool_call_count": len(turn.tool_calls),
                 "raw_response": raw_response,
                 "raw_response_sha256": hashlib.sha256(
                     raw_response.encode("utf-8")
@@ -578,7 +576,7 @@ class WindsurfBrain:
         )
 
 
-def build_windsurf_prompt(static_context: str, dynamic_json: str) -> str:
+def build_devin_prompt(static_context: str, dynamic_json: str) -> str:
     schema = json.dumps(AGENT_DECISION_SCHEMA, separators=(",", ":"), sort_keys=True)
     return (
         f"{static_context}\n\n"
@@ -587,7 +585,7 @@ def build_windsurf_prompt(static_context: str, dynamic_json: str) -> str:
     )
 
 
-def build_windsurf_continuation_prompt(dynamic_json: str) -> str:
+def build_devin_continuation_prompt(dynamic_json: str) -> str:
     return (
         "Continue the same simulated agent. Choose exactly one tick from this new "
         "private observation and return only the previously established decision JSON:\n"
@@ -595,7 +593,7 @@ def build_windsurf_continuation_prompt(dynamic_json: str) -> str:
     )
 
 
-def parse_windsurf_model_catalog(value: Any) -> set[str]:
+def parse_devin_model_catalog(value: Any) -> set[str]:
     """Extract model IDs and aliases from Devin CLI's account-scoped JSON."""
 
     models: set[str] = set()
@@ -621,7 +619,7 @@ def parse_windsurf_model_catalog(value: Any) -> set[str]:
     return models
 
 
-def resolve_windsurf_model(model: str, available: set[str]) -> str | None:
+def resolve_devin_model(model: str, available: set[str]) -> str | None:
     by_lower = {candidate.lower(): candidate for candidate in available}
     normalized = model.lower()
     if normalized in by_lower:
@@ -637,7 +635,7 @@ def resolve_windsurf_model(model: str, available: set[str]) -> str | None:
     return partial[0] if len(partial) == 1 else None
 
 
-def run_windsurf_acp_turn(
+def run_devin_acp_turn(
     *,
     command: list[str],
     cwd: str,
@@ -1069,9 +1067,9 @@ def _find_token_telemetry(value: Any) -> dict[str, Any]:
 
 
 def _write_agent_config(workspace: Path) -> Path:
-    content = json.dumps(WINDSURF_AGENT_CONFIG, separators=(",", ":"), sort_keys=True)
+    content = json.dumps(DEVIN_AGENT_CONFIG, separators=(",", ":"), sort_keys=True)
     digest = hashlib.sha256(content.encode("utf-8")).hexdigest()[:12]
-    path = workspace / f".agent-world-windsurf-{digest}.json"
+    path = workspace / f".agent-world-devin-{digest}.json"
     if not path.exists():
         try:
             path.write_text(content, encoding="utf-8")
@@ -1109,7 +1107,7 @@ def _clean_detail(detail: str) -> str:
 
 def _subscription_environment() -> dict[str, str]:
     child_env = os.environ.copy()
-    # Saved Devin/Windsurf login must be the only credential source.
+    # Saved Devin login must be the only credential source.
     for key in (
         "ANTHROPIC_API_KEY",
         "CLAUDE_CODE_OAUTH_TOKEN",
@@ -1184,7 +1182,7 @@ def _nonnegative_int(value: Any) -> int:
 
 
 @lru_cache(maxsize=None)
-def _windsurf_decision_working_directory(
+def _devin_decision_working_directory(
     connector_profile: str = "stateless-v2",
 ) -> str:
     if connector_profile == "stateless-v3":
@@ -1193,13 +1191,13 @@ def _windsurf_decision_working_directory(
             root = Path(configured).expanduser()
         else:
             root = Path(tempfile.gettempdir()) / "agent-world-provider-workspaces"
-        directory = root / "windsurf-stateless-v3"
+        directory = root / "devin-stateless-v3"
         directory.mkdir(parents=True, exist_ok=True)
         return str(directory)
-    return tempfile.mkdtemp(prefix="agent-world-windsurf-stable-")
+    return tempfile.mkdtemp(prefix="agent-world-devin-stable-")
 
 
-def _resolve_windsurf_executable() -> str:
+def _resolve_devin_executable() -> str:
     candidates = [
         shutil.which("devin"),
         str(Path.home() / ".local" / "bin" / "devin"),

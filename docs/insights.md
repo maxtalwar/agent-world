@@ -37,12 +37,12 @@ version 1, `agentInfo.name=affogato`, session create/load support, Ask-mode
 configuration, and the account model option. This is a harness distinction,
 not a model result: editor automation or a private Cascade endpoint would have
 made provenance and failure semantics unauditable. The implemented connector
-therefore records `provider=windsurf_cli` but also
-`connector_runtime=devin_cli`, and its deterministic tests cover the ACP
+therefore names the connector after its actual runtime and records
+`provider=devin_cli` with `connector_runtime=devin_cli`; its deterministic tests cover the ACP
 handshake, saved-login isolation, streamed usage, malformed output, timeout,
 quota/auth failures, and bounded-session continuation.
-Evidence: `agent_world/windsurf_brain.py`, `tests/test_windsurf_brain.py`,
-`README.md` (“Windsurf / Devin subscription agents”).
+Evidence: `agent_world/devin_brain.py`, `tests/test_devin_brain.py`,
+`README.md` (“Devin subscription agents”).
 
 ## 2026-07-30 — Sonnet 5 formed more capital than Sonnet 4.6 but chose a strictly worse portfolio
 

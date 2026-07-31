@@ -17,7 +17,7 @@ python3 -m agent_world.cli experiment --agents 5 --ticks 20 --seeds 11 --environ
 python3 -m agent_world.cli experiment --brain codex --model gpt-5.4-mini --environment organic --objective neutral --ticks 40 --agents 5 --seeds 29 --progress
 python3 -m agent_world.cli run --brain codex --model gpt-5.6-luna --reasoning-effort low --ticks 3 --agents 2 --progress
 python3 -m agent_world.cli run --brain claude --model claude-sonnet-5 --reasoning-effort low --ticks 3 --agents 2 --progress
-python3 -m agent_world.cli run --brain windsurf --model swe-1-6-fast --reasoning-effort low --ticks 3 --agents 2 --progress
+python3 -m agent_world.cli run --brain devin --model swe-1-6-fast --reasoning-effort low --ticks 3 --agents 2 --progress
 ```
 
 The default CLI run uses deterministic mock brains so the infrastructure can be tested without an LLM key.
@@ -51,7 +51,7 @@ directory.
 - `agent_world/codex_brain.py`: ChatGPT-plan-backed `AgentBrain` using isolated `codex exec` decisions.
 - `agent_world/claude_brain.py`: Claude-plan-backed `AgentBrain` using isolated headless `claude -p` decisions.
 - `agent_world/cursor_brain.py`: Cursor-subscription-backed `AgentBrain` using isolated `cursor-agent --print` decisions.
-- `agent_world/windsurf_brain.py`: Windsurf/Devin-subscription-backed `AgentBrain` using the official local ACP server.
+- `agent_world/devin_brain.py`: Devin-subscription-backed `AgentBrain` using the official local ACP server.
 - `agent_world/runner.py`: observe -> decide -> validate simulation orchestration.
 - `agent_world/observer.py`: local web observatory for live/replay visualization.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
@@ -66,7 +66,7 @@ directory.
 `OpenRouterBrain` uses OpenRouter's OpenAI-compatible Chat Completions API and
 defaults to **GLM-5.2**. OpenAI models do not use this connector by default:
 `gpt-*` model names infer `CodexBrain`, while `CursorBrain` remains an explicit
-subscription-backed alternative and `swe-*` names infer `WindsurfBrain`. Copy
+subscription-backed alternative and `swe-*` names infer `DevinBrain`. Copy
 `.env.example` to `.env` and fill in your OpenRouter key:
 
 ```bash
@@ -217,16 +217,15 @@ catalog can vary by account and over time. Cursor does not currently expose a
 headless subscription-limit endpoint, so the simulation records decision-token
 usage but cannot calculate a 5-hour or weekly percentage drawdown.
 
-### Windsurf / Devin subscription agents
+### Devin subscription agents
 
-`WindsurfBrain` uses Windsurf's supported headless successor path: the official
-Devin CLI Agent Client Protocol (ACP) server bundled with Devin Desktop. It
-does not scrape the Windsurf editor or call a private Cascade endpoint. Legacy
-Windsurf Enterprise users can choose their Windsurf account during
+`DevinBrain` uses the official Devin CLI Agent Client Protocol (ACP) server
+bundled with Devin Desktop. It does not scrape an editor or call a private
+endpoint. Legacy Windsurf Enterprise users can choose their Windsurf account during
 `devin auth login`; other users can use a Devin subscription. Because either
 account origin may back the saved session, provenance is recorded honestly as
-`provider=windsurf_cli`, `connector_runtime=devin_cli`, and
-`billing_mode=windsurf_or_devin_subscription`.
+`provider=devin_cli`, `connector_runtime=devin_cli`, and
+`billing_mode=devin_subscription`.
 
 Install Devin Desktop, sign in, and inspect the model catalog available to that
 specific account:
@@ -241,9 +240,9 @@ Then launch a small run:
 
 ```bash
 python3 -m agent_world.cli run \
-  --brain windsurf --model swe-1-6-fast --reasoning-effort low \
+  --brain devin --model swe-1-6-fast --reasoning-effort low \
   --ticks 10 --agents 3 --progress \
-  --out runs/windsurf-swe.jsonl --snapshot runs/windsurf-swe-snapshot.json
+  --out runs/devin-swe.jsonl --snapshot runs/devin-swe-snapshot.json
 ```
 
 The connector starts a tool-less ACP session in an empty isolated workspace,
@@ -291,7 +290,7 @@ Provider concurrency is independently bounded even when the global worker pool
 is larger:
 
 ```bash
---max-workers 8 --claude-max-workers 4 --codex-max-workers 4 --windsurf-max-workers 2
+--max-workers 8 --claude-max-workers 4 --codex-max-workers 4 --devin-max-workers 2
 ```
 
 For a mixed native/Cursor run, for example:
@@ -310,7 +309,7 @@ Never mix these conditions in one comparison.
 
 Use `COUNT@BRAIN:MODEL` when inference is ambiguous or for a newly released
 model, for example `10@claude:claude-fable-model-id` or
-`10@cursor:cursor-grok-4.5:high` or `10@windsurf:adaptive:high`. An optional effort suffix
+`10@cursor:cursor-grok-4.5:high` or `10@devin:adaptive:high`. An optional effort suffix
 is accepted as `COUNT@BRAIN:MODEL:EFFORT`. Cohorts are assigned in command-line
 order (`agent-1` onward), saved with the checkpoint, and restored unchanged on
 resume. Do not repeat the population flags when resuming:
