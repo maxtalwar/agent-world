@@ -16,6 +16,10 @@
     "devin_model_family": "gpt-5.6-luna",
     "devin_launch_commit": "70923661a835d10b3dbc3dfd95891513ed2041c0",
     "devin_benchmark_code_fingerprint": "b65fc3ccfb8d46ef1b3749ece34f0d12887345f63064735300ac955459fb55c7",
+    "cursor_model_requested": "gpt-5.6-luna-medium",
+    "cursor_model_family": "gpt-5.6-luna",
+    "cursor_launch_commit": "fb0ab11c568336d23f9de4df5ca24f6ff4669511",
+    "cursor_catalog_verified": true,
     "interpretation": "Reuse the completed Codex Luna cells; do not rerun Codex. Compare paired seed outcomes and provider/error/latency evidence. The model, world, protocol, and CLI settings are matched, but the connector runtime and launch commit necessarily differ because Devin support was added later."
   },
   "benchmark_protocol": "participant-v6",
@@ -71,6 +75,17 @@
       "stop_reason": "insufficient_quota",
       "out": "runs/experiments/devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250/devin-luna-v6-seed41/run.jsonl",
       "snapshot": "runs/experiments/devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250/devin-luna-v6-seed41/run-snapshot.json"
+    },
+    "cursor-luna-seed-11": {
+      "seed": 11,
+      "model": "gpt-5.6-luna-medium",
+      "status": "planned",
+      "provider": "cursor_cli",
+      "cohort": "cursor-luna-v6-seed11",
+      "screen": "aw-compare-cursor-luna-v6-s11",
+      "target_tick": 50,
+      "out": "runs/experiments/devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250/cursor-luna-v6-seed11/run.jsonl",
+      "snapshot": "runs/experiments/devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250/cursor-luna-v6-seed11/run-snapshot.json"
     }
   },
   "analysis_policy": {
