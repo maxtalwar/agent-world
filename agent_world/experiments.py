@@ -2,7 +2,8 @@
 
 The experiment runner deliberately defaults to the local ``SurvivalBrain``. An
 LLM is only contacted when the caller explicitly selects ``brain="openrouter"``,
-``brain="codex"``, ``brain="claude"``, or ``brain="cursor"``.
+``brain="codex"``, ``brain="claude"``, ``brain="cursor"``, or
+``brain="windsurf"``.
 Every cell gets its own directory, usage log, provenance manifest, report, and
 raw outputs so interrupted or mixed-provider batches remain auditable.
 """
@@ -35,6 +36,7 @@ from agent_world.openrouter_brain import OpenRouterBrain, SYSTEM_INSTRUCTIONS
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.session import SimulationSession
 from agent_world.usage import summarize_codex_simulation_credits
+from agent_world.windsurf_brain import WindsurfBrain, build_windsurf_prompt
 from agent_world.world import WorldEngine
 
 
@@ -159,9 +161,16 @@ def run_factorial_experiment(
         raise ValueError("ticks must be at least 1.")
     if agents < 1:
         raise ValueError("agents must be at least 1.")
-    if brain not in {"survival", "openrouter", "codex", "claude", "cursor"}:
+    if brain not in {
+        "survival",
+        "openrouter",
+        "codex",
+        "claude",
+        "cursor",
+        "windsurf",
+    }:
         raise ValueError(
-            "brain must be 'survival', 'openrouter', 'codex', 'claude', or 'cursor'."
+            "brain must be 'survival', 'openrouter', 'codex', 'claude', 'cursor', or 'windsurf'."
         )
     if max_workers is not None and max_workers < 1:
         raise ValueError("max_workers must be at least 1.")
@@ -361,7 +370,7 @@ def _run_single(
             "snapshot": str(snapshot_path),
             "usage": (
                 str(usage_path)
-                if brain in {"openrouter", "codex", "claude", "cursor"}
+                if brain in {"openrouter", "codex", "claude", "cursor", "windsurf"}
                 else None
             ),
             "plan_usage": str(plan_usage_path) if brain == "codex" else None,
@@ -396,7 +405,10 @@ def _run_single(
         )
         brains = create_brains(engine, brain_spec, runtime)
         first_brain = next(iter(brains.values()), None)
-        if isinstance(first_brain, (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain)):
+        if isinstance(
+            first_brain,
+            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, WindsurfBrain),
+        ):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
             )
@@ -450,7 +462,10 @@ def _run_single(
             plan_usage_path=plan_usage_path if brain_spec.type == "codex" else None,
         )
         session.start()
-        if isinstance(first_brain, (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain)):
+        if isinstance(
+            first_brain,
+            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, WindsurfBrain),
+        ):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
             )
@@ -660,6 +675,10 @@ def _initial_prompt_hashes(engine: WorldEngine, brain: str) -> dict[str, str]:
         hashes["initial_cursor_prompt_sha256"] = _sha256_text(
             build_cursor_prompt(static_context, dynamic_json)
         )
+    if brain == "windsurf":
+        hashes["initial_windsurf_prompt_sha256"] = _sha256_text(
+            build_windsurf_prompt(static_context, dynamic_json)
+        )
     return hashes
 
 
@@ -678,6 +697,9 @@ def _source_hashes() -> dict[str, str]:
         "codex_brain_source_sha256": _sha256_file(module_dir / "codex_brain.py"),
         "claude_brain_source_sha256": _sha256_file(module_dir / "claude_brain.py"),
         "cursor_brain_source_sha256": _sha256_file(module_dir / "cursor_brain.py"),
+        "windsurf_brain_source_sha256": _sha256_file(
+            module_dir / "windsurf_brain.py"
+        ),
         "runner_source_sha256": _sha256_file(module_dir / "runner.py"),
     }
 
@@ -750,6 +772,20 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
             "billing_mode": "cursor_subscription",
             "timeout_seconds": int(os.environ.get("CURSOR_TIMEOUT_SECONDS", "300")),
         }
+    if brain == "windsurf":
+        return {
+            "provider": "windsurf_cli",
+            "model": model or os.environ.get("WINDSURF_MODEL", "swe-1-6-fast"),
+            "reasoning_effort": reasoning_effort
+            or os.environ.get("WINDSURF_REASONING_EFFORT", "low"),
+            "api_style": "agent_client_protocol",
+            "base_url": None,
+            "billing_mode": "windsurf_or_devin_subscription",
+            "connector_runtime": "devin_cli",
+            "timeout_seconds": int(
+                os.environ.get("WINDSURF_TIMEOUT_SECONDS", "300")
+            ),
+        }
     base_url = os.environ.get(
         "OPENROUTER_BASE_URL",
         "https://openrouter.ai/api/v1",
@@ -775,7 +811,7 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
 
 
 def _brain_runtime_settings(
-    brain: OpenRouterBrain | CodexBrain | ClaudeBrain | CursorBrain,
+    brain: OpenRouterBrain | CodexBrain | ClaudeBrain | CursorBrain | WindsurfBrain,
     max_workers: int,
 ) -> dict[str, Any]:
     if isinstance(brain, CodexBrain):
@@ -820,6 +856,24 @@ def _brain_runtime_settings(
             "api_style": "cursor_agent_print",
             "base_url": None,
             "billing_mode": "cursor_subscription",
+            "executable": brain.executable,
+            "timeout_seconds": brain.timeout_seconds,
+            "max_workers": max_workers,
+            "connector_profile": brain.connector_profile,
+            "conversation_mode": brain.conversation_mode,
+            "session_max_turns": brain.session_max_turns,
+        }
+    if isinstance(brain, WindsurfBrain):
+        return {
+            "type": "windsurf",
+            "provider": "windsurf_cli",
+            "connector_runtime": "devin_cli",
+            "model": brain.model,
+            "resolved_model": brain.resolved_model,
+            "reasoning_effort": brain.reasoning_effort,
+            "api_style": "agent_client_protocol",
+            "base_url": None,
+            "billing_mode": "windsurf_or_devin_subscription",
             "executable": brain.executable,
             "timeout_seconds": brain.timeout_seconds,
             "max_workers": max_workers,

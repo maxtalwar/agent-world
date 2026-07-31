@@ -24,6 +24,26 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-30 — The apparent Windsurf CLI was an editor launcher, not an agent boundary
+
+**A direct “Windsurf connector” would have silently targeted the wrong
+interface: the installed `windsurf` command exposed only editor-launch flags,
+while its supported headless successor was the Devin CLI's versioned ACP
+server.** During connector discovery, `windsurf --help` contained no
+noninteractive Cascade or prompt command and the desktop updater migrated the
+installed application to Devin Desktop. The bundled `devin` executable exposed
+both single-turn automation and `devin acp`; a live protocol probe returned ACP
+version 1, `agentInfo.name=affogato`, session create/load support, Ask-mode
+configuration, and the account model option. This is a harness distinction,
+not a model result: editor automation or a private Cascade endpoint would have
+made provenance and failure semantics unauditable. The implemented connector
+therefore records `provider=windsurf_cli` but also
+`connector_runtime=devin_cli`, and its deterministic tests cover the ACP
+handshake, saved-login isolation, streamed usage, malformed output, timeout,
+quota/auth failures, and bounded-session continuation.
+Evidence: `agent_world/windsurf_brain.py`, `tests/test_windsurf_brain.py`,
+`README.md` (“Windsurf / Devin subscription agents”).
+
 ## 2026-07-30 — Sonnet 5 formed more capital than Sonnet 4.6 but chose a strictly worse portfolio
 
 **Sonnet 5 completed 20 structures across two clean Participant v6 worlds—six

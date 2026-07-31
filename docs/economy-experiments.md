@@ -48,7 +48,7 @@ New agent-facing actions include:
 
 The experiment runner defaults to the local scripted brain. Provider calls
 happen only with an explicit model-backed brain such as `--brain openrouter`
-or `--brain codex`.
+or `--brain codex`, `--brain cursor`, or `--brain windsurf`.
 
 Run the full 2x2 design on several seeds:
 

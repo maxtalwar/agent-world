@@ -107,3 +107,19 @@ either ephemeral or resumes that agent's bounded private session. API-key enviro
 the child process so saved ChatGPT authentication supplies the Codex-plan usage.
 The simulation remains responsible for memory; the Codex process receives the
 same compact static rulebook and current dynamic observation used by API brains.
+
+## Windsurf / Devin ACP Adapter
+
+`agent_world/windsurf_brain.py` invokes the official Devin CLI ACP server used
+by Windsurf's supported headless successor path. It authenticates only through
+the CLI's saved subscription login, negotiates ACP protocol version 1, creates
+or resumes one private agent session, switches the session to Ask mode when
+available, and submits the same rulebook, schema, and private observation as
+the other connectors. The client exposes no tools, rejects permission requests,
+and supplies an explicit empty tool policy in the agent configuration.
+
+The connector records the requested and account-resolved model separately,
+along with reasoning configuration, latency, session and request IDs, streamed
+token/context metadata, raw decisions, and failure evidence. API/provider key
+variables are removed from the child environment so an unrelated metered key
+cannot silently replace the saved Windsurf/Devin account.

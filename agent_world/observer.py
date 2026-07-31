@@ -256,9 +256,16 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
     brain = str(payload.get("brain", TUNED_OBSERVATORY_DEFAULTS["brain"])).strip().lower()
     if brain == "llm":
         brain = "openrouter"
-    if brain not in {"survival", "openrouter", "codex", "claude", "cursor"}:
+    if brain not in {
+        "survival",
+        "openrouter",
+        "codex",
+        "claude",
+        "cursor",
+        "windsurf",
+    }:
         raise ValueError(
-            "brain must be survival, openrouter, codex, claude, or cursor."
+            "brain must be survival, openrouter, codex, claude, cursor, or windsurf."
         )
     if brain == "codex":
         model = str(payload.get("model") or os.environ.get("CODEX_MODEL") or "gpt-5.6-luna").strip()
@@ -269,6 +276,13 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
     elif brain == "cursor":
         model = str(payload.get("model") or os.environ.get("CURSOR_MODEL") or "cursor-grok-4.5").strip()
         default_effort = os.environ.get("CURSOR_REASONING_EFFORT", "low")
+    elif brain == "windsurf":
+        model = str(
+            payload.get("model")
+            or os.environ.get("WINDSURF_MODEL")
+            or "swe-1-6-fast"
+        ).strip()
+        default_effort = os.environ.get("WINDSURF_REASONING_EFFORT", "low")
     else:
         model = str(
             payload.get("model")
@@ -336,12 +350,12 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         brain=brain,
         model=(
             model
-            if brain in {"openrouter", "codex", "claude", "cursor"}
+            if brain in {"openrouter", "codex", "claude", "cursor", "windsurf"}
             else None
         ),
         reasoning_effort=(
             reasoning_effort
-            if brain in {"openrouter", "codex", "claude", "cursor"}
+            if brain in {"openrouter", "codex", "claude", "cursor", "windsurf"}
             else None
         ),
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),

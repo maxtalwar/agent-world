@@ -174,6 +174,26 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(spec.billing_mode, "cursor_subscription")
         self.assertTrue(spec.model_backed)
 
+    def test_population_parser_and_spec_preserve_windsurf_provenance(self) -> None:
+        population = PopulationSpec.parse_many(
+            ["2@swe-1-6-fast", "1@windsurf:adaptive:high"]
+        )
+
+        self.assertEqual(population.total_agents, 3)
+        self.assertEqual(
+            [group.brain.type for group in population.groups],
+            ["windsurf", "windsurf"],
+        )
+        self.assertEqual(population.groups[0].brain.model, "swe-1-6-fast")
+        self.assertEqual(population.groups[1].brain.model, "adaptive")
+        self.assertEqual(population.groups[1].brain.reasoning_effort, "high")
+        self.assertEqual(population.groups[0].brain.provider, "windsurf_cli")
+        self.assertEqual(
+            population.groups[0].brain.billing_mode,
+            "windsurf_or_devin_subscription",
+        )
+        self.assertTrue(population.groups[0].brain.model_backed)
+
     def test_stratified_assignments_balance_each_specialty_and_survive_round_trip(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(
@@ -256,6 +276,26 @@ class BrainRuntimeTests(unittest.TestCase):
 
         self.assertEqual(brains["agent-1"].runtime.scope, "cursor_cli")
         self.assertEqual(brains["agent-2"].runtime.scope, "codex_cli")
+
+    def test_windsurf_factory_scope_is_isolated_from_openrouter(self) -> None:
+        class FakeBrain:
+            def __init__(self, model=None, reasoning_effort=None, runtime=None):
+                self.model = model
+                self.reasoning_effort = reasoning_effort
+                self.runtime = runtime
+
+        engine = WorldEngine.create(WorldConfig(seed=3), agent_names=["A1", "A2"])
+        population = PopulationSpec.parse_many(
+            ["1@windsurf:swe-1-6-fast:low", "1@openrouter:z-ai/glm-5.2:medium"]
+        )
+        runtime = BrainRuntime()
+        with patch("agent_world.brain_factory.WindsurfBrain", FakeBrain), patch(
+            "agent_world.brain_factory.OpenRouterBrain", FakeBrain
+        ):
+            brains = create_population_brains(engine, population, runtime)
+
+        self.assertEqual(brains["agent-1"].runtime.scope, "windsurf_cli")
+        self.assertEqual(brains["agent-2"].runtime.scope, "openrouter")
 
 
 if __name__ == "__main__":

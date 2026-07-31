@@ -131,11 +131,12 @@ class ObserverTests(unittest.TestCase):
     def test_model_selector_is_dropdown_with_recommended_models(self) -> None:
         self.assertIn('<select id="run-model" class="lock">', HTML)
         self.assertNotIn('<input id="run-model" type="text"', HTML)
-        for model in ["z-ai/glm-5.2", "gpt-5.4-mini", "gpt-5.6-luna", "gpt-5.6-terra", "cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro", "z-ai/glm-5.1", "z-ai/glm-4.7", "z-ai/glm-4.5-air"]:
+        for model in ["z-ai/glm-5.2", "gpt-5.4-mini", "gpt-5.6-luna", "gpt-5.6-terra", "cursor-grok-4.5", "composer-2.5", "gemini-3.1-pro", "swe-1-6-fast", "z-ai/glm-5.1", "z-ai/glm-4.7", "z-ai/glm-4.5-air"]:
             self.assertIn(f'value="{model}"', HTML)
         self.assertNotIn('value="openai/gpt-5.6-luna"', HTML)
         self.assertIn('<option value="codex">codex plan</option>', HTML)
         self.assertIn('<option value="cursor">cursor subscription</option>', HTML)
+        self.assertIn('<option value="windsurf">Windsurf / Devin subscription</option>', HTML)
         self.assertIn('<option value="z-ai/glm-5.2" selected>', HTML)
         self.assertIn('if (model.startsWith("gpt-"))', HTML)
         self.assertIn('brain.value = "codex"', HTML)
@@ -346,6 +347,18 @@ class ObserverTests(unittest.TestCase):
         self.assertEqual(config.brain, "cursor")
         self.assertEqual(config.model, "cursor-grok-4.5")
         self.assertEqual(config.reasoning_effort, "high")
+
+    def test_run_config_accepts_windsurf_subscription_brain(self) -> None:
+        config = _parse_run_config(
+            {
+                "brain": "windsurf",
+                "model": "swe-1-6-fast",
+                "reasoning_effort": "low",
+            }
+        )
+        self.assertEqual(config.brain, "windsurf")
+        self.assertEqual(config.model, "swe-1-6-fast")
+        self.assertEqual(config.reasoning_effort, "low")
 
     def test_run_config_rejects_starting_reserve_above_max(self) -> None:
         with self.assertRaises(ValueError):

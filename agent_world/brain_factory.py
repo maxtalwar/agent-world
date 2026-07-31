@@ -19,18 +19,20 @@ from agent_world.claude_brain import ClaudeBrain
 from agent_world.codex_brain import CodexBrain
 from agent_world.cursor_brain import CursorBrain
 from agent_world.openrouter_brain import OpenRouterBrain
+from agent_world.windsurf_brain import WindsurfBrain
 from agent_world.world import WorldEngine
 
 
 ALLOWED_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max"})
 SUPPORTED_BRAIN_TYPES = frozenset(
-    {"survival", "openrouter", "codex", "claude", "cursor"}
+    {"survival", "openrouter", "codex", "claude", "cursor", "windsurf"}
 )
 BRAIN_TYPE_PROVIDERS: dict[str, str] = {
     "openrouter": "openrouter",
     "codex": "codex_cli",
     "claude": "claude_cli",
     "cursor": "cursor_cli",
+    "windsurf": "windsurf_cli",
 }
 
 
@@ -60,7 +62,7 @@ class BrainSpec:
         brain_type = "openrouter" if brain_type == "llm" else brain_type
         if brain_type not in SUPPORTED_BRAIN_TYPES:
             raise ValueError(
-                "brain type must be survival, openrouter, codex, claude, or cursor"
+                "brain type must be survival, openrouter, codex, claude, cursor, or windsurf"
             )
         if max_workers is not None and max_workers < 1:
             raise ValueError("max_workers must be at least 1")
@@ -78,9 +80,10 @@ class BrainSpec:
             "codex",
             "claude",
             "cursor",
+            "windsurf",
         }:
             raise ValueError(
-                "bounded-session-v1 is supported only by codex, claude, and cursor brains"
+                "bounded-session-v1 is supported only by codex, claude, cursor, and windsurf brains"
             )
         defaults = {
             "openrouter": (
@@ -92,6 +95,12 @@ class BrainSpec:
             "codex": ("CODEX_MODEL", "gpt-5.6-luna", "CODEX_REASONING_EFFORT", "low"),
             "claude": ("CLAUDE_MODEL", "claude-sonnet-5", "CLAUDE_REASONING_EFFORT", "low"),
             "cursor": ("CURSOR_MODEL", "cursor-grok-4.5", "CURSOR_REASONING_EFFORT", "low"),
+            "windsurf": (
+                "WINDSURF_MODEL",
+                "swe-1-6-fast",
+                "WINDSURF_REASONING_EFFORT",
+                "low",
+            ),
         }
         if brain_type == "survival":
             return cls(
@@ -107,6 +116,7 @@ class BrainSpec:
             "codex": "CODEX_MAX_PARALLEL_AGENTS",
             "claude": "CLAUDE_MAX_PARALLEL_AGENTS",
             "cursor": "CURSOR_MAX_PARALLEL_AGENTS",
+            "windsurf": "WINDSURF_MAX_PARALLEL_AGENTS",
         }[brain_type]
         workers = max_workers if max_workers is not None else int(os.environ.get(worker_env, "1"))
         resolved_effort = reasoning_effort or os.environ.get(effort_env, effort_default)
@@ -124,7 +134,7 @@ class BrainSpec:
 
     @property
     def model_backed(self) -> bool:
-        return self.type in {"openrouter", "codex", "claude", "cursor"}
+        return self.type in {"openrouter", "codex", "claude", "cursor", "windsurf"}
 
     @property
     def provider(self) -> str | None:
@@ -137,6 +147,7 @@ class BrainSpec:
             "codex": "chatgpt_plan",
             "claude": "claude_plan",
             "cursor": "cursor_subscription",
+            "windsurf": "windsurf_or_devin_subscription",
         }.get(self.type)
 
     def to_dict(self) -> dict[str, Any]:
@@ -427,6 +438,8 @@ def _parse_population_group(
 
 def _infer_brain_type(model: str) -> str:
     normalized = model.lower()
+    if normalized.startswith("swe-") or normalized.startswith("windsurf-"):
+        return "windsurf"
     if normalized.startswith("cursor-") or normalized.startswith("composer-"):
         return "cursor"
     if normalized.startswith("claude-"):
@@ -462,6 +475,7 @@ def create_population_brains(
         "codex": CodexBrain,
         "claude": ClaudeBrain,
         "cursor": CursorBrain,
+        "windsurf": WindsurfBrain,
     }
     brains: dict[str, AgentBrain] = {}
     scoped_runtimes: dict[str, Any] = {}
@@ -478,7 +492,7 @@ def create_population_brains(
             "reasoning_effort": spec.reasoning_effort,
             "runtime": scoped_runtime,
         }
-        if spec.type in {"codex", "claude", "cursor"}:
+        if spec.type in {"codex", "claude", "cursor", "windsurf"}:
             boundary_kwargs = {
                 "agent_id": agent_id,
                 "connector_profile": spec.connector_profile,

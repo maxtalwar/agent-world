@@ -223,6 +223,13 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
             "Cursor model output contract failed:",
             "Cursor quota unavailable:",
             "Cursor provider unavailable:",
+            "Windsurf decision failed:",
+            "Windsurf harness failed:",
+            "Windsurf boundary failed:",
+            "Windsurf model output failed:",
+            "Windsurf model output contract failed:",
+            "Windsurf quota unavailable:",
+            "Windsurf provider unavailable:",
             "Invalid JSON response:",
             "Agent brain failed:",
         )
@@ -240,6 +247,7 @@ def is_quota_failure_message(event_type: str | None, message: str | None) -> boo
                 "Codex quota unavailable:",
                 "Claude quota unavailable:",
                 "Cursor quota unavailable:",
+                "Windsurf quota unavailable:",
             )
         )
         or "insufficient_quota" in message
@@ -255,6 +263,7 @@ def is_provider_failure_message(event_type: str | None, message: str | None) -> 
             "Claude provider unavailable:",
             "Codex provider unavailable:",
             "Cursor provider unavailable:",
+            "Windsurf provider unavailable:",
             "OpenAI provider unavailable:",
         )
     )
@@ -280,6 +289,8 @@ def is_model_output_failure_message(
             "Claude model output contract failed:",
             "Cursor model output failed:",
             "Cursor model output contract failed:",
+            "Windsurf model output failed:",
+            "Windsurf model output contract failed:",
             "Codex decision failed: Codex action arguments_json is invalid:",
             "Codex decision failed: Codex action arguments_json must decode to an object",
             "Codex decision failed: Codex decision was not a JSON object",
@@ -320,6 +331,7 @@ def is_confirmed_model_contract_failure_message(
             "Codex model output contract failed:",
             "Claude model output contract failed:",
             "Cursor model output contract failed:",
+            "Windsurf model output contract failed:",
         )
     )
 
@@ -340,6 +352,7 @@ def is_ambiguous_boundary_failure_message(
             "Codex boundary failed:",
             "Claude boundary failed:",
             "Cursor boundary failed:",
+            "Windsurf boundary failed:",
         )
     )
 
@@ -358,10 +371,12 @@ def is_harness_failure_message(
             "Codex harness failed:",
             "Claude harness failed:",
             "Cursor harness failed:",
+            "Windsurf harness failed:",
             "OpenAI decision failed:",
             "Codex decision failed:",
             "Claude decision failed:",
             "Cursor decision failed:",
+            "Windsurf decision failed:",
             "Agent brain failed:",
         )
     ) and not is_model_output_failure_message(event_type, message)
