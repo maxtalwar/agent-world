@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "study_id": "devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250",
+  "status": "planned",
+  "created_at_utc": "2026-07-31T05:02:50Z",
+  "study_type": "connector_side_by_side",
+  "comparison": {
+    "codex_comparator_study": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735",
+    "codex_cells": [
+      "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11",
+      "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41"
+    ],
+    "codex_benchmark_commit": "0af16493855cc711497c99ecc54f43a10f7a40c2",
+    "codex_model": "gpt-5.6-luna",
+    "devin_model_requested": "gpt-5-6-luna-medium",
+    "devin_model_family": "gpt-5.6-luna",
+    "devin_launch_commit": "70923661a835d10b3dbc3dfd95891513ed2041c0",
+    "interpretation": "Reuse the completed Codex Luna cells; do not rerun Codex. Compare paired seed outcomes and provider/error/latency evidence. The model, world, protocol, and CLI settings are matched, but the connector runtime and launch commit necessarily differ because Devin support was added later."
+  },
+  "benchmark_protocol": "participant-v6",
+  "locked_conditions": {
+    "agents": 10,
+    "ticks": 50,
+    "seeds": [11, 41],
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "turn_resolution": "simultaneous",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true
+  },
+  "provider_compatibility": {
+    "provider": "devin_cli",
+    "connector_runtime": "devin_cli_acp",
+    "billing_mode": "devin_subscription",
+    "model_identifier": "gpt-5-6-luna-medium",
+    "catalog_verified": true,
+    "auth_preflight": "authenticated"
+  },
+  "cells": {
+    "devin-luna-seed-11": {
+      "seed": 11,
+      "model": "gpt-5-6-luna-medium",
+      "status": "planned",
+      "cohort": "devin-luna-v6-seed11",
+      "screen": "aw-compare-devin-luna-v6-s11",
+      "target_tick": 50,
+      "out": "runs/experiments/devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250/devin-luna-v6-seed11/run.jsonl",
+      "snapshot": "runs/experiments/devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250/devin-luna-v6-seed11/run-snapshot.json"
+    },
+    "devin-luna-seed-41": {
+      "seed": 41,
+      "model": "gpt-5-6-luna-medium",
+      "status": "planned",
+      "cohort": "devin-luna-v6-seed41",
+      "screen": "aw-compare-devin-luna-v6-s41",
+      "target_tick": 50,
+      "out": "runs/experiments/devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250/devin-luna-v6-seed41/run.jsonl",
+      "snapshot": "runs/experiments/devin-gpt-5-6-luna-participant-v6-side-by-side-seeds11-41-20260731-050250/devin-luna-v6-seed41/run-snapshot.json"
+    }
+  },
+  "analysis_policy": {
+    "primary_comparisons": [
+      "resolved model and effort",
+      "decision success and failure classification",
+      "invalid proposals normalized by submitted actions",
+      "contention separately from planning errors",
+      "survival and damage",
+      "resource use, construction, exchange, gifts, and communication",
+      "latency and available usage metadata"
+    ],
+    "equivalence_claim": "Do not call connectors equivalent from completion alone. Treat the result as evidence about this paired two-seed comparison and disclose the connector/runtime and launch-commit difference."
+  }
+}
