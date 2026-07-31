@@ -24,6 +24,30 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-30 — Devin's Luna family name silently overrode the requested reasoning effort
+
+**A Devin run declared as `model=gpt-5.6-luna` and
+`reasoning_effort=low` completed successfully with
+`response_model=gpt-5-6-luna-medium`, so the friendly family name does not
+preserve the experiment's requested effort.** The clean one-agent, one-tick
+smoke completed in 10.184 seconds with one valid decision, zero decision
+failures, 100% usage-record coverage, and a four-action response that gathered
+fiber, built a farm plot, gathered food, and waited. Its usage ledger nevertheless
+reported `resolved_reasoning_effort=null` and the medium model variant. A
+separate no-prompt ACP session using the explicit
+`gpt-5-6-luna-low` model ID reported that exact low variant, confirming the
+issue is family-alias resolution at the connector boundary rather than the
+account lacking Luna Low. Until the connector maps family plus effort onto an
+exact account variant, benchmark launches should use explicit Devin model IDs
+or treat declared effort as unverified. Devin ACP also exposed context
+occupancy (13,466 of 1,000,000 tokens) but no per-turn input, output, reasoning,
+or cost counters, so usage coverage is complete at the call-record level while
+token accounting remains unavailable.
+Evidence:
+`runs/devin-luna-smoke-20260730/run-usage.jsonl`,
+`runs/devin-luna-smoke-20260730/run-report.json`,
+`runs/devin-luna-smoke-20260730/run-manifest.json`.
+
 ## 2026-07-30 — The apparent Windsurf CLI was an editor launcher, not an agent boundary
 
 **A direct “Windsurf connector” would have silently targeted the wrong
