@@ -24,6 +24,28 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-31 — More reasoning within the 5.6 family did not buy better long-horizon planning
+
+**GPT-5.6-Terra used 226 reasoning tokens per decision—less than half Luna's
+474—yet finished ahead in competence (43.6 versus 35.5) because it formed five
+assets including a shelter, while Luna completed only one farm.** Immediate
+execution was nearly identical (82.0 Terra versus 81.6 Luna), and the advantage
+did not come from richer coordination: Terra produced only 42 communications,
+zero gifts, and one accepted trade across both worlds, compared with Luna's
+212 communications, 14 gifts, and two accepted trades. Terra instead retained
+9/20 agents versus Luna's 8/20 and finished with 262.0 living-accessible value
+versus 176.25. Its shelter was still late and private, and both models scored
+zero entrepreneurship, so Terra was not broadly capable at institution
+building. The result is nevertheless a within-generation counterexample to
+reasoning volume as the dominant explanation: how a model allocates actions
+into durable capital can matter more than doubling its measured deliberation.
+Both Terra runs had clean model, provider, and harness integrity, while Luna's
+seed 41 had one isolated malformed decision that is too small to explain the
+gap.
+Evidence:
+`runs/benchmarks/gpt-5-6-terra-gpt-5-6-sol-participant-v6-seeds11-41-20260729-155943`,
+`runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735`.
+
 ## 2026-07-30 — Devin's Luna family name silently overrode the requested reasoning effort
 
 **A Devin run declared as `model=gpt-5.6-luna` and
