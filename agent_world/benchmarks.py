@@ -47,6 +47,12 @@ BENCHMARK_PROTOCOL_ID = "participant-v7"
 # byte-identical to v4, which is what lets audited v4 codex reports carry over
 # without re-running.
 BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS = 2048
+# A rate-limited trial is early, not broken: the run waits for the cap to lift
+# and retries the same tick, with the world frozen at a completed-tick
+# boundary. Twelve hours covers the weekly and five-hour caps that actually
+# interrupt runs. This is a wall-clock policy, not a simulation parameter - it
+# cannot change any decision, action, or score.
+BENCHMARK_QUOTA_WAIT_HOURS = 12.0
 BENCHMARK_SEEDS = frozenset({11, 41})
 BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
 BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS

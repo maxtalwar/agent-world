@@ -71,6 +71,20 @@ class BrainRuntime:
         with self._lock:
             self._quota_unavailable_messages[scope] = message
 
+    def clear_quota_unavailable(self, scope: str | None = None) -> None:
+        """Forget cached quota exhaustion so the next call reaches the provider.
+
+        Called after waiting out a rate limit. Without this the cached message
+        short-circuits every subsequent decision and the run can never recover
+        on its own.
+        """
+
+        with self._lock:
+            if scope is None:
+                self._quota_unavailable_messages.clear()
+            else:
+                self._quota_unavailable_messages.pop(scope, None)
+
     def throttle(self, minimum_interval_seconds: float, scope: str = "default") -> None:
         if minimum_interval_seconds <= 0:
             return
@@ -109,6 +123,9 @@ class ScopedBrainRuntime:
 
     def mark_quota_unavailable(self, message: str) -> None:
         self.parent.mark_quota_unavailable(message, self.scope)
+
+    def clear_quota_unavailable(self) -> None:
+        self.parent.clear_quota_unavailable(self.scope)
 
     def throttle(self, minimum_interval_seconds: float) -> None:
         self.parent.throttle(minimum_interval_seconds, self.scope)

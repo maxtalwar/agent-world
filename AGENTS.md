@@ -16,3 +16,9 @@
   simultaneous cell. Keep that worktree until the run is complete and analyzed,
   and resume checkpoints through the same cohort ID and commit. A mixed-model
   simulation is one run cell and therefore uses one worktree.
+- A rate limit means a run is early, not broken. Benchmark runs wait up to
+  `BENCHMARK_QUOTA_WAIT_HOURS` for the cap to reset and retry the same tick with
+  the world frozen at a completed tick; `--quota-wait-hours` sets this for
+  ad-hoc runs. Never work around a limit by restarting a run, and never let a
+  run continue against a provider that is refusing calls - a failed decision
+  becomes a `wait` action, which is fabricated agent behavior.

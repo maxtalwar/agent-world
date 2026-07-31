@@ -24,6 +24,41 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-31 — An unrecognized rate-limit message let the harness fabricate 18 ticks of agent behavior
+
+**A Claude weekly-limit error the quota classifier did not recognize was
+handled as an ordinary decision failure, so the harness substituted a `wait`
+action for every agent and kept advancing the world for 18 ticks (144 failed
+decisions, ticks 32-49) against a provider refusing every call.** The
+adapter's marker list checked for "usage limit", "session limit", and "rate
+limit"; the CLI emitted "You've hit your weekly limit · resets 2pm
+(America/Los_Angeles)", which matches none of them. Three adapters each
+carried their own near-duplicate copy of that list, so the gap existed in one
+of them only. The failure was silent by construction: a fabricated `wait` is
+indistinguishable from a chosen `wait` in the action stream, and the run
+reported `completed 50/50`.
+
+Two lessons beyond the bug. First, the integrity layer worked where the
+adapter failed — the run was caught as `run_integrity_not_clean` /
+diagnostic_only on ambiguous-boundary-failure volume, which is why nothing
+corrupt reached a leaderboard. Defense in depth is what made an undetected
+provider phrasing recoverable rather than silently score-changing. Second, a
+substituted default action is the most dangerous possible failure mode for an
+agent benchmark, because it is *valid* — it type-checks, it costs no action
+points, and it looks like patience. Any harness that fills in a default on
+provider failure is fabricating the very thing it measures.
+
+Fixed by centralizing quota recognition in `agent_world/provider_limits.py`
+(shared by all adapters, pattern-based rather than a marker list), by pausing
+whenever an entire living population fails identically at the boundary
+regardless of whether any classifier recognizes the text, and by waiting out
+the reset and retrying the same tick instead of stopping.
+Evidence: `runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41`
+(144 `agent_response` events carrying the weekly-limit text, ticks 32-49;
+seed 11 of the same pair is clean at 89.6/85.1/55.8). Audit of all 37 v6
+ledgers found this the only run in which the corrected code path was
+reachable.
+
 ## 2026-07-31 — Opus 5 converted a small reasoning budget into the strongest society yet
 
 **Claude Opus 5 averaged only 287 estimated reasoning tokens per decision—about
