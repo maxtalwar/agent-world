@@ -24,6 +24,30 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-31 — Opus 5 converted a small reasoning budget into the strongest society yet
+
+**Claude Opus 5 averaged only 287 estimated reasoning tokens per decision—about
+the same as Sonnet 5 and 76% fewer than Opus 4.8—yet became the first current
+participant-v6 cohort to lead execution (91.4), competence (79.2), and
+entrepreneurship (71.8) simultaneously.** It kept 20/20 agents alive, created
+312.25 net living-accessible value, and generated 66 units of enterprise
+supply across the matched seeds. The difference was not verbosity: Opus 5
+organized five completed shelters plus a storage asset, five cooperative
+builds, 18 access grants, and a real procurement chain in which one agent
+bought stone and used it to finish another agent's shelter. In seed 41, Agent
+2 answered an advertised stone bounty, mined and hauled the final input,
+received a contributor ownership share and permanent shelter access, then
+collected coin, fiber, and food from the two co-owners. Both runs had clean
+model, provider, and harness integrity with zero decision failures and full
+usage coverage. This is a model-behavior result and a counterexample to the
+idea that the recent benchmark regressions are explained by lower test-time
+token spend alone: strategy and coordination quality can improve sharply at
+the same measured spend.
+Evidence:
+`runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421`,
+`runs/benchmarks/claude-sonnet-5-participant-v6-certified-seeds11-41-20260729-164053`,
+`runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748`.
+
 ## 2026-07-31 — More reasoning within the 5.6 family did not buy better long-horizon planning
 
 **GPT-5.6-Terra used 226 reasoning tokens per decision—less than half Luna's
