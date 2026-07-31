@@ -38,14 +38,16 @@ CODEX_CREDIT_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
 }
 
 USD_RATE_CARD_SOURCES = {
-    "openai": "https://openai.com/api/pricing/",
+    "openai": "https://developers.openai.com/api/docs/pricing",
     "anthropic": "https://platform.claude.com/docs/en/pricing",
 }
 USD_RATE_CARD_EFFECTIVE_DATE = "2026-07-30"
-# List-price API rates. Cached reads bill at 0.1x input and cache writes at
-# 1.25x input on both providers. Rate keys are matched by prefix against the
-# normalized model string, so provider suffixes ("gpt-5-6-luna-medium") and
-# effort-tagged variants resolve to their base model.
+# List-price API rates. Cached reads use the published cached-input rate.
+# Models with a distinct cache-write tier bill writes at that published rate;
+# models without one fall back to ordinary input pricing. Rate keys are matched
+# by longest prefix against the normalized model string, so provider suffixes
+# ("gpt-5-6-luna-medium") and effort-tagged variants resolve to their base
+# model without collapsing "gpt-5.4-mini" into "gpt-5.4".
 MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
     "gpt-5.6-sol": {
         "input": Decimal("5"),
@@ -64,6 +66,42 @@ MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
         "cached_input": Decimal("0.02"),
         "cache_write": Decimal("0.25"),
         "output": Decimal("1.2"),
+    },
+    "gpt-5.5": {
+        "input": Decimal("5"),
+        "cached_input": Decimal("0.5"),
+        "cache_write": Decimal("5"),
+        "output": Decimal("30"),
+    },
+    "gpt-5.4-mini": {
+        "input": Decimal("0.75"),
+        "cached_input": Decimal("0.075"),
+        "cache_write": Decimal("0.75"),
+        "output": Decimal("4.5"),
+    },
+    "gpt-5.4-nano": {
+        "input": Decimal("0.2"),
+        "cached_input": Decimal("0.02"),
+        "cache_write": Decimal("0.2"),
+        "output": Decimal("1.25"),
+    },
+    "gpt-5.4": {
+        "input": Decimal("2.5"),
+        "cached_input": Decimal("0.25"),
+        "cache_write": Decimal("2.5"),
+        "output": Decimal("15"),
+    },
+    "gpt-5.1": {
+        "input": Decimal("1.25"),
+        "cached_input": Decimal("0.125"),
+        "cache_write": Decimal("1.25"),
+        "output": Decimal("10"),
+    },
+    "gpt-5-mini": {
+        "input": Decimal("0.25"),
+        "cached_input": Decimal("0.025"),
+        "cache_write": Decimal("0.25"),
+        "output": Decimal("2"),
     },
     "claude-fable-5": {
         "input": Decimal("10"),
@@ -392,7 +430,7 @@ def summarize_usd_cost(records: list[dict[str, Any]]) -> dict[str, Any] | None:
 
 def _usd_rate_model(model: str) -> str | None:
     normalized = _normalize_model_id(model)
-    for rate_model in MODEL_USD_RATES_PER_MILLION:
+    for rate_model in sorted(MODEL_USD_RATES_PER_MILLION, key=len, reverse=True):
         candidate = _normalize_model_id(rate_model)
         if normalized == candidate or normalized.startswith(candidate + "-"):
             return rate_model

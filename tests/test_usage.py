@@ -92,6 +92,50 @@ class UsageTests(unittest.TestCase):
         self.assertIn("claude-fable-5", summary["models"])
         self.assertEqual(summary["cost_usd"]["total"], 50.2)
 
+    def test_usd_cost_covers_benchmark_gpt_families_at_standard_rates(self) -> None:
+        summary = summarize_usd_cost(
+            [
+                {
+                    "model": "gpt-5.5",
+                    "prompt_tokens": 1_000_000,
+                    "cached_tokens": 400_000,
+                    "completion_tokens": 100_000,
+                },
+                {"model": "gpt-5.4", "prompt_tokens": 1_000_000},
+                {"model": "gpt-5.4-mini", "prompt_tokens": 1_000_000},
+                {"model": "gpt-5.4-nano", "completion_tokens": 1_000_000},
+                {"model": "gpt-5.1", "prompt_tokens": 1_000_000},
+                {"model": "gpt-5-mini", "completion_tokens": 1_000_000},
+            ]
+        )
+
+        assert summary is not None
+        self.assertTrue(summary["available"])
+        self.assertEqual(summary["models"]["gpt-5.5"]["cost_usd"], 6.2)
+        self.assertEqual(summary["models"]["gpt-5.4"]["cost_usd"], 2.5)
+        self.assertEqual(summary["models"]["gpt-5.4-mini"]["cost_usd"], 0.75)
+        self.assertEqual(summary["models"]["gpt-5.4-nano"]["cost_usd"], 1.25)
+        self.assertEqual(summary["models"]["gpt-5.1"]["cost_usd"], 1.25)
+        self.assertEqual(summary["models"]["gpt-5-mini"]["cost_usd"], 2.0)
+
+    def test_usd_cost_uses_longest_model_prefix(self) -> None:
+        summary = summarize_usd_cost(
+            [{"model": "gpt-5-4-mini-medium", "prompt_tokens": 1_000_000}]
+        )
+
+        assert summary is not None
+        self.assertEqual(list(summary["models"]), ["gpt-5.4-mini"])
+        self.assertEqual(summary["cost_usd"]["total"], 0.75)
+
+    def test_usd_cost_keeps_spark_unpriced_without_a_published_api_rate(self) -> None:
+        summary = summarize_usd_cost(
+            [{"model": "gpt-5.3-codex-spark", "prompt_tokens": 1_000_000}]
+        )
+
+        assert summary is not None
+        self.assertFalse(summary["available"])
+        self.assertEqual(summary["unknown_models"], ["gpt-5.3-codex-spark"])
+
     def test_usd_cost_without_cache_write_field_prices_writes_as_uncached_input(self) -> None:
         summary = summarize_usd_cost(
             [
