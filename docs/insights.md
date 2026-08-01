@@ -24,6 +24,33 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-07-31 — A completed-tick checkpoint can be rebuilt from paid decisions without rerunning the model
+
+**An append-only decision ledger plus a deterministic world engine is enough
+to recover an exact earlier simulation boundary even when the only surviving
+pickle contains a later, corrupted world.** Fable 5 seed 41's checkpoint had
+already advanced to tick 50 after the weekly-limit false negative, but its
+ledger retained all ten real decisions for each of ticks 0-31. Replaying those
+320 already-paid decisions reconstructed `state.tick=32` with all 10 agents
+alive, 841 total health, and state digest
+`07c35fd3f9ccdb085412bb665b16e4390b3052a6a841d7f8cc6ef9b76247fcf6`.
+The recovery matched all 1,903 world-generated events through tick 31; the
+only normalization required was the later, state-neutral addition of
+`kind: gift` to legacy gift events. It preserved 2,549 interleaved world and
+harness audit events, retained exactly 320 successful usage rows before tick
+32, and quarantined 150 later usage rows rather than counting them toward the
+resumed run.
+
+This is a harness-recovery result, not model behavior. The practical lesson is
+that checkpoints need not store every historical world state if the ledger
+stores full decisions and transitions are deterministic—but recovery must
+verify the replayed event stream, preserve the invalid tail separately, reset
+provider sessions, and partition usage at the same completed-tick boundary.
+Evidence:
+`runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/recovery-manifest.json`,
+created by `agent_world/checkpoint_recovery.py`; the original diagnostic
+directory remains unchanged.
+
 ## 2026-07-31 — An unrecognized rate-limit message let the harness fabricate 18 ticks of agent behavior
 
 **A Claude weekly-limit error the quota classifier did not recognize was
