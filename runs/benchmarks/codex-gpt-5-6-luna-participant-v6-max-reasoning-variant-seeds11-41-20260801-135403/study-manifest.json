@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403",
-  "status": "planned",
+  "status": "running_replicated_variant",
   "created_at_utc": "2026-08-01T20:54:03Z",
   "study_type": "controlled_reasoning_variant",
   "benchmark_protocol_parent": "participant-v6",
@@ -34,7 +34,9 @@
     "quota_wait_hours": 12.0
   },
   "benchmark_code_fingerprint": {
-    "codex_cli": "25acf40582adacf3e032ae451d225e6b4857833407b8acb17146eb7b1e6904e7"
+    "expected_codex_cli": "25acf40582adacf3e032ae451d225e6b4857833407b8acb17146eb7b1e6904e7",
+    "recorded_by_run": null,
+    "note": "The built-in fingerprint is only recorded when a standardized benchmark protocol is applied. This max-effort variant intentionally overrides that protocol envelope, so the clean launch SHA is the authoritative provenance anchor."
   },
   "replications": {
     "required_seeds": [11, 41],
@@ -45,10 +47,15 @@
         "brain": "codex",
         "provider": "codex_cli",
         "reasoning_effort": "max",
-        "status": "planned",
+        "status": "running",
         "cohort": "luna-max-v6-seed11",
         "screen": "aw-bench-luna-max-v6-s11",
         "target_tick": 50,
+        "started_at_utc": "2026-08-01T20:56:48Z",
+        "resolved_model_confirmed": "gpt-5.6-luna",
+        "recorded_benchmark_protocol": null,
+        "recorded_benchmark_code_fingerprint": null,
+        "launch_commit": "d3bf99058dcb60453d4faad7fa52344f5f978603",
         "out": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run.jsonl",
         "snapshot": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run-snapshot.json"
       },
@@ -58,10 +65,15 @@
         "brain": "codex",
         "provider": "codex_cli",
         "reasoning_effort": "max",
-        "status": "planned",
+        "status": "running",
         "cohort": "luna-max-v6-seed41",
         "screen": "aw-bench-luna-max-v6-s41",
         "target_tick": 50,
+        "started_at_utc": "2026-08-01T20:56:48Z",
+        "resolved_model_confirmed": "gpt-5.6-luna",
+        "recorded_benchmark_protocol": null,
+        "recorded_benchmark_code_fingerprint": null,
+        "launch_commit": "d3bf99058dcb60453d4faad7fa52344f5f978603",
         "out": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run.jsonl",
         "snapshot": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run-snapshot.json"
       }
