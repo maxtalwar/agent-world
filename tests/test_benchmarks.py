@@ -1197,6 +1197,15 @@ class ResumeFingerprintGuardTests(unittest.TestCase):
                 "participant-v6", "audited-old-hash", ["codex_cli"]
             )
 
+    def test_resume_accepts_fable_launch_fingerprint_after_quota_fix(self) -> None:
+        from agent_world.cli import _check_resume_fingerprint
+
+        _check_resume_fingerprint(
+            "participant-v6",
+            "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
+            ["claude_cli"],
+        )
+
     def test_non_benchmark_resume_is_unguarded(self) -> None:
         from agent_world.cli import _check_resume_fingerprint
 

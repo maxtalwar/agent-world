@@ -77,9 +77,17 @@ BENCHMARK_SCORING_REVISION = 1
 # comparison (extracted into _check_resume_fingerprint) and is only reachable
 # from the resume branch of _run; no agent-facing code, no scoring code, and
 # no launch path changed.
+#
+# 7dff4cec... is the claude-scoped v6 fingerprint at commit a86d06f, under
+# which the Fable 5 checkpoints were written. The compatibility branch keeps
+# that protocol and world byte-for-byte and changes only provider-failure
+# handling: a quota refusal now freezes the completed-tick boundary instead of
+# fabricating wait actions. This entry permits the recovered tick-32 checkpoint
+# to resume without changing any successful decision or world transition.
 BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
     {
         "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
+        "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
     }
 )
 
