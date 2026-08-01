@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "study_id": "codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403",
+  "status": "planned",
+  "created_at_utc": "2026-08-01T20:54:03Z",
+  "study_type": "controlled_reasoning_variant",
+  "benchmark_protocol_parent": "participant-v6",
+  "protocol_status": "comparative_variant_not_automatic_certification",
+  "variant": {
+    "only_changed_field": "reasoning_effort",
+    "baseline_value": "medium",
+    "variant_value": "max",
+    "rationale": "The standardized Participant-v6 protocol locks reasoning effort to medium; this study preserves every other locked condition and intentionally tests the provider maximum as a separate controlled variant."
+  },
+  "comparison": {
+    "baseline_study": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735",
+    "baseline_cells": [
+      "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11",
+      "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41"
+    ],
+    "baseline_model": "gpt-5.6-luna",
+    "baseline_provider": "codex_cli",
+    "baseline_reasoning_effort": "medium",
+    "interpretation": "Compare paired seed outcomes, usage, failures, latency, and behavior. Do not call the max-effort variant a certified Participant-v6 replication because the declared reasoning envelope differs."
+  },
+  "provider_compatibility": {
+    "provider": "codex_cli",
+    "billing_mode": "chatgpt_plan",
+    "model": "gpt-5.6-luna",
+    "requested_reasoning_effort": "max",
+    "codex_cli_version": "codex-cli 0.146.0",
+    "codex_config": "model_reasoning_effort=\"max\"",
+    "auth_preflight": "installed CLI; account authentication is checked by the run",
+    "quota_wait_hours": 12.0
+  },
+  "benchmark_code_fingerprint": {
+    "codex_cli": "25acf40582adacf3e032ae451d225e6b4857833407b8acb17146eb7b1e6904e7"
+  },
+  "replications": {
+    "required_seeds": [11, 41],
+    "cells": {
+      "luna-max-v6-seed-11": {
+        "seed": 11,
+        "model": "gpt-5.6-luna",
+        "brain": "codex",
+        "provider": "codex_cli",
+        "reasoning_effort": "max",
+        "status": "planned",
+        "cohort": "luna-max-v6-seed11",
+        "screen": "aw-bench-luna-max-v6-s11",
+        "target_tick": 50,
+        "out": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run.jsonl",
+        "snapshot": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run-snapshot.json"
+      },
+      "luna-max-v6-seed-41": {
+        "seed": 41,
+        "model": "gpt-5.6-luna",
+        "brain": "codex",
+        "provider": "codex_cli",
+        "reasoning_effort": "max",
+        "status": "planned",
+        "cohort": "luna-max-v6-seed41",
+        "screen": "aw-bench-luna-max-v6-s41",
+        "target_tick": 50,
+        "out": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run.jsonl",
+        "snapshot": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run-snapshot.json"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "max",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "session_max_turns": 10,
+    "population": "one uniform model cohort per cell",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12.0
+  },
+  "provenance": {
+    "git_branch": "codex/add-windsurf-connector",
+    "git_sha_at_launch": "d3bf99058dcb60453d4faad7fa52344f5f978603",
+    "launcher": "scripts/run-isolated-cohort",
+    "note": "The baseline Luna study used the earlier Participant-v6 commit 0af16493855cc711497c99ecc54f43a10f7a40c2. This variant uses the current clean checkout while preserving the baseline trial settings; the code fingerprint and commit are therefore disclosed rather than treated as identical provenance."
+  },
+  "commands": {
+    "luna-max-v6-seed-11": [
+      "scripts/run-isolated-cohort", "--cohort", "luna-max-v6-seed11", "--commit", "d3bf99058dcb60453d4faad7fa52344f5f978603", "--", "python3", "-m", "agent_world.cli", "run", "--brain", "codex", "--model", "gpt-5.6-luna", "--reasoning-effort", "max", "--seed", "11", "--ticks", "50", "--agents", "10", "--preset", "frontier-generalists", "--connector-profile", "stateless-v3", "--conversation-mode", "stateless", "--session-max-turns", "10", "--decision-mode", "raw", "--action-feedback-mode", "baseline", "--max-workers", "4", "--codex-max-workers", "4", "--claude-max-workers", "4", "--cursor-max-workers", "4", "--openrouter-max-workers", "4", "--startup-health-check-tick", "5", "--startup-health-max-failure-rate", "0.2", "--quota-wait-hours", "12", "--out", "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run.jsonl", "--snapshot", "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run-snapshot.json", "--progress"
+    ],
+    "luna-max-v6-seed-41": [
+      "scripts/run-isolated-cohort", "--cohort", "luna-max-v6-seed41", "--commit", "d3bf99058dcb60453d4faad7fa52344f5f978603", "--", "python3", "-m", "agent_world.cli", "run", "--brain", "codex", "--model", "gpt-5.6-luna", "--reasoning-effort", "max", "--seed", "41", "--ticks", "50", "--agents", "10", "--preset", "frontier-generalists", "--connector-profile", "stateless-v3", "--conversation-mode", "stateless", "--session-max-turns", "10", "--decision-mode", "raw", "--action-feedback-mode", "baseline", "--max-workers", "4", "--codex-max-workers", "4", "--claude-max-workers", "4", "--cursor-max-workers", "4", "--openrouter-max-workers", "4", "--startup-health-check-tick", "5", "--startup-health-max-failure-rate", "0.2", "--quota-wait-hours", "12", "--out", "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run.jsonl", "--snapshot", "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run-snapshot.json", "--progress"
+    ]
+  },
+  "outputs": [
+    "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11",
+    "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41"
+  ]
+}
