@@ -475,10 +475,10 @@ Invalid or unaffordable actions fail explicitly and are logged; they do not muta
 - Water tiles are not occupiable; agents gather water or fish from adjacent land.
 - Discrete ticks with a deterministic rotating resolution order, avoiding permanent first-mover priority.
 - Local observations filtered by visibility radius and event scope.
-- Inventories, item piles, structures, tile claims, groups, trade offers, and persistent memories.
+- Inventories, item piles, structures, tile claims, groups, trade offers, delivery contracts, a public town ledger, and persistent memories.
 - Trade offers can target a specific visible agent or be posted locally for any visible counterparty; offered goods are escrowed until the offer resolves.
 - Optional commerce treatments add global standing offers, completed-price history, secured credit, access fees, contributor dividends, and productive-asset upkeep/capacity.
-- The optional organic treatment keeps exchange physical and knowledge local: offers deposit goods at a tile, both parties must meet there, and expired escrow remains as an owned pile. It adds stronger comparative advantage, high-fixed-cost/high-capacity infrastructure, and carried coins without telling agents to use any of them.
+- The optional organic treatment keeps exchange physical and market knowledge local: offers deposit goods at a tile, both parties must meet there, and expired escrow remains as an owned pile. It also adds escrowed delivery contracts and a world-global append-only town ledger, alongside stronger comparative advantage, high-fixed-cost/high-capacity infrastructure, and carried coins without telling agents to use any of them.
 - Optional dispersed geography gives agents separated resource regions, different specialties, aptitudes, endowments, and needs so comparative advantage is mechanically meaningful.
 - Groups can receive access grants, directly own claimed tiles/structures, and keep persistent agreement ledgers, making shared infrastructure mechanically useful.
 - Survival pressure through food, water, energy, health, carrying capacity, action points, and carried-food spoilage.

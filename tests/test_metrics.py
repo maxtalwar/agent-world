@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from collections import Counter
 
 from agent_world.metrics import (
     compute_metrics,
@@ -47,6 +48,39 @@ class DecisionFailureClassificationTests(unittest.TestCase):
 
 
 class EconomicMetricsTests(unittest.TestCase):
+    def test_settled_contract_has_equivalent_trade_volume(self) -> None:
+        config = dict(
+            seed=1,
+            economy_mode="organic",
+            survival_food_decay=0,
+            survival_water_decay=0,
+            survival_energy_decay=0,
+            carried_food_spoil_interval=0,
+        )
+        trade = WorldEngine.create(WorldConfig(**config), agent_names=["Seller", "Buyer"])
+        seller, buyer = trade.state.agents.values()
+        buyer.position = seller.position
+        seller.inventory = Counter({"food": 2})
+        buyer.inventory = Counter({"coin": 3})
+        trade.tick({seller.id: AgentDecision(actions=[{"type": "offer_trade", "to": buyer.id, "give": {"food": 2}, "receive": {"coin": 3}}])})
+        trade.tick({buyer.id: AgentDecision(actions=[{"type": "accept_trade", "trade_id": "trade-1"}])})
+
+        contract = WorldEngine.create(WorldConfig(**config), agent_names=["Seller", "Buyer"])
+        seller, buyer = contract.state.agents.values()
+        seller.inventory = Counter({"food": 2})
+        buyer.inventory = Counter({"coin": 3})
+        contract.tick({seller.id: AgentDecision(actions=[{"type": "propose_contract", "counterparty": buyer.id, "give": {"food": 2}, "receive": {"coin": 3}, "deadline_tick": 3}])})
+        contract.tick({buyer.id: AgentDecision(actions=[{"type": "accept_contract", "contract_id": "contract-1"}])})
+        contract.tick({seller.id: AgentDecision(actions=[{"type": "deliver_contract", "contract_id": "contract-1"}])})
+
+        trade_metrics = compute_metrics(trade.state)
+        contract_metrics = compute_metrics(contract.state)
+        self.assertEqual(contract_metrics["trade"]["volume"], trade_metrics["trade"]["volume"])
+        self.assertEqual(
+            contract_metrics["economic_flows"]["market"]["transfer_value"],
+            trade_metrics["economic_flows"]["market"]["transfer_value"],
+        )
+
     def test_transfer_market_specialization_and_asset_sections_are_reported(self) -> None:
         engine = WorldEngine.create(
             WorldConfig(survival_food_decay=0, survival_water_decay=0, survival_energy_decay=0),

@@ -152,7 +152,7 @@ class EconomicInterfaceTests(unittest.TestCase):
             )
 
         assert static_context is not None
-        self.assertLessEqual(len(static_context), 6_500)
+        self.assertLessEqual(len(static_context), 7_800)
         self.assertLessEqual(sum(dynamic_sizes) / len(dynamic_sizes), 2_200)
         self.assertLessEqual(max(dynamic_sizes), 2_300)
 

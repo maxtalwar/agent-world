@@ -44,6 +44,11 @@ New agent-facing actions include:
 - `offer_contract`, `accept_contract`, and `repay_contract`
 - `offer_trade` with `scope: "global"` for commerce-mode public offers
 
+Organic worlds additionally expose:
+
+- `propose_contract`, `accept_contract`, `deliver_contract`, and `cancel_contract` for escrowed delivery agreements
+- `post_ledger_note` for the append-only, world-global town ledger
+
 ## Reproducible Runs
 
 The experiment runner defaults to the local scripted brain. Provider calls

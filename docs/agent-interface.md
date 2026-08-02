@@ -43,7 +43,7 @@ The default `baseline` feedback treatment supplies up to five recent failed acti
 
 The `world` object includes treatment modes, coordination costs, terrain passability, recipes, and required terrain/tools/structures. It does not include exact terrain yield, regeneration probabilities, spoilage cadence, or current build recommendations.
 
-Agents also receive visible standing offers, completed market-price history, and contracts to which they are a party. In organic mode, public offers and price history are local, trade summaries include a physical `escrow_position`, and engine-enforced contract actions are absent. Public structures expose access fees, capacity, upkeep state, treasury, and contributor shares.
+Agents also receive visible standing offers, completed market-price history, and contracts relevant to the active treatment. In organic mode, public offers and price history are local, trade summaries include a physical `escrow_position`, and agents can propose, accept, fully deliver, or cancel escrowed delivery contracts. Organic observations also carry the eight latest world-global town-ledger notes and the total note count. Public structures expose access fees, capacity, upkeep state, treasury, and contributor shares.
 
 ## Explicitly Not Included
 

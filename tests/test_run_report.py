@@ -24,6 +24,51 @@ def _run_short_sim(ticks: int = 4) -> tuple[list[dict], dict]:
 
 
 class RunReportTests(unittest.TestCase):
+    def test_contract_and_ledger_diagnostics(self) -> None:
+        snapshot = {
+            "tick": 4,
+            "config": {"seed": 1, "economy_mode": "organic"},
+            "agents": {
+                "agent-1": {"alive": True, "health": 100, "inventory": {}},
+                "agent-2": {"alive": True, "health": 100, "inventory": {}},
+            },
+            "groups": {},
+            "structures": {},
+            "trades": {},
+            "contracts": {},
+            "market_history": [],
+        }
+        contract = {
+            "id": "contract-1",
+            "proposer_id": "agent-1",
+            "counterparty": "agent-2",
+            "buyer_id": "agent-2",
+            "give": {"food": 1},
+            "receive": {"coin": 1},
+            "created_tick": 0,
+        }
+        events = [
+            {"type": "contract_proposed", "tick": 0, "actor_id": "agent-1", "message": "p", "data": {"contract": contract}},
+            {"type": "contract_settled", "tick": 1, "actor_id": "agent-1", "message": "s", "data": {"contract": contract}},
+            {"type": "contract_proposed", "tick": 1, "actor_id": "agent-1", "message": "p", "data": {"contract": {**contract, "id": "contract-2"}}},
+            {"type": "contract_defaulted", "tick": 3, "actor_id": "agent-1", "message": "d", "data": {"contract": {**contract, "id": "contract-2"}}},
+            {"type": "ledger_note", "tick": 3, "actor_id": "agent-2", "message": "n", "data": {"author": "agent-2", "title": "T", "body": "B"}},
+        ]
+
+        report = build_report(events, snapshot, target_ticks=4)
+
+        self.assertEqual(
+            report["diagnostics"],
+            {
+                "contracts_proposed": 2,
+                "contracts_settled": 1,
+                "contracts_defaulted": 1,
+                "contract_default_rate_pct": 50.0,
+                "ledger_note_count": 1,
+            },
+        )
+        self.assertEqual(report["economy"]["institutions"]["delivery_contracts"]["default_rate_pct"], 50.0)
+
     def test_build_report_covers_core_sections(self) -> None:
         events, snapshot = _run_short_sim()
         report = build_report(events, snapshot, source="unit-test")

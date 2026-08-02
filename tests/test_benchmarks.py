@@ -200,6 +200,53 @@ class BenchmarkTests(unittest.TestCase):
             benchmark_protocol()["trial"]["claude_thinking_budget_tokens"], 2048
         )
 
+    def test_pre_contract_synthetic_ledger_scores_are_unchanged(self) -> None:
+        scores = _protocol_report(11, "pre-contract-score-regression")["benchmarks"]["cohorts"][
+            "cohort-1"
+        ]["scores"]
+        self.assertEqual(
+            {name: score["score"] for name, score in scores.items()},
+            {
+                "effective_execution": 100.0,
+                "sustained_competence": 36.12,
+                "entrepreneurial_agency": 0.0,
+                "economic_productivity": 0.0,
+            },
+        )
+
+    def test_settled_contract_matches_equivalent_trade_enterprise_flow(self) -> None:
+        trade = self._trade("agent-1", "agent-2", {"food": 2}, {"coin": 3})
+        contract = {
+            "type": "contract_settled",
+            "tick": 0,
+            "actor_id": "agent-1",
+            "data": {
+                "contract": {"proposer_id": "agent-1", "buyer_id": "agent-2"},
+                "transaction": {"give": {"food": 2}, "receive": {"coin": 3}},
+            },
+        }
+        self.assertEqual(
+            _enterprise_supply([contract], {"agent-1", "agent-2"}),
+            _enterprise_supply([trade], {"agent-1", "agent-2"}),
+        )
+
+    def test_contract_default_collateral_is_not_enterprise_supply(self) -> None:
+        event = {
+            "type": "contract_defaulted",
+            "tick": 2,
+            "actor_id": "agent-1",
+            "data": {
+                "contract": {"proposer_id": "agent-1", "buyer_id": "agent-2"},
+                "flow": {
+                    "from": "agent-1",
+                    "to": "agent-2",
+                    "items": {"tool": 1},
+                    "enterprise_supply_eligible": False,
+                },
+            },
+        }
+        self.assertEqual(_enterprise_supply([event], {"agent-1", "agent-2"})["total"], 0.0)
+
     def test_protocol_flag_locks_comparable_run_settings(self) -> None:
         args = Namespace(
             benchmark_protocol=BENCHMARK_PROTOCOL_ID,
