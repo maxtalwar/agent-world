@@ -34,6 +34,10 @@ MILESTONE_EVENT_TYPES = (
     "join_group",
     "offer_trade",
     "accept_trade",
+    "contract_proposed",
+    "contract_settled",
+    "contract_defaulted",
+    "ledger_note",
     "gift",
     "claim_tile",
     "grant_access",
@@ -91,6 +95,9 @@ def build_report(
     trades = _summarize_trades(sim_events, snapshot, transfer_group_context)
     construction = _summarize_construction_economy(sim_events, snapshot)
     institutions = _summarize_economic_institutions(sim_events, snapshot)
+    contract_outcomes = action_counts.get("contract_settled", 0) + action_counts.get(
+        "contract_defaulted", 0
+    )
 
     invalid_reasons = Counter(
         event["message"] for event in sim_events if event["type"] == "invalid_action"
@@ -293,6 +300,17 @@ def build_report(
         "communication": {
             "says_total": len(says),
             "says_per_agent": dict(Counter(say["agent"] for say in says)),
+        },
+        "diagnostics": {
+            "contracts_proposed": action_counts.get("contract_proposed", 0),
+            "contracts_settled": action_counts.get("contract_settled", 0),
+            "contracts_defaulted": action_counts.get("contract_defaulted", 0),
+            "contract_default_rate_pct": (
+                round(100 * action_counts.get("contract_defaulted", 0) / contract_outcomes, 1)
+                if contract_outcomes
+                else 0.0
+            ),
+            "ledger_note_count": action_counts.get("ledger_note", 0),
         },
         "milestone_first_ticks": firsts,
         "reliability": {
@@ -659,14 +677,19 @@ def _summarize_trades(
     snapshot: dict[str, Any],
     group_context: dict[int, dict[str, Any]],
 ) -> dict[str, Any]:
-    offered_events = [event for event in events if event.get("type") == "offer_trade"]
-    accepted_events = [event for event in events if event.get("type") == "accept_trade"]
+    offered_events = [
+        event for event in events if event.get("type") in {"offer_trade", "contract_proposed"}
+    ]
+    accepted_events = [
+        event for event in events if event.get("type") in {"accept_trade", "contract_settled"}
+    ]
     rejected = sum(event.get("type") == "reject_trade" for event in events)
-    expired = sum(event.get("type") == "expire_trade" for event in events)
-    cancelled = sum(event.get("type") == "cancel_trade" for event in events)
+    expired = sum(event.get("type") in {"expire_trade", "contract_expired"} for event in events)
+    cancelled = sum(event.get("type") in {"cancel_trade", "contract_cancelled"} for event in events)
     offers_by_id: dict[str, dict[str, Any]] = {}
     for event in offered_events:
-        trade = (event.get("data") or {}).get("trade") or {}
+        data = event.get("data") or {}
+        trade = data.get("trade") or data.get("contract") or {}
         if trade.get("id"):
             offers_by_id[str(trade["id"])] = trade
 
@@ -679,7 +702,7 @@ def _summarize_trades(
     accepted_transfer_detail: list[dict[str, Any]] = []
     for event in accepted_events:
         data = event.get("data") or {}
-        trade = data.get("trade") or {}
+        trade = data.get("trade") or data.get("contract") or {}
         if not trade and data.get("trade_id"):
             trade = offers_by_id.get(str(data["trade_id"]), {})
         give = _positive_item_counts(trade.get("give"))
@@ -705,8 +728,8 @@ def _summarize_trades(
             {
                 "tick": event.get("tick"),
                 "trade_id": trade.get("id"),
-                "from": trade.get("from_agent"),
-                "to": trade.get("accepted_by") or event.get("actor_id"),
+                "from": trade.get("from_agent") or trade.get("proposer_id"),
+                "to": trade.get("accepted_by") or trade.get("buyer_id") or event.get("actor_id"),
                 "give": dict(sorted(give.items())),
                 "receive": dict(sorted(receive.items())),
                 "give_value": give_value,
@@ -735,7 +758,13 @@ def _summarize_trades(
         )
     else:
         status_counts = Counter()
-    public_offers = sum(bool(((event.get("data") or {}).get("trade") or {}).get("public")) for event in offered_events)
+    public_offers = sum(
+        bool(
+            ((event.get("data") or {}).get("trade") or {}).get("public")
+            or ((event.get("data") or {}).get("contract") or {}).get("open")
+        )
+        for event in offered_events
+    )
     offered_group_statuses = Counter(
         group_context.get(id(event), {"status": "unknown"})["status"] for event in offered_events
     )
@@ -770,7 +799,9 @@ def _summarize_trades(
             status: group_statuses.get(status, 0) for status in ("in_group", "out_group", "unknown")
         },
         "accepted_detail": [
-            (event.get("data") or {}).get("trade") for event in accepted_events
+            (event.get("data") or {}).get("trade")
+            or (event.get("data") or {}).get("contract")
+            for event in accepted_events
         ],
         "accepted_transfer_detail": accepted_transfer_detail,
     }
@@ -820,6 +851,16 @@ def _transfer_group_context(
         elif event_type == "accept_trade":
             trade = (event.get("data") or {}).get("trade") or {}
             parties = (trade.get("from_agent"), trade.get("accepted_by") or event.get("actor_id"))
+        elif event_type == "contract_proposed":
+            contract = (event.get("data") or {}).get("contract") or {}
+            counterparty = contract.get("counterparty")
+            parties = (
+                contract.get("proposer_id") or event.get("actor_id"),
+                None if counterparty in {None, "open"} else counterparty,
+            )
+        elif event_type == "contract_settled":
+            contract = (event.get("data") or {}).get("contract") or {}
+            parties = (contract.get("proposer_id"), contract.get("buyer_id"))
         if parties is None:
             continue
         sender, recipient = parties
@@ -1083,6 +1124,29 @@ def _summarize_economic_institutions(
             "repayment_value": _book_value(repayments),
             "collateral_value": _book_value(collateral),
         },
+        "delivery_contracts": {
+            "proposed": event_counts.get("contract_proposed", 0),
+            "accepted": event_counts.get("contract_accepted", 0),
+            "settled": event_counts.get("contract_settled", 0),
+            "defaulted": event_counts.get("contract_defaulted", 0),
+            "cancelled": event_counts.get("contract_cancelled", 0),
+            "expired": event_counts.get("contract_expired", 0),
+            "default_rate_pct": (
+                round(
+                    100
+                    * event_counts.get("contract_defaulted", 0)
+                    / (
+                        event_counts.get("contract_settled", 0)
+                        + event_counts.get("contract_defaulted", 0)
+                    ),
+                    1,
+                )
+                if event_counts.get("contract_settled", 0)
+                + event_counts.get("contract_defaulted", 0)
+                else 0.0
+            ),
+        },
+        "ledger_note_count": event_counts.get("ledger_note", 0),
         "access_fees": {
             "policies_set": event_counts.get("set_access_fee", 0),
             "payments": event_counts.get("pay_access_fee", 0),

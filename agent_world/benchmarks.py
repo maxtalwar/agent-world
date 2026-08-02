@@ -63,6 +63,7 @@ BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
 # declaration is recorded in the event, and scoring TRUSTS it - payment is
 # service income credited to the recipient, barter is a directional goods
 # flow, and gift is an unrequited transfer, reported but never scored.
+# Organic v7 worlds also include escrowed delivery contracts and the public town ledger.
 # Strict liability: misfiling a payment as a gift forfeits the credit, which
 # is a scored planning mistake, not a harness problem. V6 closed at its
 # scoring revision 2, where a frozen judge artifact
@@ -1843,6 +1844,15 @@ def _enterprise_supply(
             receive = transaction.get("receive", trade.get("receive"))
             _flow(offerer, acceptor, give)
             _flow(acceptor, offerer, receive)
+        elif event_type == "contract_settled":
+            contract = data.get("contract") or {}
+            transaction = data.get("transaction") or {}
+            proposer = str(contract.get("proposer_id") or transaction.get("seller_id") or "")
+            buyer = str(contract.get("buyer_id") or transaction.get("buyer_id") or "")
+            give = transaction.get("give", contract.get("give"))
+            receive = transaction.get("receive", contract.get("receive"))
+            _flow(proposer, buyer, give)
+            _flow(buyer, proposer, receive)
         elif event_type == "gift":
             # Scoring revision 2: a raw gift is never enterprise supply. It
             # scores only through a frozen classification - barter legs are

@@ -6,6 +6,7 @@ from collections import Counter
 from typing import Any
 
 from agent_world.models import WorldState
+from agent_world.models import CreditContract, DeliveryContract
 from agent_world.rules import ACCOUNTING_VALUES, STRUCTURE_TYPES, recipes_for_mode
 
 
@@ -22,10 +23,14 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
                 for item, qty in trade.give.items()
             )
     for contract in getattr(state, "contracts", {}).values():
-        if contract.status == "offered" and not contract.advance_released:
+        if isinstance(contract, CreditContract) and contract.status == "offered" and not contract.advance_released:
             wealth[contract.lender_id] = wealth.get(contract.lender_id, 0) + _item_value(contract.advance)
-        if contract.status == "active" and not contract.collateral_released:
+        if isinstance(contract, CreditContract) and contract.status == "active" and not contract.collateral_released:
             wealth[contract.borrower_id] = wealth.get(contract.borrower_id, 0) + _item_value(contract.collateral)
+        if isinstance(contract, DeliveryContract) and contract.status == "active":
+            if contract.buyer_id:
+                wealth[contract.buyer_id] = wealth.get(contract.buyer_id, 0) + _item_value(contract.receive)
+            wealth[contract.proposer_id] = wealth.get(contract.proposer_id, 0) + _item_value(contract.collateral)
     resource_totals: Counter[str] = Counter()
     for row in state.tiles:
         for tile in row:
@@ -45,9 +50,12 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
                 }
             )
     for contract in getattr(state, "contracts", {}).values():
-        if contract.status == "offered" and not contract.advance_released:
+        if isinstance(contract, CreditContract) and contract.status == "offered" and not contract.advance_released:
             resource_totals.update(contract.advance)
-        if contract.status == "active" and not contract.collateral_released:
+        if isinstance(contract, CreditContract) and contract.status == "active" and not contract.collateral_released:
+            resource_totals.update(contract.collateral)
+        if isinstance(contract, DeliveryContract) and contract.status == "active":
+            resource_totals.update(contract.receive)
             resource_totals.update(contract.collateral)
 
     event_counts = Counter(event.type for event in state.events)
@@ -64,8 +72,8 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
     energy_samples = [int(sample.get("energy", 0)) for sample in state.capacity_samples]
     trade_volume = 0
     for event in state.events:
-        if event.type == "accept_trade":
-            trade = event.data.get("trade", {})
+        if event.type in {"accept_trade", "contract_settled"}:
+            trade = event.data.get("trade") or event.data.get("contract") or {}
             trade_volume += _item_value(trade.get("give", {}))
             trade_volume += _item_value(trade.get("receive", {}))
     economic_flows = _economic_flow_metrics(state)
@@ -424,11 +432,13 @@ def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:
         if giver is not None and receiver is not None and giver.groups.intersection(receiver.groups):
             within_group_actions += 1
 
-    accept_events = [event for event in state.events if event.type == "accept_trade"]
+    accept_events = [
+        event for event in state.events if event.type in {"accept_trade", "contract_settled"}
+    ]
     acceptance_latencies = []
     trade_value = 0
     for event in accept_events:
-        trade = event.data.get("trade", {})
+        trade = event.data.get("trade") or event.data.get("contract") or {}
         if isinstance(trade, dict):
             created = trade.get("created_tick")
             if isinstance(created, int):
@@ -458,6 +468,12 @@ def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:
         "fulfill_contract",
         "default_contract",
         "repay_contract",
+        "contract_proposed",
+        "contract_accepted",
+        "contract_settled",
+        "contract_defaulted",
+        "contract_cancelled",
+        "contract_expired",
     )
     return {
         "gifts": {
