@@ -122,6 +122,11 @@ class BenchmarkDatabaseTests(unittest.TestCase):
         manifest = {
             "started_at_utc": "2026-08-02T00:00:00+00:00",
             "ended_at_utc": "2026-08-02T00:00:10+00:00",
+            "concurrency": {"global": 2},
+            "population": {
+                "total_agents": 2,
+                "groups": [{"id": "cohort-1", "count": 2, "max_workers": 2}],
+            },
         }
         catalog = {
             "schema_version": 1,
@@ -159,10 +164,15 @@ class BenchmarkDatabaseTests(unittest.TestCase):
                 "FROM benchmark_runs"
             ).fetchone()
             tick = connection.execute(
-                "SELECT concurrent_wall_span_seconds FROM tick_metrics"
+                "SELECT concurrent_wall_span_seconds, deciding_agent_count, "
+                "concurrent_wall_span_per_deciding_agent_seconds, "
+                "concurrent_wall_span_per_configured_agent_seconds, "
+                "concurrent_wall_span_per_worker_batch_seconds FROM tick_metrics"
             ).fetchone()
             model = connection.execute(
-                "SELECT reasoning_tokens_per_decision, net_living_value_created "
+                "SELECT reasoning_tokens_per_decision, net_living_value_created, "
+                "tick_wall_per_deciding_agent_median_seconds, "
+                "tick_wall_per_worker_batch_median_seconds "
                 "FROM model_results"
             ).fetchone()
             connection.close()
@@ -172,8 +182,14 @@ class BenchmarkDatabaseTests(unittest.TestCase):
             self.assertEqual(run[2], 10)
             self.assertEqual(run[3], 3)
             self.assertEqual(tick[0], 3)
+            self.assertEqual(tick[1], 2)
+            self.assertEqual(tick[2], 1.5)
+            self.assertEqual(tick[3], 1.5)
+            self.assertEqual(tick[4], 3)
             self.assertEqual(model[0], 15)
             self.assertEqual(model[1], 6.5)
+            self.assertEqual(model[2], 1.5)
+            self.assertEqual(model[3], 3)
 
 
 if __name__ == "__main__":

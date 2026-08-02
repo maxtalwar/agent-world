@@ -29,7 +29,7 @@ from agent_world.usage import (
 )
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DEFAULT_CATALOG = Path("data/model-benchmark-sources.json")
 DEFAULT_DATABASE = Path("data/model-benchmarks.sqlite")
 
@@ -162,6 +162,8 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             launch_commit TEXT,
             connector_profile TEXT,
             conversation_mode TEXT,
+            global_max_workers INTEGER,
+            cohort_max_workers INTEGER,
             started_at_utc TEXT,
             ended_at_utc TEXT,
             wall_clock_seconds REAL,
@@ -177,6 +179,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             competence REAL NOT NULL,
             entrepreneurship REAL NOT NULL,
             economic_productivity REAL NOT NULL,
+            configured_agents INTEGER,
             initial_agents INTEGER,
             living_agents INTEGER,
             deaths INTEGER,
@@ -270,12 +273,19 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             run_id TEXT NOT NULL REFERENCES benchmark_runs(run_id),
             tick INTEGER NOT NULL,
             decision_count INTEGER NOT NULL,
+            deciding_agent_count INTEGER NOT NULL,
+            configured_agent_count INTEGER,
+            effective_max_workers INTEGER,
+            worker_batches INTEGER,
             latency_coverage_pct REAL,
             decision_latency_mean_seconds REAL,
             decision_latency_median_seconds REAL,
             decision_latency_p95_seconds REAL,
             decision_latency_max_seconds REAL,
             concurrent_wall_span_seconds REAL,
+            concurrent_wall_span_per_deciding_agent_seconds REAL,
+            concurrent_wall_span_per_configured_agent_seconds REAL,
+            concurrent_wall_span_per_worker_batch_seconds REAL,
             prompt_tokens INTEGER NOT NULL,
             completion_tokens INTEGER NOT NULL,
             reasoning_tokens INTEGER NOT NULL,
@@ -313,6 +323,16 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             tick_wall_span_mean_seconds REAL,
             tick_wall_span_median_seconds REAL,
             tick_wall_span_p95_seconds REAL,
+            tick_wall_per_deciding_agent_median_seconds REAL,
+            tick_wall_per_deciding_agent_p95_seconds REAL,
+            tick_wall_per_configured_agent_median_seconds REAL,
+            tick_wall_per_configured_agent_p95_seconds REAL,
+            tick_wall_per_worker_batch_median_seconds REAL,
+            tick_wall_per_worker_batch_p95_seconds REAL,
+            configured_agents_min INTEGER,
+            configured_agents_max INTEGER,
+            global_max_workers_min INTEGER,
+            global_max_workers_max INTEGER,
             mean_run_wall_clock_seconds REAL,
             mean_usage_observed_span_seconds REAL,
             initial_agents INTEGER,
@@ -437,6 +457,12 @@ def _run_record(
         if len(response_values) == 1:
             resolved_model = response_values[0]
     provider_failures = int(reliability.get("llm_provider_failure_events") or 0)
+    population_groups = _path_get(manifest, "population", "groups", default=[]) or []
+    cohort_workers = [
+        int(group["max_workers"])
+        for group in population_groups
+        if isinstance(group, dict) and group.get("max_workers") is not None
+    ]
     return (
         {
             "run_id": run_id,
@@ -462,6 +488,8 @@ def _run_record(
             "connector_profile": _path_get(manifest, "agent_boundary", "connector_profile")
             or _path_get(report, "population", "connector_profile"),
             "conversation_mode": _path_get(manifest, "agent_boundary", "conversation_mode"),
+            "global_max_workers": _path_get(manifest, "concurrency", "global"),
+            "cohort_max_workers": max(cohort_workers) if cohort_workers else None,
             "started_at_utc": started,
             "ended_at_utc": ended,
             "wall_clock_seconds": _iso_duration_seconds(started, ended),
@@ -479,6 +507,8 @@ def _run_record(
             "competence": _score(report, "sustained_competence"),
             "entrepreneurship": _score(report, "entrepreneurial_agency"),
             "economic_productivity": _score(report, "economic_productivity"),
+            "configured_agents": _path_get(manifest, "population", "total_agents")
+            or raw.get("initial_agents"),
             "initial_agents": raw.get("initial_agents"),
             "living_agents": raw.get("living_agents"),
             "deaths": _path_get(report, "survival", "dead"),
@@ -579,9 +609,10 @@ def _decision_record(run_id: str, index: int, usage: dict[str, Any]) -> dict[str
 
 def _insert_tick_metrics(
     connection: sqlite3.Connection,
-    run_id: str,
+    run_record: dict[str, Any],
     decisions: list[dict[str, Any]],
 ) -> None:
+    run_id = run_record["run_id"]
     by_tick: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for decision in decisions:
         if decision.get("tick") is not None:
@@ -600,6 +631,18 @@ def _insert_tick_metrics(
             if row.get("decision_time_unix") is not None and row.get("duration_seconds") is not None
         ]
         costs = [row.get("api_list_cost_usd") for row in rows]
+        deciding_agent_ids = {
+            str(row["agent_id"]) for row in rows if row.get("agent_id") is not None
+        }
+        deciding_agents = len(deciding_agent_ids) or len(rows)
+        configured_agents = run_record.get("configured_agents")
+        max_workers = run_record.get("global_max_workers") or run_record.get("cohort_max_workers")
+        worker_batches = (
+            math.ceil(deciding_agents / int(max_workers))
+            if deciding_agents and max_workers and int(max_workers) > 0
+            else None
+        )
+        concurrent_wall_span = max(ends) - min(starts) if starts and ends else None
         _insert(
             connection,
             "tick_metrics",
@@ -607,12 +650,26 @@ def _insert_tick_metrics(
                 "run_id": run_id,
                 "tick": tick,
                 "decision_count": len(rows),
+                "deciding_agent_count": deciding_agents,
+                "configured_agent_count": configured_agents,
+                "effective_max_workers": max_workers,
+                "worker_batches": worker_batches,
                 "latency_coverage_pct": 100.0 * int(latency["samples"] or 0) / len(rows),
                 "decision_latency_mean_seconds": latency["mean"],
                 "decision_latency_median_seconds": latency["median"],
                 "decision_latency_p95_seconds": latency["p95"],
                 "decision_latency_max_seconds": latency["max"],
-                "concurrent_wall_span_seconds": max(ends) - min(starts) if starts and ends else None,
+                "concurrent_wall_span_seconds": concurrent_wall_span,
+                "concurrent_wall_span_per_deciding_agent_seconds": concurrent_wall_span / deciding_agents
+                if concurrent_wall_span is not None and deciding_agents
+                else None,
+                "concurrent_wall_span_per_configured_agent_seconds": concurrent_wall_span
+                / int(configured_agents)
+                if concurrent_wall_span is not None and configured_agents
+                else None,
+                "concurrent_wall_span_per_worker_batch_seconds": concurrent_wall_span / worker_batches
+                if concurrent_wall_span is not None and worker_batches
+                else None,
                 "prompt_tokens": sum(int(row.get("prompt_tokens") or 0) for row in rows),
                 "completion_tokens": sum(int(row.get("completion_tokens") or 0) for row in rows),
                 "reasoning_tokens": sum(int(row.get("reasoning_tokens") or 0) for row in rows),
@@ -666,15 +723,33 @@ def _insert_model_results(
         endpoint_capacity = sum(float(record["endpoint_health_capacity"] or 0) for record in records)
         run_ids = [record["run_id"] for record in records]
         placeholders = ",".join("?" for _ in run_ids)
-        tick_spans = [
-            float(row[0])
-            for row in connection.execute(
-                f"SELECT concurrent_wall_span_seconds FROM tick_metrics "
-                f"WHERE run_id IN ({placeholders}) AND concurrent_wall_span_seconds IS NOT NULL",
-                run_ids,
-            ).fetchall()
-        ]
+        tick_rows = connection.execute(
+            f"SELECT concurrent_wall_span_seconds, "
+            f"concurrent_wall_span_per_deciding_agent_seconds, "
+            f"concurrent_wall_span_per_configured_agent_seconds, "
+            f"concurrent_wall_span_per_worker_batch_seconds "
+            f"FROM tick_metrics "
+            f"WHERE run_id IN ({placeholders}) AND concurrent_wall_span_seconds IS NOT NULL",
+            run_ids,
+        ).fetchall()
+        tick_spans = [float(row[0]) for row in tick_rows]
+        tick_per_deciding_agent = [float(row[1]) for row in tick_rows if row[1] is not None]
+        tick_per_configured_agent = [float(row[2]) for row in tick_rows if row[2] is not None]
+        tick_per_worker_batch = [float(row[3]) for row in tick_rows if row[3] is not None]
         tick_latency = _latency_summary(tick_spans)
+        tick_deciding_agent_latency = _latency_summary(tick_per_deciding_agent)
+        tick_configured_agent_latency = _latency_summary(tick_per_configured_agent)
+        tick_worker_batch_latency = _latency_summary(tick_per_worker_batch)
+        configured_agent_counts = [
+            int(record["configured_agents"])
+            for record in records
+            if record["configured_agents"]
+        ]
+        global_worker_counts = [
+            int(record["global_max_workers"])
+            for record in records
+            if record["global_max_workers"]
+        ]
         execution_scores = [float(record["execution"]) for record in records]
         competence_scores = [float(record["competence"]) for record in records]
         entrepreneurship_scores = [float(record["entrepreneurship"]) for record in records]
@@ -715,6 +790,16 @@ def _insert_model_results(
                 "tick_wall_span_mean_seconds": tick_latency["mean"],
                 "tick_wall_span_median_seconds": tick_latency["median"],
                 "tick_wall_span_p95_seconds": tick_latency["p95"],
+                "tick_wall_per_deciding_agent_median_seconds": tick_deciding_agent_latency["median"],
+                "tick_wall_per_deciding_agent_p95_seconds": tick_deciding_agent_latency["p95"],
+                "tick_wall_per_configured_agent_median_seconds": tick_configured_agent_latency["median"],
+                "tick_wall_per_configured_agent_p95_seconds": tick_configured_agent_latency["p95"],
+                "tick_wall_per_worker_batch_median_seconds": tick_worker_batch_latency["median"],
+                "tick_wall_per_worker_batch_p95_seconds": tick_worker_batch_latency["p95"],
+                "configured_agents_min": min(configured_agent_counts) if configured_agent_counts else None,
+                "configured_agents_max": max(configured_agent_counts) if configured_agent_counts else None,
+                "global_max_workers_min": min(global_worker_counts) if global_worker_counts else None,
+                "global_max_workers_max": max(global_worker_counts) if global_worker_counts else None,
                 "mean_run_wall_clock_seconds": statistics.fmean(wall) if wall else None,
                 "mean_usage_observed_span_seconds": statistics.fmean(observed_spans)
                 if observed_spans
@@ -815,7 +900,7 @@ def build_database(catalog_path: Path, output_path: Path, repo_root: Path | None
                 decisions = [_decision_record(record["run_id"], index, row) for index, row in enumerate(usage)]
                 for decision in decisions:
                     _insert(connection, "decisions", decision)
-                _insert_tick_metrics(connection, record["run_id"], decisions)
+                _insert_tick_metrics(connection, record, decisions)
                 run_records[model["model_key"]].append(record)
                 run_decisions[record["run_id"]] = decisions
         _insert_model_results(connection, models, run_records, run_decisions)

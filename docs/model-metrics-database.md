@@ -41,6 +41,16 @@ included and diagnostic Participant v6 usage ledgers.
   standard deviation, and coverage.
 - `tick_metrics.concurrent_wall_span_seconds` estimates user-visible world-turn
   latency from the earliest concurrent call start to the latest call end.
+- `tick_metrics.concurrent_wall_span_per_deciding_agent_seconds` divides that
+  tick's wall span by the number of distinct agents that actually requested a
+  decision. Its model-level median and p95 are the default normalized world-tick
+  comparison when populations differ or deaths reduce the active population.
+- `tick_metrics.concurrent_wall_span_per_configured_agent_seconds` retains the
+  same normalization against the run's configured starting population.
+- `tick_metrics.concurrent_wall_span_per_worker_batch_seconds` divides by the
+  number of concurrency waves implied by deciding agents and the run's worker
+  limit. This helps distinguish a slow model from a run that simply queued more
+  batches. Agent count and worker limits are stored alongside every result.
 - `benchmark_runs.usage_observed_span_seconds` runs from the earliest recorded
   call start to the final recorded call end. It is the best historical measure
   of whole-run elapsed time and includes any gaps between recorded decisions.
@@ -49,8 +59,12 @@ included and diagnostic Participant v6 usage ledgers.
   retained as provenance rather than treated as authoritative total runtime.
 
 Do not sum decision latency to estimate elapsed run time: agents decide
-concurrently. Median is the best quick “typical response” number; p95 exposes
-the slow-tail experience.
+concurrently. Also do not describe world-tick-per-agent as individual response
+latency—it is an amortized throughput measure, while
+`latency_median_seconds` is the typical individual response. Retain both raw
+world-tick latency and normalized latency: the raw value describes what the
+user waited, while the normalized values support population-aware comparisons.
+Median is the best quick “typical” number; p95 exposes the slow tail.
 
 Time to first token is **not** available from the current non-streaming CLI
 connectors. When a provider exposes it reliably, record both request start and
@@ -112,6 +126,22 @@ SELECT label, rank,
        round(latency_median_seconds, 2) AS p50_seconds,
        round(latency_p95_seconds, 2) AS p95_seconds,
        round(api_list_cost_per_run_usd, 2) AS cost_per_run
+FROM model_capabilities
+WHERE leaderboard_eligible = 1
+ORDER BY rank;'
+```
+
+Compare population-aware world-turn speed:
+
+```bash
+sqlite3 -header -column data/model-benchmarks.sqlite '
+SELECT label, configured_agents_min, configured_agents_max,
+       global_max_workers_min, global_max_workers_max,
+       round(tick_wall_span_median_seconds, 2) AS raw_tick_p50_seconds,
+       round(tick_wall_per_deciding_agent_median_seconds, 2)
+         AS tick_p50_seconds_per_deciding_agent,
+       round(tick_wall_per_worker_batch_median_seconds, 2)
+         AS tick_p50_seconds_per_worker_batch
 FROM model_capabilities
 WHERE leaderboard_eligible = 1
 ORDER BY rank;'
