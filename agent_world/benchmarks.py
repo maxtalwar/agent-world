@@ -97,9 +97,27 @@ GIFT_VERDICTS = frozenset(
 # comparison (extracted into _check_resume_fingerprint) and is only reachable
 # from the resume branch of _run; no agent-facing code, no scoring code, and
 # no launch path changed.
-# Empty for v7 by construction: the gift-kind schema change is agent-visible
-# text for every provider, so no earlier trial saw the v7 world.
-BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset()
+#
+# 7dff4cec... is the claude-scoped v6 fingerprint at commit a86d06f, under
+# which the Fable 5 checkpoints were written. The compatibility branch keeps
+# that protocol and world byte-for-byte and changes only provider-failure
+# handling: a quota refusal now freezes the completed-tick boundary instead of
+# fabricating wait actions. This entry permits the recovered tick-32 checkpoint
+# to resume without changing any successful decision or world transition.
+#
+# Both entries are v6 fingerprints and neither promotes anything into v7. A
+# resume is refused outright when the checkpoint's protocol is not the current
+# one (see _check_resume_fingerprint), so a v6 checkpoint cannot be finished
+# under the v7 world, and _trial_flags only consults this set for trials that
+# already declare the current protocol. Resume those checkpoints from a
+# worktree pinned to their own v6 launch commit, which is where these entries
+# do their work.
+BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
+    {
+        "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
+        "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
+    }
+)
 
 # Same-suite reports whose stored fingerprint predates a code change that
 # cannot change their numbers. Membership is the audit: an entry is only added

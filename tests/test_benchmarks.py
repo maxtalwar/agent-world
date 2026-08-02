@@ -1311,14 +1311,14 @@ class ResumeFingerprintGuardTests(unittest.TestCase):
         scoped = benchmark_code_fingerprint(["codex_cli"])
         self.assertNotEqual(scoped, benchmark_code_fingerprint())
         # Must not raise: same code, same provider scope as launch recorded.
-        _check_resume_fingerprint("participant-v6", scoped, ["codex_cli"])
+        _check_resume_fingerprint(BENCHMARK_PROTOCOL_ID, scoped, ["codex_cli"])
 
     def test_resume_rejects_a_changed_fingerprint(self) -> None:
         from agent_world.cli import _check_resume_fingerprint
 
         with self.assertRaises(ValueError):
             _check_resume_fingerprint(
-                "participant-v6", "not-a-real-hash", ["codex_cli"]
+                BENCHMARK_PROTOCOL_ID, "not-a-real-hash", ["codex_cli"]
             )
 
     def test_resume_accepts_an_audited_compatible_fingerprint(self) -> None:
@@ -1332,8 +1332,29 @@ class ResumeFingerprintGuardTests(unittest.TestCase):
             frozenset({"audited-old-hash"}),
         ):
             _check_resume_fingerprint(
-                "participant-v6", "audited-old-hash", ["codex_cli"]
+                BENCHMARK_PROTOCOL_ID, "audited-old-hash", ["codex_cli"]
             )
+
+    def test_fable_launch_fingerprint_is_registered_for_its_own_suite(self) -> None:
+        # The Fable v6 checkpoints resume from a v6-pinned worktree, where this
+        # entry suppresses the fingerprint mismatch the quota fix introduced.
+        self.assertIn(
+            "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
+            agent_world.benchmarks.BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS,
+        )
+
+    def test_resume_refuses_a_checkpoint_from_an_earlier_protocol(self) -> None:
+        # Splicing two suites into one trial: the opening ticks ran a different
+        # world. The compatibility registry must not wave this through.
+        from agent_world.cli import _check_resume_fingerprint
+
+        with self.assertRaises(ValueError) as caught:
+            _check_resume_fingerprint(
+                "participant-v6",
+                "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
+                ["claude_cli"],
+            )
+        self.assertIn("pinned to its own launch commit", str(caught.exception))
 
     def test_non_benchmark_resume_is_unguarded(self) -> None:
         from agent_world.cli import _check_resume_fingerprint

@@ -375,10 +375,23 @@ def _check_resume_fingerprint(
     resumes whenever an unrelated provider's code differs. Fingerprints in
     BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS are audited as behaviorally
     identical to the current code and remain resumable.
+
+    A checkpoint from an earlier protocol is refused outright. Its opening
+    ticks ran a different world, so finishing it here would splice two suites
+    into one trial - and the compatibility registry, which is scoped per
+    protocol, would otherwise wave exactly that through. Resume such a
+    checkpoint from a worktree pinned to its own launch commit.
     """
 
     if saved_benchmark is None:
         return
+    if str(saved_benchmark) != BENCHMARK_PROTOCOL_ID:
+        raise ValueError(
+            f"This checkpoint was recorded under {saved_benchmark}, but this "
+            f"checkout runs {BENCHMARK_PROTOCOL_ID}. Resuming would run the "
+            "remaining ticks in a different world than the completed ones. "
+            "Resume it from a worktree pinned to its own launch commit."
+        )
     if saved_fingerprint == benchmark_code_fingerprint(providers or None):
         return
     if saved_fingerprint in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS:
