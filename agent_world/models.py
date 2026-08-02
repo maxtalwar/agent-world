@@ -437,6 +437,37 @@ class CreditContract:
 
 
 @dataclass
+class DeliveryContract:
+    id: str
+    proposer_id: str
+    counterparty_id: str
+    give: Counter[str]
+    receive: Counter[str]
+    collateral: Counter[str]
+    created_tick: int
+    deadline_tick: int
+    proposal_expires_tick: int
+    status: str = "proposed"
+    buyer_id: str | None = None
+
+    def summary(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "proposer_id": self.proposer_id,
+            "counterparty": self.counterparty_id,
+            "open": self.counterparty_id == "open",
+            "buyer_id": self.buyer_id,
+            "give": dict(self.give),
+            "receive": dict(self.receive),
+            "collateral": dict(self.collateral),
+            "created_tick": self.created_tick,
+            "deadline_tick": self.deadline_tick,
+            "proposal_expires_tick": self.proposal_expires_tick,
+            "status": self.status,
+        }
+
+
+@dataclass
 class Group:
     id: str
     name: str
@@ -523,7 +554,7 @@ class WorldState:
     item_piles: dict[str, ItemPile] = field(default_factory=dict)
     structures: dict[str, Structure] = field(default_factory=dict)
     trades: dict[str, TradeOffer] = field(default_factory=dict)
-    contracts: dict[str, CreditContract] = field(default_factory=dict)
+    contracts: dict[str, CreditContract | DeliveryContract] = field(default_factory=dict)
     market_history: list[dict[str, Any]] = field(default_factory=list)
     groups: dict[str, Group] = field(default_factory=dict)
     events: list[Event] = field(default_factory=list)

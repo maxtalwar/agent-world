@@ -110,6 +110,8 @@ MECHANICS_SUMMARY: dict[str, object] = {
         "store": "Moves carried goods into accessible storage, house, or workshop space on the current tile.",
         "retrieve": "Moves goods from accessible storage, house, or workshop space into inventory.",
         "offer_trade": "Creates a direct trade offer to a visible agent, or a public standing offer if target is any. Commerce-mode public offers are globally visible. Offered goods are held until accepted, rejected, or expired.",
+        "propose_contract": "In organic worlds, proposes a delivery agreement without moving goods. Acceptance escrows the buyer's full payment and the proposer's collateral.",
+        "post_ledger_note": "In organic worlds, appends one public town-ledger note per agent per tick.",
         "offer_contract": "Offers secured credit: an advance is escrowed now, collateral is posted on acceptance, and repayment is enforced at the due tick.",
         "set_access_fee": "An owner can make a productive structure public and charge goods per productive use.",
         "claim_dividend": "Collects fee revenue credited to a structure contributor.",
@@ -389,6 +391,8 @@ FREE_ACTION_TYPES = {
     "accept_trade",
     "reject_trade",
     "accept_contract",
+    "deliver_contract",
+    "cancel_contract",
     "repay_contract",
     "claim_dividend",
     "set_access_fee",
@@ -563,6 +567,11 @@ ACTION_SCHEMA: list[dict[str, object]] = [
         "example": {"type": "offer_trade", "to": "any", "give": {"food": 1}, "receive": {"water": 1}},
     },
     {
+        "type": "propose_contract",
+        "parameters": {"counterparty": "agent_id|'open'", "give": "item counts", "receive": "item counts", "deadline_tick": "absolute tick", "collateral": "item counts optional"},
+        "example": {"type": "propose_contract", "counterparty": "open", "give": {"food": 2}, "receive": {"coin": 3}, "deadline_tick": 10, "collateral": {"tool": 1}},
+    },
+    {
         "type": "offer_contract",
         "parameters": {"to": "agent_id", "advance": "item counts", "repayment": "item counts", "collateral": "item counts optional", "due_in": "int optional", "expires_in": "int optional"},
         "example": {"type": "offer_contract", "to": "agent-2", "advance": {"food": 2}, "repayment": {"ore": 1}, "collateral": {"tool": 1}, "due_in": 5},
@@ -571,6 +580,16 @@ ACTION_SCHEMA: list[dict[str, object]] = [
         "type": "accept_contract",
         "parameters": {"contract_id": "string"},
         "example": {"type": "accept_contract", "contract_id": "contract-1"},
+    },
+    {
+        "type": "deliver_contract",
+        "parameters": {"contract_id": "string"},
+        "example": {"type": "deliver_contract", "contract_id": "contract-1"},
+    },
+    {
+        "type": "cancel_contract",
+        "parameters": {"contract_id": "string"},
+        "example": {"type": "cancel_contract", "contract_id": "contract-1"},
     },
     {
         "type": "repay_contract",
@@ -670,6 +689,11 @@ ACTION_SCHEMA: list[dict[str, object]] = [
         "parameters": {"parties": "agent_id list", "text": "string", "group_id": "string optional"},
         "example": {"type": "record_agreement", "group_id": "group-1", "parties": ["agent-1", "agent-2"], "text": "Share food from this tile."},
     },
+    {
+        "type": "post_ledger_note",
+        "parameters": {"title": "string max 60 chars", "body": "string max 400 chars"},
+        "example": {"type": "post_ledger_note", "title": "Food price", "body": "Selling 2 food for 3 coin."},
+    },
 ]
 
 _ACTION_COSTS: dict[str, dict[str, object]] = {
@@ -697,6 +721,10 @@ _ACTION_COSTS: dict[str, dict[str, object]] = {
     "offer_trade": {"action_points": 1, "energy": 0},
     "accept_trade": {"action_points": 0, "energy": 0},
     "reject_trade": {"action_points": 0, "energy": 0},
+    "propose_contract": {"action_points": 1, "energy": 0},
+    "deliver_contract": {"action_points": 0, "energy": 0},
+    "cancel_contract": {"action_points": 0, "energy": 0},
+    "post_ledger_note": {"action_points": 1, "energy": 0},
     "offer_contract": {"action_points": 1, "energy": 0},
     "accept_contract": {"action_points": 0, "energy": 0},
     "repay_contract": {"action_points": 0, "energy": 0},

@@ -13,6 +13,7 @@ from agent_world.models import (
     Agent,
     AgentDecision,
     CreditContract,
+    DeliveryContract,
     Event,
     Group,
     ItemPile,
@@ -311,9 +312,13 @@ class WorldEngine:
             "offer_trade": self._action_offer_trade,
             "accept_trade": self._action_accept_trade,
             "reject_trade": self._action_reject_trade,
+            "propose_contract": self._action_propose_contract,
             "offer_contract": self._action_offer_contract,
             "accept_contract": self._action_accept_contract,
+            "deliver_contract": self._action_deliver_contract,
+            "cancel_contract": self._action_cancel_contract,
             "repay_contract": self._action_repay_contract,
+            "post_ledger_note": self._action_post_ledger_note,
             "gift": self._action_gift,
             "claim_tile": self._action_claim_tile,
             "contest_claim": self._action_contest_claim,
@@ -1254,8 +1259,10 @@ class WorldEngine:
         return action_points - 1
 
     def _action_accept_contract(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
+        if self.state.config.economy_mode == "organic":
+            return self._action_accept_delivery_contract(agent, action, action_points)
         contract = self.state.contracts.get(str(action.get("contract_id", "")))
-        if contract is None or contract.status != "offered":
+        if not isinstance(contract, CreditContract) or contract.status != "offered":
             self._invalid(agent, action, "Contract is not open.")
             return action_points
         if contract.borrower_id != agent.id:
@@ -1288,9 +1295,239 @@ class WorldEngine:
         )
         return action_points
 
+    def _action_propose_contract(
+        self, agent: Agent, action: dict[str, Any], action_points: int
+    ) -> int:
+        if self.state.config.economy_mode != "organic":
+            self._invalid(agent, action, "Delivery contracts are available only in organic worlds.")
+            return action_points - 1
+        open_proposals = sum(
+            isinstance(contract, DeliveryContract)
+            and contract.proposer_id == agent.id
+            and contract.status == "proposed"
+            for contract in self.state.contracts.values()
+        )
+        if open_proposals >= 3:
+            self._invalid(agent, action, "Agent already has the maximum of 3 unaccepted contract proposals.")
+            return action_points - 1
+        counterparty_id = str(action.get("counterparty", "")).strip()
+        if counterparty_id == "open":
+            counterparty = None
+        else:
+            counterparty = self.state.agents.get(counterparty_id)
+            if counterparty is None or not counterparty.alive or counterparty.id == agent.id:
+                self._invalid(agent, action, "Contract counterparty must be another living agent or 'open'.")
+                return action_points - 1
+        give = self._counter_from_mapping(action.get("give", {}))
+        receive = self._counter_from_mapping(action.get("receive", {}))
+        collateral = self._counter_from_mapping(action.get("collateral", {}))
+        if not give or not receive:
+            self._invalid(agent, action, "A delivery contract requires non-empty give and receive bundles.")
+            return action_points - 1
+        try:
+            deadline_tick = int(action.get("deadline_tick"))
+        except (TypeError, ValueError):
+            self._invalid(agent, action, "deadline_tick must be an absolute integer tick.")
+            return action_points - 1
+        ticks_ahead = deadline_tick - self.state.tick
+        if ticks_ahead < 1 or ticks_ahead > 20:
+            self._invalid(agent, action, "deadline_tick must be at least 1 and at most 20 ticks in the future.")
+            return action_points - 1
+        contract_id = f"contract-{self.state.next_contract_id}"
+        self.state.next_contract_id += 1
+        contract = DeliveryContract(
+            id=contract_id,
+            proposer_id=agent.id,
+            counterparty_id="open" if counterparty is None else counterparty.id,
+            give=give,
+            receive=receive,
+            collateral=collateral,
+            created_tick=self.state.tick,
+            deadline_tick=deadline_tick,
+            proposal_expires_tick=self.state.tick + 5,
+        )
+        self.state.contracts[contract.id] = contract
+        self.log_event(
+            "contract_proposed",
+            actor_id=agent.id,
+            position=agent.position,
+            message=f"{agent.name} proposed delivery contract {contract.id}.",
+            data={"contract": contract.summary()},
+            scope="public",
+        )
+        return action_points - 1
+
+    def _action_accept_delivery_contract(
+        self, agent: Agent, action: dict[str, Any], action_points: int
+    ) -> int:
+        contract = self.state.contracts.get(str(action.get("contract_id", "")))
+        if not isinstance(contract, DeliveryContract) or contract.status != "proposed":
+            self._invalid(agent, action, "Contract proposal is not open.")
+            return action_points
+        if contract.proposer_id == agent.id:
+            self._invalid(agent, action, "Proposer cannot accept their own contract.")
+            return action_points
+        if contract.counterparty_id not in {"open", agent.id}:
+            self._invalid(agent, action, "Only the named counterparty can accept this contract.")
+            return action_points
+        proposer = self.state.agents.get(contract.proposer_id)
+        if proposer is None or not proposer.alive:
+            self._invalid(agent, action, "Contract proposer is unavailable.")
+            return action_points
+        active_counts = Counter()
+        for current in self.state.contracts.values():
+            if not isinstance(current, DeliveryContract) or current.status != "active":
+                continue
+            active_counts[current.proposer_id] += 1
+            if current.buyer_id:
+                active_counts[current.buyer_id] += 1
+        if active_counts[proposer.id] >= 5:
+            self._invalid(agent, action, "Proposer already has the maximum of 5 active contracts.")
+            return action_points
+        if active_counts[agent.id] >= 5:
+            self._invalid(agent, action, "Acceptor already has the maximum of 5 active contracts.")
+            return action_points
+        if self._missing(agent.inventory, contract.receive):
+            self._invalid(agent, action, "Acceptor lacks the full payment bundle required for escrow.")
+            return action_points
+        if self._missing(proposer.inventory, contract.collateral):
+            self._invalid(agent, action, "Proposer lacks the full collateral bundle required for escrow.")
+            return action_points
+        for item, quantity in contract.receive.items():
+            agent.inventory[item] -= quantity
+        for item, quantity in contract.collateral.items():
+            proposer.inventory[item] -= quantity
+        contract.buyer_id = agent.id
+        contract.status = "active"
+        self.log_event(
+            "contract_accepted",
+            actor_id=agent.id,
+            position=agent.position,
+            message=f"{agent.name} accepted {contract.id}; payment and collateral are escrowed.",
+            data={"contract": contract.summary()},
+            scope="public",
+        )
+        return action_points
+
+    def _action_deliver_contract(
+        self, agent: Agent, action: dict[str, Any], action_points: int
+    ) -> int:
+        if self.state.config.economy_mode != "organic":
+            self._invalid(agent, action, "Delivery contracts are available only in organic worlds.")
+            return action_points
+        contract = self.state.contracts.get(str(action.get("contract_id", "")))
+        if not isinstance(contract, DeliveryContract) or contract.status != "active":
+            self._invalid(agent, action, "Contract is not active.")
+            return action_points
+        if contract.proposer_id != agent.id:
+            self._invalid(agent, action, "Only the proposer can deliver this contract.")
+            return action_points
+        buyer = self.state.agents.get(str(contract.buyer_id or ""))
+        if buyer is None or not buyer.alive:
+            self._invalid(agent, action, "Contract buyer is unavailable.")
+            return action_points
+        if self._missing(agent.inventory, contract.give):
+            self._invalid(agent, action, "Proposer lacks the full delivery bundle.")
+            return action_points
+        proposer_add = Counter(contract.receive)
+        proposer_add.update(contract.collateral)
+        if not self._can_carry_after_exchange(agent, remove=contract.give, add=proposer_add):
+            self._invalid(agent, action, "Settlement would exceed the proposer's carrying capacity.")
+            return action_points
+        if not self._can_carry_after_exchange(buyer, remove=Counter(), add=contract.give):
+            self._invalid(agent, action, "Delivery would exceed the buyer's carrying capacity.")
+            return action_points
+        for item, quantity in contract.give.items():
+            agent.inventory[item] -= quantity
+            buyer.inventory[item] += quantity
+        agent.inventory.update(contract.receive)
+        agent.inventory.update(contract.collateral)
+        contract.status = "settled"
+        transaction = {
+            "tick": self.state.tick,
+            "contract_id": contract.id,
+            "seller_id": agent.id,
+            "buyer_id": buyer.id,
+            "give": dict(contract.give),
+            "receive": dict(contract.receive),
+            "market_scope": "global",
+            "position": asdict(agent.position),
+        }
+        self.state.market_history.append(transaction)
+        self.log_event(
+            "contract_settled",
+            actor_id=agent.id,
+            position=agent.position,
+            message=f"{agent.name} delivered and settled {contract.id}.",
+            data={"contract": contract.summary(), "transaction": transaction},
+            scope="public",
+        )
+        return action_points
+
+    def _action_cancel_contract(
+        self, agent: Agent, action: dict[str, Any], action_points: int
+    ) -> int:
+        if self.state.config.economy_mode != "organic":
+            self._invalid(agent, action, "Delivery contracts are available only in organic worlds.")
+            return action_points
+        contract = self.state.contracts.get(str(action.get("contract_id", "")))
+        if not isinstance(contract, DeliveryContract) or contract.status != "proposed":
+            self._invalid(agent, action, "Only an unaccepted contract proposal can be cancelled.")
+            return action_points
+        if contract.proposer_id != agent.id:
+            self._invalid(agent, action, "Only the proposer can cancel this contract.")
+            return action_points
+        contract.status = "cancelled"
+        self.log_event(
+            "contract_cancelled",
+            actor_id=agent.id,
+            position=agent.position,
+            message=f"{agent.name} cancelled {contract.id}.",
+            data={"contract": contract.summary()},
+            scope="public",
+        )
+        return action_points
+
+    def _action_post_ledger_note(
+        self, agent: Agent, action: dict[str, Any], action_points: int
+    ) -> int:
+        if self.state.config.economy_mode != "organic":
+            self._invalid(agent, action, "The town ledger is available only in organic worlds.")
+            return action_points - 1
+        if any(
+            event.tick == self.state.tick
+            and event.type == "ledger_note"
+            and event.actor_id == agent.id
+            for event in reversed(self.state.events)
+        ):
+            self._invalid(agent, action, "Agent may post only one town-ledger note per tick.")
+            return action_points - 1
+        title = action.get("title")
+        body = action.get("body")
+        if not isinstance(title, str) or not title.strip():
+            self._invalid(agent, action, "Ledger note title must be a non-empty string.")
+            return action_points - 1
+        if not isinstance(body, str) or not body.strip():
+            self._invalid(agent, action, "Ledger note body must be a non-empty string.")
+            return action_points - 1
+        if len(title) > 60:
+            self._invalid(agent, action, "Ledger note title may not exceed 60 characters.")
+            return action_points - 1
+        if len(body) > 400:
+            self._invalid(agent, action, "Ledger note body may not exceed 400 characters.")
+            return action_points - 1
+        self.log_event(
+            "ledger_note",
+            actor_id=agent.id,
+            message=f"{agent.name} posted to the town ledger: {title}",
+            data={"author": agent.id, "tick": self.state.tick, "title": title, "body": body},
+            scope="public",
+        )
+        return action_points - 1
+
     def _action_repay_contract(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         contract = self.state.contracts.get(str(action.get("contract_id", "")))
-        if contract is None or contract.status != "active":
+        if not isinstance(contract, CreditContract) or contract.status != "active":
             self._invalid(agent, action, "Contract is not active.")
             return action_points
         if contract.borrower_id != agent.id:
@@ -2130,6 +2367,9 @@ class WorldEngine:
 
     def _settle_due_contracts(self) -> None:
         for contract in self.state.contracts.values():
+            if isinstance(contract, DeliveryContract):
+                self._settle_delivery_contract_deadline(contract)
+                continue
             if contract.status == "offered" and contract.offer_expires_tick <= self.state.tick:
                 contract.status = "expired"
                 lender = self.state.agents.get(contract.lender_id)
@@ -2179,6 +2419,52 @@ class WorldEngine:
                 data={"contract": contract.summary(), "collateral_forfeited": dict(contract.collateral)},
                 scope="public",
             )
+
+    def _settle_delivery_contract_deadline(self, contract: DeliveryContract) -> None:
+        if contract.status == "proposed" and contract.proposal_expires_tick <= self.state.tick:
+            contract.status = "expired"
+            self.log_event(
+                "contract_expired",
+                actor_id=contract.proposer_id,
+                message=f"{contract.id} expired without acceptance.",
+                data={"contract": contract.summary()},
+                scope="public",
+            )
+            return
+        if contract.status != "active" or contract.deadline_tick > self.state.tick:
+            return
+        buyer = self.state.agents.get(str(contract.buyer_id or ""))
+        proposer = self.state.agents.get(contract.proposer_id)
+        buyer_position = (
+            buyer.position
+            if buyer is not None
+            else proposer.position
+            if proposer is not None
+            else Position(self.state.config.width // 2, self.state.config.height // 2)
+        )
+        if contract.buyer_id:
+            self._deliver_owned_items(contract.buyer_id, contract.receive, buyer_position)
+            self._deliver_owned_items(contract.buyer_id, contract.collateral, buyer_position)
+        contract.status = "defaulted"
+        self.log_event(
+            "contract_defaulted",
+            actor_id=contract.proposer_id,
+            position=proposer.position if proposer else None,
+            message=f"{contract.id} defaulted; payment returned and collateral transferred to the buyer.",
+            data={
+                "contract": contract.summary(),
+                "payment_returned": dict(contract.receive),
+                "collateral_forfeited": dict(contract.collateral),
+                "flow": {
+                    "from": contract.proposer_id,
+                    "to": contract.buyer_id,
+                    "items": dict(contract.collateral),
+                    "kind": "contract_default_collateral",
+                    "enterprise_supply_eligible": False,
+                },
+            },
+            scope="public",
+        )
 
     def _fulfill_contract(self, contract: CreditContract, voluntary: bool) -> None:
         borrower = self.state.agents[contract.borrower_id]

@@ -23,6 +23,12 @@ from agent_world.rules import (
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
 ACTION_FAILURE_EVENT_TYPES = {"invalid_action", "contention_failure"}
+ORGANIC_ONLY_ACTION_TYPES = {
+    "propose_contract",
+    "deliver_contract",
+    "cancel_contract",
+    "post_ledger_note",
+}
 
 
 def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
@@ -73,20 +79,38 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         for trade in state.trades.values()
         if trade.status == "open" and _trade_visible_to_agent(state, agent, trade, radius)
     ]
-    visible_contracts = [
-        contract.summary()
-        for contract in getattr(state, "contracts", {}).values()
-        if agent.id in {contract.lender_id, contract.borrower_id}
-    ]
+    if state.config.economy_mode == "organic":
+        visible_contracts = [contract.summary() for contract in state.contracts.values()]
+    else:
+        visible_contracts = [
+            contract.summary()
+            for contract in getattr(state, "contracts", {}).values()
+            if agent.id in {contract.lender_id, contract.borrower_id}
+        ]
     effective_recipes = recipes_for_mode(
         state.config.economy_mode, getattr(state.config, "world_variant", "classic")
     )
+    mechanics = MECHANICS_SUMMARY
+    if state.config.economy_mode != "organic":
+        mechanics = {
+            **MECHANICS_SUMMARY,
+            "action_notes": {
+                key: value
+                for key, value in MECHANICS_SUMMARY["action_notes"].items()
+                if key not in {"propose_contract", "post_ledger_note"}
+            },
+        }
     disabled_actions = (
-        {"offer_contract", "accept_contract", "repay_contract"}
+        {"offer_contract", "repay_contract"}
         if state.config.economy_mode == "organic"
         else set()
     )
-    valid_actions = [action for action in ACTION_SCHEMA if action.get("type") not in disabled_actions]
+    schema_disabled_actions = disabled_actions | (
+        set() if state.config.economy_mode == "organic" else ORGANIC_ONLY_ACTION_TYPES
+    )
+    valid_actions = [
+        action for action in ACTION_SCHEMA if action.get("type") not in schema_disabled_actions
+    ]
     feedback_mode = getattr(state.config, "action_feedback_mode", "baseline")
     recent_events = _recent_visible_events(state, agent, radius)
     if feedback_mode in {"minimal", "none"}:
@@ -106,6 +130,16 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             season_payload["storm"] = True
         if is_storm_tick(state.config.seed, length, state.tick + 1):
             season_payload["storm_warning"] = True
+    ledger_notes = [
+        {
+            "author": event.data.get("author") or event.actor_id,
+            "tick": event.tick,
+            "title": event.data.get("title", ""),
+            "body": event.data.get("body", ""),
+        }
+        for event in state.events
+        if event.type == "ledger_note"
+    ]
     return {
         "tick": state.tick,
         **({"season": season_payload} if season_payload else {}),
@@ -152,7 +186,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
                 }
                 for name, rule in TERRAIN_RULES.items()
             },
-            "mechanics": MECHANICS_SUMMARY,
+            "mechanics": mechanics,
             "recipes": {
                 name: {
                     "inputs": dict(recipe.inputs),
@@ -204,6 +238,16 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         "open_trades": open_trades,
         "market_history": _visible_market_history(state, agent, radius)[-12:],
         "known_contracts": visible_contracts,
+        **(
+            {
+                "town_ledger": {
+                    "total_count": len(ledger_notes),
+                    "recent_notes": ledger_notes[-8:],
+                }
+            }
+            if state.config.economy_mode == "organic"
+            else {}
+        ),
         "known_groups": {
             gid: group.summary()
             for gid, group in state.groups.items()
@@ -383,6 +427,8 @@ def build_static_context(world: dict[str, Any]) -> str:
     for action in ACTION_SCHEMA:
         if action.get("type") in disabled_actions:
             continue
+        if world.get("economy_mode") != "organic" and action.get("type") in ORGANIC_ONLY_ACTION_TYPES:
+            continue
         cost = action.get("cost", {})
         params = action.get("parameters", {})
         if recipe_names and action.get("type") == "craft" and "recipe" in params:
@@ -428,6 +474,19 @@ def build_static_context(world: dict[str, Any]) -> str:
                 "- Expired/rejected goods remain as an owned pile if the owner is away.",
                 "- High-aptitude specialty work yields more for less energy; low aptitude costs +2 energy and learns slowly.",
                 "- ingot, advanced_tool, mint_coin require crafting skill 4 and a workshop.",
+            ]
+        )
+        lines.extend(
+            [
+                "",
+                "DELIVERY CONTRACTS:",
+                "- propose_contract names an agent or open counterparty, give/payment bundles, an absolute deadline 1-20 ticks ahead, and optional proposer collateral; proposal moves nothing.",
+                "- accept_contract escrows the buyer's full payment and the proposer's collateral; deliver_contract settles one full delivery; missed deadlines return payment and forfeit collateral.",
+                "- each agent may have at most 3 unaccepted proposals and 5 active contracts as either party; unaccepted proposals expire after 5 ticks and may be cancelled by the proposer.",
+                "",
+                "TOWN LEDGER:",
+                "- post_ledger_note appends a public world-global note (title <=60 chars, body <=400); each agent may post once per tick.",
+                "- the latest 8 notes and total note count are in town_ledger. Notes can share prices, agreements, laws, or other durable public information.",
             ]
         )
     lines.append("")
@@ -504,6 +563,7 @@ def _slim_market_transaction(item: dict[str, Any]) -> dict[str, Any]:
     keys = (
         "tick",
         "trade_id",
+        "contract_id",
         "seller_id",
         "buyer_id",
         "give",
