@@ -24,6 +24,47 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-02 — Trade does not fail from autarky or thin markets; it fails at settlement
+
+**A 2x2 designed to elicit trade by removing self-sufficiency (specialists)
+and by thickening the market (40 agents instead of 10) moved nothing: every
+cell traded less than the plain 10-agent generalist baseline.** GPT-5.6 Luna
+at medium, 50 ticks, seed 11, frontier world. Enterprise supply per 100
+agent-ticks: 10-agent generalists 3.8, 40-agent generalists 1.1, 10-agent
+specialists 0.8, 40-agent specialists 0.7. The standing hypothesis that
+models do not trade because generalists can supply themselves is therefore
+**wrong**, and so is the market-thickness explanation; the two combined were
+the worst cell of the four.
+
+The funnel shows what actually breaks. Offers scale almost linearly with
+population — 24, 22, 79, 100 across the four cells — while settlements stay
+pinned at 5, 2, 6, 6. In the 40-agent specialist cell agents posted 100 trade
+offers and closed 6; 94 expired unaccepted. Agents want to trade and try
+*harder* when more counterparties exist. They cannot converge on acceptance.
+"Models do not trade" was a mis-description of this behavior for the entire
+project; the accurate claim is **models do not settle**, which is a
+coordination failure rather than a preference or incentive failure. Note this
+supersedes the framing (not the measurements) of the 2026-07-26 entry.
+
+Second finding from the same cells: **zero contracts and zero ledger notes in
+roughly 5,000 decisions**, across all four cells. Delivery contracts and the
+public town ledger had shipped hours earlier and were verified present in the
+agent-facing prompt (`propose_contract`, `deliver_contract`,
+`post_ledger_note` all appear in the static context of these runs). The
+instrument built precisely for "agree now, settle later" was never touched by
+agents whose offers were expiring 94-at-a-time. Adding an affordance does not
+create the behavior it affords.
+
+Scope limits worth respecting: this is one model at one effort (Luna medium,
+v6 competence 35.5, near the bottom of the table), so it does not establish
+that stronger models behave the same way — a matched Sol cell is queued to
+test exactly that. The larger world also costs something independent of
+trade: 33 deaths at 40 agents versus 9 at 10, with invalid actions scaling
+similarly.
+Evidence: `runs/experiments/comparative-advantage-20260802/{a1,a2,a3,a4}`,
+experiment id `comparative-advantage-20260802` in
+`data/model-benchmarks.sqlite`.
+
 ## 2026-08-02 — Resumed-run manifests can dramatically understate elapsed benchmark time
 
 **Manifest start/end timestamps are not a safe whole-run latency metric after
