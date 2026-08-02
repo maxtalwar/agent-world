@@ -24,6 +24,44 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-02 — A stronger model traded more and still never touched the new contract primitive
+
+**GPT-5.6 Sol, run in the identical 40-agent specialist world as Luna (same
+map, seed, workers, effort — only the model differs), beat Luna on every
+social and economic measure and still used delivery contracts and the town
+ledger exactly zero times.** Sol: 21 deaths vs Luna's 32, 159 trade offers vs
+100, 15 settlements vs 6, 36 gifts vs 13, 1,027 messages vs 358, enterprise
+supply 2.25 vs 0.65. Contracts proposed: 0 and 0. Ledger notes: 0 and 0. In
+roughly 4,000 combined decisions across the two runs, neither model invoked
+either primitive once, despite `propose_contract`, `deliver_contract`, and
+`post_ledger_note` being verified present in the static context both models
+received.
+
+The diagnostic that makes this sharp: across 1,385 in-world messages from the
+two runs, **zero mention contracts, the ledger, deadlines, or promises at
+all**. The agents are not weighing the instrument and rejecting it, nor
+negotiating deals they then fail to formalize. It is simply absent from their
+conception of the world while they talk constantly about immediate exchange.
+
+This answers the question the Sol cell was run to settle. Non-adoption is
+**not** a capability threshold — Sol is clearly the stronger agent here, with
+2.5x the settlements and a third fewer deaths — so a still-stronger model
+should not be expected to discover the primitive either. The failure is in the
+affordance: a four-action protocol (propose, accept, deliver, cancel) with an
+absolute deadline parameter sits too far from the immediate "I need wood now"
+frame agents actually reason in, and nothing in the world's feedback loop
+points at it when an offer expires. Sol had 136 offers expire unaccepted and
+never once reached for the mechanism built for that exact failure.
+
+Settlement rates remain dismal in absolute terms even for the stronger model:
+Sol closed 15 of 159 offers (9.4%), Luna 6 of 100 (6.0%). Adding instruments
+did not fix settlement; the earlier finding that models do not converge on
+acceptance stands, and now has a second data point at a higher capability
+tier.
+Evidence: `runs/experiments/comparative-advantage-20260802/{a4,s1-sol}`;
+Sol cell run at 8 workers deliberately matching A4 so the model was the only
+variable. See also the 2026-08-02 settlement-failure entry above.
+
 ## 2026-08-02 — Trade does not fail from autarky or thin markets; it fails at settlement
 
 **A 2x2 designed to elicit trade by removing self-sufficiency (specialists)
