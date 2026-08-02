@@ -60,6 +60,9 @@ directory.
 - `tests/`: regression coverage for world rules, maps, observer, and provider adapters.
 - `docs/`: design notes and future handoff context.
 - `docs/insights.md`: the insights journal — dated, evidence-backed record of model quirks and emergent behaviors discovered across runs. Agents append to it whenever a result would surprise someone who has read every leaderboard.
+- `docs/model-leaderboard.md`: the canonical complete model-selection table,
+  including competence ranking, reasoning use, API-list-equivalent cost, and
+  clearly marked controlled variants.
 
 ## LLM Agents
 
@@ -352,6 +355,10 @@ preset, complete assignment, assignment seed, harness condition, concurrency,
 command, git provenance, resolved response-model versions, and output paths.
 
 ## Standardized model benchmarks
+
+For model selection and the latest complete cross-model comparison, start with
+[`docs/model-leaderboard.md`](docs/model-leaderboard.md). The shorter tables in
+benchmark narratives are presentation excerpts, not separate leaderboards.
 
 Agent World Participant v4 provides three versioned scores: effective execution
 and sustained competence are bounded from 0 to 100, while entrepreneurial
