@@ -24,6 +24,19 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-01 — Sequential turns fixed the problem they targeted and still made runs worse (recovered finding)
+
+**Letting each agent see earlier same-tick resolutions before deciding
+eliminated every one of the ~318 per-run invalid actions attributed to
+unobserved prior events — and overall invalid rates still rose in all three
+paired seeds (27.3% vs 26.1%), offers fell 24.3→18.3, completed structures
+fell two→zero, at 6.2x the runtime.** Perfect information about the current
+tick traded away planning independence and initiative, and the economy paid
+for it. This is why `simultaneous-v1` is the default today. Recovered from
+the July turn-mode experiment while archiving the `codex/experiment-observability`
+branch; full design, statistics, and caveats in `docs/research-ledger.md`
+(2026-07-16 entry), artifacts on the archived branch.
+
 ## 2026-08-01 — Luna's weak frontier result was effort-sensitive, not a fixed model ceiling
 
 **Raising GPT-5.6 Luna from medium to max reasoning increased measured
