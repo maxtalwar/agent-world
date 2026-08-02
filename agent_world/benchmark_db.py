@@ -29,8 +29,8 @@ from agent_world.usage import (
 )
 
 
-SCHEMA_VERSION = 2
-DEFAULT_CATALOG = Path("data/model-benchmark-sources.json")
+SCHEMA_VERSION = 3
+DEFAULT_CATALOG = Path("data/run-sources.json")
 DEFAULT_DATABASE = Path("data/model-benchmarks.sqlite")
 
 
@@ -102,15 +102,14 @@ def _iso_duration_seconds(started: Any, ended: Any) -> float | None:
         return None
 
 
-def _cohort(report: dict[str, Any]) -> dict[str, Any]:
+def _benchmark_cohorts(report: dict[str, Any]) -> dict[str, dict[str, Any]]:
     cohorts = _path_get(report, "benchmarks", "cohorts", default={}) or {}
-    if len(cohorts) != 1:
-        raise ValueError(f"Expected one benchmark cohort, found {len(cohorts)}")
-    return next(iter(cohorts.values()))
+    return cohorts if isinstance(cohorts, dict) else {}
 
 
-def _score(report: dict[str, Any], name: str) -> float:
-    return float(_path_get(_cohort(report), "scores", name, "score", default=0.0) or 0.0)
+def _score(cohort: dict[str, Any], name: str) -> float | None:
+    value = _path_get(cohort, "scores", name, "score")
+    return float(value) if value is not None else None
 
 
 def _sum_counts(value: Any) -> int:
@@ -129,6 +128,16 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             value TEXT NOT NULL
         );
 
+        CREATE TABLE experiments (
+            experiment_id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            question TEXT NOT NULL,
+            design_json TEXT NOT NULL,
+            started_at TEXT,
+            status TEXT NOT NULL,
+            notes TEXT
+        );
+
         CREATE TABLE models (
             model_key TEXT PRIMARY KEY,
             label TEXT NOT NULL,
@@ -140,30 +149,28 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             leaderboard_exclusion_reason TEXT
         );
 
-        CREATE TABLE benchmark_runs (
+        CREATE TABLE runs (
             run_id TEXT PRIMARY KEY,
-            model_key TEXT NOT NULL REFERENCES models(model_key),
+            kind TEXT NOT NULL CHECK(kind IN ('benchmark_trial','controlled_variant','experiment','diagnostic')),
+            experiment_id TEXT REFERENCES experiments(experiment_id),
             seed INTEGER NOT NULL,
-            included_in_model_result INTEGER NOT NULL DEFAULT 1,
-            run_exclusion_reason TEXT,
+            width INTEGER,
+            height INTEGER,
+            preset TEXT,
+            economy_mode TEXT,
+            geography_mode TEXT,
+            specialization_mode TEXT,
+            world_variant TEXT,
             source_report TEXT NOT NULL,
             source_usage TEXT NOT NULL,
             source_manifest TEXT,
             report_sha256 TEXT NOT NULL,
             usage_sha256 TEXT NOT NULL,
             manifest_sha256 TEXT,
-            resolved_model TEXT,
-            provider TEXT,
-            brain TEXT,
-            reasoning_effort TEXT,
-            reasoning_tokens_estimated INTEGER NOT NULL,
-            benchmark_protocol TEXT,
-            source_fingerprint TEXT,
             launch_commit TEXT,
             connector_profile TEXT,
             conversation_mode TEXT,
             global_max_workers INTEGER,
-            cohort_max_workers INTEGER,
             started_at_utc TEXT,
             ended_at_utc TEXT,
             wall_clock_seconds REAL,
@@ -175,10 +182,6 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             quality_status TEXT,
             quality_flags_json TEXT NOT NULL,
             usage_coverage_pct REAL,
-            execution REAL NOT NULL,
-            competence REAL NOT NULL,
-            entrepreneurship REAL NOT NULL,
-            economic_productivity REAL NOT NULL,
             configured_agents INTEGER,
             initial_agents INTEGER,
             living_agents INTEGER,
@@ -236,16 +239,71 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             latency_min_seconds REAL,
             latency_max_seconds REAL,
             latency_stddev_seconds REAL,
+            action_counts_json TEXT NOT NULL,
+            factors_json TEXT,
+            notes TEXT
+        );
+
+        CREATE TABLE run_cohorts (
+            run_id TEXT NOT NULL REFERENCES runs(run_id),
+            cohort_id TEXT NOT NULL,
+            model TEXT NOT NULL,
+            resolved_model TEXT,
+            provider TEXT,
+            brain TEXT,
+            reasoning_effort TEXT,
+            cohort_max_workers INTEGER,
+            agent_count INTEGER NOT NULL,
+            agents_json TEXT NOT NULL,
+            living_agents INTEGER,
+            deaths INTEGER,
+            execution REAL,
+            competence REAL,
+            entrepreneurship REAL,
+            economic_productivity REAL,
+            living_terminal_economic_value REAL,
+            terminal_economic_value REAL,
+            reasoning_tokens_per_decision REAL,
+            reasoning_tokens_estimated INTEGER NOT NULL,
+            calls INTEGER NOT NULL,
+            prompt_tokens INTEGER NOT NULL,
+            cached_tokens INTEGER NOT NULL,
+            completion_tokens INTEGER NOT NULL,
+            reasoning_tokens INTEGER NOT NULL,
+            api_list_cost_usd REAL,
+            latency_coverage_pct REAL,
+            latency_mean_seconds REAL,
+            latency_median_seconds REAL,
+            latency_p90_seconds REAL,
+            latency_p95_seconds REAL,
+            latency_p99_seconds REAL,
+            latency_min_seconds REAL,
+            latency_max_seconds REAL,
+            latency_stddev_seconds REAL,
             raw_metrics_json TEXT NOT NULL,
             scores_json TEXT NOT NULL,
-            action_counts_json TEXT NOT NULL
+            PRIMARY KEY (run_id, cohort_id)
+        );
+
+        CREATE TABLE benchmark_trials (
+            run_id TEXT PRIMARY KEY REFERENCES runs(run_id),
+            benchmark_protocol TEXT,
+            suite_id TEXT,
+            scoring_revision INTEGER,
+            source_fingerprint TEXT,
+            certification TEXT NOT NULL CHECK(certification IN ('eligible_replication','diagnostic_only','controlled_variant')),
+            included_in_model_result INTEGER NOT NULL DEFAULT 1,
+            run_exclusion_reason TEXT,
+            protocol_compliant INTEGER,
+            source_fingerprint_compatible INTEGER
         );
 
         CREATE TABLE decisions (
-            run_id TEXT NOT NULL REFERENCES benchmark_runs(run_id),
+            run_id TEXT NOT NULL REFERENCES runs(run_id),
             sequence_index INTEGER NOT NULL,
             tick INTEGER,
             agent_id TEXT,
+            cohort_id TEXT,
             decision_time_unix REAL,
             duration_seconds REAL,
             provider TEXT,
@@ -270,7 +328,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
         );
 
         CREATE TABLE tick_metrics (
-            run_id TEXT NOT NULL REFERENCES benchmark_runs(run_id),
+            run_id TEXT NOT NULL REFERENCES runs(run_id),
             tick INTEGER NOT NULL,
             decision_count INTEGER NOT NULL,
             deciding_agent_count INTEGER NOT NULL,
@@ -377,7 +435,38 @@ def _create_schema(connection: sqlite3.Connection) -> None:
         FROM model_results r
         JOIN models m USING (model_key)
         WHERE m.leaderboard_eligible = 1
+          AND EXISTS (
+              SELECT 1
+              FROM benchmark_trials bt
+              JOIN run_cohorts rc ON rc.run_id = bt.run_id
+              JOIN runs ru ON ru.run_id = bt.run_id
+              WHERE rc.model = r.model_key
+                AND bt.included_in_model_result = 1
+          )
         ORDER BY r.rank;
+
+        CREATE VIEW evidence AS
+        SELECT
+            ru.run_id,
+            ru.kind,
+            ru.experiment_id,
+            ru.seed,
+            (SELECT group_concat(model, ', ')
+             FROM (SELECT DISTINCT model FROM run_cohorts c2
+                   WHERE c2.run_id = ru.run_id ORDER BY model)) AS models,
+            CASE WHEN count(rc.cohort_id) = 1 THEN max(rc.execution) END AS execution,
+            CASE WHEN count(rc.cohort_id) = 1 THEN max(rc.competence) END AS competence,
+            CASE WHEN count(rc.cohort_id) = 1 THEN max(rc.entrepreneurship) END AS entrepreneurship,
+            sum(rc.api_list_cost_usd) AS api_list_cost_usd,
+            ru.latency_median_seconds,
+            bt.certification,
+            bt.included_in_model_result,
+            bt.run_exclusion_reason,
+            ru.factors_json
+        FROM runs ru
+        JOIN run_cohorts rc USING (run_id)
+        LEFT JOIN benchmark_trials bt USING (run_id)
+        GROUP BY ru.run_id;
 
         CREATE VIEW model_capabilities AS
         SELECT m.*, r.*
@@ -386,7 +475,9 @@ def _create_schema(connection: sqlite3.Connection) -> None:
 
         CREATE INDEX decisions_run_tick_idx ON decisions(run_id, tick);
         CREATE INDEX decisions_model_latency_idx ON decisions(model, duration_seconds);
-        CREATE INDEX runs_model_seed_idx ON benchmark_runs(model_key, seed);
+        CREATE INDEX runs_kind_seed_idx ON runs(kind, seed);
+        CREATE INDEX cohorts_model_idx ON run_cohorts(model);
+        CREATE INDEX trials_included_idx ON benchmark_trials(included_in_model_result);
         """
     )
 
@@ -401,7 +492,13 @@ def _run_record(
     repo_root: Path,
     model: dict[str, Any],
     run_spec: dict[str, Any],
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+) -> tuple[
+    dict[str, Any],
+    list[dict[str, Any]],
+    list[dict[str, Any]],
+    dict[str, Any] | None,
+    dict[str, Any],
+]:
     report_path = repo_root / run_spec["report_path"]
     usage_path = repo_root / run_spec.get("usage_path", _related_path(report_path, "-usage.jsonl").relative_to(repo_root))
     manifest_path = repo_root / run_spec.get(
@@ -414,9 +511,26 @@ def _run_record(
         if line.strip()
     ]
     manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
-    cohort = _cohort(report)
-    raw = cohort.get("raw") or {}
-    scores = cohort.get("scores") or {}
+    benchmark_cohorts = _benchmark_cohorts(report)
+    population_cohorts = _path_get(report, "population", "cohorts", default={}) or {}
+    if not isinstance(population_cohorts, dict):
+        population_cohorts = {}
+    manifest_groups = {
+        str(group.get("id")): group
+        for group in (_path_get(manifest, "population", "groups", default=[]) or [])
+        if isinstance(group, dict) and group.get("id") is not None
+    }
+    assignments = (
+        _path_get(report, "population", "assignments", default={})
+        or _path_get(manifest, "population", "assignments", default={})
+        or {}
+    )
+    cohort_ids = sorted(set(benchmark_cohorts) | set(population_cohorts) | set(manifest_groups))
+    if not cohort_ids:
+        cohort_ids = ["cohort-1"]
+    primary = benchmark_cohorts.get(cohort_ids[0], {})
+    raw = primary.get("raw") or {}
+    scores = primary.get("scores") or {}
     reliability = report.get("reliability") or {}
     economy = report.get("economy") or {}
     structures = report.get("structures") or {}
@@ -443,53 +557,33 @@ def _run_record(
     usage_ends = [float(row["time"]) for row in usage if row.get("time") is not None]
     latency_coverage = 100.0 * int(latency["samples"] or 0) / calls if calls else 0.0
     report_usage = report.get("usage") or {}
-    gift_classification = _path_get(report, "benchmarks", "trial", "gift_classification", default={}) or {}
-    resolved_models = manifest.get("resolved_models") or {}
-    resolved_model = cohort.get("model") or model.get("model_id") or model["model_key"]
-    if isinstance(resolved_models, dict) and resolved_models:
-        response_values = sorted(
-            {
-                str(value)
-                for value in resolved_models.values()
-                if isinstance(value, str) and value
-            }
-        )
-        if len(response_values) == 1:
-            resolved_model = response_values[0]
     provider_failures = int(reliability.get("llm_provider_failure_events") or 0)
-    population_groups = _path_get(manifest, "population", "groups", default=[]) or []
-    cohort_workers = [
-        int(group["max_workers"])
-        for group in population_groups
-        if isinstance(group, dict) and group.get("max_workers") is not None
-    ]
-    return (
-        {
+    config = manifest.get("config") or report.get("config") or {}
+    kind = str(run_spec.get("kind") or model.get("kind") or "benchmark_trial")
+    run_record = {
             "run_id": run_id,
-            "model_key": model["model_key"],
+            "kind": kind,
+            "experiment_id": run_spec.get("experiment_id") or model.get("experiment_id"),
             "seed": int(run_spec["seed"]),
-            "included_in_model_result": int(run_spec.get("included_in_model_result", True)),
-            "run_exclusion_reason": run_spec.get("run_exclusion_reason"),
+            "width": config.get("width"),
+            "height": config.get("height"),
+            "preset": manifest.get("preset"),
+            "economy_mode": config.get("economy_mode"),
+            "geography_mode": config.get("geography_mode"),
+            "specialization_mode": config.get("specialization_mode"),
+            "world_variant": config.get("world_variant"),
             "source_report": str(report_path.relative_to(repo_root)),
             "source_usage": str(usage_path.relative_to(repo_root)),
             "source_manifest": str(manifest_path.relative_to(repo_root)) if manifest_path.exists() else None,
             "report_sha256": _sha256(report_path),
             "usage_sha256": _sha256(usage_path),
             "manifest_sha256": _sha256(manifest_path) if manifest_path.exists() else None,
-            "resolved_model": resolved_model,
-            "provider": cohort.get("provider"),
-            "brain": cohort.get("brain"),
-            "reasoning_effort": cohort.get("reasoning_effort"),
-            "reasoning_tokens_estimated": int(bool(report_usage.get("reasoning_tokens_estimated"))),
-            "benchmark_protocol": _path_get(report, "benchmarks", "trial", "declared_protocol"),
-            "source_fingerprint": _path_get(report, "benchmarks", "trial", "code_fingerprint_sha256"),
             "launch_commit": _path_get(manifest, "provenance", "git_sha_at_launch")
             or _path_get(manifest, "provenance", "git_sha"),
             "connector_profile": _path_get(manifest, "agent_boundary", "connector_profile")
             or _path_get(report, "population", "connector_profile"),
             "conversation_mode": _path_get(manifest, "agent_boundary", "conversation_mode"),
             "global_max_workers": _path_get(manifest, "concurrency", "global"),
-            "cohort_max_workers": max(cohort_workers) if cohort_workers else None,
             "started_at_utc": started,
             "ended_at_utc": ended,
             "wall_clock_seconds": _iso_duration_seconds(started, ended),
@@ -503,10 +597,6 @@ def _run_record(
             "quality_status": reliability.get("quality_status"),
             "quality_flags_json": _json(reliability.get("quality_flags") or []),
             "usage_coverage_pct": reliability.get("usage_record_coverage_pct"),
-            "execution": _score(report, "effective_execution"),
-            "competence": _score(report, "sustained_competence"),
-            "entrepreneurship": _score(report, "entrepreneurial_agency"),
-            "economic_productivity": _score(report, "economic_productivity"),
             "configured_agents": _path_get(manifest, "population", "total_agents")
             or raw.get("initial_agents"),
             "initial_agents": raw.get("initial_agents"),
@@ -526,7 +616,7 @@ def _run_record(
             "completed_structures_json": _json(completed_structures),
             "in_progress_structures": _sum_counts(in_progress_structures),
             "cooperative_builds": len(structures.get("coop_builds") or []),
-            "groups_created": _path_get(cohort, "diagnostics", "groups_created", default=0),
+            "groups_created": _path_get(primary, "diagnostics", "groups_created", default=0),
             "access_grants": economy.get("access_grants") or 0,
             "trades_offered": trade.get("offered") or 0,
             "trades_accepted": trade.get("accepted") or 0,
@@ -539,7 +629,7 @@ def _run_record(
             "contracts_defaulted": _path_get(institutions, "contracts", "defaulted", default=0),
             "access_fee_value": _path_get(institutions, "access_fees", "value", default=0),
             "dividend_value": _path_get(institutions, "dividends", "value", default=0),
-            "communications": _path_get(cohort, "diagnostics", "communications", default=0),
+            "communications": _path_get(primary, "diagnostics", "communications", default=0),
             "construction_contributions": _path_get(construction, "contributions", "events", default=0),
             "decision_attempts": reliability.get("decision_attempts"),
             "decision_failure_rate_pct": reliability.get("decision_failure_rate_pct"),
@@ -565,15 +655,141 @@ def _run_record(
             "latency_min_seconds": latency["min"],
             "latency_max_seconds": latency["max"],
             "latency_stddev_seconds": latency["stddev"],
+            "action_counts_json": _json(_path_get(report, "actions", "counts", default={}) or {}),
+            "factors_json": _json(run_spec["factors"]) if run_spec.get("factors") is not None else None,
+            "notes": run_spec.get("notes"),
+        }
+
+    cohort_records: list[dict[str, Any]] = []
+    reasoning_estimated = int(bool(report_usage.get("reasoning_tokens_estimated")))
+    for cohort_id in cohort_ids:
+        benchmark_cohort = benchmark_cohorts.get(cohort_id) or {}
+        population_cohort = population_cohorts.get(cohort_id) or {}
+        group = manifest_groups.get(cohort_id) or {}
+        agents = list(benchmark_cohort.get("agents") or population_cohort.get("agents") or [])
+        if not agents:
+            agents = sorted(str(agent) for agent, assigned in assignments.items() if assigned == cohort_id)
+        cohort_usage = [row for row in usage if row.get("agent_id") in set(agents)] if agents else list(usage)
+        cohort_latency = _latency_summary(row.get("duration_seconds") for row in cohort_usage)
+        cohort_cost = summarize_usd_cost(cohort_usage)
+        cohort_cost_total = (
+            _path_get(cohort_cost, "cost_usd", "total")
+            if isinstance(cohort_cost, dict) and cohort_cost.get("available")
+            else None
+        )
+        response_models = sorted(
+            {str(row["response_model"]) for row in cohort_usage if row.get("response_model")}
+        )
+        declared_model = (
+            benchmark_cohort.get("model")
+            or population_cohort.get("model")
+            or group.get("model")
+            or model.get("model_id")
+            or model["model_key"]
+        )
+        model_key = model["model_key"] if model.get("catalog_model", True) else str(declared_model)
+        cohort_raw = benchmark_cohort.get("raw") or {}
+        cohort_scores = benchmark_cohort.get("scores") or {}
+        cohort_calls = len(cohort_usage)
+        living = population_cohort.get("living", cohort_raw.get("living_agents"))
+        initial = population_cohort.get("initial_agents", cohort_raw.get("initial_agents"))
+        deaths = population_cohort.get("dead")
+        if deaths is None and initial is not None and living is not None:
+            deaths = int(initial) - int(living)
+        cohort_records.append(
+            {
+                "run_id": run_id,
+                "cohort_id": cohort_id,
+                "model": model_key,
+                "resolved_model": response_models[0] if len(response_models) == 1 else declared_model,
+                "provider": benchmark_cohort.get("provider") or population_cohort.get("provider") or group.get("provider"),
+                "brain": benchmark_cohort.get("brain") or population_cohort.get("brain") or group.get("type"),
+                "reasoning_effort": benchmark_cohort.get("reasoning_effort") or population_cohort.get("reasoning_effort") or group.get("reasoning_effort"),
+                "cohort_max_workers": group.get("max_workers"),
+                "agent_count": len(agents) or int(group.get("count") or initial or 0),
+                "agents_json": _json(agents),
+                "living_agents": living,
+                "deaths": deaths,
+                "execution": _score(benchmark_cohort, "effective_execution"),
+                "competence": _score(benchmark_cohort, "sustained_competence"),
+                "entrepreneurship": _score(benchmark_cohort, "entrepreneurial_agency"),
+                "economic_productivity": _score(benchmark_cohort, "economic_productivity"),
+                "living_terminal_economic_value": cohort_raw.get("living_terminal_economic_value"),
+                "terminal_economic_value": cohort_raw.get("terminal_economic_value"),
+                "reasoning_tokens_per_decision": sum(int(row.get("reasoning_tokens") or 0) for row in cohort_usage) / cohort_calls if cohort_calls else None,
+                "reasoning_tokens_estimated": reasoning_estimated,
+                "calls": cohort_calls,
+                "prompt_tokens": sum(int(row.get("prompt_tokens") or 0) for row in cohort_usage),
+                "cached_tokens": sum(int(row.get("cached_tokens") or 0) for row in cohort_usage),
+                "completion_tokens": sum(int(row.get("completion_tokens") or 0) for row in cohort_usage),
+                "reasoning_tokens": sum(int(row.get("reasoning_tokens") or 0) for row in cohort_usage),
+                "api_list_cost_usd": cohort_cost_total,
+                "latency_coverage_pct": 100.0 * int(cohort_latency["samples"] or 0) / cohort_calls if cohort_calls else 0.0,
+                "latency_mean_seconds": cohort_latency["mean"],
+                "latency_median_seconds": cohort_latency["median"],
+                "latency_p90_seconds": cohort_latency["p90"],
+                "latency_p95_seconds": cohort_latency["p95"],
+                "latency_p99_seconds": cohort_latency["p99"],
+                "latency_min_seconds": cohort_latency["min"],
+                "latency_max_seconds": cohort_latency["max"],
+                "latency_stddev_seconds": cohort_latency["stddev"],
+                "raw_metrics_json": _json(cohort_raw or population_cohort),
+                "scores_json": _json(cohort_scores),
+            }
+        )
+
+    trial = _path_get(report, "benchmarks", "trial", default={}) or {}
+    benchmark_record = None
+    if kind != "experiment":
+        certification = run_spec.get("certification")
+        if certification is None:
+            certification = "controlled_variant" if kind == "controlled_variant" else (
+                "diagnostic_only" if kind == "diagnostic" else "eligible_replication"
+            )
+        benchmark_record = {
+            "run_id": run_id,
+            "benchmark_protocol": trial.get("declared_protocol"),
+            "suite_id": _path_get(report, "benchmarks", "suite_id") or model.get("suite"),
+            "scoring_revision": _path_get(report, "benchmarks", "protocol", "scoring_revision") or model.get("scoring_revision"),
+            "source_fingerprint": trial.get("code_fingerprint_sha256"),
+            "certification": certification,
+            "included_in_model_result": int(run_spec.get("included_in_model_result", True)),
+            "run_exclusion_reason": run_spec.get("run_exclusion_reason"),
+            "protocol_compliant": int(bool(trial.get("protocol_compliant"))) if "protocol_compliant" in trial else None,
+            "source_fingerprint_compatible": int(bool(trial.get("source_fingerprint_compatible"))) if "source_fingerprint_compatible" in trial else None,
+        }
+
+    aggregate_record = dict(run_record)
+    aggregate_record.update(
+        {
+            "model_key": model["model_key"],
+            "included_in_model_result": int(run_spec.get("included_in_model_result", True)),
+            "run_exclusion_reason": run_spec.get("run_exclusion_reason"),
+            "resolved_model": cohort_records[0]["resolved_model"],
+            "provider": cohort_records[0]["provider"],
+            "brain": cohort_records[0]["brain"],
+            "reasoning_effort": cohort_records[0]["reasoning_effort"],
+            "reasoning_tokens_estimated": reasoning_estimated,
+            "benchmark_protocol": trial.get("declared_protocol"),
+            "source_fingerprint": trial.get("code_fingerprint_sha256"),
+            "cohort_max_workers": cohort_records[0]["cohort_max_workers"],
+            "execution": cohort_records[0]["execution"],
+            "competence": cohort_records[0]["competence"],
+            "entrepreneurship": cohort_records[0]["entrepreneurship"],
+            "economic_productivity": cohort_records[0]["economic_productivity"],
             "raw_metrics_json": _json(raw),
             "scores_json": _json(scores),
-            "action_counts_json": _json(_path_get(report, "actions", "counts", default={}) or {}),
-        },
-        usage,
+        }
     )
+    return run_record, cohort_records, usage, benchmark_record, aggregate_record
 
 
-def _decision_record(run_id: str, index: int, usage: dict[str, Any]) -> dict[str, Any]:
+def _decision_record(
+    run_id: str,
+    index: int,
+    usage: dict[str, Any],
+    agent_to_cohort: dict[str, str] | None = None,
+) -> dict[str, Any]:
     prompt = int(usage.get("prompt_tokens") or 0)
     cached = int(usage.get("cached_tokens") or 0)
     cost = summarize_usd_cost([usage])
@@ -582,6 +798,7 @@ def _decision_record(run_id: str, index: int, usage: dict[str, Any]) -> dict[str
         "sequence_index": index,
         "tick": usage.get("tick"),
         "agent_id": usage.get("agent_id"),
+        "cohort_id": (agent_to_cohort or {}).get(str(usage.get("agent_id"))),
         "decision_time_unix": usage.get("time"),
         "duration_seconds": usage.get("duration_seconds"),
         "provider": usage.get("provider"),
@@ -691,7 +908,10 @@ def _insert_model_results(
         records = [
             record
             for record in run_records[model["model_key"]]
-            if record["included_in_model_result"]
+            if connection.execute(
+                "SELECT included_in_model_result FROM benchmark_trials WHERE run_id = ?",
+                (record["run_id"],),
+            ).fetchone()[0]
         ]
         if not records:
             continue
@@ -853,9 +1073,10 @@ def build_database(catalog_path: Path, output_path: Path, repo_root: Path | None
     catalog_path = (catalog_path if catalog_path.is_absolute() else repo_root / catalog_path).resolve()
     output_path = (output_path if output_path.is_absolute() else repo_root / output_path).resolve()
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
-    if int(catalog.get("schema_version") or 0) != 1:
-        raise ValueError("Unsupported benchmark source catalog schema")
+    if int(catalog.get("schema_version") or 0) != 2:
+        raise ValueError("Unsupported run source catalog schema")
     models = catalog.get("models") or []
+    experiments = catalog.get("experiments") or []
     output_path.parent.mkdir(parents=True, exist_ok=True)
     descriptor, temporary_name = tempfile.mkstemp(prefix=output_path.name + ".", dir=output_path.parent)
     os.close(descriptor)
@@ -872,14 +1093,29 @@ def build_database(catalog_path: Path, output_path: Path, repo_root: Path | None
             "updated_at_utc": str(catalog.get("updated_at_utc") or ""),
             "usd_rate_card_effective_date": USD_RATE_CARD_EFFECTIVE_DATE,
             "usd_rate_card_sources": _json(USD_RATE_CARD_SOURCES),
-            "purpose": "Durable queryable model-capability evidence; the compact leaderboard is one projection.",
+            "purpose": "Universal simulation-run evidence with benchmarking as a certification layer.",
             "latency_semantics": "duration_seconds is end-to-end provider decision latency including adapter retries; tick concurrent_wall_span_seconds approximates user-visible world-turn latency.",
         }
         for key, value in metadata.items():
             connection.execute("INSERT INTO database_metadata(key, value) VALUES (?, ?)", (key, value))
         run_records: dict[str, list[dict[str, Any]]] = defaultdict(list)
         run_decisions: dict[str, list[dict[str, Any]]] = {}
+        for experiment in experiments:
+            _insert(
+                connection,
+                "experiments",
+                {
+                    "experiment_id": experiment["experiment_id"],
+                    "title": experiment["title"],
+                    "question": experiment["question"],
+                    "design_json": _json(experiment.get("design") or {}),
+                    "started_at": experiment.get("started_at"),
+                    "status": experiment.get("status") or "in_progress",
+                    "notes": experiment.get("notes"),
+                },
+            )
         for model in models:
+            model["catalog_model"] = True
             _insert(
                 connection,
                 "models",
@@ -895,14 +1131,59 @@ def build_database(catalog_path: Path, output_path: Path, repo_root: Path | None
                 },
             )
             for run_spec in model.get("runs") or []:
-                record, usage = _run_record(repo_root, model, run_spec)
-                _insert(connection, "benchmark_runs", record)
-                decisions = [_decision_record(record["run_id"], index, row) for index, row in enumerate(usage)]
+                if "kind" not in run_spec:
+                    if model.get("controlled_variant"):
+                        run_spec["kind"] = "controlled_variant"
+                    elif not model.get("leaderboard_eligible", True):
+                        run_spec["kind"] = "diagnostic"
+                    else:
+                        run_spec["kind"] = "benchmark_trial"
+                record, cohorts, usage, trial, aggregate = _run_record(repo_root, model, run_spec)
+                _insert(connection, "runs", record)
+                for cohort in cohorts:
+                    _insert(connection, "run_cohorts", cohort)
+                if trial is not None:
+                    _insert(connection, "benchmark_trials", trial)
+                agent_to_cohort = {
+                    str(agent): cohort["cohort_id"]
+                    for cohort in cohorts
+                    for agent in json.loads(cohort["agents_json"])
+                }
+                decisions = [
+                    _decision_record(record["run_id"], index, row, agent_to_cohort)
+                    for index, row in enumerate(usage)
+                ]
                 for decision in decisions:
                     _insert(connection, "decisions", decision)
                 _insert_tick_metrics(connection, record, decisions)
-                run_records[model["model_key"]].append(record)
+                run_records[model["model_key"]].append(aggregate)
                 run_decisions[record["run_id"]] = decisions
+        for experiment in experiments:
+            for run_spec in experiment.get("runs") or []:
+                run_spec = dict(run_spec)
+                run_spec["kind"] = "experiment"
+                run_spec["experiment_id"] = experiment["experiment_id"]
+                source = {
+                    "model_key": run_spec.get("run_id") or experiment["experiment_id"],
+                    "catalog_model": False,
+                    "experiment_id": experiment["experiment_id"],
+                }
+                record, cohorts, usage, trial, _aggregate = _run_record(repo_root, source, run_spec)
+                _insert(connection, "runs", record)
+                for cohort in cohorts:
+                    _insert(connection, "run_cohorts", cohort)
+                agent_to_cohort = {
+                    str(agent): cohort["cohort_id"]
+                    for cohort in cohorts
+                    for agent in json.loads(cohort["agents_json"])
+                }
+                decisions = [
+                    _decision_record(record["run_id"], index, row, agent_to_cohort)
+                    for index, row in enumerate(usage)
+                ]
+                for decision in decisions:
+                    _insert(connection, "decisions", decision)
+                _insert_tick_metrics(connection, record, decisions)
         _insert_model_results(connection, models, run_records, run_decisions)
         connection.commit()
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
@@ -958,7 +1239,7 @@ def verify_database(database_path: Path) -> dict[str, Any]:
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
         foreign_key_errors = connection.execute("PRAGMA foreign_key_check").fetchall()
         models = connection.execute("SELECT COUNT(*) FROM model_results").fetchone()[0]
-        runs = connection.execute("SELECT COUNT(*) FROM benchmark_runs").fetchone()[0]
+        runs = connection.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
         decisions = connection.execute("SELECT COUNT(*) FROM decisions").fetchone()[0]
         ticks = connection.execute("SELECT COUNT(*) FROM tick_metrics").fetchone()[0]
         latency = connection.execute(

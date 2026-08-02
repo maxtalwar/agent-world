@@ -1,0 +1,401 @@
+{
+  "schema_version": 2,
+  "updated_at_utc": "2026-08-02T00:00:00+00:00",
+  "suite": "participant-v6",
+  "scoring_revision": 2,
+  "experiments": [
+    {
+      "experiment_id": "comparative-advantage-20260802",
+      "title": "Comparative advantage population and specialization study",
+      "question": "How do population size and specialist roles affect coordination, survival, and economic outcomes?",
+      "design": {
+        "population": [
+          10,
+          40
+        ],
+        "specialization": [
+          "generalists",
+          "specialists"
+        ]
+      },
+      "started_at": "2026-08-02T19:47:48.100280+00:00",
+      "status": "in_progress",
+      "notes": "Only cells with final reports are cataloged; in-flight cells are omitted.",
+      "runs": [
+        {
+          "run_id": "comparative-advantage-20260802:a1",
+          "seed": 11,
+          "report_path": "runs/experiments/comparative-advantage-20260802/a1/run-report.json",
+          "factors": {
+            "population": 10,
+            "specialization": "generalists"
+          },
+          "kind": "experiment",
+          "experiment_id": "comparative-advantage-20260802"
+        },
+        {
+          "run_id": "comparative-advantage-20260802:a2",
+          "seed": 11,
+          "report_path": "runs/experiments/comparative-advantage-20260802/a2/run-report.json",
+          "factors": {
+            "population": 10,
+            "specialization": "specialists"
+          },
+          "kind": "experiment",
+          "experiment_id": "comparative-advantage-20260802"
+        }
+      ]
+    }
+  ],
+  "models": [
+    {
+      "model_key": "claude-fable-5",
+      "label": "Fable 5",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "run_id": "claude-fable-5:seed-41:invalid-provider-continuation",
+          "kind": "diagnostic",
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41/run-report.json",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Invalid provider-quota continuation; superseded by deterministic checkpoint recovery from tick 32."
+        }
+      ]
+    },
+    {
+      "model_key": "claude-opus-5",
+      "label": "Opus 5",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421/opus5-v6-seed11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-opus-5-participant-v6-certified-seeds11-41-20260730-233421/opus5-v6-seed41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "claude-opus-4-8",
+      "label": "Opus 4.8",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus48-v6-seed11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-opus-4-8-participant-v6-seeds11-41-20260729-155748/opus48-v6-seed41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.6-sol",
+      "label": "GPT-5.6 Sol",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/gpt-5-6-sol-participant-v6-provisional-seed11-20260728-195329/seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/gpt-5-6-terra-gpt-5-6-sol-participant-v6-seeds11-41-20260729-155943/sol-v6-seed41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "claude-sonnet-4-6",
+      "label": "Sonnet 4.6",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549/sonnet-seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549/sonnet-seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.6-luna-max",
+      "label": "GPT-5.6 Luna Max",
+      "kind": "controlled_variant",
+      "controlled_variant": true,
+      "variant_note": "Participant v6 world and trial settings with max reasoning effort; launched from a newer clean commit than the closed standard-effort field.",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run-report.json",
+          "kind": "controlled_variant"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run-report.json",
+          "kind": "controlled_variant"
+        }
+      ]
+    },
+    {
+      "model_key": "claude-opus-4-7",
+      "label": "Opus 4.7",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-opus-4-7-participant-v6-seeds11-41-20260729-072905/opus-seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-opus-4-7-participant-v6-seeds11-41-20260729-072905/opus-seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.4",
+      "label": "GPT-5.4",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549/gpt54-seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549/gpt54-seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "claude-sonnet-5",
+      "label": "Sonnet 5",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-sonnet-5-participant-v6-certified-seeds11-41-20260729-164053/sonnet5-v6-seed11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-sonnet-5-participant-v6-certified-seeds11-41-20260729-164053/sonnet5-v6-seed41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "claude-opus-4-6",
+      "label": "Opus 4.6",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/opus-seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/opus-seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.6-terra",
+      "label": "GPT-5.6 Terra",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/gpt-5-6-terra-gpt-5-6-sol-participant-v6-seeds11-41-20260729-155943/terra-v6-seed11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/gpt-5-6-terra-gpt-5-6-sol-participant-v6-seeds11-41-20260729-155943/terra-v6-seed41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.6-luna",
+      "label": "GPT-5.6 Luna",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.5",
+      "label": "GPT-5.5",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/gpt-5-5-participant-v6-certified-seeds11-41-20260729-005319/seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/gpt-5-5-participant-v6-certified-seeds11-41-20260729-005319/seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.4-mini",
+      "label": "GPT-5.4 Mini",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.3-codex-spark",
+      "label": "GPT-5.3 Codex Spark",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/spark-seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "claude-haiku-4-5",
+      "label": "Haiku 4.5",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549/haiku-seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/claude-haiku-4-5-claude-sonnet-4-6-gpt-5-4-participant-v6-certified-seeds11-41-20260729-004549/haiku-seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5-mini",
+      "label": "GPT-5 Mini",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/cursor-gpt-5-mini-participant-v6-certified-seeds11-41-20260729-181911/gpt5mini-v6-seed11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/cursor-gpt-5-mini-participant-v6-certified-seeds11-41-20260729-181911/gpt5mini-v6-seed41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.4-nano",
+      "label": "GPT-5.4 Nano",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323/gpt54nano-v6-seed11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/cursor-gpt-5-4-nano-participant-v6-certified-seeds11-41-20260729-205323/gpt54nano-v6-seed41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-5.1-diagnostic",
+      "label": "GPT-5.1 (diagnostic)",
+      "kind": "diagnostic",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "Both Cursor-backed runs have invalid integrity and degraded quality flags.",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/cursor-gpt-5-1-participant-v6-certified-seeds11-41-20260729-205745/gpt51-v6-seed11/run-report.json",
+          "kind": "diagnostic"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/cursor-gpt-5-1-participant-v6-certified-seeds11-41-20260729-205745/gpt51-v6-seed41/run-report.json",
+          "kind": "diagnostic"
+        }
+      ]
+    },
+    {
+      "model_key": "cursor-grok-4.5-diagnostic",
+      "label": "Grok 4.5 (diagnostic)",
+      "kind": "diagnostic",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "Only one seed is present and the Cursor-backed run has invalid integrity and degraded quality flags.",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11/run-report.json",
+          "kind": "diagnostic"
+        }
+      ]
+    }
+  ]
+}

@@ -1,29 +1,41 @@
-# Model capability metrics database
+# Simulation-run and model capability metrics database
 
-The durable cross-model evidence store is
+The durable simulation evidence store is
 [`data/model-benchmarks.sqlite`](../data/model-benchmarks.sqlite). The compact
 [`model-leaderboard.md`](model-leaderboard.md) is intentionally only one
-human-readable projection of this database; it does not define the database
-schema or limit what is retained.
+human-readable projection of its certified benchmark layer; benchmark
+eligibility does not determine whether a run is admitted to the database.
 
 The database is generated from the explicit source catalog in
-[`data/model-benchmark-sources.json`](../data/model-benchmark-sources.json).
-That catalog distinguishes leaderboard evidence from useful but excluded
-diagnostic evidence. For example, the degraded GPT-5.1 and Grok 4.5 runs remain
-queryable, as does Fable's superseded quota-corrupted continuation, but none of
-them affects the comparative leaderboard.
+[`data/run-sources.json`](../data/run-sources.json). This replaces the former
+`data/model-benchmark-sources.json` name because the catalog now accepts every
+simulation kind. The catalog alone is authoritative and sufficient to recreate
+the generated SQLite file. It distinguishes benchmark trials, controlled
+variants, experiments, and diagnostics while preserving every existing
+inclusion or exclusion disposition.
+
+The layering is deliberate: `runs` admits all final cataloged simulations;
+`run_cohorts` describes each run's one or more model populations;
+`benchmark_trials` declares certification and pooling eligibility; and
+`experiments` groups runs under a question and factorial design. `model_results`
+and `leaderboard` remain projections of rows explicitly included by the
+benchmark layer. A run can therefore be useful evidence without being a
+certified benchmark replication.
 
 ## What is stored
 
 | Layer | Table/view | Important contents |
 |---|---|---|
-| Model | `models`, `model_results`, `model_capabilities` | Rank eligibility, controlled-variant status, combined scores, seed ranges, survival, value creation, commerce, construction, cooperation, reliability, reasoning, cache, cost, and latency distributions |
-| Run | `benchmark_runs` | Seed-level scores and outcomes, exact provider/model/effort, protocol and source hashes, launch commit, integrity flags, tokens, cost, latency, and source paths |
+| Universal run | `runs` | Kind, experiment, seed, world/configuration, provenance, completion and integrity, global outcomes, usage, source paths and hashes, and experimental factors |
+| Population | `run_cohorts` | One row per cohort, including model/provider/brain/effort, assigned agents, cohort outcomes and nullable scores, tokens, cost, latency, and retained raw metric/score trees |
+| Benchmark certification | `benchmark_trials` | Protocol, suite, scoring revision, fingerprint, certification class, protocol compliance, and model-result inclusion/exclusion |
+| Experiment | `experiments` | Study question, factor design, start, status, and notes |
+| Model | `models`, `model_results`, `model_capabilities` | Existing benchmark-only rank eligibility, combined scores, seed ranges, survival, economic behavior, reliability, reasoning, cache, cost, and latency distributions |
 | World tick | `tick_metrics` | Decisions per tick, token/cost totals, per-decision latency, and concurrent wall span |
-| Decision | `decisions` | Agent/tick, end-to-end call latency, input/cache/output/reasoning tokens, cost, request size, provider response model, conversation state, and request hashes |
-| Projection | `leaderboard` | The small ranked table used in benchmark narratives and model selection |
+| Decision | `decisions` | Run/cohort/agent/tick, end-to-end call latency, input/cache/output/reasoning tokens, cost, request size, provider response model, conversation state, and request hashes |
+| Projection | `leaderboard`, `evidence` | The unchanged benchmark leaderboard and a flat all-kinds evidence query |
 
-The model and run tables also retain the full frozen raw-metric and score trees
+The model-result and cohort tables also retain the full frozen raw-metric and score trees
 as JSON. This lets a later agent query a familiar typed column quickly while
 still reaching less-common metrics without rebuilding the database.
 
@@ -51,10 +63,10 @@ included and diagnostic Participant v6 usage ledgers.
   number of concurrency waves implied by deciding agents and the run's worker
   limit. This helps distinguish a slow model from a run that simply queued more
   batches. Agent count and worker limits are stored alongside every result.
-- `benchmark_runs.usage_observed_span_seconds` runs from the earliest recorded
+- `runs.usage_observed_span_seconds` runs from the earliest recorded
   call start to the final recorded call end. It is the best historical measure
   of whole-run elapsed time and includes any gaps between recorded decisions.
-- `benchmark_runs.wall_clock_seconds` is the manifest's start/end interval.
+- `runs.wall_clock_seconds` is the manifest's start/end interval.
   For a resumed run it may describe only the last launcher segment, so it is
   retained as provenance rather than treated as authoritative total runtime.
 
@@ -163,17 +175,36 @@ Find diagnostic or superseded evidence and its exclusion rationale:
 
 ```bash
 sqlite3 -header -column data/model-benchmarks.sqlite '
-SELECT m.label, r.seed, r.integrity_status, r.quality_status,
-       r.included_in_model_result, r.run_exclusion_reason,
+SELECT e.models, r.seed, r.integrity_status, r.quality_status,
+       bt.included_in_model_result, bt.run_exclusion_reason,
        m.leaderboard_exclusion_reason
-FROM benchmark_runs r JOIN models m USING (model_key)
-WHERE m.leaderboard_eligible = 0 OR r.included_in_model_result = 0;'
+FROM runs r
+JOIN benchmark_trials bt USING (run_id)
+JOIN run_cohorts rc USING (run_id)
+JOIN models m ON m.model_key = rc.model
+JOIN evidence e USING (run_id)
+WHERE m.leaderboard_eligible = 0 OR bt.included_in_model_result = 0;'
+```
+
+Query all Luna evidence in one place—certified trials, the Max controlled
+variant, and experiment cells. Competence is nullable where no benchmark score
+tree exists, while cost and latency remain available from usage ledgers:
+
+```bash
+sqlite3 -header -column data/model-benchmarks.sqlite '
+SELECT kind, models, seed, round(competence, 1) AS competence,
+       round(api_list_cost_usd, 3) AS cost_usd,
+       round(latency_median_seconds, 2) AS latency_p50_seconds,
+       certification, factors_json
+FROM evidence
+WHERE lower(models) LIKE "%luna%"
+ORDER BY kind, models, seed;'
 ```
 
 Rebuild and verify after adding a source to the catalog:
 
 ```bash
-python3 -m agent_world.benchmark_db build
+python3 -m agent_world.benchmark_db build --catalog data/run-sources.json
 python3 -m agent_world.benchmark_db verify
 python3 -m agent_world.benchmark_db leaderboard
 ```

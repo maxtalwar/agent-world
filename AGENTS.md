@@ -1,7 +1,8 @@
 # Repository workflow
 
 - Before selecting a model for a benchmark or making a cross-model performance
-  claim, query `data/model-benchmarks.sqlite`; its schema and example queries
+  claim, query `data/model-benchmarks.sqlite`, generated from
+  `data/run-sources.json`; its schema and example queries
   are documented in `docs/model-metrics-database.md`. Use
   `docs/model-leaderboard.md` as the canonical compact human-readable
   projection. Update the source catalog, generated database, and projection in

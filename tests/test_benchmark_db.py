@@ -1,3 +1,4 @@
+import hashlib
 import json
 import sqlite3
 import tempfile
@@ -9,6 +10,27 @@ from agent_world.benchmarks import score_benchmark_counts
 
 
 class BenchmarkDatabaseTests(unittest.TestCase):
+    def test_repository_build_is_byte_deterministic_and_preserves_leaderboard(self) -> None:
+        repo_root = Path(__file__).resolve().parents[1]
+        expected_leaderboard_sha256 = "a5f6607386fab780a04dd93d3df50786631a0b7ccad86b0f50de638dffd64019"
+
+        with tempfile.TemporaryDirectory() as temporary:
+            first = Path(temporary) / "first.sqlite"
+            second = Path(temporary) / "second.sqlite"
+            catalog = repo_root / "data" / "run-sources.json"
+            build_database(catalog, first, repo_root=repo_root)
+            build_database(catalog, second, repo_root=repo_root)
+
+            self.assertEqual(first.read_bytes(), second.read_bytes())
+            connection = sqlite3.connect(first)
+            rows = connection.execute("SELECT * FROM leaderboard ORDER BY rank").fetchall()
+            connection.close()
+            digest = hashlib.sha256(
+                json.dumps(rows, separators=(",", ":")).encode("utf-8")
+            ).hexdigest()
+            self.assertEqual(len(rows), 18)
+            self.assertEqual(digest, expected_leaderboard_sha256)
+
     def test_latency_summary_uses_interpolated_percentiles(self) -> None:
         summary = _latency_summary([1, 3])
 
@@ -129,7 +151,7 @@ class BenchmarkDatabaseTests(unittest.TestCase):
             },
         }
         catalog = {
-            "schema_version": 1,
+            "schema_version": 2,
             "suite": "participant-v6",
             "scoring_revision": 2,
             "models": [
@@ -161,7 +183,7 @@ class BenchmarkDatabaseTests(unittest.TestCase):
             run = connection.execute(
                 "SELECT latency_mean_seconds, latency_p95_seconds, wall_clock_seconds, "
                 "usage_observed_span_seconds "
-                "FROM benchmark_runs"
+                "FROM runs"
             ).fetchone()
             tick = connection.execute(
                 "SELECT concurrent_wall_span_seconds, deciding_agent_count, "
@@ -190,6 +212,145 @@ class BenchmarkDatabaseTests(unittest.TestCase):
             self.assertEqual(model[1], 6.5)
             self.assertEqual(model[2], 1.5)
             self.assertEqual(model[3], 3)
+
+    def test_mixed_population_and_unscored_experiment_ingest(self) -> None:
+        report = {
+            "run": {"completed": True, "final_tick": 5, "target_ticks": 5},
+            "population": {
+                "assignments": {"agent-1": "sol", "agent-2": "luna"},
+                "cohorts": {
+                    "sol": {"agents": ["agent-1"], "model": "gpt-sol", "living": 1, "dead": 0},
+                    "luna": {"agents": ["agent-2"], "model": "gpt-luna", "living": 1, "dead": 0},
+                },
+            },
+            "reliability": {"quality_flags": [], "usage_record_coverage_pct": 100},
+            "survival": {"dead": 0},
+            "structures": {"complete": {}, "in_progress": {}, "coop_builds": []},
+            "economy": {"trades": {}, "institutions": {}, "construction": {}},
+            "actions": {"counts": {}},
+        }
+        usage = [
+            {"tick": 0, "agent_id": "agent-1", "time": 10, "duration_seconds": 1, "model": "gpt-sol"},
+            {"tick": 0, "agent_id": "agent-2", "time": 11, "duration_seconds": 2, "model": "gpt-luna"},
+        ]
+        manifest = {
+            "status": "completed",
+            "started_at_utc": "2026-08-02T00:00:00+00:00",
+            "ended_at_utc": "2026-08-02T00:00:10+00:00",
+            "config": {"width": 16, "height": 16, "specialization_mode": "specialists"},
+            "population": {
+                "total_agents": 2,
+                "assignments": {"agent-1": "sol", "agent-2": "luna"},
+                "groups": [
+                    {"id": "sol", "model": "gpt-sol", "count": 1, "max_workers": 1},
+                    {"id": "luna", "model": "gpt-luna", "count": 1, "max_workers": 1},
+                ],
+            },
+        }
+        catalog = {
+            "schema_version": 2,
+            "experiments": [
+                {
+                    "experiment_id": "mixed-study",
+                    "title": "Mixed population",
+                    "question": "How do two cohorts interact?",
+                    "design": {"mix": ["1+1"]},
+                    "status": "completed",
+                    "runs": [
+                        {
+                            "run_id": "mixed-run",
+                            "seed": 11,
+                            "report_path": "run-report.json",
+                            "factors": {"mix": "1+1"},
+                        }
+                    ],
+                }
+            ],
+            "models": [],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "run-report.json").write_text(json.dumps(report), encoding="utf-8")
+            (root / "run-usage.jsonl").write_text(
+                "".join(json.dumps(row) + "\n" for row in usage), encoding="utf-8"
+            )
+            (root / "run-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            (root / "catalog.json").write_text(json.dumps(catalog), encoding="utf-8")
+            database = root / "metrics.sqlite"
+            build_database(root / "catalog.json", database, repo_root=root)
+
+            connection = sqlite3.connect(database)
+            cohorts = connection.execute(
+                "SELECT cohort_id, model, execution FROM run_cohorts ORDER BY cohort_id"
+            ).fetchall()
+            decisions = connection.execute(
+                "SELECT agent_id, cohort_id FROM decisions ORDER BY agent_id"
+            ).fetchall()
+            evidence = connection.execute(
+                "SELECT kind, competence FROM evidence WHERE run_id = 'mixed-run'"
+            ).fetchone()
+            connection.close()
+            self.assertEqual(cohorts, [("luna", "gpt-luna", None), ("sol", "gpt-sol", None)])
+            self.assertEqual(decisions, [("agent-1", "sol"), ("agent-2", "luna")])
+            self.assertEqual(evidence, ("experiment", None))
+
+    def test_excluded_controlled_variant_is_evidence_not_leaderboard(self) -> None:
+        report = {
+            "run": {"completed": True, "final_tick": 1, "target_ticks": 1},
+            "benchmarks": {
+                "cohorts": {
+                    "cohort-1": {
+                        "agents": ["agent-1"],
+                        "model": "variant-model",
+                        "raw": {},
+                        "scores": {},
+                    }
+                },
+                "trial": {"declared_protocol": "test-protocol"},
+            },
+            "reliability": {"quality_flags": []},
+            "structures": {"complete": {}, "in_progress": {}, "coop_builds": []},
+            "economy": {"trades": {}, "institutions": {}, "construction": {}},
+        }
+        manifest = {
+            "population": {
+                "total_agents": 1,
+                "groups": [{"id": "cohort-1", "model": "variant-model", "count": 1}],
+            }
+        }
+        catalog = {
+            "schema_version": 2,
+            "models": [
+                {
+                    "model_key": "variant-model",
+                    "label": "Variant Model",
+                    "controlled_variant": True,
+                    "leaderboard_eligible": False,
+                    "runs": [
+                        {
+                            "seed": 11,
+                            "report_path": "run-report.json",
+                            "included_in_model_result": False,
+                        }
+                    ],
+                }
+            ],
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "run-report.json").write_text(json.dumps(report), encoding="utf-8")
+            (root / "run-usage.jsonl").write_text("", encoding="utf-8")
+            (root / "run-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+            (root / "catalog.json").write_text(json.dumps(catalog), encoding="utf-8")
+            database = root / "metrics.sqlite"
+            build_database(root / "catalog.json", database, repo_root=root)
+
+            connection = sqlite3.connect(database)
+            evidence = connection.execute("SELECT kind FROM evidence").fetchone()
+            leaderboard_count = connection.execute("SELECT count(*) FROM leaderboard").fetchone()[0]
+            connection.close()
+            self.assertEqual(evidence, ("controlled_variant",))
+            self.assertEqual(leaderboard_count, 0)
 
 
 if __name__ == "__main__":
