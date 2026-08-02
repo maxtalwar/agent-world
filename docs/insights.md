@@ -24,6 +24,52 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-01 — Luna's weak frontier result was effort-sensitive, not a fixed model ceiling
+
+**Raising GPT-5.6 Luna from medium to max reasoning increased measured
+deliberation eightfold (474 to 3,773 reasoning tokens per decision) and moved
+the paired result from 35.5 to 65.1 competence: survival rose from 8/20 to
+15/20, completed capital from one farm to 11 farms plus three shelters, and
+entrepreneurship from 0.0 to 34.1.** The max variant kept strong execution
+(88.6), produced seven settled trades, and ended with 528.625 of
+living-accessible value versus the medium run's 176.25. Yet API-list-equivalent
+cost rose only from $0.79 to $2.96 per run because Luna's token prices are so
+low. The added reasoning did not solve everything: five agents still died,
+endpoint health was only 471/2,000, most capital remained private farms, and
+there were no groups, contracts, fees, or dividends.
+
+This is a controlled model-behavior variant, not an official Participant-v6
+replication. Reasoning effort was the only intended setting change, but the
+max cells launched from a newer clean commit and therefore disclose different
+source provenance rather than claiming automatic protocol certification.
+Evidence:
+`runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403`,
+compared with
+`runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735`.
+
+## 2026-08-01 — Fable replication changed the economic story without changing basic competence
+
+**Fable 5 kept 10/10 agents alive in both seeds and moved only from 85.1 to
+87.1 competence, yet seed 41 generated 19 settled trades and 177.8
+entrepreneurship versus two trades and 55.8 in seed 11—a 3.2x entrepreneurship
+spread inside the same model and protocol.** The recovered seed-41 world
+produced 115.75 units of enterprise supply versus seed 11's 12.0. A frozen
+ledger review classified five of its seven primitive `gift` transfers as real
+commerce: three payments for shelter access or upkeep and two settlements of
+goods debts; the remaining food and water transfers were aid and stayed
+unscored. The paired score is therefore 89.7 execution, 86.2 competence, and
+130.5 entrepreneurship, not the conservative all-unclassified estimate.
+
+This is model-behavior evidence that replication is especially important for
+emergent market formation: a single Fable seed described survival and capital
+competence reasonably well, but radically understated the model's propensity
+to form a functioning exchange economy. The seed-41 continuation itself is
+also recovery-dependent; its deterministic tick-32 reconstruction and clean
+tick-50 integrity are documented separately above.
+Evidence:
+`runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11`,
+`runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32`.
+
 ## 2026-07-31 — A completed-tick checkpoint can be rebuilt from paid decisions without rerunning the model
 
 **An append-only decision ledger plus a deterministic world engine is enough

@@ -1,0 +1,101 @@
+{
+  "schema_version": 1,
+  "purpose": "Frozen per-gift transfer classifications consumed by Participant v6 scoring revision 2. Judged once from ledger evidence; scoring reads this file deterministically. Re-judging requires a new scoring revision.",
+  "run_jsonl_sha256": "0eb14d6b11a848c771bd3c8e2136f0fe3af93409fae6b42ee749a0569de1bbc7",
+  "judge": {
+    "model": "gpt-5.6-sol",
+    "runtime": "Codex desktop task; direct read-only ledger review",
+    "reasoning_effort": "current_task",
+    "prompt_sha256": "c69050b07222b05419e8e490c1a04e137154ffc27acfd19a438935bba53f1cdc",
+    "output_schema_sha256": "9c4ff268086c4cafce6a4977e3e342adee6686f77f5c1b9cf28a60a21b210810",
+    "judged_at": "2026-08-01"
+  },
+  "verdict_policy": "payment_for_service and barter_settlement require a verbatim ledger evidence quote (verified); unrequited_transfer and unclassifiable are unscored. Unclassified defaults to unscored.",
+  "gift_count": 7,
+  "classifications": [
+    {
+      "gift_index": 0,
+      "tick": 19,
+      "giver": "agent-9",
+      "recipient": "agent-1",
+      "items": {
+        "fiber": 2
+      },
+      "verdict": "payment_for_service",
+      "evidence_quote": "agent-1: gifting 2 fiber for irrigation and adding 1 fiber to shelter upkeep. In return please grant me access to structure-4 before autumn - I'll keep supplying fiber (foraging 16) all winter.",
+      "reasoning": "Agent-9 explicitly transferred the fiber in return for shelter access, and agent-1 granted that access two ticks later."
+    },
+    {
+      "gift_index": 1,
+      "tick": 22,
+      "giver": "agent-9",
+      "recipient": "agent-1",
+      "items": {
+        "coin": 2
+      },
+      "verdict": "payment_for_service",
+      "evidence_quote": "Thank you for the grant! Handing you the 2 coin now as agreed. I'll keep covering fiber upkeep for structure-4 through winter. Good luck finishing the irrigation.",
+      "reasoning": "The coin settled the explicit agreement immediately after agent-1 granted agent-9 access to the shelter."
+    },
+    {
+      "gift_index": 2,
+      "tick": 22,
+      "giver": "agent-1",
+      "recipient": "agent-6",
+      "items": {
+        "food": 1
+      },
+      "verdict": "unrequited_transfer",
+      "evidence_quote": "",
+      "reasoning": "Agent-1 presented the food as immediate aid because agent-6 looked strained. The nearby request to contribute wood did not establish the food as agreed consideration, and the contribution had already completed the irrigation."
+    },
+    {
+      "gift_index": 3,
+      "tick": 36,
+      "giver": "agent-8",
+      "recipient": "agent-3",
+      "items": {
+        "fiber": 2
+      },
+      "verdict": "payment_for_service",
+      "evidence_quote": "Here's the 2 fiber I owe for s6 winter upkeep. Quick food run to [14,12], back on s6 next tick - please keep my access.",
+      "reasoning": "Agent-8 explicitly paid an acknowledged fiber debt for shelter upkeep and continued winter access; agent-3 confirmed the next tick that the debt was cleared and access would remain."
+    },
+    {
+      "gift_index": 4,
+      "tick": 45,
+      "giver": "agent-5",
+      "recipient": "agent-10",
+      "items": {
+        "food": 2
+      },
+      "verdict": "barter_settlement",
+      "evidence_quote": "Here's the 2 food I owed from our fiber deal - we're square. Stay warm.",
+      "reasoning": "Agent-5 explicitly identified the food as settlement of a debt from a fiber-for-food goods deal."
+    },
+    {
+      "gift_index": 5,
+      "tick": 45,
+      "giver": "agent-1",
+      "recipient": "agent-9",
+      "items": {
+        "coin": 2
+      },
+      "verdict": "barter_settlement",
+      "evidence_quote": "Paying my 2-coin water debt now. You're hungry, I'm parched: accept my 2 food for 2 water here at [9,10]. After winter I chop wood to finish the well so this stops happening.",
+      "reasoning": "Agent-1 explicitly identified the coin as repayment for water previously taken from agent-9, making it settlement of a goods debt."
+    },
+    {
+      "gift_index": 6,
+      "tick": 47,
+      "giver": "agent-4",
+      "recipient": "agent-6",
+      "items": {
+        "water": 1
+      },
+      "verdict": "unrequited_transfer",
+      "evidence_quote": "",
+      "reasoning": "Agent-4 described the water itself as aid to a distressed agent. The separate access bargain concerned agent-4's promised future wood contribution to the well, and agent-6 later called this transfer a water gift."
+    }
+  ]
+}
