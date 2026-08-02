@@ -6,6 +6,11 @@ closed Participant v6 field plus the GPT-5.6 Luna Max controlled reasoning
 variant. Use this snapshot as the best cross-model evidence until Participant
 v7 has a sufficiently broad replicated field.
 
+This table is the compact human-readable projection of the richer
+[`model-benchmarks.sqlite`](../data/model-benchmarks.sqlite) capability
+database. Query the database for latency, seed variance, reliability,
+provenance, outcomes, commerce, diagnostic runs, and full-precision values.
+
 Models are ranked by sustained competence. Scores combine the raw counts from
 seeds 11 and 41 before applying the frozen formula; they are not averages of
 rounded seed scores.
@@ -19,7 +24,7 @@ rounded seed scores.
 | 5 | Sonnet 4.6 | 84.6 | 71.6 | 31.7 | ~1,765 tok | $26.44 |
 | 6† | GPT-5.6 Luna Max | 88.6 | 65.1 | 34.1 | 3,773 tok | $2.96 |
 | 7† | Opus 4.7 | 84.0 | 60.8 | 25.9 | ~383 tok | $17.76 |
-| 8† | GPT-5.4 | 88.5 | 58.4 | 16.4 | 800 tok | $13.13 |
+| 8† | GPT-5.4 | 88.5 | 58.4 | 16.4 | 799 tok | $13.13 |
 | 9† | Sonnet 5 | 70.5 | 49.8 | 0.0 | ~287 tok | $9.76 |
 | 10† | Opus 4.6 | 84.7 | 47.3 | 0.0 | ~216 tok | $26.16 |
 | 11† | GPT-5.6 Terra | 82.0 | 43.6 | 0.0 | 226 tok | $7.25 |
@@ -71,9 +76,7 @@ the study.
   [`insights.md`](insights.md); benchmark definitions live in
   [`model-benchmarks.md`](model-benchmarks.md).
 
-When adding a model or corrected replication, update this document in the same
-commit as the durable benchmark evidence. Recombine raw seed counts with the
-frozen scoring formula, recalculate reasoning as total reasoning tokens divided
-by total calls, and recalculate cost from each run's usage ledger. Never update
-the table from a startup manifest, partial run, or arithmetic mean of rounded
-seed scores.
+When adding a model or corrected replication, update the source catalog,
+regenerate `data/model-benchmarks.sqlite`, and update this document in the same
+commit as the durable benchmark evidence. Never update the table from a startup
+manifest, partial run, or arithmetic mean of rounded seed scores.

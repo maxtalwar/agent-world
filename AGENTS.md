@@ -1,10 +1,11 @@
 # Repository workflow
 
 - Before selecting a model for a benchmark or making a cross-model performance
-  claim, read `docs/model-leaderboard.md`. It is the canonical full
-  model-selection table, including costs and clearly marked controlled
-  variants. Update it in the same commit as any new or corrected durable
-  benchmark result.
+  claim, query `data/model-benchmarks.sqlite`; its schema and example queries
+  are documented in `docs/model-metrics-database.md`. Use
+  `docs/model-leaderboard.md` as the canonical compact human-readable
+  projection. Update the source catalog, generated database, and projection in
+  the same commit as any new or corrected durable benchmark result.
 - After making any workspace change, run the relevant validation, commit the change, and push the branch before handing work back to the user.
 - When a run, experiment, debug session, or benchmark surfaces something
   genuinely interesting — a model quirk, a capability inversion, an emergent

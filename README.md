@@ -56,6 +56,8 @@ directory.
 - `agent_world/observer.py`: local web observatory for live/replay visualization.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
 - `agent_world/run_report.py`: per-run structured data export (`-report.json`/`-report.md`) and cross-run comparison.
+- `agent_world/benchmark_db.py`: builds and queries the durable cross-model
+  SQLite capability database from frozen benchmark artifacts.
 - `agent_world/experiments.py`: reproducible multi-seed environment × objective experiments with provenance manifests and paired contrasts.
 - `tests/`: regression coverage for world rules, maps, observer, and provider adapters.
 - `docs/`: design notes and future handoff context.
@@ -63,6 +65,8 @@ directory.
 - `docs/model-leaderboard.md`: the canonical complete model-selection table,
   including competence ranking, reasoning use, API-list-equivalent cost, and
   clearly marked controlled variants.
+- `docs/model-metrics-database.md`: schema, latency definitions, query examples,
+  and maintenance instructions for `data/model-benchmarks.sqlite`.
 
 ## LLM Agents
 

@@ -24,6 +24,26 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-02 — Resumed-run manifests can dramatically understate elapsed benchmark time
+
+**Manifest start/end timestamps are not a safe whole-run latency metric after
+continuation: Sonnet 5 seed 11's usage ledger spans about 4 hours 8 minutes,
+while its final manifest interval is only 14 minutes 53 seconds.** The first
+recorded provider call ended at 2026-07-29 17:09:18 UTC and the last ended at
+21:17:42 UTC, but `run-manifest.json` starts at 21:02:50 UTC. Seed 41 shows the
+same pattern: usage begins around 17:09 UTC while the manifest covers only
+21:24:47-21:33:32 UTC. A speed comparison based on manifests would therefore
+make this model/run look far faster than the decisions actually experienced.
+
+This is a harness/provenance artifact, not Sonnet behavior. The model metrics
+database consequently stores three distinct clocks: per-decision end-to-end
+latency, per-tick concurrent wall span, and the usage-ledger observed run span;
+the manifest interval is retained separately and explicitly labeled as a
+possibly partial launcher segment. Evidence:
+`runs/benchmarks/claude-sonnet-5-participant-v6-certified-seeds11-41-20260729-164053/sonnet5-v6-seed11/run-usage.jsonl`,
+`runs/benchmarks/claude-sonnet-5-participant-v6-certified-seeds11-41-20260729-164053/sonnet5-v6-seed11/run-manifest.json`,
+and the matching seed-41 files.
+
 ## 2026-08-01 — Sequential turns fixed the problem they targeted and still made runs worse (recovered finding)
 
 **Letting each agent see earlier same-tick resolutions before deciding
