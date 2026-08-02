@@ -43,6 +43,51 @@ STANDARD_MAP_16 = [
     "WWWWW...FFFFFFFF",
 ]
 
+# A fixed 32x32 world with named geographic regions:
+# - the Northern Range, split by the Highpass at x16-17
+# - the Northwest Coast forests
+# - the river, flowing from springs at x14-15,y7 through the central lake to
+#   the southern delta
+# - NORTH FORD at y10 and SOUTH FORD at y21, the river's only crossings
+# - the Heartland plains basin east of the river
+# - the Barrens in the far east, deliberately waterless and woodless marginal land
+# - the South Shore basin in the southwest
+# - the Great Forest in the southeast
+STANDARD_MAP_32 = [
+    "WWFFFFFFMMMMMMMM..MMMMMMMMMFF...",
+    "WWFFFFFMMMMMMMMM..MMMMMMMMMFFF..",
+    "WFFFFF.MMMMMMMMM..MMMMMMMM..FF..",
+    "WFFFF..MMMMMMMM...MMMMMMM....FF.",
+    "WFFF...MMMMMMM....MMMMMM....FFF.",
+    "WWFF...MMMMMM.....MMMMM..FF.....",
+    "WWF....MMMMM..M...MMMM..........",
+    "WW.....MMMM...WW...MMM..........",
+    "WW.....MMMFF..WW....MM..........",
+    "W......MMFF...WW....M...........",
+    "W......FF.......................",
+    "W.....FFF.....WW.......M........",
+    "WW....FF......WW................",
+    "WWW..........WWWWW..............",
+    "WWWW........WWWWWWW.....FF......",
+    "WWW.........WWWWWWW.....FF......",
+    "WW..........WWWWWW..............",
+    "WW...........WWWWW..............",
+    "W..............WW...............",
+    "W..............WW...............",
+    "W.....M........WW.........FF....",
+    "W.....MM........................",
+    "W..............WW........FFFF...",
+    "WW.............WW......FFFFFF...",
+    "WW.....F.......WW.......FFFFFF..",
+    "W......FF......WW......FFFFFFFF.",
+    "W......FF.....WWW.....FFFFFFFFF.",
+    "WW......F.....WWW....FFFFFFFFFF.",
+    "WWW..........WWWW..FFFFFFFFFFFFF",
+    "WWWW.........WWWW.FFFFFFFFFFFFFF",
+    "WWWWW.........WWWWW.FFFFFFFFFFFF",
+    "WWWWWWWW....WWWWWWWWFFFFFFFFFFFF",
+]
+
 
 SPECIALIST_PROFILES: tuple[dict[str, object], ...] = (
     {
@@ -87,13 +132,35 @@ SPECIALIST_PROFILES: tuple[dict[str, object], ...] = (
     },
 )
 
+SPECIALIST_ANCHORS: dict[tuple[int, int], tuple[Position, ...]] = {
+    (16, 16): (
+        Position(6, 10),
+        Position(2, 2),
+        Position(12, 2),
+        Position(1, 10),
+        Position(11, 11),
+    ),
+    (32, 32): (
+        Position(20, 15),
+        Position(26, 26),
+        Position(10, 6),
+        Position(4, 14),
+        Position(13, 11),
+    ),
+}
 
-def specialist_profile(offset: int) -> dict[str, object]:
+
+def specialist_profile(offset: int, width: int = 16, height: int = 16) -> dict[str, object]:
     """Return a copy of the deterministic dispersed-treatment role profile."""
 
-    profile = SPECIALIST_PROFILES[offset % len(SPECIALIST_PROFILES)]
+    profile_index = offset % len(SPECIALIST_PROFILES)
+    profile = SPECIALIST_PROFILES[profile_index]
+    anchors = SPECIALIST_ANCHORS.get((width, height))
+    if anchors is None:
+        raise ValueError("Specialist anchors support only 16x16 and 32x32 worlds.")
     return {
         **profile,
+        "anchor": anchors[profile_index],
         "endowment": dict(profile.get("endowment", {})),
         "need_multipliers": dict(profile.get("need_multipliers", {})),
     }
@@ -108,7 +175,7 @@ def find_specialist_spawn(
     """Choose a role-appropriate, geographically dispersed passable start."""
 
     occupied = occupied or set()
-    profile = specialist_profile(offset)
+    profile = specialist_profile(offset, config.width, config.height)
     anchor = profile["anchor"]
     wanted = str(profile["terrain"])
     candidates: list[Position] = []
@@ -137,9 +204,14 @@ def _is_coastal(tiles: list[list[Tile]], position: Position, config: WorldConfig
 
 
 def build_standard_tiles(config: WorldConfig) -> list[list[Tile]]:
-    if config.width != 16 or config.height != 16:
-        raise ValueError("The standard handcrafted map currently requires a 16x16 world.")
-    tiles = tiles_from_rows(STANDARD_MAP_16, resource_base_multiplier=config.resource_base_multiplier)
+    size = (config.width, config.height)
+    if size == (16, 16):
+        rows = STANDARD_MAP_16
+    elif size == (32, 32):
+        rows = STANDARD_MAP_32
+    else:
+        raise ValueError("The standard handcrafted map supports only 16x16 and 32x32 worlds.")
+    tiles = tiles_from_rows(rows, resource_base_multiplier=config.resource_base_multiplier)
     _apply_wild_resource_density(tiles, config)
     return tiles
 

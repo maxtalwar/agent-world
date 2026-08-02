@@ -1,6 +1,6 @@
 # World Design
 
-Agent World is currently a fixed 16x16, tick-based world. The map is handcrafted rather than randomly generated so runs are easier to compare.
+Agent World supports fixed 16x16 and 32x32, tick-based worlds. The maps are handcrafted rather than randomly generated so runs are easier to compare.
 
 ## Canonical Map
 

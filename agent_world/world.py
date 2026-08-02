@@ -78,6 +78,11 @@ class WorldEngine:
         agent_names: Iterable[str] | None = None,
     ) -> "WorldEngine":
         config = config or WorldConfig()
+        if (config.width, config.height) == (32, 32) and config.geography_mode == "shared_oasis":
+            raise ValueError(
+                "The 32x32 standard map supports geography_mode='dispersed' only; "
+                "shared_oasis would center the starter radius on impassable lake water."
+            )
         tiles = build_standard_tiles(config)
         state = WorldState(config=config, tick=0, tiles=tiles)
         engine = cls(state)
@@ -135,7 +140,7 @@ class WorldEngine:
         return agent
 
     def _apply_specialist_profile(self, agent: Agent, offset: int) -> None:
-        profile = specialist_profile(offset)
+        profile = specialist_profile(offset, self.state.config.width, self.state.config.height)
         specialty_skill = str(profile["skill"])
         agent.specialty = str(profile["specialty"])
         organic = self.state.config.economy_mode == "organic"

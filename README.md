@@ -45,7 +45,7 @@ directory.
 
 - `agent_world/world.py`: source-of-truth world engine and action validation.
 - `agent_world/rules.py`: resources, terrain, recipes, action schema, and structure rules.
-- `agent_world/maps.py`: canonical handcrafted 16x16 world map.
+- `agent_world/maps.py`: canonical handcrafted 16x16 and 32x32 world maps.
 - `agent_world/interface.py`: per-agent observation and neutral prompt construction.
 - `agent_world/openrouter_brain.py`: OpenRouter-backed `AgentBrain` with retry/throttle handling.
 - `agent_world/codex_brain.py`: ChatGPT-plan-backed `AgentBrain` using isolated `codex exec` decisions.
@@ -478,7 +478,7 @@ Invalid or unaffordable actions fail explicitly and are logged; they do not muta
 
 ## World Model
 
-- Standard 16x16 handcrafted world with a coast, river/lake system, forests, plains, and an eastern mountain range.
+- Standard handcrafted 16x16 and 32x32 worlds with coasts, river/lake systems, forests, plains, and mountain ranges.
 - Water tiles are not occupiable; agents gather water or fish from adjacent land.
 - Discrete ticks with a deterministic rotating resolution order, avoiding permanent first-mover priority.
 - Local observations filtered by visibility radius and event scope.
