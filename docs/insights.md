@@ -24,6 +24,40 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-02 — Agent-world concurrency is bounded by local process memory, not by any provider limit
+
+**A worker ramp from 8 to 100 concurrent decisions found zero provider-side
+throttling and a hard local wall: the ceiling is roughly 70MB of CLI
+subprocess memory per concurrently-deciding agent.** Per-decision latency was
+flat across a 3x concurrency increase (8 workers 13.0s median / 20.6s p95;
+16 workers 12.6s / 19.1s; 24 workers 13.6s / 19.8s) while tick wall-clock fell
+2.4x, from 75.7s to 31.6s. Across every cell there were zero timeout, retry,
+stall, or quota events — the provider never objected to any concurrency level
+tested.
+
+The knee is at 24. Raising 24 -> 40 workers bought only 7% (31.6s -> 29.2s per
+tick) because per-decision latency rose to 17.0s as the machine scheduled 40
+subprocesses over 8 cores at load average 41; the wave-count saving and the
+latency penalty roughly cancelled. At 100 workers on 100 agents the run had to
+be stopped during tick 2: 8.3GB resident in Codex processes alone, free pages
+down to ~4,000, sustained swapout growth, load average 86, and median decision
+latency degraded to 23.3s — nearly 2x the 8-worker baseline. Still zero
+provider failures. The laptop failed, not the account.
+
+Two consequences. First, 24 is now the default codex_cli worker ceiling for
+non-benchmark runs (the benchmark protocol stays locked at 4, which preserves
+comparability with the entire existing corpus). Second, this bounds
+large-population ambitions more sharply than cost does: a 100-agent world
+needs roughly 7GB of subprocess memory before the engine or the model bill is
+considered, so scaling past ~40 concurrent agents requires a materially larger
+machine or distribution across hosts. Notably the cloud sandboxes surveyed the
+same day (Codex Cloud 16GB/2 cores, Claude Cloud 15GB/4 vCPU) are SMALLER than
+the 24GB development laptop, so moving execution to them would buy
+laptop-independence and reliability but not headroom.
+Evidence: `runs/experiments/worker-ramp-20260802/{w16,w24,w40,w100}`, with
+per-cell resource samples in each directory and `w100/probe-status.txt`
+recording the stop condition.
+
 ## 2026-08-02 — A stronger model traded more and still never touched the new contract primitive
 
 **GPT-5.6 Sol, run in the identical 40-agent specialist world as Luna (same

@@ -610,8 +610,17 @@ def _run(args: argparse.Namespace) -> None:
     args.model = brain_spec.model if not population_spec.mixed else None
     args.reasoning_effort = brain_spec.reasoning_effort if not population_spec.mixed else None
     args.max_workers = max_workers
+    # The per-provider ceiling was 4 everywhere, dating from an era when the
+    # OpenAI API rate-limited concurrent requests. Decisions now go through the
+    # provider CLIs against plan quota, and a measured 8/16/24/40/100-worker
+    # ramp found no provider-side throttling at all: per-decision latency stays
+    # flat to 24 (13.0s -> 12.6s -> 13.6s median) while tick wall-clock falls
+    # 2.4x. The real ceiling is local memory - each CLI subprocess costs ~70MB,
+    # so 100 concurrent workers drove the machine into sustained swapping.
+    # 24 is the measured knee; only codex_cli was measured, so the other CLI
+    # providers keep the conservative 4 until someone ramps them too.
     provider_max_workers = {
-        "codex_cli": int(getattr(args, "codex_max_workers", None) or min(max_workers, 4)),
+        "codex_cli": int(getattr(args, "codex_max_workers", None) or min(max_workers, 24)),
         "claude_cli": int(getattr(args, "claude_max_workers", None) or min(max_workers, 4)),
         "cursor_cli": int(getattr(args, "cursor_max_workers", None) or min(max_workers, 4)),
         "devin_cli": int(
