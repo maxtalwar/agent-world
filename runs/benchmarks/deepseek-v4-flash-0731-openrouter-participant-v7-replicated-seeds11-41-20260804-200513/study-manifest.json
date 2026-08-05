@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "study_id": "deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513",
+  "status": "planned",
+  "created_at_utc": "2026-08-05T03:05:13Z",
+  "study_type": "benchmark_trial",
+  "suite_id": "agent-world-participant-v7",
+  "benchmark_protocol": "participant-v7",
+  "benchmark_scoring_revision": 1,
+  "benchmark_code_fingerprint": {
+    "openrouter": "f9d392cf50d32a89f24abd0069dce69a352407c740ecae945ac8e951de6d9660"
+  },
+  "targets": {
+    "deepseek/deepseek-v4-flash-0731": {
+      "brain": "openrouter",
+      "provider": "openrouter",
+      "billing_mode": "api",
+      "model": "deepseek/deepseek-v4-flash-0731",
+      "resolved_model_expected": "deepseek/deepseek-v4-flash-0731",
+      "reasoning_effort_requested": "medium",
+      "seeds": [11, 41]
+    }
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds_per_model": [11, 41],
+    "policy": "Both integrity-clean, complete Participant-v7 cells on seeds 11 and 41 are required for replicated certification."
+  },
+  "model_catalog": {
+    "source": "OpenRouter /api/v1/models",
+    "catalog_verified_at_utc": "2026-08-05T03:01:00Z",
+    "model_id": "deepseek/deepseek-v4-flash-0731",
+    "canonical_slug": "deepseek/deepseek-v4-flash-20260731",
+    "catalog_name": "DeepSeek: DeepSeek V4 Flash 0731",
+    "latest_alias": "~deepseek/deepseek-v4-flash-latest",
+    "latest_alias_target_at_verification": "deepseek/deepseek-v4-flash-0731",
+    "context_length": 1048576,
+    "max_completion_tokens": 65536,
+    "pricing_usd_per_token": {
+      "input": 0.00000009,
+      "input_cache_read": 0.000000018,
+      "output": 0.00000018
+    }
+  },
+  "reasoning_compatibility": {
+    "requested_effort": "medium",
+    "model_advertised_efforts": ["max", "high", "low"],
+    "gateway_behavior": "OpenRouter maps unsupported requested effort to the nearest model-supported effort.",
+    "effective_effort_reported": null,
+    "comparison_caveat": "Participant-v7 requires a declared medium request, but this model does not advertise native medium effort. Preserve the declared setting and disclose gateway mapping in analysis."
+  },
+  "provider_compatibility": {
+    "provider": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_style": "chat",
+    "credential_source": "repository .env via OPENROUTER_API_KEY or current OPENAI_API_KEY fallback",
+    "auth_preflight": "authenticated 0423 model catalog request previously succeeded; exact 0731 ID verified in the current public catalog",
+    "configured_timeout_seconds": 180,
+    "configured_max_retries": 4,
+    "quota_wait_hours": 12.0
+  },
+  "supersedes": {
+    "study_id": "deepseek-v4-flash-openrouter-participant-v7-certified-seeds11-41-20260804-192338",
+    "reason": "The earlier study targeted deepseek/deepseek-v4-flash, which is the fixed 0423 release rather than the requested latest V4 Flash release. Its partial checkpoints are diagnostic only and must not be resumed into this study."
+  },
+  "replications": {
+    "required_seeds": [11, 41],
+    "cells": {
+      "deepseek-v4-flash-0731-v7-seed-11": {
+        "seed": 11,
+        "model": "deepseek/deepseek-v4-flash-0731",
+        "brain": "openrouter",
+        "provider": "openrouter",
+        "status": "planned",
+        "cohort": "deepseek-v4-flash-0731-v7-seed11",
+        "screen": "aw-bench-deepseek-v4-flash-0731-v7-s11",
+        "target_tick": 50,
+        "out": "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed11/run.jsonl",
+        "snapshot": "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed11/run-snapshot.json"
+      },
+      "deepseek-v4-flash-0731-v7-seed-41": {
+        "seed": 41,
+        "model": "deepseek/deepseek-v4-flash-0731",
+        "brain": "openrouter",
+        "provider": "openrouter",
+        "status": "planned",
+        "cohort": "deepseek-v4-flash-0731-v7-seed41",
+        "screen": "aw-bench-deepseek-v4-flash-0731-v7-s41",
+        "target_tick": 50,
+        "out": "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed41/run.jsonl",
+        "snapshot": "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed41/run-snapshot.json"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "session_max_turns": 10,
+    "population": "one uniform model cohort per cell",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12.0
+  },
+  "provenance": {
+    "git_branch": "main",
+    "git_sha_at_launch": "eefbe25a67efc7b510a223eaf296f9878e379764",
+    "launcher": "scripts/run-isolated-cohort"
+  },
+  "commands": {
+    "deepseek-v4-flash-0731-v7-seed-11": [
+      "scripts/run-isolated-cohort", "--cohort", "deepseek-v4-flash-0731-v7-seed11", "--commit", "eefbe25a67efc7b510a223eaf296f9878e379764", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v7", "--brain", "openrouter", "--model", "deepseek/deepseek-v4-flash-0731", "--seed", "11", "--out", "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed11/run.jsonl", "--snapshot", "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed11/run-snapshot.json", "--progress"
+    ],
+    "deepseek-v4-flash-0731-v7-seed-41": [
+      "scripts/run-isolated-cohort", "--cohort", "deepseek-v4-flash-0731-v7-seed41", "--commit", "eefbe25a67efc7b510a223eaf296f9878e379764", "--", "python3", "-m", "agent_world.cli", "run", "--benchmark-protocol", "participant-v7", "--brain", "openrouter", "--model", "deepseek/deepseek-v4-flash-0731", "--seed", "41", "--out", "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed41/run.jsonl", "--snapshot", "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed41/run-snapshot.json", "--progress"
+    ]
+  },
+  "outputs": [
+    "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed11",
+    "runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513/deepseek-v4-flash-0731-v7-seed41"
+  ]
+}
