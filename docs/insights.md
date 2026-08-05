@@ -24,6 +24,24 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-04 — OpenRouter runs silently lacked latency telemetry
+
+**OpenRouter usage records had no `duration_seconds`, so a completed API-backed
+benchmark would have looked latency-free even though every other provider path
+and the model database treat end-to-end decision latency as a first-class
+metric.** The omission surfaced during the corrected DeepSeek V4 Flash 0731
+startup: seed 11 had written 19 usage rows and seed 41 had written 24, none with
+a duration, while the calls were visibly taking tens of seconds or longer.
+Because only completion timestamps were recorded, individual call latency could
+not be reconstructed reliably under four-way concurrency.
+
+This was a harness observability gap, not model behavior. The cells were stopped
+around ticks 1-2 before a long benchmark accumulated, and the OpenRouter
+connector now records monotonic end-to-end duration across the provider call,
+adapter retries, and response validation on every usage row. Evidence:
+`runs/benchmarks/deepseek-v4-flash-0731-openrouter-participant-v7-replicated-seeds11-41-20260804-200513`
+and `tests/test_openrouter_brain.py`.
+
 ## 2026-08-02 — Agent-world concurrency is bounded by local process memory, not by any provider limit
 
 **A worker ramp from 8 to 100 concurrent decisions found zero provider-side

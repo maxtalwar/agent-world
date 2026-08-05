@@ -191,6 +191,15 @@ class OpenRouterBrain:
             ).hexdigest(),
             "request_sha256": hashlib.sha256(request_bytes).hexdigest(),
         }
+        request_started_at = time.monotonic()
+
+        def timed_request_meta(extra: dict[str, Any] | None = None) -> dict[str, Any]:
+            return {
+                **request_meta,
+                "duration_seconds": round(time.monotonic() - request_started_at, 3),
+                **(extra or {}),
+            }
+
         try:
             response = self._post_json_with_retries(endpoint, payload)
             try:
@@ -199,13 +208,12 @@ class OpenRouterBrain:
                 detail = f"{type(exc).__name__}: {exc}"
                 self._record_usage(
                     response,
-                    {
-                        **request_meta,
-                        **ambiguous_boundary_metadata(
+                    timed_request_meta(
+                        ambiguous_boundary_metadata(
                             serialize_raw(response),
                             detail,
-                        ),
-                    },
+                        )
+                    ),
                 )
                 return AgentDecision(
                     intent=f"OpenRouter boundary failed: {detail}",
@@ -225,10 +233,7 @@ class OpenRouterBrain:
                 )
                 self._record_usage(
                     response,
-                    {
-                        **request_meta,
-                        **attribution.usage_metadata(adapter_detail),
-                    },
+                    timed_request_meta(attribution.usage_metadata(adapter_detail)),
                 )
                 return AgentDecision(
                     intent=attributed_failure_message(
@@ -255,10 +260,7 @@ class OpenRouterBrain:
             if adapter_detail is not None:
                 self._record_usage(
                     response,
-                    {
-                        **request_meta,
-                        **attribution.usage_metadata(adapter_detail),
-                    },
+                    timed_request_meta(attribution.usage_metadata(adapter_detail)),
                 )
                 return AgentDecision(
                     intent=attributed_failure_message(
@@ -271,7 +273,7 @@ class OpenRouterBrain:
                     memory_updates=[],
                 )
             assert parsed_decision is not None
-            self._record_usage(response, request_meta)
+            self._record_usage(response, timed_request_meta())
             return parsed_decision
         except OpenRouterQuotaError as exc:
             self._mark_quota_unavailable(str(exc))
@@ -310,7 +312,7 @@ class OpenRouterBrain:
                     "reasoning_tokens": 0,
                     "cost": 0,
                     "time": time.time(),
-                    **request_meta,
+                    **timed_request_meta(),
                     **ambiguous_boundary_metadata(detail, detail),
                 }
             )
