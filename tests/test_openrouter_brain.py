@@ -139,6 +139,18 @@ class OpenRouterBrainTests(unittest.TestCase):
         self.assertEqual(decision.intent, "wait")
         self.assertEqual(brain.last_payload["reasoning"], {"effort": "high"})
 
+    def test_usage_records_end_to_end_request_duration(self) -> None:
+        brain = CapturingChatBrain(
+            api_key="test-key",
+            min_request_interval_seconds=0,
+        )
+
+        with patch("agent_world.openrouter_brain.time.monotonic", side_effect=[10.0, 12.25]):
+            brain.decide({"tick": 3, "self": {"id": "agent-1"}})
+
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["duration_seconds"], 2.25)
+
     def test_malformed_model_output_is_preserved_with_failure_metadata(self) -> None:
         brain = MalformedOpenRouterBrain(
             api_key="test-key",
