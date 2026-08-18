@@ -9,6 +9,7 @@ from unittest.mock import patch
 from agent_world.env import load_dotenv
 from agent_world.interface import build_static_context
 from agent_world.openrouter_brain import (
+    AGENT_DECISION_SCHEMA,
     OpenRouterBrain,
     OpenRouterQuotaError,
     extract_chat_text,
@@ -222,7 +223,13 @@ class OpenRouterBrainTests(unittest.TestCase):
         self.assertEqual(brain.last_payload["model"], "z-ai/glm-5.2")
         self.assertEqual(brain.last_payload["messages"][0]["role"], "system")
         self.assertEqual(brain.last_payload["messages"][1]["role"], "user")
-        self.assertEqual(brain.last_payload["response_format"], {"type": "json_object"})
+        self.assertEqual(brain.last_payload["response_format"]["type"], "json_schema")
+        self.assertTrue(brain.last_payload["response_format"]["json_schema"]["strict"])
+        self.assertEqual(
+            brain.last_payload["response_format"]["json_schema"]["schema"],
+            AGENT_DECISION_SCHEMA,
+        )
+        self.assertEqual(brain.last_payload["provider"], {"require_parameters": True})
         self.assertEqual(brain.last_payload["reasoning"], {"effort": "high"})
         self.assertIn("max_tokens", brain.last_payload)
         self.assertNotIn("input", brain.last_payload)
@@ -268,7 +275,14 @@ class OpenRouterBrainTests(unittest.TestCase):
                 min_request_interval_seconds=0,
             )
             brain.decide({"tick": 0, "valid_actions": []})
-            self.assertEqual(brain.last_payload["provider"], {"order": ["Z.AI", "Alibaba"], "allow_fallbacks": True})
+            self.assertEqual(
+                brain.last_payload["provider"],
+                {
+                    "require_parameters": True,
+                    "order": ["Z.AI", "Alibaba"],
+                    "allow_fallbacks": True,
+                },
+            )
         finally:
             del os.environ["OPENROUTER_PROVIDER_ORDER"]
 

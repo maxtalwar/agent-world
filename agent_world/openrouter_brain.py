@@ -331,7 +331,14 @@ class OpenRouterBrain:
                 {"role": "user", "content": f"The current observation follows as JSON:\n{dynamic_json}"},
             ],
             "max_tokens": self.max_output_tokens,
-            "response_format": {"type": "json_object"},
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "agent_world_decision",
+                    "strict": True,
+                    "schema": AGENT_DECISION_SCHEMA,
+                },
+            },
             "usage": {"include": True},
         }
         provider_order = [
@@ -339,10 +346,16 @@ class OpenRouterBrain:
             for name in os.environ.get("OPENROUTER_PROVIDER_ORDER", "").split(",")
             if name.strip()
         ]
-        if provider_order and "openrouter.ai" in self.base_url:
-            # Pin routing to reliable providers: OpenRouter otherwise load-balances across
-            # dozens of hosts, and one degraded host means hung requests and cold caches.
-            payload["provider"] = {"order": provider_order, "allow_fallbacks": True}
+        if "openrouter.ai" in self.base_url:
+            # Structured output is part of the benchmark boundary. Require a route that
+            # honors it instead of allowing OpenRouter to silently drop the parameter.
+            payload["provider"] = {"require_parameters": True}
+            if provider_order:
+                # Pin routing to reliable providers: OpenRouter otherwise load-balances
+                # across hosts, and one degraded host means hung requests and cold caches.
+                payload["provider"].update(
+                    {"order": provider_order, "allow_fallbacks": True}
+                )
         if self.reasoning_effort:
             # OpenRouter normalizes this across providers; reasoning-capable models (GLM-5.2)
             # use it, and providers that ignore reasoning simply drop it.
