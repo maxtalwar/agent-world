@@ -25,7 +25,12 @@ from agent_world.decision_failure import (
     attributed_failure_message,
     serialize_raw,
 )
-from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
+from agent_world.interface import (
+    _extract_json_object,
+    build_dynamic_observation,
+    build_static_context,
+    parse_agent_response,
+)
 from agent_world.models import AgentDecision
 
 
@@ -203,7 +208,7 @@ class OpenRouterBrain:
         try:
             response = self._post_json_with_retries(endpoint, payload)
             try:
-                decision = extractor(response)
+                decision = _unwrapped_decision_payload(extractor(response))
             except Exception as exc:
                 detail = f"{type(exc).__name__}: {exc}"
                 self._record_usage(
@@ -487,6 +492,24 @@ def extract_chat_text(response: dict[str, Any]) -> str:
         finish_reason = choices[0].get("finish_reason")
         raise ValueError(f"No content in chat response (finish_reason={finish_reason}).")
     raise ValueError("No choices in chat response.")
+
+
+def _unwrapped_decision_payload(decision: Any) -> Any:
+    """Remove deterministic chat transport wrappers before attribution.
+
+    Some OpenRouter provider routes wrap otherwise valid structured output in
+    markdown JSON fences. Treat only a balanced, parseable object as transport
+    normalization; leave genuinely malformed content untouched so independent
+    contract validation can attribute it to model output.
+    """
+
+    if not isinstance(decision, str):
+        return decision
+    try:
+        return json.loads(decision)
+    except json.JSONDecodeError:
+        salvaged = _extract_json_object(decision)
+        return decision if salvaged is None else salvaged
 
 
 def _ssl_context() -> ssl.SSLContext:

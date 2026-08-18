@@ -651,11 +651,10 @@ def _unwrapped_decision_payload(decision: dict[str, Any] | str) -> Any:
     wraps JSON in a markdown fence. The production adapter already salvages that
     (``parse_agent_response``), so the validator has to as well - otherwise it
     reports a contract violation for output the simulation would have accepted,
-    inventing a model failure that never happened. Providers used by the other
-    brains cannot emit a fence at all: OpenRouter runs in JSON mode and Codex
-    returns tool-call arguments, so stripping it removes a transport artifact
-    rather than excusing the model. Genuinely malformed output still has no
-    recoverable object and still fails.
+    inventing a model failure that never happened. Stripping a balanced,
+    parseable object removes a transport artifact rather than excusing the
+    model. Genuinely malformed output still has no recoverable object and still
+    fails.
     """
 
     if not isinstance(decision, str):

@@ -79,6 +79,28 @@ class MalformedOpenRouterBrain(OpenRouterBrain):
         }
 
 
+class FencedOpenRouterBrain(OpenRouterBrain):
+    def _post_json_with_retries(self, path, payload):
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "content": (
+                            "```json\n"
+                            '{"intent":"move","actions":[],"messages":[],'
+                            '"memory_updates":[]}\n'
+                            "```"
+                        )
+                    }
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 100,
+                "completion_tokens": 20,
+            },
+        }
+
+
 class MissingOutputOpenRouterBrain(OpenRouterBrain):
     def _post_json_with_retries(self, path, payload):
         return {
@@ -167,6 +189,18 @@ class OpenRouterBrainTests(unittest.TestCase):
         self.assertEqual(record["decision_failure_origin"], "model_output")
         self.assertEqual(record["failed_raw_response"], '{"intent":"move"')
         self.assertEqual(len(record["failed_raw_response_sha256"]), 64)
+
+    def test_fenced_json_is_normalized_before_contract_attribution(self) -> None:
+        brain = FencedOpenRouterBrain(
+            api_key="test-key",
+            min_request_interval_seconds=0,
+        )
+        decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
+
+        self.assertEqual(decision.intent, "move")
+        self.assertEqual(decision.actions, [])
+        record = brain.runtime.usage_records()[0]
+        self.assertNotIn("decision_failure_origin", record)
 
     def test_contract_valid_output_rejected_by_adapter_is_harness_failure(self) -> None:
         brain = CapturingChatBrain(
