@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "study_id": "glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919",
+  "status": "planned",
+  "created_at_utc": "2026-08-18T19:09:19Z",
+  "study_type": "benchmark_trial",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_scoring_revision": 2,
+  "benchmark_code_fingerprint": {
+    "openrouter": "c1b02b23baf760e0b7769157bfd8860ceb59410f1b96a5bf34e5b745f1554477"
+  },
+  "targets": {
+    "z-ai/glm-5.2": {
+      "brain": "openrouter",
+      "provider": "openrouter",
+      "billing_mode": "api",
+      "model": "z-ai/glm-5.2",
+      "resolved_model_expected": "z-ai/glm-5.2",
+      "reasoning_effort_requested": "medium",
+      "seeds": [11, 41]
+    }
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds_per_model": [11, 41],
+    "policy": "Both integrity-clean, complete Participant-v6 cells on seeds 11 and 41 are required for replicated certification."
+  },
+  "model_catalog": {
+    "source": "OpenRouter /api/v1/models",
+    "catalog_verified_at_utc": "2026-08-18T19:00:00Z",
+    "model_id": "z-ai/glm-5.2",
+    "canonical_slug": "z-ai/glm-5.2-20260616",
+    "catalog_name": "Z.ai: GLM 5.2",
+    "context_length": 1048576,
+    "max_completion_tokens": 131072,
+    "pricing_usd_per_token": {
+      "input": 0.00000049,
+      "input_cache_read": 0.000000091,
+      "output": 0.00000154
+    },
+    "supported_parameters": ["reasoning", "reasoning_effort", "response_format", "structured_outputs"]
+  },
+  "provider_compatibility": {
+    "provider": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_style": "chat",
+    "auth_preflight": "authenticated model catalog request succeeded",
+    "configured_timeout_seconds": 180,
+    "configured_max_retries": 4,
+    "quota_wait_hours": 12.0,
+    "decision_latency_telemetry": "duration_seconds from monotonic request start through provider retries and response validation"
+  },
+  "protocol_provenance": {
+    "base_v6_commit": "02381ec8b4252852a8e5b822f850b5fc24de7cdc",
+    "launch_commit": "34d375abef153be9c9c43950f95221ca31af9c25",
+    "launch_branch": "codex/v6-openrouter-latency",
+    "declared_deviation": "The closed Participant-v6 world, prompt, scoring revision, and trial settings are unchanged. The launch commit adds monotonic OpenRouter decision-duration telemetry only; it does not alter requests, model-visible text, world mechanics, or scores."
+  },
+  "replications": {
+    "required_seeds": [11, 41],
+    "cells": {
+      "glm-5-2-v6-seed-11": {"seed": 11, "status": "planned", "cohort": "glm-5-2-v6-s11-20260818", "target_tick": 50, "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11/run.jsonl", "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11/run-snapshot.json"},
+      "glm-5-2-v6-seed-41": {"seed": 41, "status": "planned", "cohort": "glm-5-2-v6-s41-20260818", "target_tick": 50, "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41/run.jsonl", "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41/run-snapshot.json"}
+    }
+  },
+  "locked_trial": {"agents": 10, "ticks": 50, "diagnostic_score_ticks": [30, 40], "official_score_tick": 50, "preset": "frontier-generalists", "reasoning_effort": "medium", "decision_mode": "raw", "action_feedback_mode": "baseline", "connector_profile": "stateless-v3", "conversation_mode": "stateless", "turn_resolution": "simultaneous", "global_max_workers": 4, "provider_max_workers": 4, "agent_io_log": true, "startup_health_check_tick": 5, "startup_health_max_failure_rate": 0.2, "quota_wait_hours": 12.0},
+  "launcher": "scripts/run-isolated-cohort"
+}
