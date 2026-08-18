@@ -24,30 +24,41 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
-## 2026-08-18 -- JSON-only output made schema enforcement look like model incompetence
+## 2026-08-18 -- Structured output still needed transport normalization
 
 **OpenRouter's `json_object` response mode produced valid JSON that violated
 Agent World's decision contract on 58-94% of startup decisions, while the same
 models returned contract-valid decisions immediately when the connector used
-their advertised strict structured-output support.** In matched five-tick
-Participant-v6 diagnostics, GLM 5.2 failed 39/50 and 29/50 decisions across
-seeds 11 and 41; Qwen3.8 Max failed 47/50 and 44/50. The dominant error was a
-speech object without the required `mode`, followed by overlong or wrongly
-typed memory updates. All four startup health gates stopped as designed.
+their advertised strict structured-output support. But strict schema
+enforcement did not make the provider boundary uniform: the Z.AI GLM 5.2 route
+still wrapped otherwise valid objects in markdown ```json fences, while Qwen3.8
+Max honored the same request without wrappers.** In matched five-tick
+Participant-v6 `json_object` diagnostics, GLM 5.2 failed 39/50 and 29/50
+decisions across seeds 11 and 41; Qwen3.8 Max failed 47/50 and 44/50. The
+dominant error was a speech object without the required `mode`, followed by
+overlong or wrongly typed memory updates. All four startup health gates stopped
+as designed.
 
-This was a harness-enforcement artifact, not a finding that the models could
-not produce decisions. The adapter had requested only `response_format =
-json_object`, whereas other benchmark connectors use provider-side schema
-constraints. Both OpenRouter catalog entries advertise `structured_outputs`.
-After switching to strict `json_schema` and requiring a route that honors the
-parameter, one live preflight per model returned an exact-model, contract-valid
-decision with no salvage or retry. The failed cells remain excluded diagnostic
-evidence; the benchmark restarts in fresh directories under the corrected
-fingerprint. Evidence:
+Switching to strict `json_schema` plus `provider.require_parameters = true`
+eliminated those contract-shape failures for Qwen. It exposed a second harness
+artifact for GLM: 11/50 seed-11 outputs and 7/75 recorded seed-41 outputs were
+attributed as invalid JSON, and every preserved raw response was a balanced,
+parseable decision inside markdown fences. Seed 11 stopped at the startup
+health gate; seed 41 was interrupted after the artifact was confirmed. This
+was not a model-decision failure because the production parser already accepts
+the same fenced object. The independent validator now performs only that
+deterministic extraction before attribution; truncated or otherwise malformed
+JSON remains a failure. All affected cells remain excluded and must not be
+resumed.
+
+The broader lesson is that advertised structured-output support constrains the
+object but does not guarantee identical transport formatting across routed
+providers. Validate the raw provider envelope before turning a schema error
+into a cross-model capability claim. Evidence:
 `runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919`,
 `runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919`,
 and `agent_world/openrouter_brain.py` on commit
-`e8057f0044541ad3fd75f097ccda001da980d430`.
+`5b2f8df263017873b03812ecf05d7077a4d2c052`.
 
 ## 2026-08-04 — OpenRouter runs silently lacked latency telemetry
 
