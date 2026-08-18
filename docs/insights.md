@@ -58,7 +58,7 @@ into a cross-model capability claim. Evidence:
 `runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919`,
 `runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919`,
 and `agent_world/openrouter_brain.py` on commit
-`5b2f8df263017873b03812ecf05d7077a4d2c052`.
+`5b2f8dfcdb8fafc1bef601f1047bfdaa552d3301`.
 
 ## 2026-08-04 — OpenRouter runs silently lacked latency telemetry
 
