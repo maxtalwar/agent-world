@@ -24,6 +24,31 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-18 -- JSON-only output made schema enforcement look like model incompetence
+
+**OpenRouter's `json_object` response mode produced valid JSON that violated
+Agent World's decision contract on 58-94% of startup decisions, while the same
+models returned contract-valid decisions immediately when the connector used
+their advertised strict structured-output support.** In matched five-tick
+Participant-v6 diagnostics, GLM 5.2 failed 39/50 and 29/50 decisions across
+seeds 11 and 41; Qwen3.8 Max failed 47/50 and 44/50. The dominant error was a
+speech object without the required `mode`, followed by overlong or wrongly
+typed memory updates. All four startup health gates stopped as designed.
+
+This was a harness-enforcement artifact, not a finding that the models could
+not produce decisions. The adapter had requested only `response_format =
+json_object`, whereas other benchmark connectors use provider-side schema
+constraints. Both OpenRouter catalog entries advertise `structured_outputs`.
+After switching to strict `json_schema` and requiring a route that honors the
+parameter, one live preflight per model returned an exact-model, contract-valid
+decision with no salvage or retry. The failed cells remain excluded diagnostic
+evidence; the benchmark restarts in fresh directories under the corrected
+fingerprint. Evidence:
+`runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919`,
+`runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919`,
+and `agent_world/openrouter_brain.py` on commit
+`e8057f0044541ad3fd75f097ccda001da980d430`.
+
 ## 2026-08-04 — OpenRouter runs silently lacked latency telemetry
 
 **OpenRouter usage records had no `duration_seconds`, so a completed API-backed

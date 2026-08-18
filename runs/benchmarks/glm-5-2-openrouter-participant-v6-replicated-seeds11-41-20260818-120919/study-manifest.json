@@ -8,7 +8,7 @@
   "benchmark_protocol": "participant-v6",
   "benchmark_scoring_revision": 2,
   "benchmark_code_fingerprint": {
-    "openrouter": "d2e2c0e549a62bd9f6e6f7784b2d5b60fd7a11d4c77d2472ddf6a012dffe2fe8"
+    "openrouter": "6bdb29f6bbbf8f995166659cd1d2f609ad6dbc4d4cd01258da736b09ebd568e1"
   },
   "targets": {
     "z-ai/glm-5.2": {
@@ -53,15 +53,18 @@
   },
   "protocol_provenance": {
     "base_v6_commit": "02381ec8b4252852a8e5b822f850b5fc24de7cdc",
-    "launch_commit": "39e542d32e6e2f5c14c7cf6710b5ad45eb45773f",
+    "launch_commit": "e8057f0044541ad3fd75f097ccda001da980d430",
     "launch_branch": "codex/v6-openrouter-latency",
-    "declared_deviation": "The closed Participant-v6 world, prompt, scoring revision, and trial settings are unchanged. The launch commit adds monotonic OpenRouter decision-duration telemetry plus later harness safeguards that freeze and retry the same tick on provider quota failures. These changes do not alter successful requests, model-visible text, world mechanics, or scores."
+    "declared_deviation": "The closed Participant-v6 world, prompt, scoring revision, and trial settings are unchanged. The launch commit adds monotonic decision-duration telemetry, quota-safe same-tick retry, and provider-side enforcement of the existing decision schema for parity with the Codex and Claude benchmark connectors. The schema text and post-response validation already existed; the corrected adapter requires OpenRouter to enforce it rather than merely requesting an arbitrary JSON object."
   },
+  "diagnostic_attempts": [
+    {"paths": ["glm-5-2-v6-seed11", "glm-5-2-v6-seed41"], "stopped_at_tick": 5, "decision_failures": {"seed_11": 39, "seed_41": 29}, "reason": "Excluded startup diagnostics: json_object mode did not enforce the declared decision schema. Both cells failed the startup health gate and must not be resumed."}
+  ],
   "replications": {
     "required_seeds": [11, 41],
     "cells": {
-      "glm-5-2-v6-seed-11": {"seed": 11, "status": "planned", "cohort": "glm-5-2-v6-s11-20260818", "target_tick": 50, "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11/run.jsonl", "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11/run-snapshot.json"},
-      "glm-5-2-v6-seed-41": {"seed": 41, "status": "planned", "cohort": "glm-5-2-v6-s41-20260818", "target_tick": 50, "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41/run.jsonl", "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41/run-snapshot.json"}
+      "glm-5-2-v6-seed-11": {"seed": 11, "status": "planned", "cohort": "glm-5-2-v6-schema-s11-20260818", "target_tick": 50, "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11-schema/run.jsonl", "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11-schema/run-snapshot.json"},
+      "glm-5-2-v6-seed-41": {"seed": 41, "status": "planned", "cohort": "glm-5-2-v6-schema-s41-20260818", "target_tick": 50, "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-schema/run.jsonl", "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-schema/run-snapshot.json"}
     }
   },
   "locked_trial": {"agents": 10, "ticks": 50, "diagnostic_score_ticks": [30, 40], "official_score_tick": 50, "preset": "frontier-generalists", "reasoning_effort": "medium", "decision_mode": "raw", "action_feedback_mode": "baseline", "connector_profile": "stateless-v3", "conversation_mode": "stateless", "turn_resolution": "simultaneous", "global_max_workers": 4, "provider_max_workers": 4, "agent_io_log": true, "startup_health_check_tick": 5, "startup_health_max_failure_rate": 0.2, "quota_wait_hours": 12.0},
