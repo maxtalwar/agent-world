@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-08-02T00:00:00+00:00",
+  "updated_at_utc": "2026-08-18T23:42:00.7569458+00:00",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -394,6 +394,46 @@
           "seed": 11,
           "report_path": "runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11/run-report.json",
           "kind": "diagnostic"
+        }
+      ]
+    },
+    {
+      "model_key": "qwen3-8-max",
+      "label": "Qwen3.8 Max",
+      "kind": "benchmark_trial",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed11-schema/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed41-schema/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "z-ai-glm-5-2-diagnostic",
+      "label": "GLM 5.2 (diagnostic)",
+      "kind": "diagnostic",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "Both OpenRouter-backed runs have invalid integrity because completion-envelope exhaustion produced ambiguous boundary failures.",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11-fence/run-report.json",
+          "kind": "diagnostic",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Invalid integrity: 15 ambiguous boundary failures, all completion-envelope exhaustion with finish_reason=length."
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-fence/run-report.json",
+          "kind": "diagnostic",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Invalid integrity: 20 ambiguous boundary failures, all completion-envelope exhaustion with finish_reason=length."
         }
       ]
     }

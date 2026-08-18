@@ -1,15 +1,37 @@
 {
   "schema_version": 1,
   "study_id": "qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919",
-  "status": "planned",
+  "status": "completed_certified",
   "created_at_utc": "2026-08-18T19:09:19Z",
   "study_type": "benchmark_trial",
   "suite_id": "agent-world-participant-v6",
   "benchmark_protocol": "participant-v6",
   "benchmark_scoring_revision": 2,
-  "benchmark_code_fingerprint": {"openrouter": "6bdb29f6bbbf8f995166659cd1d2f609ad6dbc4d4cd01258da736b09ebd568e1"},
-  "targets": {"qwen/qwen3.8-max": {"brain": "openrouter", "provider": "openrouter", "billing_mode": "api", "model": "qwen/qwen3.8-max", "resolved_model_expected": "qwen/qwen3.8-max", "reasoning_effort_requested": "medium", "seeds": [11, 41]}},
-  "result_tier": {"requested": "replicated_certified", "required_seeds_per_model": [11, 41], "policy": "Both integrity-clean, complete Participant-v6 cells on seeds 11 and 41 are required for replicated certification."},
+  "benchmark_code_fingerprint": {
+    "openrouter": "6bdb29f6bbbf8f995166659cd1d2f609ad6dbc4d4cd01258da736b09ebd568e1"
+  },
+  "targets": {
+    "qwen/qwen3.8-max": {
+      "brain": "openrouter",
+      "provider": "openrouter",
+      "billing_mode": "api",
+      "model": "qwen/qwen3.8-max",
+      "resolved_model_expected": "qwen/qwen3.8-max",
+      "reasoning_effort_requested": "medium",
+      "seeds": [
+        11,
+        41
+      ]
+    }
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds_per_model": [
+      11,
+      41
+    ],
+    "policy": "Both integrity-clean, complete Participant-v6 cells on seeds 11 and 41 are required for replicated certification."
+  },
   "model_catalog": {
     "source": "OpenRouter /api/v1/models",
     "catalog_verified_at_utc": "2026-08-18T19:00:00Z",
@@ -18,19 +40,124 @@
     "catalog_name": "Qwen: Qwen3.8 Max",
     "context_length": 1000000,
     "max_completion_tokens": 131072,
-    "pricing_usd_per_token": {"input": 0.000002, "input_cache_read": 0.00000025, "input_cache_write": 0.0000025, "output": 0.000006},
-    "supported_parameters": ["reasoning", "reasoning_effort", "response_format", "structured_outputs"]
+    "pricing_usd_per_token": {
+      "input": 2e-06,
+      "input_cache_read": 2.5e-07,
+      "input_cache_write": 2.5e-06,
+      "output": 6e-06
+    },
+    "supported_parameters": [
+      "reasoning",
+      "reasoning_effort",
+      "response_format",
+      "structured_outputs"
+    ]
   },
-  "provider_compatibility": {"provider": "openrouter", "base_url": "https://openrouter.ai/api/v1", "api_style": "chat", "auth_preflight": "authenticated model catalog request succeeded", "configured_timeout_seconds": 180, "configured_max_retries": 4, "quota_wait_hours": 12.0, "decision_latency_telemetry": "duration_seconds from monotonic request start through provider retries and response validation"},
-  "protocol_provenance": {"base_v6_commit": "02381ec8b4252852a8e5b822f850b5fc24de7cdc", "launch_commit": "e8057f0044541ad3fd75f097ccda001da980d430", "launch_branch": "codex/v6-openrouter-latency", "declared_deviation": "The closed Participant-v6 world, prompt, scoring revision, and trial settings are unchanged. The launch commit adds monotonic decision-duration telemetry, quota-safe same-tick retry, and provider-side enforcement of the existing decision schema for parity with the Codex and Claude benchmark connectors. The schema text and post-response validation already existed; the corrected adapter requires OpenRouter to enforce it rather than merely requesting an arbitrary JSON object."},
-  "diagnostic_attempts": [{"paths": ["qwen3-8-max-v6-seed11", "qwen3-8-max-v6-seed41"], "stopped_at_tick": 5, "decision_failures": {"seed_11": 47, "seed_41": 44}, "reason": "Excluded startup diagnostics: json_object mode did not enforce the declared decision schema. Both cells failed the startup health gate and must not be resumed."}],
+  "provider_compatibility": {
+    "provider": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_style": "chat",
+    "auth_preflight": "authenticated model catalog request succeeded",
+    "configured_timeout_seconds": 180,
+    "configured_max_retries": 4,
+    "quota_wait_hours": 12.0,
+    "decision_latency_telemetry": "duration_seconds from monotonic request start through provider retries and response validation"
+  },
+  "protocol_provenance": {
+    "base_v6_commit": "02381ec8b4252852a8e5b822f850b5fc24de7cdc",
+    "launch_commit": "e8057f0044541ad3fd75f097ccda001da980d430",
+    "launch_branch": "codex/v6-openrouter-latency",
+    "declared_deviation": "The closed Participant-v6 world, prompt, scoring revision, and trial settings are unchanged. The launch commit adds monotonic decision-duration telemetry, quota-safe same-tick retry, and provider-side enforcement of the existing decision schema for parity with the Codex and Claude benchmark connectors. The schema text and post-response validation already existed; the corrected adapter requires OpenRouter to enforce it rather than merely requesting an arbitrary JSON object."
+  },
+  "diagnostic_attempts": [
+    {
+      "paths": [
+        "qwen3-8-max-v6-seed11",
+        "qwen3-8-max-v6-seed41"
+      ],
+      "stopped_at_tick": 5,
+      "decision_failures": {
+        "seed_11": 47,
+        "seed_41": 44
+      },
+      "reason": "Excluded startup diagnostics: json_object mode did not enforce the declared decision schema. Both cells failed the startup health gate and must not be resumed."
+    }
+  ],
   "replications": {
-    "required_seeds": [11, 41],
+    "required_seeds": [
+      11,
+      41
+    ],
     "cells": {
-      "qwen3-8-max-v6-seed-11": {"seed": 11, "status": "planned", "cohort": "qwen3-8-max-v6-schema-s11-20260818", "target_tick": 50, "out": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed11-schema/run.jsonl", "snapshot": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed11-schema/run-snapshot.json"},
-      "qwen3-8-max-v6-seed-41": {"seed": 41, "status": "planned", "cohort": "qwen3-8-max-v6-schema-s41-20260818", "target_tick": 50, "out": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed41-schema/run.jsonl", "snapshot": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed41-schema/run-snapshot.json"}
+      "qwen3-8-max-v6-seed-11": {
+        "seed": 11,
+        "status": "completed",
+        "cohort": "qwen3-8-max-v6-schema-s11-20260818",
+        "target_tick": 50,
+        "out": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed11-schema/run.jsonl",
+        "snapshot": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed11-schema/run-snapshot.json",
+        "final_tick": 50,
+        "completed_at_utc": "2026-08-18T23:25:09.720838+00:00",
+        "resolved_model_confirmed": "qwen/qwen3.8-max",
+        "benchmark_integrity_status": "clean",
+        "model_output_failure_events": 0,
+        "ambiguous_boundary_failure_events": 0,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "api_list_cost_usd": 5.940418,
+        "report": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed11-schema/run-report.json"
+      },
+      "qwen3-8-max-v6-seed-41": {
+        "seed": 41,
+        "status": "completed",
+        "cohort": "qwen3-8-max-v6-schema-s41-20260818",
+        "target_tick": 50,
+        "out": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed41-schema/run.jsonl",
+        "snapshot": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed41-schema/run-snapshot.json",
+        "final_tick": 50,
+        "completed_at_utc": "2026-08-18T23:20:47.640955+00:00",
+        "resolved_model_confirmed": "qwen/qwen3.8-max",
+        "benchmark_integrity_status": "clean",
+        "model_output_failure_events": 0,
+        "ambiguous_boundary_failure_events": 0,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "api_list_cost_usd": 5.679172,
+        "report": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-seed41-schema/run-report.json"
+      }
     }
   },
-  "locked_trial": {"agents": 10, "ticks": 50, "diagnostic_score_ticks": [30, 40], "official_score_tick": 50, "preset": "frontier-generalists", "reasoning_effort": "medium", "decision_mode": "raw", "action_feedback_mode": "baseline", "connector_profile": "stateless-v3", "conversation_mode": "stateless", "turn_resolution": "simultaneous", "global_max_workers": 4, "provider_max_workers": 4, "agent_io_log": true, "startup_health_check_tick": 5, "startup_health_max_failure_rate": 0.2, "quota_wait_hours": 12.0},
-  "launcher": "scripts/run-isolated-cohort"
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [
+      30,
+      40
+    ],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12.0
+  },
+  "launcher": "scripts/run-isolated-cohort",
+  "result": {
+    "certification": "replicated_certified",
+    "aggregate_report": "runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/qwen3-8-max-v6-replicated.json",
+    "effective_execution": 63.07,
+    "sustained_competence": 0.0,
+    "entrepreneurial_agency": 0.0,
+    "economic_productivity": 0.0,
+    "llm_calls_total": 677,
+    "api_list_cost_usd": 11.61959
+  }
 }

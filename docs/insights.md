@@ -24,6 +24,38 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-18 -- GLM 5.2 spent the decision envelope before deciding
+
+**Under Participant-v6's fixed 5,000-token completion envelope, GLM 5.2
+repeatedly consumed the whole response on deliberation and never emitted a
+usable decision, while Qwen3.8 Max completed the identical OpenRouter contract
+with zero decision failures.** Across GLM's two completed seeds, 48/696 calls
+reported at least 5,000 completion tokens and every capped call failed. Thirty-
+five returned no content with `finish_reason=length` (15 on seed 11, 20 on
+seed 41), leaving only provider envelopes full of reasoning and therefore an
+ambiguous model/adapter boundary. Thirteen more capped calls exposed a partial
+or malformed decision and were independently confirmed as model-output
+violations. Another 11 confirmed contract violations occurred below the cap.
+Participant-v6 consequently excludes both GLM cells from certification despite
+their reaching tick 50 with 100% usage coverage and no harness or provider-
+request failures.
+
+This was not one bad routed backend: the 35 reasoning-only boundary failures
+spanned Alibaba (24), Baidu (4), GMICloud (4), StreamLake (2), and DeepInfra
+(1). It is also not evidence that structured output itself was unavailable:
+the earlier fence-normalization diagnostic had already separated transport
+formatting from decision validity. Qwen3.8 Max then supplied the control: the
+same strict schema and medium-effort v6 envelope produced 677/677 attributable
+decisions, with no model-output, boundary, provider, or harness failures.
+
+The benchmark lesson is that a shared output ceiling is also a deliberation
+budget when providers place reasoning tokens inside `completion_tokens`.
+Exhausting that ceiling can masquerade as an adapter failure unless the raw
+provider envelope and `finish_reason` are retained. Evidence:
+`runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/{glm-5-2-v6-seed11-fence,glm-5-2-v6-seed41-fence}`
+and
+`runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/{qwen3-8-max-v6-seed11-schema,qwen3-8-max-v6-seed41-schema}`.
+
 ## 2026-08-18 -- Structured output still needed transport normalization
 
 **OpenRouter's `json_object` response mode produced valid JSON that violated

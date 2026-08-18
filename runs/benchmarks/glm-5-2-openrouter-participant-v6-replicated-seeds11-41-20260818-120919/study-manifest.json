@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919",
-  "status": "planned",
+  "status": "completed_diagnostic_only",
   "created_at_utc": "2026-08-18T19:09:19Z",
   "study_type": "benchmark_trial",
   "suite_id": "agent-world-participant-v6",
@@ -18,12 +18,18 @@
       "model": "z-ai/glm-5.2",
       "resolved_model_expected": "z-ai/glm-5.2",
       "reasoning_effort_requested": "medium",
-      "seeds": [11, 41]
+      "seeds": [
+        11,
+        41
+      ]
     }
   },
   "result_tier": {
     "requested": "replicated_certified",
-    "required_seeds_per_model": [11, 41],
+    "required_seeds_per_model": [
+      11,
+      41
+    ],
     "policy": "Both integrity-clean, complete Participant-v6 cells on seeds 11 and 41 are required for replicated certification."
   },
   "model_catalog": {
@@ -35,11 +41,16 @@
     "context_length": 1048576,
     "max_completion_tokens": 131072,
     "pricing_usd_per_token": {
-      "input": 0.00000049,
-      "input_cache_read": 0.000000091,
-      "output": 0.00000154
+      "input": 4.9e-07,
+      "input_cache_read": 9.1e-08,
+      "output": 1.54e-06
     },
-    "supported_parameters": ["reasoning", "reasoning_effort", "response_format", "structured_outputs"]
+    "supported_parameters": [
+      "reasoning",
+      "reasoning_effort",
+      "response_format",
+      "structured_outputs"
+    ]
   },
   "provider_compatibility": {
     "provider": "openrouter",
@@ -58,16 +69,112 @@
     "declared_deviation": "The closed Participant-v6 world, prompt, scoring revision, and trial settings are unchanged. The launch commit adds monotonic decision-duration telemetry, quota-safe same-tick retry, provider-side enforcement of the existing decision schema, and deterministic removal of a balanced parseable JSON object from markdown fences before independent contract attribution. The latter matches the parser's pre-existing accepted-input semantics and does not repair malformed JSON."
   },
   "diagnostic_attempts": [
-    {"paths": ["glm-5-2-v6-seed11", "glm-5-2-v6-seed41"], "stopped_at_tick": 5, "decision_failures": {"seed_11": 39, "seed_41": 29}, "reason": "Excluded startup diagnostics: json_object mode did not enforce the declared decision schema. Both cells failed the startup health gate and must not be resumed."},
-    {"paths": ["glm-5-2-v6-seed11-schema", "glm-5-2-v6-seed41-schema"], "completed_ticks": {"seed_11": 5, "seed_41": 7}, "decision_failures": {"seed_11": 11, "seed_41": 7}, "fenced_json_failures": {"seed_11": 11, "seed_41": 7}, "reason": "Excluded transport diagnostics: the Z.AI route wrapped otherwise contract-valid strict structured outputs in markdown JSON fences. Seed 11 tripped the startup health gate at 22%; seed 41 was intentionally interrupted after tick 6 with partial tick-7 usage once the same artifact was confirmed. Neither cell may be resumed."}
+    {
+      "paths": [
+        "glm-5-2-v6-seed11",
+        "glm-5-2-v6-seed41"
+      ],
+      "stopped_at_tick": 5,
+      "decision_failures": {
+        "seed_11": 39,
+        "seed_41": 29
+      },
+      "reason": "Excluded startup diagnostics: json_object mode did not enforce the declared decision schema. Both cells failed the startup health gate and must not be resumed."
+    },
+    {
+      "paths": [
+        "glm-5-2-v6-seed11-schema",
+        "glm-5-2-v6-seed41-schema"
+      ],
+      "completed_ticks": {
+        "seed_11": 5,
+        "seed_41": 7
+      },
+      "decision_failures": {
+        "seed_11": 11,
+        "seed_41": 7
+      },
+      "fenced_json_failures": {
+        "seed_11": 11,
+        "seed_41": 7
+      },
+      "reason": "Excluded transport diagnostics: the Z.AI route wrapped otherwise contract-valid strict structured outputs in markdown JSON fences. Seed 11 tripped the startup health gate at 22%; seed 41 was intentionally interrupted after tick 6 with partial tick-7 usage once the same artifact was confirmed. Neither cell may be resumed."
+    }
   ],
   "replications": {
-    "required_seeds": [11, 41],
+    "required_seeds": [
+      11,
+      41
+    ],
     "cells": {
-      "glm-5-2-v6-seed-11": {"seed": 11, "status": "planned", "cohort": "glm-5-2-v6-fence-s11-20260818", "target_tick": 50, "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11-fence/run.jsonl", "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11-fence/run-snapshot.json"},
-      "glm-5-2-v6-seed-41": {"seed": 41, "status": "planned", "cohort": "glm-5-2-v6-fence-s41-20260818", "target_tick": 50, "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-fence/run.jsonl", "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-fence/run-snapshot.json"}
+      "glm-5-2-v6-seed-11": {
+        "seed": 11,
+        "status": "completed_diagnostic_only",
+        "cohort": "glm-5-2-v6-fence-s11-20260818",
+        "target_tick": 50,
+        "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11-fence/run.jsonl",
+        "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11-fence/run-snapshot.json",
+        "final_tick": 50,
+        "completed_at_utc": "2026-08-18T23:26:37.507011+00:00",
+        "resolved_model_confirmed": "z-ai/glm-5.2",
+        "benchmark_integrity_status": "invalid",
+        "model_output_failure_events": 15,
+        "ambiguous_boundary_failure_events": 15,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "api_list_cost_usd": 0.908808,
+        "report": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed11-fence/run-report.json"
+      },
+      "glm-5-2-v6-seed-41": {
+        "seed": 41,
+        "status": "completed_diagnostic_only",
+        "cohort": "glm-5-2-v6-fence-s41-20260818",
+        "target_tick": 50,
+        "out": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-fence/run.jsonl",
+        "snapshot": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-fence/run-snapshot.json",
+        "final_tick": 50,
+        "completed_at_utc": "2026-08-18T23:25:53.276450+00:00",
+        "resolved_model_confirmed": "z-ai/glm-5.2",
+        "benchmark_integrity_status": "invalid",
+        "model_output_failure_events": 9,
+        "ambiguous_boundary_failure_events": 20,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "api_list_cost_usd": 1.073468,
+        "report": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-fence/run-report.json"
+      }
     }
   },
-  "locked_trial": {"agents": 10, "ticks": 50, "diagnostic_score_ticks": [30, 40], "official_score_tick": 50, "preset": "frontier-generalists", "reasoning_effort": "medium", "decision_mode": "raw", "action_feedback_mode": "baseline", "connector_profile": "stateless-v3", "conversation_mode": "stateless", "turn_resolution": "simultaneous", "global_max_workers": 4, "provider_max_workers": 4, "agent_io_log": true, "startup_health_check_tick": 5, "startup_health_max_failure_rate": 0.2, "quota_wait_hours": 12.0},
-  "launcher": "scripts/run-isolated-cohort"
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [
+      30,
+      40
+    ],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12.0
+  },
+  "launcher": "scripts/run-isolated-cohort",
+  "result": {
+    "certification": "diagnostic_only",
+    "diagnostic_aggregate_report": "runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-diagnostic.json",
+    "exclusion_reason": "Both completed cells contain ambiguous boundary failures: OpenRouter returned no content with finish_reason=length after the fixed 5000-token completion ceiling. Participant-v6 excludes such cells from certification.",
+    "ambiguous_boundary_failure_events": 35,
+    "model_output_failure_events": 24,
+    "llm_calls_total": 696,
+    "api_list_cost_usd": 1.982276
+  }
 }

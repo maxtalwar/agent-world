@@ -1,6 +1,6 @@
 # Agent World model-selection leaderboard
 
-**Last updated: 2026-08-02.** This is the canonical agent-facing table for
+**Last updated: 2026-08-18.** This is the canonical agent-facing table for
 choosing models for new Agent World benchmark runs. It contains the complete
 closed Participant v6 field plus the GPT-5.6 Luna Max controlled reasoning
 variant. Use this snapshot as the best cross-model evidence until Participant
@@ -34,7 +34,8 @@ rounded seed scores.
 | 15† | GPT-5.3 Codex Spark | 72.2 | 20.0 | 0.0 | 5,198 tok | unavailable |
 | 16† | Haiku 4.5 | 79.8 | 0.0 | 0.0 | ~1,830 tok | $8.09 |
 | 17† | GPT-5 Mini | 78.9 | 0.0 | 0.0 | 0 tok | $2.33 |
-| 18† | GPT-5.4 Nano | 61.2 | 0.0 | 0.0 | 0 tok | $1.05 |
+| 18† | Qwen3.8 Max | 63.1 | 0.0 | 0.0 | 1,602 tok | $5.81 |
+| 19† | GPT-5.4 Nano | 61.2 | 0.0 | 0.0 | 0 tok | $1.05 |
 
 † Luna Max intentionally changes the Participant v6 reasoning effort from
 medium to max. Its rank, and the shifted ranks below it, are analytical rather
@@ -72,6 +73,11 @@ the study.
   [`gift-classifications.json`](../runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/gift-classifications.json).
 - Luna Max provenance is recorded in its tracked
   [`study-manifest.json`](../runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/study-manifest.json).
+- Qwen3.8 Max is a clean, certified OpenRouter replication; its tracked
+  [`study-manifest.json`](../runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/study-manifest.json)
+  records both seeds, exact model resolution, and cost. GLM 5.2 is retained in
+  the database as diagnostic evidence only because both completed seeds had
+  ambiguous completion-envelope failures.
 - Behavioral interpretation and harness caveats live in
   [`insights.md`](insights.md); benchmark definitions live in
   [`model-benchmarks.md`](model-benchmarks.md).

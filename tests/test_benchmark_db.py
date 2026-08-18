@@ -12,7 +12,7 @@ from agent_world.benchmarks import score_benchmark_counts
 class BenchmarkDatabaseTests(unittest.TestCase):
     def test_repository_build_is_byte_deterministic_and_preserves_leaderboard(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
-        expected_leaderboard_sha256 = "a5f6607386fab780a04dd93d3df50786631a0b7ccad86b0f50de638dffd64019"
+        expected_leaderboard_sha256 = "c2c29ca514382e5e18732447a6f1e0e2dbaecf22bd9164b42497bfc56fbbd343"
 
         with tempfile.TemporaryDirectory() as temporary:
             first = Path(temporary) / "first.sqlite"
@@ -28,7 +28,7 @@ class BenchmarkDatabaseTests(unittest.TestCase):
             digest = hashlib.sha256(
                 json.dumps(rows, separators=(",", ":")).encode("utf-8")
             ).hexdigest()
-            self.assertEqual(len(rows), 18)
+            self.assertEqual(len(rows), 19)
             self.assertEqual(digest, expected_leaderboard_sha256)
 
     def test_latency_summary_uses_interpolated_percentiles(self) -> None:
