@@ -92,6 +92,31 @@ class UsageTests(unittest.TestCase):
         self.assertIn("claude-fable-5", summary["models"])
         self.assertEqual(summary["cost_usd"]["total"], 50.2)
 
+    def test_usd_cost_prices_openrouter_benchmark_models_and_cache_tiers(self) -> None:
+        summary = summarize_usd_cost(
+            [
+                {
+                    "model": "z-ai/glm-5.2",
+                    "prompt_tokens": 1_000_000,
+                    "cached_tokens": 400_000,
+                    "completion_tokens": 100_000,
+                },
+                {
+                    "model": "qwen/qwen3.8-max",
+                    "prompt_tokens": 1_000_000,
+                    "cached_tokens": 400_000,
+                    "cache_write_tokens": 100_000,
+                    "completion_tokens": 100_000,
+                },
+            ]
+        )
+
+        assert summary is not None
+        self.assertTrue(summary["available"])
+        self.assertEqual(summary["models"]["z-ai/glm-5.2"]["cost_usd"], 0.4844)
+        self.assertEqual(summary["models"]["qwen/qwen3.8-max"]["cost_usd"], 1.95)
+        self.assertEqual(summary["cost_usd"]["total"], 2.4344)
+
     def test_usd_cost_covers_benchmark_gpt_families_at_standard_rates(self) -> None:
         summary = summarize_usd_cost(
             [
