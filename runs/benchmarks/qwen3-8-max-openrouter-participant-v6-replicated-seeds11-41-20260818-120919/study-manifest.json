@@ -7,7 +7,7 @@
   "suite_id": "agent-world-participant-v6",
   "benchmark_protocol": "participant-v6",
   "benchmark_scoring_revision": 2,
-  "benchmark_code_fingerprint": {"openrouter": "c1b02b23baf760e0b7769157bfd8860ceb59410f1b96a5bf34e5b745f1554477"},
+  "benchmark_code_fingerprint": {"openrouter": "d2e2c0e549a62bd9f6e6f7784b2d5b60fd7a11d4c77d2472ddf6a012dffe2fe8"},
   "targets": {"qwen/qwen3.8-max": {"brain": "openrouter", "provider": "openrouter", "billing_mode": "api", "model": "qwen/qwen3.8-max", "resolved_model_expected": "qwen/qwen3.8-max", "reasoning_effort_requested": "medium", "seeds": [11, 41]}},
   "result_tier": {"requested": "replicated_certified", "required_seeds_per_model": [11, 41], "policy": "Both integrity-clean, complete Participant-v6 cells on seeds 11 and 41 are required for replicated certification."},
   "model_catalog": {
@@ -22,7 +22,7 @@
     "supported_parameters": ["reasoning", "reasoning_effort", "response_format", "structured_outputs"]
   },
   "provider_compatibility": {"provider": "openrouter", "base_url": "https://openrouter.ai/api/v1", "api_style": "chat", "auth_preflight": "authenticated model catalog request succeeded", "configured_timeout_seconds": 180, "configured_max_retries": 4, "quota_wait_hours": 12.0, "decision_latency_telemetry": "duration_seconds from monotonic request start through provider retries and response validation"},
-  "protocol_provenance": {"base_v6_commit": "02381ec8b4252852a8e5b822f850b5fc24de7cdc", "launch_commit": "34d375abef153be9c9c43950f95221ca31af9c25", "launch_branch": "codex/v6-openrouter-latency", "declared_deviation": "The closed Participant-v6 world, prompt, scoring revision, and trial settings are unchanged. The launch commit adds monotonic OpenRouter decision-duration telemetry only; it does not alter requests, model-visible text, world mechanics, or scores."},
+  "protocol_provenance": {"base_v6_commit": "02381ec8b4252852a8e5b822f850b5fc24de7cdc", "launch_commit": "39e542d32e6e2f5c14c7cf6710b5ad45eb45773f", "launch_branch": "codex/v6-openrouter-latency", "declared_deviation": "The closed Participant-v6 world, prompt, scoring revision, and trial settings are unchanged. The launch commit adds monotonic OpenRouter decision-duration telemetry plus later harness safeguards that freeze and retry the same tick on provider quota failures. These changes do not alter successful requests, model-visible text, world mechanics, or scores."},
   "replications": {
     "required_seeds": [11, 41],
     "cells": {
