@@ -40,8 +40,9 @@ CODEX_CREDIT_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
 USD_RATE_CARD_SOURCES = {
     "openai": "https://developers.openai.com/api/docs/pricing",
     "anthropic": "https://platform.claude.com/docs/en/pricing",
+    "openrouter": "https://openrouter.ai/models",
 }
-USD_RATE_CARD_EFFECTIVE_DATE = "2026-07-30"
+USD_RATE_CARD_EFFECTIVE_DATE = "2026-08-18"
 # List-price API rates. Cached reads use the published cached-input rate.
 # Models with a distinct cache-write tier bill writes at that published rate;
 # models without one fall back to ordinary input pricing. Rate keys are matched
@@ -49,6 +50,18 @@ USD_RATE_CARD_EFFECTIVE_DATE = "2026-07-30"
 # ("gpt-5-6-luna-medium") and effort-tagged variants resolve to their base
 # model without collapsing "gpt-5.4-mini" into "gpt-5.4".
 MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
+    "qwen/qwen3.8-max": {
+        "input": Decimal("2"),
+        "cached_input": Decimal("0.25"),
+        "cache_write": Decimal("2.5"),
+        "output": Decimal("6"),
+    },
+    "z-ai/glm-5.2": {
+        "input": Decimal("0.49"),
+        "cached_input": Decimal("0.091"),
+        "cache_write": Decimal("0.49"),
+        "output": Decimal("1.54"),
+    },
     "gpt-5.6-sol": {
         "input": Decimal("5"),
         "cached_input": Decimal("0.5"),
