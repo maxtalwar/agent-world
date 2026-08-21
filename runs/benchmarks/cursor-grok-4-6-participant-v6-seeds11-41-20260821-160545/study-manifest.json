@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "study_id": "cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545",
+  "status": "planned_replicated",
+  "created_at_utc": "2026-08-21T16:05:45Z",
+  "study_type": "benchmark_trial",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_scoring_revision": 2,
+  "benchmark_code_fingerprint": {
+    "cursor_cli": "4155f8f0ed7df5b3d1a0266360e81f1f83c96abc0ae3c0710ec5a8878a3c5fac"
+  },
+  "targets": {
+    "cursor-grok-4.6": {
+      "brain": "cursor",
+      "provider": "cursor_cli",
+      "billing_mode": "cursor_subscription",
+      "model": "cursor-grok-4.6",
+      "resolved_model_expected": "cursor-grok-4.6-medium",
+      "reasoning_effort_requested": "medium",
+      "seeds": [
+        11,
+        41
+      ]
+    }
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds_per_model": [
+      11,
+      41
+    ],
+    "policy": "Both integrity-clean, complete Participant-v6 cells on seeds 11 and 41 are required for replicated certification."
+  },
+  "provider_compatibility": {
+    "provider": "cursor_cli",
+    "billing_mode": "cursor_subscription",
+    "cursor_executable": "/home/maxtalwar/.local/bin/cursor-agent",
+    "cursor_cli_version": "2026.08.11-e8db854",
+    "auth_preflight": "cursor-agent status succeeded",
+    "catalog_preflight": "cursor-grok-4.6-medium available",
+    "resolver_preflight": "cursor-grok-4.6 at medium resolved to cursor-grok-4.6-medium",
+    "schema_smoke": {
+      "status": "contract_valid",
+      "response_model": "cursor-grok-4.6-medium",
+      "duration_seconds": 47.896,
+      "prompt_tokens": 15791,
+      "completion_tokens": 288
+    }
+  },
+  "protocol_provenance": {
+    "launch_commit": "b2587d70203d374654c6f8456546d40257d77b5d",
+    "launch_branch": "main",
+    "declared_deviation": null
+  },
+  "replications": {
+    "required_seeds": [
+      11,
+      41
+    ],
+    "cells": {
+      "grok-4-6-v6-seed-11": {
+        "seed": 11,
+        "status": "planned",
+        "cohort": "grok-4-6-v6-s11-20260821",
+        "target_tick": 50,
+        "out": "runs/benchmarks/cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545/grok-4-6-v6-seed11/run.jsonl",
+        "snapshot": "runs/benchmarks/cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545/grok-4-6-v6-seed11/run-snapshot.json"
+      },
+      "grok-4-6-v6-seed-41": {
+        "seed": 41,
+        "status": "planned",
+        "cohort": "grok-4-6-v6-s41-20260821",
+        "target_tick": 50,
+        "out": "runs/benchmarks/cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545/grok-4-6-v6-seed41/run.jsonl",
+        "snapshot": "runs/benchmarks/cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545/grok-4-6-v6-seed41/run-snapshot.json"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [
+      30,
+      40
+    ],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "session_max_turns": 10,
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  },
+  "launcher": "scripts/run-isolated-cohort"
+}
