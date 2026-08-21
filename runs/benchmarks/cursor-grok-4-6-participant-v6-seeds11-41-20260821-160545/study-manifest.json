@@ -8,7 +8,7 @@
   "benchmark_protocol": "participant-v6",
   "benchmark_scoring_revision": 2,
   "benchmark_code_fingerprint": {
-    "cursor_cli": "4155f8f0ed7df5b3d1a0266360e81f1f83c96abc0ae3c0710ec5a8878a3c5fac"
+    "cursor_cli": "38886efa8ba1ced8b9c618fb75561c91bd3bbc85b4412aeed7eabf63a09ca825"
   },
   "targets": {
     "cursor-grok-4.6": {
@@ -49,10 +49,22 @@
     }
   },
   "protocol_provenance": {
-    "launch_commit": "b2587d70203d374654c6f8456546d40257d77b5d",
-    "launch_branch": "main",
-    "declared_deviation": null
+    "launch_commit": "12d8e91b6ccd2dae3b20daf2263ae8fbfdd582f3",
+    "launch_branch": "codex/v6-openrouter-latency",
+    "declared_deviation": "No Cursor-visible protocol deviation. The preserved v6 lineage contains later OpenRouter-only compatibility changes; the recorded benchmark fingerprint is provider-scoped to cursor_cli."
   },
+  "launcher_attempts": [
+    {
+      "commit": "b2587d70203d374654c6f8456546d40257d77b5d",
+      "cohorts": [
+        "grok-4-6-v6-s11-20260821",
+        "grok-4-6-v6-s41-20260821"
+      ],
+      "status": "rejected_before_run",
+      "model_calls": 0,
+      "reason": "The current main branch accepts Participant-v7 only and rejected --benchmark-protocol participant-v6 during CLI argument parsing. No run artifacts or simulation state were created."
+    }
+  ],
   "replications": {
     "required_seeds": [
       11,
@@ -62,7 +74,7 @@
       "grok-4-6-v6-seed-11": {
         "seed": 11,
         "status": "planned",
-        "cohort": "grok-4-6-v6-s11-20260821",
+        "cohort": "grok-4-6-v6compat-s11-20260821",
         "target_tick": 50,
         "out": "runs/benchmarks/cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545/grok-4-6-v6-seed11/run.jsonl",
         "snapshot": "runs/benchmarks/cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545/grok-4-6-v6-seed11/run-snapshot.json"
@@ -70,7 +82,7 @@
       "grok-4-6-v6-seed-41": {
         "seed": 41,
         "status": "planned",
-        "cohort": "grok-4-6-v6-s41-20260821",
+        "cohort": "grok-4-6-v6compat-s41-20260821",
         "target_tick": 50,
         "out": "runs/benchmarks/cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545/grok-4-6-v6-seed41/run.jsonl",
         "snapshot": "runs/benchmarks/cursor-grok-4-6-participant-v6-seeds11-41-20260821-160545/grok-4-6-v6-seed41/run-snapshot.json"
