@@ -436,6 +436,22 @@
           "run_exclusion_reason": "Invalid integrity: 20 ambiguous boundary failures, all completion-envelope exhaustion with finish_reason=length."
         }
       ]
+    },
+    {
+      "model_key": "stealth-ox-alpha-diagnostic",
+      "label": "Ox Alpha (diagnostic)",
+      "kind": "diagnostic",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "The seed-11 cell stopped at the tick-5 startup health gate after 47 of 50 model outputs violated the decision contract; seed 41 was not launched.",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed11-json-object/run-report.json",
+          "kind": "diagnostic",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Incomplete startup diagnostic: 47/50 confirmed model-output contract violations under the route's advertised json_object response format."
+        }
+      ]
     }
   ]
 }

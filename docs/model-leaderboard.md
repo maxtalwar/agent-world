@@ -1,6 +1,6 @@
 # Agent World model-selection leaderboard
 
-**Last updated: 2026-08-18.** This is the canonical agent-facing table for
+**Last updated: 2026-08-21.** This is the canonical agent-facing table for
 choosing models for new Agent World benchmark runs. It contains the complete
 closed Participant v6 field plus the GPT-5.6 Luna Max controlled reasoning
 variant. Use this snapshot as the best cross-model evidence until Participant
@@ -77,7 +77,10 @@ the study.
   [`study-manifest.json`](../runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/study-manifest.json)
   records both seeds, exact model resolution, and cost. GLM 5.2 is retained in
   the database as diagnostic evidence only because both completed seeds had
-  ambiguous completion-envelope failures.
+  ambiguous completion-envelope failures. Ox Alpha is also retained only as
+  diagnostic evidence: its seed-11 run stopped at the tick-5 health gate after
+  47/50 confirmed model-output contract violations, and seed 41 was not
+  launched.
 - Behavioral interpretation and harness caveats live in
   [`insights.md`](insights.md); benchmark definitions live in
   [`model-benchmarks.md`](model-benchmarks.md).

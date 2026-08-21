@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324",
-  "status": "startup_health_gate_pending",
+  "status": "stopped_diagnostic_startup_health_failure",
   "created_at_utc": "2026-08-21T15:53:24Z",
   "study_type": "benchmark_trial",
   "suite_id": "agent-world-participant-v6",
@@ -120,15 +120,27 @@
     "cells": {
       "ox-alpha-v6-seed-11": {
         "seed": 11,
-        "status": "planned_startup_health_gate",
+        "status": "stopped_startup_health_gate",
         "cohort": "ox-alpha-v6-json-s11-20260821",
         "target_tick": 50,
         "out": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed11-json-object/run.jsonl",
-        "snapshot": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed11-json-object/run-snapshot.json"
+        "snapshot": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed11-json-object/run-snapshot.json",
+        "final_tick": 5,
+        "stopped_reason": "startup_health_check_failed",
+        "resolved_model_confirmed": "stealth/ox-alpha",
+        "provider_confirmed": "Stealth",
+        "benchmark_integrity_status": "clean",
+        "quality_status": "degraded",
+        "model_output_failure_events": 47,
+        "ambiguous_boundary_failure_events": 0,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "api_list_cost_usd": 0.0,
+        "report": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed11-json-object/run-report.json"
       },
       "ox-alpha-v6-seed-41": {
         "seed": 41,
-        "status": "pending_seed_11_health_gate",
+        "status": "not_launched_seed_11_health_gate_failed",
         "cohort": "ox-alpha-v6-json-s41-20260821",
         "target_tick": 50,
         "out": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed41-json-object/run.jsonl",
@@ -158,5 +170,32 @@
     "startup_health_max_failure_rate": 0.2,
     "quota_wait_hours": 12
   },
-  "launcher": "scripts/run-isolated-cohort"
+  "launcher": "scripts/run-isolated-cohort",
+  "result": {
+    "certification": "diagnostic_only",
+    "official_score": null,
+    "reason": "Seed 11 stopped at the mandatory tick-5 startup health gate after 47 of 50 decisions violated the model-output contract. Seed 41 was not launched.",
+    "seed_11_health_gate": {
+      "tick": 5,
+      "calls": 50,
+      "contract_valid_decisions": 3,
+      "model_output_failure_events": 47,
+      "decision_failure_rate_pct": 94.0,
+      "failure_details": {
+        "$.memory_updates must be array, got dict": 41,
+        "$.messages[0].mode is required": 6
+      },
+      "resolved_model": "stealth/ox-alpha",
+      "provider": "Stealth",
+      "reasoning_effort": "medium",
+      "response_format_type": "json_object",
+      "usage_record_coverage_pct": 100.0,
+      "ambiguous_boundary_failure_events": 0,
+      "harness_failure_events": 0,
+      "median_latency_seconds": 4.3625,
+      "p95_latency_seconds": 7.71,
+      "max_latency_seconds": 9.106,
+      "api_list_cost_usd": 0.0
+    }
+  }
 }

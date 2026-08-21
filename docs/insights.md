@@ -24,6 +24,32 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-21 -- Ox Alpha knew the decision keys but not their contract
+
+**Ox Alpha returned all four required top-level decision keys on every failed
+startup call, yet 47 of 50 outputs still violated nested types, showing that
+JSON-object mode can hide a near-total schema-following failure behind
+syntactically perfect JSON.** The model's sole OpenRouter route advertises
+`response_format` but not `structured_outputs`; strict JSON-schema requests
+at both medium and high effort were rejected before inference, and forced tool
+choice was also unavailable. Under the route's supported `json_object` mode
+at Participant-v6's locked medium effort, 41/50 decisions made
+`memory_updates` an object instead of an array and 6/50 omitted
+`messages[0].mode`. Only 3/50 passed the unchanged independent contract, so
+the mandatory tick-5 health gate stopped seed 11 and seed 41 was never
+launched.
+
+This is confirmed model behavior under a weaker transport contract, not a
+provider outage or parser artifact: all 50 calls resolved to
+`stealth/ox-alpha` through provider `Stealth`, usage coverage was 100%,
+and there were zero ambiguous-boundary, provider, quota, or harness failures.
+It is not a leaderboard result because the run ended at tick 5. The finding
+extends the 2026-08-18 structured-output insight: exact top-level keys and valid
+JSON are poor proxies for contract compliance, and an alpha model without a
+schema-enforcing route cannot be compared fairly to models whose outputs are
+physically constrained. Evidence:
+`runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed11-json-object`.
+
 ## 2026-08-18 -- GLM 5.2 spent the decision envelope before deciding
 
 **Under Participant-v6's fixed 5,000-token completion envelope, GLM 5.2
