@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "study_id": "ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324",
+  "status": "startup_health_gate_pending",
+  "created_at_utc": "2026-08-21T15:53:24Z",
+  "study_type": "benchmark_trial",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_scoring_revision": 2,
+  "benchmark_code_fingerprint": {
+    "openrouter": "34f9830bafe28b912bbf02a059db545ea8094436b3491bee121f0d97e38c23bf"
+  },
+  "targets": {
+    "stealth/ox-alpha": {
+      "brain": "openrouter",
+      "provider": "openrouter",
+      "billing_mode": "api",
+      "model": "stealth/ox-alpha",
+      "resolved_model_expected": "stealth/ox-alpha",
+      "reasoning_effort_requested": "medium",
+      "response_format_type": "json_object",
+      "seeds": [
+        11,
+        41
+      ]
+    }
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds_per_model": [
+      11,
+      41
+    ],
+    "policy": "Both integrity-clean, complete Participant-v6 cells on seeds 11 and 41 are required for replicated certification. The JSON-object transport deviation must remain explicit in interpretation."
+  },
+  "model_catalog": {
+    "source": "OpenRouter /api/v1/models and model endpoints",
+    "catalog_verified_at_utc": "2026-08-21T15:35:00Z",
+    "model_id": "stealth/ox-alpha",
+    "canonical_slug": "stealth/ox-alpha",
+    "catalog_name": "Ox Alpha",
+    "provider_name": "Stealth",
+    "context_length": 1048576,
+    "max_completion_tokens": 131072,
+    "expiration_date": "2098-12-31",
+    "pricing_usd_per_token": {
+      "input": 0,
+      "output": 0
+    },
+    "reasoning": {
+      "mandatory": true,
+      "catalog_supported_efforts": [
+        "max",
+        "high",
+        "low"
+      ],
+      "requested_medium_preflight": "accepted by the live endpoint"
+    },
+    "supported_parameters": [
+      "include_reasoning",
+      "max_tokens",
+      "reasoning",
+      "reasoning_effort",
+      "response_format",
+      "temperature",
+      "tool_choice",
+      "tools",
+      "top_k",
+      "top_p"
+    ],
+    "unsupported_for_route": [
+      "structured_outputs",
+      "forced tool_choice"
+    ]
+  },
+  "provider_compatibility": {
+    "provider": "openrouter",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_style": "chat",
+    "auth_preflight": "authenticated model catalog request succeeded",
+    "configured_timeout_seconds": 180,
+    "configured_max_retries": 4,
+    "quota_wait_hours": 12,
+    "response_format_type": "json_object",
+    "decision_contract_validation": "independent post-response validation against the unchanged AGENT_DECISION_SCHEMA",
+    "decision_latency_telemetry": "duration_seconds from monotonic request start through provider retries and response validation"
+  },
+  "protocol_provenance": {
+    "base_v6_commit": "02381ec8b4252852a8e5b822f850b5fc24de7cdc",
+    "compatibility_parent_commit": "12d8e91b6ccd2dae3b20daf2263ae8fbfdd582f3",
+    "launch_commit": "13dc0b49454be2e493e4ac9b3b7e127069dda2ff",
+    "launch_branch": "codex/ox-alpha-openrouter-v6",
+    "declared_deviation": "Ox Alpha has no OpenRouter route advertising structured_outputs, and forced tool choice is rejected. The run therefore uses the route's advertised json_object response format. The closed Participant-v6 world, static prompt, dynamic observation, reasoning effort, decision schema, independent contract attribution, scoring revision, and trial settings are unchanged; only provider-side schema enforcement is weaker and is recorded on every usage row."
+  },
+  "diagnostic_preflights": [
+    {
+      "response_format_type": "json_schema",
+      "reasoning_efforts": [
+        "medium",
+        "high"
+      ],
+      "result": "OpenRouter 404: no endpoint can handle the requested parameters because the sole route lacks structured_outputs."
+    },
+    {
+      "response_format_type": "json_schema_without_parameter_gate",
+      "reasoning_effort": "high",
+      "result": "Request completed but the route ignored the schema and returned the wrong top-level keys."
+    },
+    {
+      "response_format_type": "json_object",
+      "reasoning_effort": "medium",
+      "result": "Request completed as stealth/ox-alpha through provider Stealth; JSON syntax was valid but memory_updates had the wrong type, confirming that independent contract attribution is required."
+    }
+  ],
+  "replications": {
+    "required_seeds": [
+      11,
+      41
+    ],
+    "cells": {
+      "ox-alpha-v6-seed-11": {
+        "seed": 11,
+        "status": "planned_startup_health_gate",
+        "cohort": "ox-alpha-v6-json-s11-20260821",
+        "target_tick": 50,
+        "out": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed11-json-object/run.jsonl",
+        "snapshot": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed11-json-object/run-snapshot.json"
+      },
+      "ox-alpha-v6-seed-41": {
+        "seed": 41,
+        "status": "pending_seed_11_health_gate",
+        "cohort": "ox-alpha-v6-json-s41-20260821",
+        "target_tick": 50,
+        "out": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed41-json-object/run.jsonl",
+        "snapshot": "runs/benchmarks/ox-alpha-openrouter-participant-v6-seeds11-41-20260821-155324/ox-alpha-v6-seed41-json-object/run-snapshot.json"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [
+      30,
+      40
+    ],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12
+  },
+  "launcher": "scripts/run-isolated-cohort"
+}
