@@ -24,6 +24,32 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-22 -- Repairing Ox Alpha's syntax did not repair its society
+
+**A deterministic, lossless structural repair oracle raised Ox Alpha's
+Participant-v6 contract-valid decision rate from 17.8% to 91.9%, yet both
+repaired populations went extinct and pooled sustained competence remained
+zero.** Across seeds 11 and 41, the oracle modified 544/714 responses (76.2%):
+528 message-field renames and 20 memory-object conversions. It recovered 529
+otherwise invalid decisions, while 58 responses still failed the unchanged
+contract. There were no provider, quota, harness, or ambiguous-boundary
+failures and usage coverage was 100%, so the completed worlds isolate behavior
+after interface normalization rather than an operational incident.
+
+The normalized pooled execution score was 69.13, but execution did not become
+survival. All 20 agents died, with deaths starting at ticks 27 and 28; thirst
+appeared in 248 survival-damage records and hunger in 186. The agents completed
+seven structures and communicated 576 times, but accepted no trades, formed no
+groups or contracts, supplied no enterprise value, and converted only 13 farm
+actions into eight harvests. The result separates interface competence from
+world competence: Ox Alpha's raw schema mismatch concealed usable action
+selection, but it did not explain the societal collapse.
+
+This is deliberately not a leaderboard result. The repair oracle changed the
+transported decision shape on most calls, so 69.13 estimates the controlled
+variant rather than unassisted Ox Alpha. Evidence:
+`runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-oracle-analysis.{json,md}`.
+
 ## 2026-08-21 -- Ox Alpha knew the decision keys but not their contract
 
 **Ox Alpha returned all four required top-level decision keys on every failed
