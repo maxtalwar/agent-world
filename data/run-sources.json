@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-08-18T23:42:00.7569458+00:00",
+  "updated_at_utc": "2026-08-22T22:05:56.176658245Z",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -450,6 +450,27 @@
           "kind": "diagnostic",
           "included_in_model_result": false,
           "run_exclusion_reason": "Incomplete startup diagnostic: 47/50 confirmed model-output contract violations under the route's advertised json_object response format."
+        }
+      ]
+    },
+    {
+      "model_key": "stealth-ox-alpha-repair-oracle-diagnostic",
+      "label": "Ox Alpha + repair oracle (diagnostic)",
+      "kind": "diagnostic",
+      "controlled_variant": true,
+      "variant_note": "Participant v6 with the declared ox-alpha-schema-v1 deterministic structural repair oracle applied before independent decision-contract validation.",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "The repair oracle modified 544 of 714 responses. This is a controlled interface-normalization diagnostic, not an unassisted Ox Alpha benchmark.",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed11/run-report.json",
+          "kind": "diagnostic"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed41/run-report.json",
+          "kind": "diagnostic"
         }
       ]
     }

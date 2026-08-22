@@ -24,6 +24,37 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-22 -- Ox Alpha's repair oracle exposed both a capability split and a certification trap
+
+**Deterministic shape repair raised Ox Alpha's Participant-v6 contract-valid
+rate from 17.8% to 91.9%, but both repaired populations still went extinct—and
+the frozen aggregator would have mislabeled the controlled intervention
+“certified.”** Across seeds 11 and 41, the declared `ox-alpha-schema-v1`
+oracle modified 544/714 responses (76.2%): 528 message-field renames and 20
+memory-object conversions. Fifty-eight decisions still violated the unchanged
+contract after repair. Both cells had 100% usage coverage and no provider,
+quota, harness, or ambiguous-boundary failures.
+
+Frozen Participant-v6 tooling at the clean launch commit pools the repaired
+variant to 69.13 execution, 0.0 sustained competence, and 0.0 entrepreneurial
+agency. At tick 30 the two worlds still had nine and seven living agents with
+competence 58.27 and 53.34; by tick 40 only two and one remained, and all 20
+were dead by ticks 46 and 43. The agents completed seven structures and sent
+576 communications, but accepted no trades, formed no group or contract,
+supplied no enterprise value, and accumulated 710 invalid proposals. Interface
+normalization therefore recovered substantial action-selection ability without
+recovering survival or economic coordination.
+
+The certification failure is a harness-provenance issue, not model behavior.
+The study manifest correctly declares `raw_with_declared_structural_repair`
+and diagnostic-only status, and 544 usage rows preserve original and repaired
+payloads plus hashes. The generated run manifests nevertheless record
+`decision_mode=raw`, their reports mark `protocol_compliant=true`, and the
+launch-commit aggregator consequently prints `certified`. Artifact evidence
+overrides that label: the result belongs to a controlled diagnostic variant
+and must never enter the unassisted leaderboard. Evidence:
+`runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/{study-manifest.json,ox-alpha-repair-v6-seed11,ox-alpha-repair-v6-seed41}`.
+
 ## 2026-08-21 -- Ox Alpha knew the decision keys but not their contract
 
 **Ox Alpha returned all four required top-level decision keys on every failed

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222",
-  "status": "running",
+  "status": "completed_diagnostic_only",
   "created_at_utc": "2026-08-21T17:02:22Z",
   "launched_at_utc": "2026-08-21T17:05:23Z",
   "study_type": "normalized_diagnostic",
@@ -91,19 +91,65 @@
     "cells": {
       "ox-alpha-repair-oracle-v6-seed-11": {
         "seed": 11,
-        "status": "running",
+        "status": "completed_diagnostic_only",
         "cohort": "ox-alpha-repair-v6-s11-20260821",
         "target_tick": 50,
         "out": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed11/run.jsonl",
-        "snapshot": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed11/run-snapshot.json"
+        "snapshot": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed11/run-snapshot.json",
+        "report": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed11/run-report.json",
+        "completed_at_utc": "2026-08-21T17:21:10.091053+00:00",
+        "final_tick": 50,
+        "resolved_model_confirmed": "stealth/ox-alpha",
+        "provider_confirmed": "Stealth",
+        "benchmark_integrity_status": "clean",
+        "quality_status": "degraded",
+        "decision_repair_events": 299,
+        "raw_contract_valid_decisions": 56,
+        "normalized_contract_valid_decisions": 348,
+        "model_output_failure_events_after_repair": 16,
+        "ambiguous_boundary_failure_events": 0,
+        "provider_failure_events": 0,
+        "quota_failure_events": 0,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "provider_reported_cost_usd": 0.0,
+        "api_list_cost_usd": null,
+        "artifact_sha256": {
+          "report": "9b27861a4524ce01dfb7804c9b1d6ded704243a74ba92b88159d1ff04f4e3af6",
+          "usage": "b25bfec99e89894276a1ac102f0d17aff0710ca020dfe5b98ead90a28be70f3b",
+          "manifest": "e6ced6ce871196feaa47f9c16cc5dc144d0ab033dc3fe7e3a0f1bb4738706c3e"
+        }
       },
       "ox-alpha-repair-oracle-v6-seed-41": {
         "seed": 41,
-        "status": "running",
+        "status": "completed_diagnostic_only",
         "cohort": "ox-alpha-repair-v6-s41-20260821",
         "target_tick": 50,
         "out": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed41/run.jsonl",
-        "snapshot": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed41/run-snapshot.json"
+        "snapshot": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed41/run-snapshot.json",
+        "report": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed41/run-report.json",
+        "completed_at_utc": "2026-08-21T17:20:16.477738+00:00",
+        "final_tick": 50,
+        "resolved_model_confirmed": "stealth/ox-alpha",
+        "provider_confirmed": "Stealth",
+        "benchmark_integrity_status": "clean",
+        "quality_status": "degraded",
+        "decision_repair_events": 245,
+        "raw_contract_valid_decisions": 71,
+        "normalized_contract_valid_decisions": 308,
+        "model_output_failure_events_after_repair": 42,
+        "ambiguous_boundary_failure_events": 0,
+        "provider_failure_events": 0,
+        "quota_failure_events": 0,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "provider_reported_cost_usd": 0.0,
+        "api_list_cost_usd": null,
+        "artifact_sha256": {
+          "report": "14442e01cb23a05c5da310e7671f1086297ff1d91f5088a2c2ccb2a798c663d5",
+          "usage": "79a93da5606dd6c3b759ab4f1472ccc9ecefabda2a0316f13dedea697469bf06",
+          "manifest": "a399275d061e5a285a64768dcecd42cd61d97dd68e0ccaad323f17b93b40a2e9"
+        }
       }
     }
   },
@@ -133,6 +179,39 @@
   "result": {
     "certification": "diagnostic_only",
     "official_score": null,
-    "normalized_score": null
+    "analyzed_at_utc": "2026-08-22T22:05:56.176658245Z",
+    "normalized_score": {
+      "effective_execution": 69.13,
+      "sustained_competence": 0.0,
+      "entrepreneurial_agency": 0.0,
+      "economic_productivity": 0.0
+    },
+    "normalized_score_source": "Frozen Participant-v6 aggregation from launch commit 8894415830aa5523826ad0fb9e9e9086ad467015; the tool's automatic certified label is rejected because the per-run reports omitted the declared repair intervention.",
+    "llm_calls_total": 714,
+    "decision_repair_events": 544,
+    "decision_repair_rate_pct": 76.19,
+    "raw_contract_valid_decisions": 127,
+    "raw_contract_valid_rate_pct": 17.79,
+    "normalized_contract_valid_decisions": 656,
+    "normalized_contract_valid_rate_pct": 91.88,
+    "model_output_failure_events_after_repair": 58,
+    "decision_failure_rate_after_repair_pct": 8.12,
+    "engine_invalid_proposals": 652,
+    "invalid_proposals_total": 710,
+    "submitted_actions": 2016,
+    "living_agents": 0,
+    "initial_agents": 20,
+    "provider_reported_cost_usd": 0.0,
+    "api_list_cost_usd": null,
+    "reasoning_tokens_reported": 0,
+    "reasoning_telemetry_note": "The Stealth route reported zero reasoning tokens despite mandatory reasoning; treat this as unavailable telemetry, not proof of zero deliberation.",
+    "decision_latency_median_seconds": 7.301,
+    "decision_latency_p95_seconds": 14.80595,
+    "certification_metadata_audit": {
+      "frozen_aggregator_label": "certified",
+      "corrected_disposition": "diagnostic_only",
+      "reason": "The run reports say decision_mode=raw and protocol_compliant=true, but the study manifest declares raw_with_declared_structural_repair and 544 usage rows record decision_repair_applied=true."
+    },
+    "exclusion_reason": "The ox-alpha-schema-v1 oracle modified 544 of 714 responses before validation. The pooled scores estimate the controlled repaired variant and must never be attributed to unassisted Ox Alpha or placed on the leaderboard."
   }
 }
