@@ -37,6 +37,7 @@ from agent_world.persistence import IncrementalRunWriter
 from agent_world.session import SimulationSession
 from agent_world.usage import summarize_codex_simulation_credits
 from agent_world.devin_brain import DevinBrain, build_devin_prompt
+from agent_world.grok_brain import GrokBrain, build_grok_prompts
 from agent_world.world import WorldEngine
 
 
@@ -168,9 +169,10 @@ def run_factorial_experiment(
         "claude",
         "cursor",
         "devin",
+        "grok",
     }:
         raise ValueError(
-            "brain must be 'survival', 'openrouter', 'codex', 'claude', 'cursor', or 'devin'."
+            "brain must be 'survival', 'openrouter', 'codex', 'claude', 'cursor', 'devin', or 'grok'."
         )
     if max_workers is not None and max_workers < 1:
         raise ValueError("max_workers must be at least 1.")
@@ -370,7 +372,7 @@ def _run_single(
             "snapshot": str(snapshot_path),
             "usage": (
                 str(usage_path)
-                if brain in {"openrouter", "codex", "claude", "cursor", "devin"}
+                if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok"}
                 else None
             ),
             "plan_usage": str(plan_usage_path) if brain == "codex" else None,
@@ -407,7 +409,7 @@ def _run_single(
         first_brain = next(iter(brains.values()), None)
         if isinstance(
             first_brain,
-            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, DevinBrain),
+            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, DevinBrain, GrokBrain),
         ):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
@@ -464,7 +466,7 @@ def _run_single(
         session.start()
         if isinstance(
             first_brain,
-            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, DevinBrain),
+            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, DevinBrain, GrokBrain),
         ):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
@@ -675,6 +677,10 @@ def _initial_prompt_hashes(engine: WorldEngine, brain: str) -> dict[str, str]:
         hashes["initial_cursor_prompt_sha256"] = _sha256_text(
             build_cursor_prompt(static_context, dynamic_json)
         )
+    if brain == "grok":
+        grok_system, grok_user = build_grok_prompts(static_context, dynamic_json)
+        hashes["initial_grok_system_prompt_sha256"] = _sha256_text(grok_system)
+        hashes["initial_grok_user_prompt_sha256"] = _sha256_text(grok_user)
     if brain == "devin":
         hashes["initial_devin_prompt_sha256"] = _sha256_text(
             build_devin_prompt(static_context, dynamic_json)
@@ -697,6 +703,7 @@ def _source_hashes() -> dict[str, str]:
         "codex_brain_source_sha256": _sha256_file(module_dir / "codex_brain.py"),
         "claude_brain_source_sha256": _sha256_file(module_dir / "claude_brain.py"),
         "cursor_brain_source_sha256": _sha256_file(module_dir / "cursor_brain.py"),
+        "grok_brain_source_sha256": _sha256_file(module_dir / "grok_brain.py"),
         "devin_brain_source_sha256": _sha256_file(
             module_dir / "devin_brain.py"
         ),
@@ -772,6 +779,16 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
             "billing_mode": "cursor_subscription",
             "timeout_seconds": int(os.environ.get("CURSOR_TIMEOUT_SECONDS", "300")),
         }
+    if brain == "grok":
+        return {
+            "provider": "grok_cli",
+            "model": model or os.environ.get("GROK_MODEL", "grok-4.6"),
+            "reasoning_effort": reasoning_effort or os.environ.get("GROK_REASONING_EFFORT", "medium"),
+            "api_style": "grok_single_json_schema",
+            "base_url": None,
+            "billing_mode": "grok_subscription",
+            "timeout_seconds": int(os.environ.get("GROK_TIMEOUT_SECONDS", "300")),
+        }
     if brain == "devin":
         return {
             "provider": "devin_cli",
@@ -811,7 +828,7 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
 
 
 def _brain_runtime_settings(
-    brain: OpenRouterBrain | CodexBrain | ClaudeBrain | CursorBrain | DevinBrain,
+    brain: OpenRouterBrain | CodexBrain | ClaudeBrain | CursorBrain | DevinBrain | GrokBrain,
     max_workers: int,
 ) -> dict[str, Any]:
     if isinstance(brain, CodexBrain):
@@ -862,6 +879,22 @@ def _brain_runtime_settings(
             "connector_profile": brain.connector_profile,
             "conversation_mode": brain.conversation_mode,
             "session_max_turns": brain.session_max_turns,
+        }
+    if isinstance(brain, GrokBrain):
+        return {
+            "type": "grok",
+            "provider": "grok_cli",
+            "model": brain.model,
+            "resolved_model": brain.resolved_model,
+            "reasoning_effort": brain.reasoning_effort,
+            "api_style": "grok_single_json_schema",
+            "base_url": None,
+            "billing_mode": "grok_subscription",
+            "executable": brain.executable,
+            "timeout_seconds": brain.timeout_seconds,
+            "max_workers": max_workers,
+            "connector_profile": brain.connector_profile,
+            "conversation_mode": brain.conversation_mode,
         }
     if isinstance(brain, DevinBrain):
         return {
