@@ -335,6 +335,7 @@ BENCHMARK_PROVIDER_FINGERPRINT_FILES: dict[str, tuple[str, ...]] = {
     "codex_cli": ("codex_brain.py",),
     "cursor_cli": ("cursor_brain.py",),
     "devin_cli": ("devin_brain.py",),
+    "grok_cli": ("grok_brain.py",),
     "openrouter": ("openrouter_brain.py",),
     "openai_compatible": ("openrouter_brain.py",),
 }
