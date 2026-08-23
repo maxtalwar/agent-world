@@ -24,6 +24,33 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-22 -- Grok's backend model label poisoned its next request
+
+**The direct Grok CLI connector successfully obtained one decision per agent
+from Grok 4.6, then mistook the backend response label `grok-4.6-build` for a
+callable model ID and fabricated 360 wait actions after Grok rejected every
+subsequent request.** Both Participant-v6 seeds launched with the public model
+name `grok-4.6`. All 20 tick-0 calls succeeded, resolved to
+`grok-4.6-build`, and returned contract-valid decisions. The connector then
+assigned that response label to `resolved_model` and reused it in the next
+`--model` argument. From ticks 1 through 18, every one of 360 calls failed
+with the same `unknown model id` error. Because the connector returned a
+synthetic `wait` decision instead of stopping the world, all 20 agents died at
+tick 18 and the empty worlds advanced to tick 50.
+
+This is harness behavior, not Grok capability. The generated reports compound
+the error by claiming clean integrity, clean quality, zero decision failures,
+protocol compliance, and replication eligibility even though their own usage
+ledgers mark 180 ambiguous-boundary payload-extraction failures per seed. The
+frozen scorer mechanically pools the corrupted worlds to 22.20 execution and
+zero competence and entrepreneurship, but those numbers must never be used as
+a model result. The only genuine model evidence is first-turn behavior: 20/20
+contract-valid, purposeful decisions submitted 66 actions, of which 60 were
+feasible; successful calls had 30.59-second median latency, 41.14-second p95,
+31,876 reasoning tokens, and $0.14152364 of provider-reported usage. Evidence:
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-seeds11-41-20260822-233838/{study-manifest.json,grok-4-6-direct-v6-seed11,grok-4-6-direct-v6-seed41}`
+and launch commit `da4cf018e7be0cea68dca8c5f71d19f240b82167`.
+
 ## 2026-08-22 -- Ox Alpha's repair oracle exposed both a capability split and a certification trap
 
 **Deterministic shape repair raised Ox Alpha's Participant-v6 contract-valid

@@ -85,6 +85,10 @@ the study.
   the oracle modified 544/714 responses. The repaired variant is cataloged for
   interface and behavioral analysis only; it is not an Ox Alpha leaderboard
   result.
+- The direct Grok 4.6 Build study is retained as an invalid harness
+  diagnostic. Only tick 0 reached the model before a connector identity bug
+  converted 360 rejected requests into synthetic wait actions. It has no
+  leaderboard or simulated capability position.
 - Behavioral interpretation and harness caveats live in
   [`insights.md`](insights.md); benchmark definitions live in
   [`model-benchmarks.md`](model-benchmarks.md).

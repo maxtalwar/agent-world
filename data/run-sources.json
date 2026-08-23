@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-08-22T22:05:56.176658245Z",
+  "updated_at_utc": "2026-08-23T06:33:19.445130109Z",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -471,6 +471,29 @@
           "seed": 41,
           "report_path": "runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-v6-seed41/run-report.json",
           "kind": "diagnostic"
+        }
+      ]
+    },
+    {
+      "model_key": "xai-grok-4-6-build-grok-cli-invalid-diagnostic",
+      "label": "Grok 4.6 Build via Grok CLI (invalid diagnostic)",
+      "kind": "diagnostic",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "A connector identity bug replaced the callable public model name grok-4.6 with the backend response label grok-4.6-build after each agent's first successful call. The next 180 calls per seed were rejected as unknown-model errors and converted into wait actions, so the apparent completed, clean scores are fabricated harness behavior.",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-seeds11-41-20260822-233838/grok-4-6-direct-v6-seed11/run-report.json",
+          "kind": "diagnostic",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Invalid harness run: only the 10 tick-0 decisions came from Grok 4.6 Build; 180 subsequent boundary failures were converted into wait actions until all agents died at tick 18. The generated clean-integrity and eligible-replication labels are contradicted by the usage ledger."
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-seeds11-41-20260822-233838/grok-4-6-direct-v6-seed41/run-report.json",
+          "kind": "diagnostic",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Invalid harness run: only the 10 tick-0 decisions came from Grok 4.6 Build; 180 subsequent boundary failures were converted into wait actions until all agents died at tick 18. The generated clean-integrity and eligible-replication labels are contradicted by the usage ledger."
         }
       ]
     }

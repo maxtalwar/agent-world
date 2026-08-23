@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "study_id": "grok-4-6-grok-cli-participant-v6-seeds11-41-20260822-233838",
+  "status": "completed_invalid_harness_diagnostic",
+  "created_at_utc": "2026-08-23T06:33:19.445130109Z",
+  "study_type": "diagnostic",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_scoring_revision": 2,
+  "target": {
+    "brain": "grok",
+    "provider": "grok_cli",
+    "billing_mode": "grok_subscription",
+    "requested_model": "grok-4.6",
+    "first_response_model": "grok-4.6-build",
+    "reasoning_effort": "medium",
+    "seeds": [11, 41]
+  },
+  "protocol_provenance": {
+    "launch_commit": "da4cf018e7be0cea68dca8c5f71d19f240b82167",
+    "benchmark_code_fingerprint": "6bbf650f623c86061aa395a0d2e2c7d5c9c83b285533141b65968f490d2813a9",
+    "dirty_worktree": false,
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "preset": "frontier-generalists",
+    "target_ticks": 50,
+    "agents": 10,
+    "global_max_workers": 4,
+    "provider_max_workers": 4
+  },
+  "connector_defect": {
+    "summary": "After the first successful call for each agent, the connector assigned the backend response label grok-4.6-build to resolved_model and reused it as the next request's --model argument. Grok Build accepts the public model name grok-4.6 but rejected the backend label as an unknown model ID.",
+    "failure_detail": "Couldn't set model 'grok-4.6-build': Invalid params: \"unknown model id\". Run 'grok models' to see available models.",
+    "failure_origin": "ambiguous_boundary",
+    "synthetic_fallback_action": "wait",
+    "world_was_not_frozen": true,
+    "report_false_clean": true
+  },
+  "result_tier": {
+    "certification": "invalid_diagnostic_only",
+    "leaderboard_eligible": false,
+    "official_score": null,
+    "simulated_leaderboard_position": null,
+    "exclusion_reason": "Only 20 tick-0 decisions came from Grok 4.6 Build. The next 360 calls failed at the connector boundary and were converted into synthetic wait actions, causing every agent to die at tick 18. Generated report claims of clean integrity and replication eligibility are invalid."
+  },
+  "aggregate_evidence": {
+    "attempted_calls": 380,
+    "successful_model_decisions": 20,
+    "failed_boundary_calls": 360,
+    "contract_valid_successful_decisions": 20,
+    "genuine_action_count": 66,
+    "genuine_feasible_action_count": 60,
+    "successful_latency_median_seconds": 30.59,
+    "successful_latency_p95_seconds": 41.138,
+    "prompt_tokens": 309239,
+    "completion_tokens": 35573,
+    "reasoning_tokens": 31876,
+    "cached_tokens": 1152,
+    "provider_reported_cost_usd": 0.14152364,
+    "corrupted_frozen_score": {
+      "effective_execution": 22.2,
+      "sustained_competence": 0.0,
+      "entrepreneurial_agency": 0.0,
+      "economic_productivity": 0.0,
+      "disposition": "invalid_harness_artifact"
+    }
+  },
+  "replications": {
+    "seed_11": {
+      "final_tick": 50,
+      "successful_model_decisions": 10,
+      "failed_boundary_calls": 180,
+      "all_agents_dead_tick": 18,
+      "report_sha256": "0f7ab5eb92e3446157dea14670a617e46f335a276b4e83b9948a82be0663cbef",
+      "usage_sha256": "83f50535e434bc92bfc4ac88d7ad5a56efa40c9dad49714cf10ea62bd945a1fc",
+      "manifest_sha256": "e3d0b65a8f2d7e6803ba8b9fb797e7e609aa33cb96b52a976483263573f3751e"
+    },
+    "seed_41": {
+      "final_tick": 50,
+      "successful_model_decisions": 10,
+      "failed_boundary_calls": 180,
+      "all_agents_dead_tick": 18,
+      "report_sha256": "398ce1682ac1c2a5b81051a0dca07f03c3f65b7591122f7c85d3cdc2a41f3b7c",
+      "usage_sha256": "b2985e50f61f159ae3fe4e2a2b2d2fbe9c41ad76ef03a2dd643da81c82f7c729",
+      "manifest_sha256": "a50b832a0d3f1a0e4e20e9b4e89fb86103fb9b14be5db568a4ceabe04a7ba6c1"
+    }
+  }
+}
