@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "study_id": "grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608",
+  "status": "running_replicated",
+  "created_at_utc": "2026-08-23T16:16:08Z",
+  "study_type": "benchmark_trial",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_scoring_revision": 2,
+  "targets": {
+    "grok-4.6": {
+      "brain": "grok",
+      "provider": "grok_cli",
+      "billing_mode": "grok_subscription",
+      "model": "grok-4.6",
+      "resolved_model_expected": "grok-4.6-build",
+      "reasoning_effort_requested": "medium",
+      "seeds": [11, 41]
+    }
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds_per_model": [11, 41],
+    "policy": "Both integrity-clean, complete Participant-v6 cells on seeds 11 and 41 are required for replicated certification."
+  },
+  "connector_fix": {
+    "request_model_identity": "The public callable model ID grok-4.6 remains the request model across turns; the backend response label grok-4.6-build is telemetry only.",
+    "failure_classification": "Grok boundary, quota, provider, harness, and model-output failures now participate in integrity classification and systemic-failure tick freezing.",
+    "regression_validation": "367 tests passed at the launch commit; both live cells completed tick 2 with zero boundary failures, including 20 successful second-turn calls that the superseded study failed."
+  },
+  "protocol_provenance": {
+    "launch_commit": "8bbd62e6b1bc7dc09b6239d3b6d3c4df6e59c793",
+    "launch_branch": "codex/fix-grok-build-v6-rerun",
+    "dirty_worktree": false,
+    "supersedes_invalid_study": "grok-4-6-grok-cli-participant-v6-seeds11-41-20260822-233838"
+  },
+  "replications": {
+    "required_seeds": [11, 41],
+    "cells": {
+      "grok-4-6-build-v6-seed-11": {
+        "seed": 11,
+        "status": "running",
+        "cohort": "grok46-build-v6-fixed-s11-20260823",
+        "target_tick": 50,
+        "out": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run.jsonl",
+        "snapshot": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-snapshot.json"
+      },
+      "grok-4-6-build-v6-seed-41": {
+        "seed": 41,
+        "status": "running",
+        "cohort": "grok46-build-v6-fixed-s41-20260823",
+        "target_tick": 50,
+        "out": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run.jsonl",
+        "snapshot": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-snapshot.json"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12
+  },
+  "launcher": "scripts/run-isolated-cohort"
+}
