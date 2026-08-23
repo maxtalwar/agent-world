@@ -7,7 +7,11 @@ from agent_world.metrics import (
     compute_metrics,
     is_ambiguous_boundary_failure_message,
     is_confirmed_model_contract_failure_message,
+    is_decision_failure_message,
+    is_harness_failure_message,
     is_model_output_failure_message,
+    is_provider_failure_message,
+    is_quota_failure_message,
 )
 from agent_world.models import AgentDecision, WorldConfig
 from agent_world.world import WorldEngine
@@ -45,6 +49,38 @@ class DecisionFailureClassificationTests(unittest.TestCase):
         other = "Claude boundary failed: claude -p exited 1: something else entirely"
         self.assertTrue(is_ambiguous_boundary_failure_message("agent_response", other))
         self.assertFalse(is_model_output_failure_message("agent_response", other))
+
+    def test_grok_failures_participate_in_integrity_classification(self) -> None:
+        boundary = "Grok boundary failed: unknown model id"
+        self.assertTrue(is_decision_failure_message("agent_response", boundary))
+        self.assertTrue(
+            is_ambiguous_boundary_failure_message("agent_response", boundary)
+        )
+        self.assertTrue(
+            is_quota_failure_message(
+                "agent_response", "Grok quota unavailable: usage exhausted"
+            )
+        )
+        self.assertTrue(
+            is_provider_failure_message(
+                "agent_response", "Grok provider unavailable: network error"
+            )
+        )
+        self.assertTrue(
+            is_model_output_failure_message(
+                "agent_response", "Grok model output contract failed: bad payload"
+            )
+        )
+        self.assertTrue(
+            is_confirmed_model_contract_failure_message(
+                "agent_response", "Grok model output contract failed: bad payload"
+            )
+        )
+        self.assertTrue(
+            is_harness_failure_message(
+                "agent_response", "Grok decision failed: local adapter error"
+            )
+        )
 
 
 class EconomicMetricsTests(unittest.TestCase):

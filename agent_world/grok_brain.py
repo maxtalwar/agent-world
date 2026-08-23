@@ -227,7 +227,13 @@ class GrokBrain:
         return [
             self.executable,
             "--single", user_prompt,
-            "--model", self.resolved_model,
+            # The CLI accepts the public catalog name requested by the user.
+            # `modelUsage` may expose a backend build label (for example
+            # `grok-4.6-build`), but that response label is telemetry, not a
+            # callable model ID. Reusing it here makes the first decision
+            # succeed and every subsequent decision fail as "unknown model
+            # id".
+            "--model", self.model,
             "--reasoning-effort", self.reasoning_effort,
             "--output-format", "json",
             "--json-schema", schema,
