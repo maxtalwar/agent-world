@@ -97,6 +97,23 @@ class GrokBrainTests(unittest.TestCase):
         self.assertEqual(record["cost"], 0)
         self.assertEqual(record["provider_reported_cost_usd"], 0.005)
 
+    def test_backend_response_label_is_not_reused_as_request_model(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["grok"], 0, stdout=_successful_stdout("continue"), stderr=""
+        )
+        with patch(
+            "agent_world.grok_brain.subprocess.run", return_value=completed
+        ) as run:
+            brain = GrokBrain(executable="grok", model="grok-4.6")
+            brain.decide({"tick": 0, "self": {"id": "agent-1"}})
+            brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(brain.resolved_model, "grok-4.6-build")
+        self.assertEqual(len(run.call_args_list), 2)
+        for call in run.call_args_list:
+            command = call.args[0]
+            self.assertEqual(command[command.index("--model") + 1], "grok-4.6")
+
     def test_malformed_model_output_has_model_attribution(self) -> None:
         result = json.loads(_successful_stdout())
         result.pop("structuredOutput")
