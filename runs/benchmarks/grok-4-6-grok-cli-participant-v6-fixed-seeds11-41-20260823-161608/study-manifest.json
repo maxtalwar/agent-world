@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608",
-  "status": "running_replicated",
+  "status": "provisional_seed11_complete_seed41_paused",
   "created_at_utc": "2026-08-23T16:16:08Z",
   "study_type": "benchmark_trial",
   "suite_id": "agent-world-participant-v6",
@@ -39,19 +39,33 @@
     "cells": {
       "grok-4-6-build-v6-seed-11": {
         "seed": 11,
-        "status": "running",
+        "status": "completed",
         "cohort": "grok46-build-v6-fixed-s11-20260823",
         "target_tick": 50,
         "out": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run.jsonl",
-        "snapshot": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-snapshot.json"
+        "snapshot": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-snapshot.json",
+        "final_tick": 50,
+        "completed_at_utc": "2026-08-24T07:58:25.306270+00:00",
+        "resolved_model_confirmed": "grok-4.6-build",
+        "benchmark_integrity_status": "clean",
+        "model_output_failure_events": 0,
+        "ambiguous_boundary_failure_events": 0,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "provider_reported_cost_equivalent_usd": 4.2136829,
+        "report": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json"
       },
       "grok-4-6-build-v6-seed-41": {
         "seed": 41,
-        "status": "running",
+        "status": "paused_checkpoint",
         "cohort": "grok46-build-v6-fixed-s41-20260823",
         "target_tick": 50,
         "out": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run.jsonl",
-        "snapshot": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-snapshot.json"
+        "snapshot": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-snapshot.json",
+        "final_tick": 20,
+        "stop_reason": "decisions_unusable",
+        "provider_boundary": "HTTP 402 Grok Build usage balance exhausted",
+        "checkpoint": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-checkpoint.pkl"
       }
     }
   },
@@ -81,5 +95,20 @@
     "startup_health_max_failure_rate": 0.2,
     "quota_wait_hours": 12
   },
-  "launcher": "scripts/run-isolated-cohort"
+  "launcher": "scripts/run-isolated-cohort",
+  "result": {
+    "certification": "provisional_single_seed",
+    "seed": 11,
+    "replicated_certification_pending_seed": 41,
+    "source_fingerprint_compatible": false,
+    "leaderboard_status": "analytical_only_not_admitted",
+    "effective_execution": 92.4,
+    "sustained_competence": 81.88,
+    "entrepreneurial_agency": 71.82,
+    "economic_productivity": 271.5,
+    "living_agents": 9,
+    "initial_agents": 10,
+    "llm_calls": 500,
+    "provider_reported_cost_equivalent_usd": 4.2136829
+  }
 }

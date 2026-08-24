@@ -24,6 +24,29 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-24 — Grok formed an informal winter shelter exchange but failed at basic water resilience
+
+**Grok 4.6 Build created a ledger-real shelter-for-help network without any
+formal group, contract, or access-fee mechanism, yet the shelter owner died
+immediately after winter with zero water.** In the clean Participant v6 seed-11
+run, Agent 6 and Agent 10 completed shelter 14 at tick 36 with contributor
+shares of 62.5% and 37.5%. Their messages repeatedly framed access as being
+for food or help rather than additional equity; Agent 6 then granted shelter
+access to Agents 10, 7, 9, and 1, while Agent 10 delivered two food and Agent 9
+delivered four coins plus one food. Because the exchanges used gifts and
+discretionary access rather than formal fees or a frozen gift-classification
+artifact, none counted as service income. The network nevertheless sheltered
+several agents through winter. Agent 6 survived the season but left the roof
+to recover supplies and died at tick 49 with energy 24, food 4, and water 0.
+This is model behavior rather than a harness artifact: all 500 decisions were
+successful with clean integrity and full usage coverage. It shows that Grok
+could improvise property rights, contributor shares, and reciprocal aid while
+still failing to manage the proprietor's most basic survival constraint.
+Evidence:
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run.jsonl`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/study-manifest.json`.
+
 ## 2026-08-23 — Grok reported an exhausted balance as a successful process carrying an error envelope
 
 **Grok Build returned HTTP 402 quota exhaustion inside a JSON `type=error`
