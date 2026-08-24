@@ -21,11 +21,28 @@ masqueraded as model behavior — append an entry.** Rules:
   silently delete.
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
+## 2026-08-24 -- Codex process count was not the desktop's limiting resource
+
+**Four simultaneous Codex cells sustained an aggregate 99 observed child
+processes without swapping, while the 40-worker cell remained the fastest
+setting tested.** Matched 40-agent, five-tick cells at 10, 20, 30, and 40
+workers finished in 372.5, 241.5, 218.4, and 168.4 seconds respectively. All
+800 decisions succeeded with clean harness integrity. The 40-worker cell's
+median call slowed to 22.9 seconds from 16.2 at 10 workers, showing contention,
+but eliminating scheduling waves still delivered 2.21x whole-run throughput.
+During the four-way overlap WSL retained at least 12,273 MiB available memory
+and recorded zero swap use, page-ins, or page-outs. This is a harness/host
+capacity result, not model behavior: on this desktop 40 is a tested-safe Codex
+ceiling and the actual ceiling lies above the tested range.
+Evidence: `runs/experiments/desktop-worker-ramp-20260824/analysis.md`;
+`runs/experiments/desktop-worker-ramp-20260824/host-resource-samples.csv`;
+per-cell manifests and usage ledgers in that experiment directory.
+
 ## 2026-08-24 — A provider ceiling is not an effective worker default
 
 **The Codex worker-ramp change raised the provider semaphore from 4 to 24 but
 left the upstream global pool default at 1, so a bare ordinary run remained
-serial despite the measured 24-worker throughput knee.** Commit `a27bb84`
+serial despite the measured 24-worker throughput knee.** Commit `58dc3b8`
 changed only `codex_cli`'s provider ceiling; `BrainSpec.resolve` still fell
 back to one global worker, and the isolated-cohort launcher did not inject a
 different value. The original ramp manifests confirm that every measured cell
@@ -35,7 +52,7 @@ default to a four-thread global pool, while Participant benchmark trials use a
 provider-aware global pool and semaphore (24 for Codex, 4 for other harnesses).
 Because the current benchmark population has ten agents, a configured Codex
 limit of 24 means at most ten simultaneous decisions in that protocol.
-Evidence: commit `a27bb84`; `agent_world/brain_factory.py`;
+Evidence: commit `58dc3b8`; `agent_world/brain_factory.py`;
 `agent_world/cli.py`; `runs/experiments/worker-ramp-20260802/*/run-manifest.json`.
 
 
