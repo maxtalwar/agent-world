@@ -1,6 +1,6 @@
 ---
 name: run-agent-world-benchmark
-description: Launch, resume, monitor, finalize, or report status on Agent World model benchmark runs. Use for requests to run a model through the standardized benchmark, continue a paused seed, handle quota waits, verify completion, or prepare run evidence for later analysis; not for interpreting completed model performance.
+description: Launch, resume, monitor, finalize, or report status on standardized Agent World benchmark trials. Use when the user explicitly asks for a benchmark, leaderboard result, certification, provisional benchmark, or named participant protocol; not for general simulations, smoke tests, or experiments.
 ---
 
 # Run Agent World Benchmark
@@ -16,7 +16,9 @@ Follow `AGENTS.md` for repository-wide isolation, quota, validation, commit, pus
 ## Interpret the request
 
 - Only start or resume model-backed work when the user asks.
+- Require explicit benchmark intent. The words “run,” “test,” “try,” “smoke test,” or “experiment” alone do not authorize benchmark defaults; use `$run-agent-world-experiment` for those requests.
 - “Run the benchmark on MODEL” means the current standardized suite and its required seeds. At present that is Participant v7 on seeds 11 and 41. If the user asks for one seed, mark the study provisional.
+- If the user names Participant v6, v7, or another suite, use that suite's documented rules and required seed set. Protocol versions share this workflow; do not invent a separate procedure or silently substitute the current suite.
 - Resolve and record the exact brain, provider, callable model ID, returned model identity, reasoning effort, billing mode, and connector before launch. Do not substitute a similarly named model.
 - Treat protocol changes, nonstandard seeds, mixed populations, alternate reasoning settings, or connector experiments as controlled or diagnostic variants, never as standard leaderboard evidence.
 

@@ -2,7 +2,7 @@
 
 Agent World Participant v7 is the current standardized model benchmark suite.
 The suite and scoring rules live in this document; operators launching,
-resuming, or finalizing a model-backed run must also follow the canonical
+resuming, or finalizing a standardized benchmark must also follow the canonical
 [benchmark run protocol](benchmark-run-protocol.md).
 
 ## Participant v7: self-classified transfers

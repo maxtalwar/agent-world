@@ -9,12 +9,13 @@ Ground every conclusion in the repository's durable evidence rather than chat hi
 
 ## Require an analysis-ready handoff
 
-- For a new or unadmitted study, read `docs/benchmark-run-protocol.md` and inspect the study manifest's `analysis_readiness` block before interpreting performance.
+- For a new or unadmitted benchmark study, read `docs/benchmark-run-protocol.md` and inspect the study manifest's `analysis_readiness` block before interpreting performance.
+- For a general experiment, read `docs/agent-world-experiment-runs.md`, keep the analysis diagnostic, and do not infer benchmark or provisional status from seed 11. If the requested claim needs cost or transfer accounting that was intentionally skipped, finish it through `$run-agent-world-experiment` first.
 - `ready` supports replicated-certification analysis. `provisional_ready` supports clearly labelled provisional analysis, including a simulated leaderboard position that never masquerades as admission.
 - `waiting_quota`, `diagnostic_only`, `invalid`, and `needs_provenance_review` do not support a standard leaderboard claim. Diagnose them only in the class their evidence supports.
-- Confirm clean integrity, 100% usage coverage, verified model provenance, independently derived API-list cost (or an explicit unavailable reason), and complete protocol-appropriate transfer accounting.
-- Participant v7 requires deterministic `self_declared_v7` accounting; do not run an LLM gift classifier. Participant v6 requires a valid frozen classification for every gift, or `none_no_gifts` when the ledger has none.
-- Do not silently classify gifts, regenerate reports, repair provenance, or otherwise finish the run inside analysis. State that finalization is incomplete and use `$run-agent-world-benchmark` if the user asks to complete it.
+- For benchmark admission or placement, confirm clean integrity, 100% usage coverage, verified model provenance, independently derived API-list cost (or an explicit unavailable reason), and complete protocol-appropriate transfer accounting. For a diagnostic experiment, report actual integrity and require only the accounting needed for the claim being made.
+- Participant v7 requires deterministic `self_declared_v7` accounting; do not run an LLM gift classifier. Participant v6 economic or entrepreneurship analysis requires a valid frozen classification for every gift, or `none_no_gifts` when the ledger has none; an unrelated smoke test may explicitly record `not_required`.
+- Do not silently classify gifts, regenerate reports, repair provenance, or otherwise finish the run inside analysis. State that finalization is incomplete and use the appropriate benchmark or experiment run skill if the user asks to complete it.
 - Already cataloged historical evidence may predate `analysis_readiness`; its verified catalog and database admission are the durable substitute.
 
 ## Choose the evidence path
@@ -22,7 +23,7 @@ Ground every conclusion in the repository's durable evidence rather than chat hi
 - For model comparison or selection, start with `data/model-benchmarks.sqlite`. Read `docs/model-metrics-database.md` for schema semantics and maintained example queries. Use `docs/model-leaderboard.md` only as the canonical compact projection.
 - For protocol, scoring, certification, or cross-version questions, read the relevant sections of `docs/model-benchmarks.md` before interpreting results.
 - For behavioral claims and known harness caveats, consult `docs/insights.md`, then follow its evidence pointers to the underlying run artifacts when the claim needs confirmation.
-- For a specific run, use the catalog entry in `data/run-sources.json` to locate its report, usage ledger, manifest, integrity status, and hashes. Prefer the database's typed fields; inspect raw artifacts only for details not represented there.
+- For a cataloged benchmark run, use its entry in `data/run-sources.json` to locate the report, usage ledger, manifest, integrity status, and hashes. Prefer the database's typed fields; for an unadmitted experiment, start from its manifest and inspect raw artifacts only for the diagnostic question.
 
 ## Analyze carefully
 
@@ -36,7 +37,7 @@ Ground every conclusion in the repository's durable evidence rather than chat hi
 
 ## Present the result
 
-- Lead with a compact mini-table containing the subject and its nearest meaningful leaderboard neighbors from the same comparable pool. Include the canonical score columns, tier/seed coverage, integrity, cost, and other columns material to the comparison; label any cross-protocol context separately.
+- For benchmark or comparative model analysis, lead with a compact mini-table containing the subject and its nearest meaningful leaderboard neighbors from the same comparable pool. Include the canonical score columns, tier/seed coverage, integrity, cost, and other columns material to the comparison; label any cross-protocol context separately. A narrow harness or smoke-test diagnostic may lead with the finding instead.
 - If the subject is provisional or otherwise unadmitted but analytically comparable, show where it would sit as a clearly marked simulated position. Never insert it into the canonical table without admission.
 - Describe what the economy actually looked like: survival, production and capital formation, trade and service income, transfer types, institutions or public goods, specialization, and the strongest ledger-backed stories of entrepreneurship or coordination.
 - Scale depth to information value. A strong, unusual, or strategically rich result merits a fuller narrative and more behavioral evidence; a weak, invalid, or uneventful result can be concise while still explaining the failure mode.
@@ -56,4 +57,4 @@ Run the relevant tests, including `tests/test_benchmark_db.py` and `tests/test_b
 
 ## Run-workflow boundary
 
-Only launch, resume, monitor, or finalize model-backed cells when the user asks. Use `$run-agent-world-benchmark` for that workflow. Analysis may inspect raw artifacts and diagnose a stopped run, but it does not bypass the run skill's isolation, quota, completion, accounting, or readiness gates.
+Only launch, resume, monitor, or finalize model-backed cells when the user asks. Use `$run-agent-world-benchmark` for explicit benchmark, leaderboard, certification, or participant-protocol work; use `$run-agent-world-experiment` for general runs and tests. Analysis may inspect raw artifacts and diagnose a stopped run, but it does not bypass either run skill's isolation, quota, completion, accounting, or evidence gates.

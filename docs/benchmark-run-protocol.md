@@ -11,6 +11,18 @@ The run workflow produces evidence. The analysis workflow interprets and
 admits that evidence. A simulation reaching its last tick is not by itself an
 analysis-ready benchmark result.
 
+## Scope boundary
+
+Use this protocol only when the user explicitly asks for a benchmark,
+leaderboard result, certification, provisional benchmark, or named participant
+protocol. A general request to run, test, try, smoke-test, or experiment follows
+[agent-world-experiment-runs.md](agent-world-experiment-runs.md) and defaults to
+seed 11 only. It must not silently acquire seed 41 or benchmark status.
+
+Participant v6, v7, and future suite versions are protocol selections inside
+this one benchmark workflow. Keeping one workflow prevents isolation, quota,
+accounting, and evidence rules from drifting across per-version skills.
+
 ## Default interpretation
 
 When a user says “run the benchmark on MODEL” without narrowing the request:
