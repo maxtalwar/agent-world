@@ -1,6 +1,6 @@
 ---
 name: analyze-agent-world-benchmarks
-description: Analyze Agent World benchmark evidence, compare models, validate certification and provenance, or maintain the benchmark catalog, database, and leaderboard. Use for Agent World model-performance, cost, latency, reliability, and model-selection questions; not for generic benchmark advice.
+description: Analyze Agent World benchmark evidence, compare models, validate certification and provenance, or maintain the benchmark catalog, database, and leaderboard. Use for Agent World model-performance, cost, latency, reliability, and model-selection questions; not for generic benchmark advice. Use only when the user asks to analyze/interpret completed run evidence and report how runs performed. Don't use for launching runs or general benchmark-related engineering.
 ---
 
 # Analyze Agent World Benchmarks
