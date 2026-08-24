@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "purpose": "Frozen per-gift transfer classifications consumed by Participant v6 scoring revision 2. Judged once from ledger evidence; scoring reads this file deterministically. Re-judging requires a new scoring revision.",
+  "run_jsonl_sha256": "2f9b0a99d91405b6b6ae4348244815ecca08a44d752567f2f43dfd9e05f5f574",
+  "judge": {
+    "model": "gpt-5.6-sol",
+    "runtime": "codex exec --ephemeral --sandbox read-only",
+    "reasoning_effort": "medium",
+    "prompt_sha256": "c5bfff9674f0dd493d4a13ad158b222079358fcb9fb723bd6fc67639b461dd5b",
+    "output_schema_sha256": "aadaa6fd0c6c1088e7daf937783585ab66358fff055658267bba953006e9f58a",
+    "judged_at": "2026-08-24"
+  },
+  "verdict_policy": "payment_for_service and barter_settlement require a verbatim ledger evidence quote (verified); unrequited_transfer and unclassifiable are unscored. Unclassified defaults to unscored.",
+  "gift_count": 11,
+  "classifications": [
+    {
+      "gift_index": 0,
+      "tick": 6,
+      "giver": "agent-10",
+      "recipient": "agent-5",
+      "items": {"water": 1},
+      "verdict": "unrequited_transfer",
+      "evidence_quote": "",
+      "reasoning": "The water is described as sharing aid with a strained agent; no consideration was owed."
+    },
+    {
+      "gift_index": 1,
+      "tick": 7,
+      "giver": "agent-5",
+      "recipient": "agent-10",
+      "items": {"food": 1},
+      "verdict": "barter_settlement",
+      "evidence_quote": "Thanks a10 for water. Farm access granted; sent 1 food. a3: where is water?",
+      "reasoning": "The message explicitly links the food sent to Agent 10's earlier water transfer."
+    },
+    {
+      "gift_index": 2,
+      "tick": 26,
+      "giver": "agent-5",
+      "recipient": "agent-8",
+      "items": {"food": 1},
+      "verdict": "unrequited_transfer",
+      "evidence_quote": "",
+      "reasoning": "The food is described as a gift to the starving recipient; hoped-for shelter cooperation is not an explicit obligation."
+    },
+    {
+      "gift_index": 3,
+      "tick": 31,
+      "giver": "agent-7",
+      "recipient": "agent-1",
+      "items": {"water": 1},
+      "verdict": "payment_for_service",
+      "evidence_quote": "Please grant_access [7,8] so I can reach the lake. I will share water. Thirst 0.",
+      "reasoning": "The promised water is explicit consideration for passage access."
+    },
+    {
+      "gift_index": 4,
+      "tick": 34,
+      "giver": "agent-3",
+      "recipient": "agent-8",
+      "items": {"wood": 2},
+      "verdict": "payment_for_service",
+      "evidence_quote": "Rejected trade-21. Gifted 2 wood for shelter here. I keep 1w + 2w pile [10,10]. Fishing then eat. Start shelter; I'll contribute. Still need 2 stone before winter.",
+      "reasoning": "The wood is explicitly provided for the recipient's construction of their cooperative shelter."
+    },
+    {
+      "gift_index": 5,
+      "tick": 36,
+      "giver": "agent-10",
+      "recipient": "agent-6",
+      "items": {"food": 1},
+      "verdict": "payment_for_service",
+      "evidence_quote": "a6: winter now. Pick up your 2st pile and contribute to shelter-14 THIS TICK. Grant me [6,9] access. I gift 1 food from [7,9]. Help not equity.",
+      "reasoning": "The food is explicitly tied to shelter access and completion help."
+    },
+    {
+      "gift_index": 6,
+      "tick": 39,
+      "giver": "agent-10",
+      "recipient": "agent-6",
+      "items": {"food": 1},
+      "verdict": "payment_for_service",
+      "evidence_quote": "a10: finishing shelter-14 with my 2st now, staying [6,9] all winter. Need that 1 food. Roof for food/help, not extra equity.",
+      "reasoning": "The documented arrangement explicitly exchanges food or help for the winter roof."
+    },
+    {
+      "gift_index": 7,
+      "tick": 40,
+      "giver": "agent-9",
+      "recipient": "agent-6",
+      "items": {"coin": 2},
+      "verdict": "payment_for_service",
+      "evidence_quote": "a6 please grant_access me on s14/[6,9] for winter. Gifting 2c. Forage16, I will bring food. Peace, no piles. 2 stone if you need.",
+      "reasoning": "The coins are explicitly offered for winter shelter access."
+    },
+    {
+      "gift_index": 8,
+      "tick": 41,
+      "giver": "agent-9",
+      "recipient": "agent-6",
+      "items": {"coin": 2, "food": 1},
+      "verdict": "payment_for_service",
+      "evidence_quote": "a6: grant_access me s14/[6,9] please. Accepting a1 food-for-stone and gifting you the food+2c. Winter exposure. I stay, peace, no piles.",
+      "reasoning": "The food and coins are explicitly transferred for permission to stay in the shelter."
+    },
+    {
+      "gift_index": 9,
+      "tick": 45,
+      "giver": "agent-3",
+      "recipient": "agent-8",
+      "items": {"food": 1},
+      "verdict": "unrequited_transfer",
+      "evidence_quote": "",
+      "reasoning": "The food is described as a gift to a recipient with no food and low health; no consideration is established."
+    },
+    {
+      "gift_index": 10,
+      "tick": 46,
+      "giver": "agent-6",
+      "recipient": "agent-1",
+      "items": {"fiber": 1},
+      "verdict": "unrequited_transfer",
+      "evidence_quote": "",
+      "reasoning": "The fiber is sent to help with shelter-19, with no explicit consideration owed by Agent 1."
+    }
+  ]
+}

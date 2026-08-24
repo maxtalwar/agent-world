@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from agent_world.benchmarks import _merge_numeric_tree, score_benchmark_counts
+from agent_world.run_report import _normalize_loaded_usage_record
 from agent_world.usage import (
     USD_RATE_CARD_EFFECTIVE_DATE,
     USD_RATE_CARD_SOURCES,
@@ -506,7 +507,7 @@ def _run_record(
     )
     report = json.loads(report_path.read_text(encoding="utf-8"))
     usage = [
-        json.loads(line)
+        _normalize_loaded_usage_record(json.loads(line))
         for line in usage_path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]

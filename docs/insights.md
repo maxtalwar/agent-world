@@ -24,6 +24,28 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-24 — Grok Build's cost telemetry is not an API-list-price estimate
+
+**Grok Build's subscription telemetry reported $4.213683 for the completed
+seed-11 run, while the same 8.451M input tokens and 1.972M output tokens cost
+$24.786370 at xAI's public Grok 4.6 API rates—a 5.88x difference—and a connector
+normalization bug initially hid most cache reads.** The CLI exposes uncached
+input (`inputTokens`) and cache reads (`cacheReadInputTokens`) as disjoint
+counts, whereas Agent World's common usage contract defines cached tokens as a
+subset of inclusive prompt tokens. The old connector copied only the uncached
+field into `prompt_tokens`; the generic cost calculator then capped 2,631,168
+reported cache-read tokens down to 455,064 because many individual cache counts
+exceeded the incorrectly narrow prompt count. This is entirely a harness and
+billing-basis artifact, not model behavior. The connector now writes inclusive
+prompt totals, the report loader deterministically upgrades historical Grok
+records from their preserved `grok_model_usage`, and reports retain the $4.21
+subscription figure separately from the comparable $24.79 API equivalent.
+Evidence:
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-usage.jsonl`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json`,
+`agent_world/grok_brain.py`, `agent_world/run_report.py`,
+`agent_world/usage.py`, and `tests/test_usage.py`.
+
 ## 2026-08-24 — Grok formed an informal winter shelter exchange but failed at basic water resilience
 
 **Grok 4.6 Build created a ledger-real shelter-for-help network without any
@@ -34,8 +56,10 @@ shares of 62.5% and 37.5%. Their messages repeatedly framed access as being
 for food or help rather than additional equity; Agent 6 then granted shelter
 access to Agents 10, 7, 9, and 1, while Agent 10 delivered two food and Agent 9
 delivered four coins plus one food. Because the exchanges used gifts and
-discretionary access rather than formal fees or a frozen gift-classification
-artifact, none counted as service income. The network nevertheless sheltered
+discretionary access rather than formal fees, they initially went unscored. A
+subsequently frozen revision-2 classification identified five commercial gifts
+worth 22.5 accounting units as service income while leaving 7.0 units informal.
+The network nevertheless sheltered
 several agents through winter. Agent 6 survived the season but left the roof
 to recover supplies and died at tick 49 with energy 24, food 4, and water 0.
 This is model behavior rather than a harness artifact: all 500 decisions were

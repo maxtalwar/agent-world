@@ -282,7 +282,17 @@ class GrokBrain:
                 "base_url": None,
                 "billing_mode": "grok_subscription",
                 "reasoning_effort": self.reasoning_effort,
-                "prompt_tokens": int(usage.get("input_tokens") or 0),
+                # Grok Build reports input_tokens, cache reads, and cache
+                # creations as disjoint counts. The shared ledger contract
+                # stores prompt_tokens as their inclusive total.
+                "prompt_tokens": sum(
+                    int(usage.get(key) or 0)
+                    for key in (
+                        "input_tokens",
+                        "cache_read_input_tokens",
+                        "cache_creation_input_tokens",
+                    )
+                ),
                 "cached_tokens": int(usage.get("cache_read_input_tokens") or 0),
                 "cache_write_tokens": int(usage.get("cache_creation_input_tokens") or 0),
                 "completion_tokens": int(usage.get("output_tokens") or 0),

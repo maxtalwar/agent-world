@@ -91,7 +91,7 @@ class GrokBrainTests(unittest.TestCase):
         self.assertEqual(record["response_model"], "grok-4.6-build")
         self.assertEqual(record["billing_mode"], "grok_subscription")
         self.assertEqual(record["api_style"], "grok_single_json_schema")
-        self.assertEqual(record["prompt_tokens"], 200)
+        self.assertEqual(record["prompt_tokens"], 300)
         self.assertEqual(record["cached_tokens"], 70)
         self.assertEqual(record["reasoning_tokens"], 40)
         self.assertEqual(record["cost"], 0)

@@ -8,6 +8,7 @@ directly comparable because they share one schema.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -55,6 +56,7 @@ def build_report(
     source: str | None = None,
     target_ticks: int | None = None,
     plan_usage: dict[str, Any] | None = None,
+    gift_classifications: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     usage_records = usage_records or []
     sim_events = [event for event in events if event["type"] not in AGENT_IO_EVENT_TYPES]
@@ -362,6 +364,8 @@ def build_report(
         "wealth_gini": _gini(wealth_values),
         "transcript": says,
     }
+    if gift_classifications is not None:
+        report["gift_classifications"] = gift_classifications
     report["benchmarks"] = build_benchmark_results(events, snapshot, report)
     return report
 
@@ -1655,6 +1659,11 @@ def write_report(
     target_ticks: int | None = None,
     plan_usage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    gift_classifications = _load_gift_classifications(
+        out_stem.parent / "gift-classifications.json",
+        out_stem.with_name(out_stem.name + ".jsonl"),
+        events,
+    )
     report = build_report(
         events,
         snapshot,
@@ -1662,12 +1671,52 @@ def write_report(
         source=out_stem.name,
         target_ticks=target_ticks,
         plan_usage=plan_usage,
+        gift_classifications=gift_classifications,
     )
     json_path = out_stem.with_name(out_stem.name + "-report.json")
     md_path = out_stem.with_name(out_stem.name + "-report.md")
     json_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     md_path.write_text(render_markdown(report), encoding="utf-8")
     return report
+
+
+def _load_gift_classifications(
+    artifact_path: Path,
+    run_path: Path,
+    events: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    """Load and fail closed on a frozen sibling gift-classification artifact."""
+
+    if not artifact_path.exists():
+        return None
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    expected_hash = hashlib.sha256(run_path.read_bytes()).hexdigest()
+    if artifact.get("run_jsonl_sha256") != expected_hash:
+        raise ValueError(f"gift classification ledger hash mismatch: {artifact_path}")
+
+    gifts = [event for event in events if event.get("type") == "gift"]
+    rows = artifact.get("classifications") or []
+    if artifact.get("gift_count") != len(gifts) or len(rows) != len(gifts):
+        raise ValueError(f"gift classification count mismatch: {artifact_path}")
+    messages = [str(event.get("message") or "") for event in events]
+    commercial = {"payment_for_service", "barter_settlement"}
+    for index, (gift, row) in enumerate(zip(gifts, rows, strict=True)):
+        expected = {
+            "gift_index": index,
+            "tick": gift.get("tick"),
+            "giver": gift.get("actor_id"),
+            "recipient": (gift.get("data") or {}).get("to"),
+            "items": (gift.get("data") or {}).get("items"),
+        }
+        actual = {key: row.get(key) for key in expected}
+        if actual != expected:
+            raise ValueError(f"gift classification identity mismatch at index {index}: {artifact_path}")
+        quote = str(row.get("evidence_quote") or "")
+        if row.get("verdict") in commercial and (
+            not quote or not any(quote in message for message in messages)
+        ):
+            raise ValueError(f"gift classification evidence mismatch at index {index}: {artifact_path}")
+    return artifact
 
 
 def load_run_files(stem: Path) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
@@ -1679,11 +1728,38 @@ def load_run_files(stem: Path) -> tuple[list[dict[str, Any]], dict[str, Any], li
     snapshot = json.loads(stem.with_name(stem.name + "-snapshot.json").read_text(encoding="utf-8"))
     usage_path = stem.with_name(stem.name + "-usage.jsonl")
     usage_records = (
-        [json.loads(line) for line in usage_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+        [
+            _normalize_loaded_usage_record(json.loads(line))
+            for line in usage_path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
         if usage_path.exists()
         else []
     )
     return events, snapshot, usage_records
+
+
+def _normalize_loaded_usage_record(record: dict[str, Any]) -> dict[str, Any]:
+    """Upgrade known historical connector field semantics without mutating evidence."""
+
+    if record.get("provider") != "grok_cli":
+        return record
+    model_usage = record.get("grok_model_usage")
+    if not isinstance(model_usage, dict) or not model_usage:
+        return record
+    row = next(iter(model_usage.values()))
+    if not isinstance(row, dict):
+        return record
+    uncached = int(row.get("inputTokens") or 0)
+    cached = int(row.get("cacheReadInputTokens") or 0)
+    cache_write = int(row.get("cacheCreationInputTokens") or 0)
+    # Connector versions before 2026-08-24 copied Grok's disjoint uncached
+    # count into prompt_tokens. Current records already contain the inclusive
+    # total and pass through unchanged.
+    if int(record.get("prompt_tokens") or 0) == uncached:
+        record = dict(record)
+        record["prompt_tokens"] = uncached + cached + cache_write
+    return record
 
 
 COMPARISON_ROWS: tuple[tuple[str, tuple[str, ...]], ...] = (
