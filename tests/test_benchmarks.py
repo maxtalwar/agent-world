@@ -34,7 +34,7 @@ from agent_world.benchmarks import (
     format_benchmark_leaderboard,
     score_benchmark_counts,
 )
-from agent_world.cli import _apply_benchmark_protocol
+from agent_world.cli import _apply_benchmark_protocol, _resolve_provider_max_workers
 from agent_world.run_report import _render_benchmark_lines
 
 
@@ -97,8 +97,8 @@ def _protocol_report(
             "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"]),
             "decision_mode": "raw",
             "turn_resolution": "simultaneous",
-            "global_max_workers": 24,
-            "provider_max_workers": {"codex_cli": 24},
+            "global_max_workers": 40,
+            "provider_max_workers": {"codex_cli": 40},
             "agent_io_log": True,
             "action_feedback_mode": "baseline",
             "connector_profile": "stateless-v3",
@@ -265,8 +265,8 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.world_variant, "frontier")
         self.assertEqual(args.reasoning_effort, "medium")
         self.assertEqual(args.connector_profile, "stateless-v3")
-        self.assertEqual(args.max_workers, 24)
-        self.assertEqual(args.codex_max_workers, 24)
+        self.assertEqual(args.max_workers, 40)
+        self.assertEqual(args.codex_max_workers, 40)
         # Scoped to the adapter this trial will invoke, not every adapter.
         self.assertEqual(
             args.benchmark_code_fingerprint, benchmark_code_fingerprint(["codex_cli"])
@@ -275,7 +275,7 @@ class BenchmarkTests(unittest.TestCase):
             args.benchmark_code_fingerprint, benchmark_code_fingerprint()
         )
 
-    def test_non_codex_protocol_run_keeps_four_workers(self) -> None:
+    def test_claude_protocol_run_uses_twenty_workers(self) -> None:
         args = Namespace(
             benchmark_protocol=BENCHMARK_PROTOCOL_ID,
             population=None,
@@ -286,9 +286,40 @@ class BenchmarkTests(unittest.TestCase):
 
         _apply_benchmark_protocol(args)
 
-        self.assertEqual(args.max_workers, 4)
-        self.assertEqual(args.claude_max_workers, 4)
-        self.assertEqual(args.codex_max_workers, 24)
+        self.assertEqual(args.max_workers, 20)
+        self.assertEqual(args.claude_max_workers, 20)
+        self.assertEqual(args.grok_max_workers, 20)
+        self.assertEqual(args.codex_max_workers, 40)
+
+    def test_grok_protocol_run_uses_twenty_workers(self) -> None:
+        args = Namespace(
+            benchmark_protocol=BENCHMARK_PROTOCOL_ID,
+            population=None,
+            brain="grok",
+            sequential_decisions=False,
+            seed=None,
+        )
+
+        _apply_benchmark_protocol(args)
+
+        self.assertEqual(args.max_workers, 20)
+        self.assertEqual(args.grok_max_workers, 20)
+
+    def test_provider_defaults_are_clamped_to_run_workers(self) -> None:
+        limits = _resolve_provider_max_workers(Namespace(), 12)
+
+        self.assertEqual(limits["codex_cli"], 12)
+        self.assertEqual(limits["claude_cli"], 12)
+        self.assertEqual(limits["grok_cli"], 12)
+        self.assertEqual(limits["openrouter"], 4)
+
+    def test_explicit_provider_workers_are_also_clamped_to_global_pool(self) -> None:
+        limits = _resolve_provider_max_workers(
+            Namespace(codex_max_workers=35, claude_max_workers=7), 30
+        )
+
+        self.assertEqual(limits["codex_cli"], 30)
+        self.assertEqual(limits["claude_cli"], 7)
 
     def test_protocol_flag_rejects_conflicting_settings(self) -> None:
         args = Namespace(

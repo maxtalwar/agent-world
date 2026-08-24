@@ -37,11 +37,11 @@ BENCHMARK_PROTOCOL_ID = "participant-v7"
 BENCHMARK_DEFAULT_MAX_WORKERS = 4
 BENCHMARK_PROVIDER_MAX_WORKERS = {
     "openrouter": 4,
-    "codex_cli": 24,
-    "claude_cli": 4,
+    "codex_cli": 40,
+    "claude_cli": 20,
     "cursor_cli": 4,
     "devin_cli": 4,
-    "grok_cli": 4,
+    "grok_cli": 20,
 }
 # Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
 # Anthropic ships no per-effort token number to borrow: stock Claude Code

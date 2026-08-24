@@ -40,18 +40,19 @@ per-cell manifests and usage ledgers in that experiment directory.
 
 ## 2026-08-24 — A provider ceiling is not an effective worker default
 
-**The Codex worker-ramp change raised the provider semaphore from 4 to 24 but
-left the upstream global pool default at 1, so a bare ordinary run remained
-serial despite the measured 24-worker throughput knee.** Commit `58dc3b8`
-changed only `codex_cli`'s provider ceiling; `BrainSpec.resolve` still fell
-back to one global worker, and the isolated-cohort launcher did not inject a
+**Raising a provider semaphore alone did not increase concurrency because the
+upstream global pool remained the binding limit.** Commit `58dc3b8` initially
+raised only `codex_cli`'s provider ceiling; `BrainSpec.resolve` still fell back
+to one global worker, and the isolated-cohort launcher did not inject a
 different value. The original ramp manifests confirm that every measured cell
-explicitly passed both `--max-workers` and `--codex-max-workers`. The
-configuration is now explicit at both layers: ordinary provider-backed runs
-default to a four-thread global pool, while Participant benchmark trials use a
-provider-aware global pool and semaphore (24 for Codex, 4 for other harnesses).
-Because the current benchmark population has ten agents, a configured Codex
-limit of 24 means at most ten simultaneous decisions in that protocol.
+explicitly passed both `--max-workers` and `--codex-max-workers`. Ordinary
+provider-backed runs now default to a four-thread global pool. Inside a larger
+pool, provider defaults are 40 for Codex, 20 for Claude Code and Grok Build,
+and 4 for the remaining harnesses, with every provider value clamped to the
+global pool. The Codex value is supported by the desktop ramp; the Claude and
+Grok values are conservative inferences, not measured results. Because the
+current benchmark population has ten agents, all three larger configured
+limits still mean at most ten simultaneous decisions in that protocol.
 Evidence: commit `58dc3b8`; `agent_world/brain_factory.py`;
 `agent_world/cli.py`; `runs/experiments/worker-ramp-20260802/*/run-manifest.json`.
 
@@ -316,15 +317,17 @@ down to ~4,000, sustained swapout growth, load average 86, and median decision
 latency degraded to 23.3s — nearly 2x the 8-worker baseline. Still zero
 provider failures. The laptop failed, not the account.
 
-Two consequences. First, 24 is now the default codex_cli worker ceiling for
-non-benchmark runs (the benchmark protocol stays locked at 4, which preserves
-comparability with the entire existing corpus). Second, this bounds
-large-population ambitions more sharply than cost does: a 100-agent world
-needs roughly 7GB of subprocess memory before the engine or the model bill is
-considered, so scaling past ~40 concurrent agents requires a materially larger
-machine or distribution across hosts. Notably the cloud sandboxes surveyed the
-same day (Codex Cloud 16GB/2 cores, Claude Cloud 15GB/4 vCPU) are SMALLER than
-the 24GB development laptop, so moving execution to them would buy
+Two consequences followed on the laptop. First, 24 became its default Codex
+worker ceiling. A 2026-08-24 desktop ramp superseded that machine-specific
+recommendation: 40 workers was fastest with no swap, so the desktop default is
+now 40. Claude Code and Grok Build use an inferred 20-worker default pending
+equivalent provider-specific ramps. Second, this bounds large-population
+ambitions more sharply than cost does: a 100-agent world needs roughly 7GB of
+subprocess memory before the engine or the model bill is considered, so scaling
+past ~40 concurrent agents requires a materially larger machine or distribution
+across hosts. Notably the cloud sandboxes surveyed the same day (Codex Cloud
+16GB/2 cores, Claude Cloud 15GB/4 vCPU) are SMALLER than the 24GB development
+laptop, so moving execution to them would buy
 laptop-independence and reliability but not headroom.
 Evidence: `runs/experiments/worker-ramp-20260802/{w16,w24,w40,w100}`, with
 per-cell resource samples in each directory and `w100/probe-status.txt`

@@ -18,7 +18,8 @@ Start runs from the browser at `http://127.0.0.1:8765`. The Run panel accepts:
 - seed: deterministic world/run seed
 - objective/economy/geography treatment modes
 - model: model used for provider-backed runs; `openrouter` defaults to `z-ai/glm-5.2`, while `gpt-*` models default to the `codex` route
-- max workers: same-tick brain call concurrency; keep this at `1` for LLM runs unless rate limits allow more
+- max workers: global same-tick brain-call concurrency; provider-backed runs
+  default to 4 and apply the provider ceilings documented below when raised
 - agent IO log: whether to keep private observations and prompts in the JSONL audit log
 
 The observatory writes each launched run to the watched `runs/live.jsonl` and `runs/live-snapshot.json` files and refreshes the map, agent panels, metrics, and event feed as the run progresses. At terminal state it emits the same `runs/live-report.json` and `runs/live-report.md` artifacts as a CLI run.
@@ -109,19 +110,24 @@ It is a watchable overhead view of the simulated world, but the purpose is obser
 
 ## Rate Limits
 
-Ordinary provider-backed runs default to four concurrent decisions:
+Ordinary provider-backed runs default to a four-worker global pool:
 
 ```dotenv
 OPENROUTER_MAX_PARALLEL_AGENTS=4
 OPENROUTER_MIN_REQUEST_INTERVAL_SECONDS=0.5
 OPENROUTER_MAX_RETRIES=4
 CODEX_MAX_PARALLEL_AGENTS=4
+CLAUDE_MAX_PARALLEL_AGENTS=4
+GROK_MAX_PARALLEL_AGENTS=4
 ```
 
-Participant benchmark runs use four workers for every harness except Codex,
-which requests up to 24 workers (and is still bounded by the living-agent
-count). Increase ordinary-run concurrency only if account and host limits can
-handle it.
+When the global pool is raised, the default provider ceilings are 40 for Codex,
+20 for Claude Code and Grok Build, and 4 for OpenRouter, Cursor, and Devin.
+Every provider semaphore is clamped to the global pool, so a run configured
+with `--max-workers 12` uses at most 12 Codex, Claude, or Grok calls. Participant
+benchmarks request the provider-aware ceiling but remain bounded by their ten
+living agents. The Codex value is measured on the desktop; the Claude and Grok
+values are conservative inferences that have not received equivalent ramps.
 
 For Codex-plan runs, the ordinary per-call `*-usage.jsonl` is the source of truth for run-exclusive consumption. Reports price its uncached input, cached input, and output against the versioned Luna/Terra/Sol Codex rate card and label the result `simulation_credits`. This excludes Codex work performed by the supervising task or another window.
 

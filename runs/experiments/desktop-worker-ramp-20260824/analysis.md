@@ -67,8 +67,8 @@ fastest tested setting, completed cleanly during a much harsher aggregate
 100-worker overlap, and showed no memory or swap pressure. This experiment
 establishes that the machine can handle **at least** 40 workers per run; it does
 not locate the true maximum because no single-cell setting above 40 was tested.
-The current 24-worker Codex benchmark default is therefore conservative. For
-the ten-agent Participant benchmark, however, any ceiling above ten has no
+The former 24-worker Codex benchmark default was conservative and is now 40.
+For the ten-agent Participant benchmark, any ceiling above ten still has no
 effect because only ten decisions exist in a tick.
 
 The evidence for each cell is its `run-manifest.json`, `run-report.json`, and

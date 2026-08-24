@@ -144,11 +144,13 @@ outside the repository, and constrains the final response to an equivalent
 strict decision contract that the adapter normalizes back to Agent World's flat
 action shape.
 Codex-plan results should be labeled separately from raw API results because the
-Codex harness adds its own runtime instructions. Ordinary runs default to four
-concurrent Codex decisions. Participant benchmark runs request up to 24 Codex
-workers (bounded by the number of living agents), the measured local throughput
-knee; explicit `CODEX_MAX_PARALLEL_AGENTS` or `--max-workers` values still
-override ordinary runs.
+Codex harness adds its own runtime instructions. Ordinary runs default to a
+four-worker global pool. Provider ceilings inside a larger pool default to 40
+for Codex, 20 for Claude Code and Grok Build, and 4 for the remaining
+harnesses. Every provider ceiling is clamped to the run's global worker count.
+Participant benchmarks use those provider-aware defaults, although the current
+ten-agent population can issue at most ten simultaneous decisions. Explicit
+provider worker flags still override ordinary-run defaults.
 
 ### Claude plan agents
 
@@ -299,7 +301,8 @@ Provider concurrency is independently bounded even when the global worker pool
 is larger:
 
 ```bash
---max-workers 8 --claude-max-workers 4 --codex-max-workers 4 --devin-max-workers 2
+--max-workers 30 --claude-max-workers 20 --codex-max-workers 30 \
+  --grok-max-workers 20 --devin-max-workers 2
 ```
 
 For a mixed native/Cursor run, for example:

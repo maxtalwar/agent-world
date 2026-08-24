@@ -363,7 +363,7 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
             else None
         ),
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
-        max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=24),
+        max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=40),
         connector_profile=_bounded_choice(
             payload.get("connector_profile", "stateless-v1"),
             "connector_profile",

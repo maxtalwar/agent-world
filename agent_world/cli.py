@@ -406,6 +406,37 @@ def _check_resume_fingerprint(
     )
 
 
+_PROVIDER_WORKER_ARGUMENTS = {
+    "codex_cli": "codex_max_workers",
+    "claude_cli": "claude_max_workers",
+    "cursor_cli": "cursor_max_workers",
+    "devin_cli": "devin_max_workers",
+    "grok_cli": "grok_max_workers",
+    "openrouter": "openrouter_max_workers",
+}
+
+
+def _resolve_provider_max_workers(
+    args: argparse.Namespace, max_workers: int
+) -> dict[str, int]:
+    """Resolve provider defaults and clamp every semaphore to the global pool."""
+
+    if max_workers < 1:
+        raise ValueError("max_workers must be at least 1")
+    resolved: dict[str, int] = {}
+    for provider, argument in _PROVIDER_WORKER_ARGUMENTS.items():
+        requested = getattr(args, argument, None)
+        provider_workers = (
+            BENCHMARK_PROVIDER_MAX_WORKERS[provider]
+            if requested is None
+            else int(requested)
+        )
+        if provider_workers < 1:
+            raise ValueError(f"{argument} must be at least 1")
+        resolved[provider] = min(max_workers, provider_workers)
+    return resolved
+
+
 def _run(args: argparse.Namespace) -> None:
     load_dotenv()
     resume_checkpoint = getattr(args, "resume_checkpoint", None)
@@ -615,27 +646,13 @@ def _run(args: argparse.Namespace) -> None:
     args.model = brain_spec.model if not population_spec.mixed else None
     args.reasoning_effort = brain_spec.reasoning_effort if not population_spec.mixed else None
     args.max_workers = max_workers
-    # The per-provider ceiling was 4 everywhere, dating from an era when the
-    # OpenAI API rate-limited concurrent requests. Decisions now go through the
-    # provider CLIs against plan quota, and a measured 8/16/24/40/100-worker
-    # ramp found no provider-side throttling at all: per-decision latency stays
-    # flat to 24 (13.0s -> 12.6s -> 13.6s median) while tick wall-clock falls
-    # 2.4x. The real ceiling is local memory - each CLI subprocess costs ~70MB,
-    # so 100 concurrent workers drove the machine into sustained swapping.
-    # 24 is the measured knee; only codex_cli was measured, so the other CLI
-    # providers keep the conservative 4 until someone ramps them too.
-    provider_max_workers = {
-        "codex_cli": int(getattr(args, "codex_max_workers", None) or min(max_workers, 24)),
-        "claude_cli": int(getattr(args, "claude_max_workers", None) or min(max_workers, 4)),
-        "cursor_cli": int(getattr(args, "cursor_max_workers", None) or min(max_workers, 4)),
-        "devin_cli": int(
-            getattr(args, "devin_max_workers", None) or min(max_workers, 4)
-        ),
-        "grok_cli": int(getattr(args, "grok_max_workers", None) or min(max_workers, 4)),
-        "openrouter": int(
-            getattr(args, "openrouter_max_workers", None) or min(max_workers, 4)
-        ),
-    }
+    # A matched desktop ramp found 40 Codex workers fastest while four
+    # simultaneous cells sustained 99 observed child processes without swap.
+    # Claude Code and Grok Build use a deliberately lower inferred default of
+    # 20 because their account limits preclude the same direct ramp. Provider
+    # values are ceilings inside the global pool: a 12-worker run therefore
+    # uses 12 Codex, Claude, or Grok workers, never 40 or 20.
+    provider_max_workers = _resolve_provider_max_workers(args, max_workers)
     decision_mode = args.decision_mode or "raw"
     startup_health_check_tick = getattr(args, "startup_health_check_tick", 5) or None
     quota_wait_hours = max(0.0, float(getattr(args, "quota_wait_hours", None) or 0.0))

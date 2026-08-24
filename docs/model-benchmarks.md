@@ -183,7 +183,7 @@ Every benchmark run uses:
 | Decisions | raw |
 | Action feedback | baseline |
 | Resolution | simultaneous |
-| Global/provider workers | 4 by default; Codex CLI 24 (effectively at most 10 with this population) |
+| Global/provider workers | Provider-aware: Codex CLI 40; Claude CLI and Grok CLI 20; others 4 (all effectively at most 10 with this population) |
 | Connector | `stateless-v3` |
 | Provider conversation | stateless |
 | Private agent I/O | enabled |
