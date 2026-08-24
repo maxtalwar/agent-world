@@ -138,7 +138,11 @@ class GrokBrain:
                 "connector_profile": self.connector_profile,
                 "conversation_mode": "stateless",
             }
-            if completed.returncode != 0 or not isinstance(result, dict):
+            if (
+                completed.returncode != 0
+                or not isinstance(result, dict)
+                or result.get("type") == "error"
+            ):
                 detail = _failure_detail(result, completed.stdout, completed.stderr)
                 if _is_quota_error(detail):
                     message = f"Grok quota unavailable: {detail}"

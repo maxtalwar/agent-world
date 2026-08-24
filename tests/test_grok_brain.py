@@ -114,6 +114,29 @@ class GrokBrainTests(unittest.TestCase):
             command = call.args[0]
             self.assertEqual(command[command.index("--model") + 1], "grok-4.6")
 
+    def test_usage_balance_exhaustion_opens_quota_circuit(self) -> None:
+        detail = (
+            'Internal error: { "message": "API error (status 402 Payment Required): '
+            'Grok Build usage balance exhausted", "http_status": 402 }'
+        )
+        completed = subprocess.CompletedProcess(
+            ["grok"],
+            0,
+            stdout=json.dumps({"type": "error", "message": detail}),
+            stderr="",
+        )
+        with patch(
+            "agent_world.grok_brain.subprocess.run", return_value=completed
+        ) as run:
+            brain = GrokBrain(executable="grok", model="grok-4.6")
+            first = brain.decide({"tick": 20, "self": {"id": "agent-1"}})
+            second = brain.decide({"tick": 20, "self": {"id": "agent-2"}})
+
+        self.assertTrue(first.intent.startswith("Grok quota unavailable:"))
+        self.assertEqual(second.intent, first.intent)
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(brain.runtime.quota_message(), first.intent)
+
     def test_malformed_model_output_has_model_attribution(self) -> None:
         result = json.loads(_successful_stdout())
         result.pop("structuredOutput")

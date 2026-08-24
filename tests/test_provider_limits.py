@@ -39,6 +39,7 @@ class QuotaDetectionTests(unittest.TestCase):
             "rate_limit_exceeded",
             "Your credit balance is too low",
             "insufficient_quota",
+            'API error (status 402 Payment Required): Grok Build usage balance exhausted',
             "You have exceeded your monthly limit",
             "Limit will reset at 10:00",
         ):

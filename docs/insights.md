@@ -24,6 +24,27 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-08-23 — Grok reported an exhausted balance as a successful process carrying an error envelope
+
+**Grok Build returned HTTP 402 quota exhaustion inside a JSON `type=error`
+envelope while the CLI process exited successfully, so the connector treated a
+provider refusal as an ambiguous payload-extraction failure and bypassed the
+benchmark's quota-wait policy.** Two independent Participant v6 cells reached
+the same account boundary after 210 and 200 successful decisions respectively.
+At seed 11 tick 21 and seed 41 tick 20, all ten attempted decisions preserved
+the exact message `Grok Build usage balance exhausted`; both worlds stopped at
+clean checkpoints with `decisions_unusable` instead of entering the configured
+12-hour wait. This was a harness artifact, not model behavior. The connector
+now recognizes explicit error envelopes regardless of process exit status, and
+the shared quota classifier recognizes the provider's `usage balance exhausted`
+wording. Regression coverage reproduces the exit-zero envelope and verifies
+that one refusal opens the run-scoped quota circuit before another agent call.
+Evidence:
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-usage-partial-tick-21.jsonl`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-usage-partial-tick-20.jsonl`,
+`agent_world/grok_brain.py`, `agent_world/provider_limits.py`,
+`tests/test_grok_brain.py`, `tests/test_provider_limits.py`.
+
 ## 2026-08-22 -- Grok's backend model label poisoned its next request
 
 **The direct Grok CLI connector successfully obtained one decision per agent
@@ -447,7 +468,6 @@ Evidence: `runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-2026
 seed 11 of the same pair is clean at 89.6/85.1/55.8). Audit of all 37 v6
 ledgers found this the only run in which the corrected code path was
 reachable.
-
 ## 2026-07-31 — Opus 5 converted a small reasoning budget into the strongest society yet
 
 **Claude Opus 5 averaged only 287 estimated reasoning tokens per decision—about
