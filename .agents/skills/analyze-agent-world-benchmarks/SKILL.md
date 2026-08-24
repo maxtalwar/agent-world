@@ -7,6 +7,16 @@ description: Analyze Agent World benchmark evidence, compare models, validate ce
 
 Ground every conclusion in the repository's durable evidence rather than chat history, filenames, startup manifests, or partial runs.
 
+## Require an analysis-ready handoff
+
+- For a new or unadmitted study, read `docs/benchmark-run-protocol.md` and inspect the study manifest's `analysis_readiness` block before interpreting performance.
+- `ready` supports replicated-certification analysis. `provisional_ready` supports clearly labelled provisional analysis, including a simulated leaderboard position that never masquerades as admission.
+- `waiting_quota`, `diagnostic_only`, `invalid`, and `needs_provenance_review` do not support a standard leaderboard claim. Diagnose them only in the class their evidence supports.
+- Confirm clean integrity, 100% usage coverage, verified model provenance, independently derived API-list cost (or an explicit unavailable reason), and complete protocol-appropriate transfer accounting.
+- Participant v7 requires deterministic `self_declared_v7` accounting; do not run an LLM gift classifier. Participant v6 requires a valid frozen classification for every gift, or `none_no_gifts` when the ledger has none.
+- Do not silently classify gifts, regenerate reports, repair provenance, or otherwise finish the run inside analysis. State that finalization is incomplete and use `$run-agent-world-benchmark` if the user asks to complete it.
+- Already cataloged historical evidence may predate `analysis_readiness`; its verified catalog and database admission are the durable substitute.
+
 ## Choose the evidence path
 
 - For model comparison or selection, start with `data/model-benchmarks.sqlite`. Read `docs/model-metrics-database.md` for schema semantics and maintained example queries. Use `docs/model-leaderboard.md` only as the canonical compact projection.
@@ -24,6 +34,14 @@ Ground every conclusion in the repository's durable evidence rather than chat hi
 6. Interpret latency according to `docs/model-metrics-database.md`: individual decision latency, concurrent tick wall span, normalized tick throughput, and whole-run observed span are different measures. Never sum concurrent decision latencies to estimate elapsed run time.
 7. Separate observed facts from inference. Cite the database query and the exact local report, manifest, ledger, or documentation file supporting any non-obvious claim.
 
+## Present the result
+
+- Lead with a compact mini-table containing the subject and its nearest meaningful leaderboard neighbors from the same comparable pool. Include the canonical score columns, tier/seed coverage, integrity, cost, and other columns material to the comparison; label any cross-protocol context separately.
+- If the subject is provisional or otherwise unadmitted but analytically comparable, show where it would sit as a clearly marked simulated position. Never insert it into the canonical table without admission.
+- Describe what the economy actually looked like: survival, production and capital formation, trade and service income, transfer types, institutions or public goods, specialization, and the strongest ledger-backed stories of entrepreneurship or coordination.
+- Scale depth to information value. A strong, unusual, or strategically rich result merits a fuller narrative and more behavioral evidence; a weak, invalid, or uneventful result can be concise while still explaining the failure mode.
+- Distinguish facts, calculations, and interpretations. Explain protocol caveats that materially change the comparison rather than burying them below the score.
+
 ## Maintain durable results
 
 When adding or correcting durable benchmark evidence, update `data/run-sources.json`, rebuild and verify `data/model-benchmarks.sqlite`, and regenerate the compact projection in the same scoped change:
@@ -36,6 +54,6 @@ python3 -m agent_world.benchmark_db leaderboard
 
 Run the relevant tests, including `tests/test_benchmark_db.py` and `tests/test_benchmarks.py` when their behavior is affected. Follow `AGENTS.md` for commits, pushes, isolated model-backed runs, quota handling, and the evidence bar for `docs/insights.md`.
 
-## New model-backed runs
+## Run-workflow boundary
 
-Only launch a run when the user requests one. Read `docs/isolated-run-worktrees.md` and use `scripts/run-isolated-cohort` for every independently executing run cell, with a distinct cohort ID and a clean pinned launch commit. Preserve the worktree through completion and analysis. Treat rate limits as resumable waiting states; do not restart a run or fabricate agent decisions from failed provider calls.
+Only launch, resume, monitor, or finalize model-backed cells when the user asks. Use `$run-agent-world-benchmark` for that workflow. Analysis may inspect raw artifacts and diagnose a stopped run, but it does not bypass the run skill's isolation, quota, completion, accounting, or readiness gates.
