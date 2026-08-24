@@ -19,6 +19,7 @@ Follow `AGENTS.md` for repository-wide isolation, quota, validation, commit, pus
 - Require explicit benchmark intent. The words “run,” “test,” “try,” “smoke test,” or “experiment” alone do not authorize benchmark defaults; use `$run-agent-world-experiment` for those requests.
 - “Run the benchmark on MODEL” means the current standardized suite and its required seeds. At present that is Participant v7 on seeds 11 and 41. If the user asks for one seed, mark the study provisional.
 - If the user names Participant v6, v7, or another suite, use that suite's documented rules and required seed set. Protocol versions share this workflow; do not invent a separate procedure or silently substitute the current suite.
+- Do not ask the user to choose a world preset for a standardized benchmark. The named `--benchmark-protocol` owns and locks the preset and every behavior-defining setting. If the user requests a different preset or setting, classify the run as an experiment or controlled diagnostic rather than standard benchmark evidence.
 - Resolve and record the exact brain, provider, callable model ID, returned model identity, reasoning effort, billing mode, and connector before launch. Do not substitute a similarly named model.
 - Treat protocol changes, nonstandard seeds, mixed populations, alternate reasoning settings, or connector experiments as controlled or diagnostic variants, never as standard leaderboard evidence.
 

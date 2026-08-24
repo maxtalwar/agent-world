@@ -36,6 +36,13 @@ When a user says “run the benchmark on MODEL” without narrowing the request:
 - treat any altered seed, population, connector, reasoning setting, or locked
   world setting as a controlled or diagnostic variant.
 
+Do not ask the user to select a world or preset for a standardized benchmark.
+The named `--benchmark-protocol` must lock the suite's preset and every
+behavior-defining setting. The current Participant v7 suite uses
+`frontier-generalists`; the full locked configuration is the Frozen trial table
+in `docs/model-benchmarks.md`. A requested override changes the run into an
+experiment or controlled diagnostic and cannot remain standard evidence.
+
 Do not copy a command from an older run until its protocol and flags have been
 checked against the current CLI and suite documentation.
 

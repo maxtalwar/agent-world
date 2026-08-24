@@ -15,6 +15,8 @@ Before taking run action, read `docs/agent-world-experiment-runs.md` completely.
 
 - Only launch or resume model-backed work when the user asks.
 - Default to seed 11 only. Never add seed 41 unless the user explicitly requests it or explicitly converts the work into a standardized benchmark study before launch.
+- Before launching a new experiment, if the user has not specified a preset or equivalent world configuration, ask once which preset to use. Present `organic-generalists` as the default and summarize the current alternatives from CLI help. Do not ask again when resuming an existing manifest or when the user already said to use defaults.
+- The experiment default is `organic-generalists`: classic world, organic economy, dispersed geography, neutral objective, and generalist agents. Use it when the user chooses the default or delegates the choice.
 - Choose agents, ticks, world, reasoning, and other settings from the experiment's purpose. Do not inherit the benchmark's full horizon or locked trial unless the user requests those settings.
 - Record `run_kind: experiment`, the question being tested, all settings, exact model/provider provenance, and why the chosen scale is sufficient.
 - If the user explicitly asks for a benchmark, leaderboard result, certification, provisional benchmark, or named participant protocol, use `$run-agent-world-benchmark` instead.
