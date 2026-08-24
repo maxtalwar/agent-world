@@ -633,7 +633,7 @@ def _run(args: argparse.Namespace) -> None:
         ),
         "grok_cli": int(getattr(args, "grok_max_workers", None) or min(max_workers, 4)),
         "openrouter": int(
-            getattr(args, "openrouter_max_workers", None) or min(max_workers, 2)
+            getattr(args, "openrouter_max_workers", None) or min(max_workers, 4)
         ),
     }
     decision_mode = args.decision_mode or "raw"
