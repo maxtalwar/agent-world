@@ -89,13 +89,13 @@ OPENROUTER_MAX_OUTPUT_TOKENS=8000
 OPENROUTER_REASONING_EFFORT=medium
 OPENROUTER_MAX_RETRIES=4
 OPENROUTER_MIN_REQUEST_INTERVAL_SECONDS=0.5
-OPENROUTER_MAX_PARALLEL_AGENTS=1
+OPENROUTER_MAX_PARALLEL_AGENTS=4
 SSL_CERT_FILE=/etc/ssl/cert.pem
 ```
 
-OpenRouter runs default to one request at a time to avoid token-per-minute
-bursts. Increase `OPENROUTER_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
-if your rate limits can handle it. Cost knobs include
+Ordinary runs default to four concurrent decisions. Change
+`OPENROUTER_MAX_PARALLEL_AGENTS` or pass `--max-workers` only when a different
+account or host limit has been measured. Cost knobs include
 `OPENROUTER_REASONING_EFFORT` and `OPENROUTER_MAX_OUTPUT_TOKENS`.
 If the API returns hard quota/credit exhaustion, the run stops early and reports `quota_failures` so the log is not mistaken for agent behavior.
 
@@ -144,9 +144,11 @@ outside the repository, and constrains the final response to an equivalent
 strict decision contract that the adapter normalizes back to Agent World's flat
 action shape.
 Codex-plan results should be labeled separately from raw API results because the
-Codex harness adds its own runtime instructions. Runs default to one concurrent
-Codex decision; raise `CODEX_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
-after benchmarking account limits and host load.
+Codex harness adds its own runtime instructions. Ordinary runs default to four
+concurrent Codex decisions. Participant benchmark runs request up to 24 Codex
+workers (bounded by the number of living agents), the measured local throughput
+knee; explicit `CODEX_MAX_PARALLEL_AGENTS` or `--max-workers` values still
+override ordinary runs.
 
 ### Claude plan agents
 

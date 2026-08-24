@@ -109,16 +109,19 @@ It is a watchable overhead view of the simulated world, but the purpose is obser
 
 ## Rate Limits
 
-OpenRouter runs default to one request at a time:
+Ordinary provider-backed runs default to four concurrent decisions:
 
 ```dotenv
-OPENROUTER_MAX_PARALLEL_AGENTS=1
+OPENROUTER_MAX_PARALLEL_AGENTS=4
 OPENROUTER_MIN_REQUEST_INTERVAL_SECONDS=0.5
 OPENROUTER_MAX_RETRIES=4
-CODEX_MAX_PARALLEL_AGENTS=1
+CODEX_MAX_PARALLEL_AGENTS=4
 ```
 
-Increase concurrency only if the account rate limits can handle it.
+Participant benchmark runs use four workers for every harness except Codex,
+which requests up to 24 workers (and is still bounded by the living-agent
+count). Increase ordinary-run concurrency only if account and host limits can
+handle it.
 
 For Codex-plan runs, the ordinary per-call `*-usage.jsonl` is the source of truth for run-exclusive consumption. Reports price its uncached input, cached input, and output against the versioned Luna/Terra/Sol Codex rate card and label the result `simulation_credits`. This excludes Codex work performed by the supervising task or another window.
 

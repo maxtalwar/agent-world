@@ -18,7 +18,9 @@ from agent_world.benchmarks import (
     BENCHMARK_ALLOWED_SEEDS,
     BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
     BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS,
+    BENCHMARK_DEFAULT_MAX_WORKERS,
     BENCHMARK_DIAGNOSTIC_TICKS,
+    BENCHMARK_PROVIDER_MAX_WORKERS,
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_QUOTA_WAIT_HOURS,
     aggregate_benchmark_reports,
@@ -165,7 +167,7 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--resume-checkpoint", type=Path, default=None, help="Resume a trusted local checkpoint; --ticks may extend its total target.")
     run_parser.add_argument("--no-agent-io-log", action="store_true", help="Do not log private observations/prompts.")
     run_parser.add_argument("--sequential-decisions", action="store_true", help="Disable same-tick concurrent brain calls.")
-    run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. Provider-backed brains default to one worker.")
+    run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. Provider-backed brains default to four workers.")
     run_parser.add_argument("--codex-max-workers", type=int, default=None)
     run_parser.add_argument("--claude-max-workers", type=int, default=None)
     run_parser.add_argument("--cursor-max-workers", type=int, default=None)
@@ -1020,6 +1022,11 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
             f"{BENCHMARK_PROTOCOL_ID} requires simultaneous decision collection."
         )
 
+    benchmark_provider = BRAIN_TYPE_PROVIDERS[args.brain]
+    benchmark_max_workers = BENCHMARK_PROVIDER_MAX_WORKERS.get(
+        benchmark_provider, BENCHMARK_DEFAULT_MAX_WORKERS
+    )
+
     locked = {
         "ticks": 50,
         "agents": 10,
@@ -1039,13 +1046,13 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         "assignment_seed": 0,
         "width": 16,
         "height": 16,
-        "max_workers": 4,
-        "codex_max_workers": 4,
-        "claude_max_workers": 4,
-        "cursor_max_workers": 4,
-        "devin_max_workers": 4,
-        "grok_max_workers": 4,
-        "openrouter_max_workers": 4,
+        "max_workers": benchmark_max_workers,
+        "codex_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["codex_cli"],
+        "claude_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["claude_cli"],
+        "cursor_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["cursor_cli"],
+        "devin_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["devin_cli"],
+        "grok_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["grok_cli"],
+        "openrouter_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["openrouter"],
         "startup_health_check_tick": 5,
         "startup_health_max_failure_rate": 0.2,
     }

@@ -180,7 +180,7 @@ Every benchmark run uses:
 | Decisions | raw |
 | Action feedback | baseline |
 | Resolution | simultaneous |
-| Global/provider workers | 4 |
+| Global/provider workers | 4 by default; Codex CLI 24 (effectively at most 10 with this population) |
 | Connector | `stateless-v3` |
 | Provider conversation | stateless |
 | Private agent I/O | enabled |

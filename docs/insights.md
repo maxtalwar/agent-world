@@ -21,6 +21,23 @@ masqueraded as model behavior — append an entry.** Rules:
   silently delete.
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
+## 2026-08-24 — A provider ceiling is not an effective worker default
+
+**The Codex worker-ramp change raised the provider semaphore from 4 to 24 but
+left the upstream global pool default at 1, so a bare ordinary run remained
+serial despite the measured 24-worker throughput knee.** Commit `a27bb84`
+changed only `codex_cli`'s provider ceiling; `BrainSpec.resolve` still fell
+back to one global worker, and the isolated-cohort launcher did not inject a
+different value. The original ramp manifests confirm that every measured cell
+explicitly passed both `--max-workers` and `--codex-max-workers`. The
+configuration is now explicit at both layers: ordinary provider-backed runs
+default to a four-thread global pool, while Participant benchmark trials use a
+provider-aware global pool and semaphore (24 for Codex, 4 for other harnesses).
+Because the current benchmark population has ten agents, a configured Codex
+limit of 24 means at most ten simultaneous decisions in that protocol.
+Evidence: commit `a27bb84`; `agent_world/brain_factory.py`;
+`agent_world/cli.py`; `runs/experiments/worker-ramp-20260802/*/run-manifest.json`.
+
 
 ---
 

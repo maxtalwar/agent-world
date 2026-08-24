@@ -269,7 +269,7 @@ class ObserverTests(unittest.TestCase):
         self.assertEqual(config.agents, 5)
         self.assertEqual(config.model, "z-ai/glm-5.2")
         self.assertEqual(config.reasoning_effort, "medium")
-        self.assertEqual(config.max_workers, 1)
+        self.assertEqual(config.max_workers, 4)
         self.assertEqual(config.world_config.seed, 11)
         self.assertEqual(config.world_config.action_points_per_tick, 4)
         self.assertEqual(config.world_config.carried_food_spoil_interval, 6)

@@ -97,8 +97,8 @@ def _protocol_report(
             "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"]),
             "decision_mode": "raw",
             "turn_resolution": "simultaneous",
-            "global_max_workers": 4,
-            "provider_max_workers": {"codex_cli": 4},
+            "global_max_workers": 24,
+            "provider_max_workers": {"codex_cli": 24},
             "agent_io_log": True,
             "action_feedback_mode": "baseline",
             "connector_profile": "stateless-v3",
@@ -265,6 +265,8 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.world_variant, "frontier")
         self.assertEqual(args.reasoning_effort, "medium")
         self.assertEqual(args.connector_profile, "stateless-v3")
+        self.assertEqual(args.max_workers, 24)
+        self.assertEqual(args.codex_max_workers, 24)
         # Scoped to the adapter this trial will invoke, not every adapter.
         self.assertEqual(
             args.benchmark_code_fingerprint, benchmark_code_fingerprint(["codex_cli"])
@@ -272,6 +274,21 @@ class BenchmarkTests(unittest.TestCase):
         self.assertNotEqual(
             args.benchmark_code_fingerprint, benchmark_code_fingerprint()
         )
+
+    def test_non_codex_protocol_run_keeps_four_workers(self) -> None:
+        args = Namespace(
+            benchmark_protocol=BENCHMARK_PROTOCOL_ID,
+            population=None,
+            brain="claude",
+            sequential_decisions=False,
+            seed=None,
+        )
+
+        _apply_benchmark_protocol(args)
+
+        self.assertEqual(args.max_workers, 4)
+        self.assertEqual(args.claude_max_workers, 4)
+        self.assertEqual(args.codex_max_workers, 24)
 
     def test_protocol_flag_rejects_conflicting_settings(self) -> None:
         args = Namespace(

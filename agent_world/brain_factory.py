@@ -25,6 +25,7 @@ from agent_world.world import WorldEngine
 
 
 ALLOWED_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max"})
+DEFAULT_MODEL_MAX_WORKERS = 4
 SUPPORTED_BRAIN_TYPES = frozenset(
     {"survival", "openrouter", "codex", "claude", "cursor", "devin", "grok"}
 )
@@ -122,7 +123,9 @@ class BrainSpec:
             "devin": "DEVIN_MAX_PARALLEL_AGENTS",
             "grok": "GROK_MAX_PARALLEL_AGENTS",
         }[brain_type]
-        workers = max_workers if max_workers is not None else int(os.environ.get(worker_env, "1"))
+        workers = max_workers if max_workers is not None else int(
+            os.environ.get(worker_env, str(DEFAULT_MODEL_MAX_WORKERS))
+        )
         resolved_effort = reasoning_effort or os.environ.get(effort_env, effort_default)
         if resolved_effort not in ALLOWED_EFFORTS:
             raise ValueError(f"unsupported reasoning effort: {resolved_effort}")

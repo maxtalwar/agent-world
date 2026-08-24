@@ -34,6 +34,15 @@ from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 # ceiling cannot be differentiated by any later rescoring.
 BENCHMARK_SUITE_ID = "agent-world-participant-v7"
 BENCHMARK_PROTOCOL_ID = "participant-v7"
+BENCHMARK_DEFAULT_MAX_WORKERS = 4
+BENCHMARK_PROVIDER_MAX_WORKERS = {
+    "openrouter": 4,
+    "codex_cli": 24,
+    "claude_cli": 4,
+    "cursor_cli": 4,
+    "devin_cli": 4,
+    "grok_cli": 4,
+}
 # Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
 # Anthropic ships no per-effort token number to borrow: stock Claude Code
 # drives adaptive thinking from the effort dial with NO token cap (measured
@@ -580,8 +589,13 @@ def benchmark_protocol() -> dict[str, Any]:
             "conversation_mode": "stateless",
             "population": "one uniform model cohort",
             "turn_resolution": "simultaneous",
-            "global_max_workers": 4,
-            "provider_max_workers": 4,
+            "global_max_workers": BENCHMARK_DEFAULT_MAX_WORKERS,
+            "provider_max_workers": BENCHMARK_DEFAULT_MAX_WORKERS,
+            "provider_worker_overrides": {
+                provider: workers
+                for provider, workers in BENCHMARK_PROVIDER_MAX_WORKERS.items()
+                if workers != BENCHMARK_DEFAULT_MAX_WORKERS
+            },
             "agent_io_log": True,
             "model_output_failure_policy": (
                 "Independently validate each extracted decision against the "
@@ -1560,6 +1574,17 @@ def _trial_flags(
     flags: list[str] = []
 
     expected = benchmark_protocol()["trial"]
+    used_provider = next(
+        (
+            str(cohort.get("provider"))
+            for cohort in cohorts.values()
+            if cohort.get("provider")
+        ),
+        None,
+    )
+    expected_max_workers = expected.get("provider_worker_overrides", {}).get(
+        used_provider, expected["global_max_workers"]
+    )
     checks = {
         "agents": ((report.get("population") or {}).get("total_agents"), expected["agents"]),
         "ticks": (run.get("target_ticks"), expected["ticks"]),
@@ -1594,7 +1619,7 @@ def _trial_flags(
         ),
         "global_max_workers": (
             start_data.get("global_max_workers"),
-            expected["global_max_workers"],
+            expected_max_workers,
         ),
     }
     for name, (actual, wanted) in checks.items():
@@ -1648,17 +1673,9 @@ def _trial_flags(
     if reliability.get("usage_record_coverage_pct") != 100.0:
         flags.append("usage_coverage_not_complete")
     provider_limits = start_data.get("provider_max_workers") or {}
-    used_provider = next(
-        (
-            str(cohort.get("provider"))
-            for cohort in cohorts.values()
-            if cohort.get("provider")
-        ),
-        None,
-    )
     if (
         used_provider is None
-        or provider_limits.get(used_provider) != expected["provider_max_workers"]
+        or provider_limits.get(used_provider) != expected_max_workers
     ):
         flags.append("protocol_mismatch:provider_max_workers")
     if start_data.get("agent_io_log") is not True:
