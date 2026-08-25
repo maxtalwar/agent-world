@@ -1,6 +1,6 @@
 # Agent World model-selection leaderboard
 
-**Last updated: 2026-08-22.** This is the canonical agent-facing table for
+**Last updated: 2026-08-25.** This is the canonical agent-facing table for
 choosing models for new Agent World benchmark runs. It contains the complete
 closed Participant v6 field plus the GPT-5.6 Luna Max controlled reasoning
 variant. Use this snapshot as the best cross-model evidence until Participant
@@ -85,6 +85,13 @@ the study.
   the oracle modified 544/714 responses. The repaired variant is cataloged for
   interface and behavioral analysis only; it is not an Ox Alpha leaderboard
   result.
+- The corrected Grok 4.6 Build study completed both required seeds cleanly
+  through the Grok CLI. Its pooled analytical result is 91.5 execution, 82.4
+  competence, and 92.6 entrepreneurship at a token-derived API-list
+  equivalent of $24.15/run, which would place it second by competence between
+  Fable 5 and Opus 5. It remains a simulated position because its clean launch
+  fingerprint has not been admitted as compatible with the closed canonical
+  Participant-v6 pool.
 - The direct Grok 4.6 Build study is retained as an invalid harness
   diagnostic. Only tick 0 reached the model before a connector identity bug
   converted 360 rejected requests into synthetic wait actions. It has no

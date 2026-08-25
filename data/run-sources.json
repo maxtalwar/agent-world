@@ -479,11 +479,16 @@
       "label": "Grok 4.6 Build via Grok CLI",
       "kind": "benchmark_trial",
       "leaderboard_eligible": false,
-      "leaderboard_exclusion_reason": "Provisional clean seed 11 only; required seed 41 remains paused at its quota checkpoint, and the launch fingerprint has not been admitted as a compatible canonical Participant-v6 fingerprint.",
+      "leaderboard_exclusion_reason": "Both required seeds completed cleanly and are analytically poolable under Participant v6, but the launch fingerprint has not been admitted as a compatible canonical Participant-v6 fingerprint. Retain the two-seed result as a simulated placement, not an official leaderboard entry.",
       "runs": [
         {
           "seed": 11,
           "report_path": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-report.json",
           "kind": "benchmark_trial"
         }
       ]

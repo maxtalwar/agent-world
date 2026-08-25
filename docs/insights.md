@@ -81,29 +81,31 @@ Evidence:
 `agent_world/grok_brain.py`, `agent_world/run_report.py`,
 `agent_world/usage.py`, and `tests/test_usage.py`.
 
-## 2026-08-24 — Grok formed an informal winter shelter exchange but failed at basic water resilience
+## 2026-08-25 — Grok repeatedly improvised shelter economies but failed at basic survival logistics
 
-**Grok 4.6 Build created a ledger-real shelter-for-help network without any
-formal group, contract, or access-fee mechanism, yet the shelter owner died
-immediately after winter with zero water.** In the clean Participant v6 seed-11
-run, Agent 6 and Agent 10 completed shelter 14 at tick 36 with contributor
-shares of 62.5% and 37.5%. Their messages repeatedly framed access as being
-for food or help rather than additional equity; Agent 6 then granted shelter
-access to Agents 10, 7, 9, and 1, while Agent 10 delivered two food and Agent 9
-delivered four coins plus one food. Because the exchanges used gifts and
-discretionary access rather than formal fees, they initially went unscored. A
-subsequently frozen revision-2 classification identified five commercial gifts
-worth 22.5 accounting units as service income while leaving 7.0 units informal.
-The network nevertheless sheltered
-several agents through winter. Agent 6 survived the season but left the roof
-to recover supplies and died at tick 49 with energy 24, food 4, and water 0.
-This is model behavior rather than a harness artifact: all 500 decisions were
-successful with clean integrity and full usage coverage. It shows that Grok
-could improvise property rights, contributor shares, and reciprocal aid while
-still failing to manage the proprietor's most basic survival constraint.
+**Across both clean seeds, Grok 4.6 Build improvised contributor shares,
+discretionary shelter access, and upkeep-for-roof exchanges without forming a
+single group, contract, or formal access-fee policy—then lost three agents to
+zero food or water.** In seed 11, Agents 6 and 10 completed shelter 14 with
+62.5%/37.5% contributor shares. Agent 6 admitted Agents 10, 7, 9, and 1 while
+messages explicitly negotiated food, coins, help, and winter access; the frozen
+classifier credited five commercial gifts worth 22.5 accounting units as
+service income. Agent 6 nevertheless died at tick 49 with water 0. Seed 41
+reproduced the same informal institution in a different form: Agent 9 made
+shelter 13 public, admitted Agents 1, 6, 8, and 7, and received one fiber from
+Agent 1 explicitly "for shelter upkeep." That was the run's only classified
+service payment. Meanwhile Agents 3 and 10 died at ticks 44 and 46 with both
+food and water at 0. The two frozen ledgers pool to 91.45 execution, 82.41
+competence, and 92.60 entrepreneurship, with 17/20 survivors and zero model,
+provider, quota, ambiguous-boundary, or harness failures. This is model
+behavior, not a harness artifact: Grok can invent working micro-property and
+reciprocity arrangements, but its high-level coordination does not reliably
+close individual subsistence loops.
 Evidence:
 `runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run.jsonl`,
-`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run.jsonl`,
+both `run-report.json` and `gift-classifications.json` artifacts in those seed
+directories,
 `runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/study-manifest.json`.
 
 ## 2026-08-23 — Grok reported an exhausted balance as a successful process carrying an error envelope
