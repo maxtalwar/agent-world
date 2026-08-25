@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "study_id": "grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433",
+  "status": "preflight_passed_pending_launch",
+  "created_at_utc": "2026-08-25T23:14:33Z",
+  "study_type": "benchmark_trial",
+  "suite_id": "agent-world-participant-v7",
+  "benchmark_protocol": "participant-v7",
+  "benchmark_scoring_revision": 1,
+  "targets": {
+    "grok-4.5": {
+      "brain": "grok",
+      "provider": "grok_cli",
+      "route": "Grok Build via the official Grok CLI and the user's grok.com subscription",
+      "billing_mode": "grok_subscription",
+      "model": "grok-4.5",
+      "resolved_model_expected": "grok-4.5-build",
+      "reasoning_effort_requested": "medium",
+      "seeds": [11, 41]
+    }
+  },
+  "comparison_design": {
+    "intended_comparator": "A future Participant-v7 seeds 11 and 41 run requesting Grok 4.5 through Cursor.",
+    "matched_dimensions": [
+      "participant-v7 protocol",
+      "seeds 11 and 41",
+      "medium reasoning effort",
+      "stateless-v3 connector semantics",
+      "raw simultaneous decisions"
+    ],
+    "historical_evidence_note": "The existing Cursor Grok 4.5 evidence is diagnostic-only seed 11 from an older suite and is not a matched comparison for this study."
+  },
+  "result_tier": {
+    "requested": "replicated_certified",
+    "required_seeds_per_model": [11, 41],
+    "policy": "Both integrity-clean, complete Participant-v7 cells on seeds 11 and 41 are required for replicated certification."
+  },
+  "preflight": {
+    "completed_at_utc": "2026-08-25T23:10:00Z",
+    "model_catalog_authenticated": true,
+    "requested_model": "grok-4.5",
+    "resolved_model": "grok-4.5-build",
+    "provider": "grok_cli",
+    "api_style": "grok_single_json_schema",
+    "billing_mode": "grok_subscription",
+    "contract_valid": true,
+    "decision_failure_origin": null,
+    "duration_seconds": 11.038,
+    "prompt_tokens": 14347,
+    "completion_tokens": 618,
+    "reasoning_tokens": 278,
+    "validation": "93 relevant tests passed before launch."
+  },
+  "protocol_provenance": {
+    "launch_commit": "2f49eb3e092b0a76cf2cec64372f69438eb64276",
+    "launch_branch": "codex/harness-specific-worker-defaults",
+    "dirty_worktree": false
+  },
+  "replications": {
+    "required_seeds": [11, 41],
+    "cells": {
+      "grok-4-5-build-v7-seed-11": {
+        "seed": 11,
+        "status": "ready_to_launch",
+        "cohort": "grok45-build-v7-s11-20260825",
+        "target_tick": 50,
+        "out": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed11/run.jsonl",
+        "snapshot": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed11/run-snapshot.json"
+      },
+      "grok-4-5-build-v7-seed-41": {
+        "seed": 41,
+        "status": "ready_to_launch",
+        "cohort": "grok45-build-v7-s41-20260825",
+        "target_tick": 50,
+        "out": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed41/run.jsonl",
+        "snapshot": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed41/run-snapshot.json"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 20,
+    "provider_max_workers": 20,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12
+  },
+  "launcher": "scripts/run-isolated-cohort",
+  "analysis_readiness": {
+    "schema_version": 1,
+    "status": "not_ready_running",
+    "completed_seeds": [],
+    "waiting_seeds": [],
+    "blockers": [
+      "Both benchmark cells must complete and pass finalization checks."
+    ]
+  }
+}
