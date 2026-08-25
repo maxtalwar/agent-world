@@ -41,8 +41,9 @@ USD_RATE_CARD_SOURCES = {
     "openai": "https://developers.openai.com/api/docs/pricing",
     "anthropic": "https://platform.claude.com/docs/en/pricing",
     "openrouter": "https://openrouter.ai/models",
+    "xai": "https://docs.x.ai/developers/models/grok-4.6",
 }
-USD_RATE_CARD_EFFECTIVE_DATE = "2026-08-18"
+USD_RATE_CARD_EFFECTIVE_DATE = "2026-08-24"
 # List-price API rates. Cached reads use the published cached-input rate.
 # Models with a distinct cache-write tier bill writes at that published rate;
 # models without one fall back to ordinary input pricing. Rate keys are matched
@@ -50,6 +51,15 @@ USD_RATE_CARD_EFFECTIVE_DATE = "2026-08-18"
 # ("gpt-5-6-luna-medium") and effort-tagged variants resolve to their base
 # model without collapsing "gpt-5.4-mini" into "gpt-5.4".
 MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
+    # Grok 4.6 requests below 200k input tokens. xAI publishes a higher
+    # long-context tier at/above 200k; the Participant-v6 run's maximum
+    # request was 18,331 input tokens, so every recorded request uses this tier.
+    "grok-4.6": {
+        "input": Decimal("2"),
+        "cached_input": Decimal("0.5"),
+        "cache_write": Decimal("2"),
+        "output": Decimal("6"),
+    },
     "qwen/qwen3.8-max": {
         "input": Decimal("2"),
         "cached_input": Decimal("0.25"),
@@ -355,7 +365,11 @@ def summarize_usd_cost(records: list[dict[str, Any]]) -> dict[str, Any] | None:
     provider_reported = 0.0
 
     for record in records:
-        provider_reported += float(record.get("cost") or 0)
+        provider_reported += float(
+            record.get("provider_reported_cost_usd")
+            if record.get("provider_reported_cost_usd") is not None
+            else record.get("cost") or 0
+        )
         prompt_tokens = _nonnegative_int(record.get("prompt_tokens"))
         cached_tokens = min(prompt_tokens, _nonnegative_int(record.get("cached_tokens")))
         cache_write_tokens = min(

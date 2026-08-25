@@ -80,12 +80,15 @@ the study.
   ambiguous completion-envelope failures. Ox Alpha is also retained only as
   diagnostic evidence: its seed-11 run stopped at the tick-5 health gate after
   47/50 confirmed model-output contract violations, and seed 41 was not
-  launched. A separate two-seed repair-oracle diagnostic raised Ox Alpha's
-  contract-valid rate from 17.8% to 91.9%, but the oracle modified 544/714
-  decisions and both populations still suffered complete extinction. Its
-  pooled 69.1 execution, 0.0 competence, and 0.0 entrepreneurship scores are
-  retained in the database as a controlled diagnostic variant, never as an
-  official Ox Alpha result.
+  launched. A separate two-seed repair-oracle diagnostic completed both worlds
+  and pooled to 69.1 execution, 0.0 competence, and 0.0 entrepreneurship, but
+  the oracle modified 544/714 responses. The repaired variant is cataloged for
+  interface and behavioral analysis only; it is not an Ox Alpha leaderboard
+  result.
+- The direct Grok 4.6 Build study is retained as an invalid harness
+  diagnostic. Only tick 0 reached the model before a connector identity bug
+  converted 360 rejected requests into synthetic wait actions. It has no
+  leaderboard or simulated capability position.
 - Behavioral interpretation and harness caveats live in
   [`insights.md`](insights.md); benchmark definitions live in
   [`model-benchmarks.md`](model-benchmarks.md).

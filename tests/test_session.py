@@ -357,12 +357,20 @@ class SimulationSessionTests(unittest.TestCase):
                 target_ticks=1,
                 brains={"agent-1": WaitBrain(), "agent-2": WaitBrain()},
                 log_agent_io=False,
+                max_workers=28,
+                provider_max_workers={"codex_cli": 24, "claude_cli": 4},
                 report_stem=Path(temp_dir) / "mixed",
             )
 
             result = session.run()
 
             started = next(event for event in engine.state.events if event.type == "run_started")
+            self.assertEqual(session.max_workers, 28)
+            self.assertEqual(session.runner.max_workers, 28)
+            self.assertEqual(
+                session.runner.provider_max_workers,
+                {"codex_cli": 24, "claude_cli": 4},
+            )
             self.assertEqual(started.data["brain"], "mixed")
             self.assertEqual(started.data["population"]["assignments"]["agent-1"], "cohort-1")
             self.assertEqual(result.report["population"]["cohorts"]["cohort-1"]["model"], "claude-sonnet-5")

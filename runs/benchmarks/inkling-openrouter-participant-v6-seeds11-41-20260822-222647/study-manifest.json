@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "study_id": "inkling-openrouter-participant-v6-seeds11-41-20260822-222647",
+  "status": "running_diagnostic",
+  "created_at_utc": "2026-08-22T22:26:47Z",
+  "launched_at_utc": "2026-08-22T22:30:46Z",
+  "study_type": "benchmark_trial",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_scoring_revision": 2,
+  "benchmark_code_fingerprint": {
+    "openrouter": "34f9830bafe28b912bbf02a059db545ea8094436b3491bee121f0d97e38c23bf"
+  },
+  "targets": {
+    "thinkingmachines/inkling": {
+      "brain": "openrouter",
+      "provider": "openrouter",
+      "upstream_provider_order": [
+        "DeepInfra"
+      ],
+      "billing_mode": "api",
+      "model": "thinkingmachines/inkling",
+      "resolved_model_expected": "thinkingmachines/inkling",
+      "reasoning_effort_requested": "medium",
+      "response_format_type": "json_object",
+      "seeds": [
+        11,
+        41
+      ]
+    }
+  },
+  "result_tier": {
+    "requested": "diagnostic_only",
+    "required_seeds_per_model": [
+      11,
+      41
+    ],
+    "leaderboard_eligible": false,
+    "policy": "Both cells use the closed Participant-v6 world and scoring, but Inkling's current OpenRouter routes do not support strict structured outputs. Results may be analyzed diagnostically and must not be promoted to certified or leaderboard evidence."
+  },
+  "model_catalog": {
+    "sources": [
+      "Thinking Machines Lab Inkling model card",
+      "OpenRouter authenticated /api/v1/models",
+      "OpenRouter authenticated model endpoints API"
+    ],
+    "catalog_verified_at_utc": "2026-08-22T22:20:00Z",
+    "model_id": "thinkingmachines/inkling",
+    "canonical_slug": "thinkingmachines/inkling-20260715",
+    "catalog_name": "Thinking Machines: Inkling",
+    "provider_name": "Thinking Machines Lab",
+    "architecture": {
+      "total_parameters": "975B",
+      "active_parameters": "41B",
+      "type": "mixture_of_experts",
+      "license": "Apache-2.0"
+    },
+    "openrouter_deepinfra_route": {
+      "context_length": 524288,
+      "max_completion_tokens": 262144,
+      "quantization": "fp8",
+      "pricing_usd_per_token": {
+        "input": 9.5e-7,
+        "cached_input": 1.6e-7,
+        "output": 0.00000405
+      },
+      "supports_response_format": true,
+      "supports_structured_outputs": false
+    },
+    "reasoning": {
+      "default_effort": "high",
+      "default_enabled": true,
+      "supported_efforts": [
+        "max",
+        "high",
+        "medium",
+        "low",
+        "minimal",
+        "none"
+      ]
+    }
+  },
+  "provider_compatibility": {
+    "provider": "openrouter",
+    "upstream_provider": "DeepInfra",
+    "base_url": "https://openrouter.ai/api/v1",
+    "api_style": "chat",
+    "configured_timeout_seconds": 180,
+    "configured_max_retries": 4,
+    "quota_wait_hours": 12,
+    "response_format_type": "json_object",
+    "decision_contract_validation": "independent post-response validation against the unchanged AGENT_DECISION_SCHEMA",
+    "decision_latency_telemetry": "duration_seconds from monotonic request start through provider retries and response validation"
+  },
+  "protocol_provenance": {
+    "base_v6_commit": "02381ec8b4252852a8e5b822f850b5fc24de7cdc",
+    "compatibility_parent_commit": "12d8e91b6ccd2dae3b20daf2263ae8fbfdd582f3",
+    "launch_commit": "13dc0b49454be2e493e4ac9b3b7e127069dda2ff",
+    "launch_branch": "codex/ox-alpha-openrouter-v6",
+    "declared_deviation": "Inkling has no current OpenRouter route advertising structured_outputs. The run therefore uses the paid DeepInfra route's advertised json_object response format, pinned for stable routing. The closed Participant-v6 world, static prompt, dynamic observation, reasoning effort, decision schema, independent contract attribution, scoring revision, and trial settings are unchanged; only provider-side schema enforcement is weaker and is recorded on every usage row."
+  },
+  "diagnostic_preflights": [
+    {
+      "response_format_type": "json_schema",
+      "provider_order": [
+        "DeepInfra"
+      ],
+      "reasoning_effort": "medium",
+      "result": "OpenRouter 404: no endpoint can handle the required strict JSON-schema parameters; no model inference occurred."
+    },
+    {
+      "response_format_type": "json_object",
+      "provider_order": [
+        "DeepInfra"
+      ],
+      "reasoning_effort": "medium",
+      "result": "The request completed as thinkingmachines/inkling through DeepInfra, but a minimal compatibility prompt returned an object without the decision contract's required intent field. The benchmark cells retain the mandatory tick-5 startup health gate and use the full benchmark rulebook."
+    }
+  ],
+  "replications": {
+    "required_seeds": [
+      11,
+      41
+    ],
+    "cells": {
+      "inkling-v6-seed-11": {
+        "seed": 11,
+        "status": "running",
+        "cohort": "inkling-v6-json-s11-20260822",
+        "target_tick": 50,
+        "out": "runs/benchmarks/inkling-openrouter-participant-v6-seeds11-41-20260822-222647/inkling-v6-seed11-json-object/run.jsonl",
+        "snapshot": "runs/benchmarks/inkling-openrouter-participant-v6-seeds11-41-20260822-222647/inkling-v6-seed11-json-object/run-snapshot.json"
+      },
+      "inkling-v6-seed-41": {
+        "seed": 41,
+        "status": "running",
+        "cohort": "inkling-v6-json-s41-20260822",
+        "target_tick": 50,
+        "out": "runs/benchmarks/inkling-openrouter-participant-v6-seeds11-41-20260822-222647/inkling-v6-seed41-json-object/run.jsonl",
+        "snapshot": "runs/benchmarks/inkling-openrouter-participant-v6-seeds11-41-20260822-222647/inkling-v6-seed41-json-object/run-snapshot.json"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [
+      30,
+      40
+    ],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12
+  },
+  "launcher": "scripts/run-isolated-cohort",
+  "result": {
+    "certification": "diagnostic_only",
+    "official_score": null
+  }
+}

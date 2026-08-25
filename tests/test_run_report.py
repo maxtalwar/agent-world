@@ -7,7 +7,13 @@ from pathlib import Path
 
 from agent_world.agents import SurvivalBrain
 from agent_world.models import WorldConfig
-from agent_world.run_report import build_report, format_comparison, render_markdown, write_report
+from agent_world.run_report import (
+    _normalize_loaded_usage_record,
+    build_report,
+    format_comparison,
+    render_markdown,
+    write_report,
+)
 from agent_world.runner import SimulationRunner
 from agent_world.world import WorldEngine
 
@@ -24,6 +30,25 @@ def _run_short_sim(ticks: int = 4) -> tuple[list[dict], dict]:
 
 
 class RunReportTests(unittest.TestCase):
+    def test_historical_grok_usage_is_upgraded_to_inclusive_prompt_tokens(self) -> None:
+        record = _normalize_loaded_usage_record(
+            {
+                "provider": "grok_cli",
+                "prompt_tokens": 1002,
+                "cached_tokens": 14848,
+                "grok_model_usage": {
+                    "grok-4.6-build": {
+                        "inputTokens": 1002,
+                        "cacheReadInputTokens": 14848,
+                        "cacheCreationInputTokens": 0,
+                    }
+                },
+            }
+        )
+
+        self.assertEqual(record["prompt_tokens"], 15850)
+        self.assertEqual(record["cached_tokens"], 14848)
+
     def test_contract_and_ledger_diagnostics(self) -> None:
         snapshot = {
             "tick": 4,

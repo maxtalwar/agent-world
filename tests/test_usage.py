@@ -117,6 +117,26 @@ class UsageTests(unittest.TestCase):
         self.assertEqual(summary["models"]["qwen/qwen3.8-max"]["cost_usd"], 1.95)
         self.assertEqual(summary["cost_usd"]["total"], 2.4344)
 
+    def test_usd_cost_prices_grok_46_and_preserves_build_accounting(self) -> None:
+        summary = summarize_usd_cost(
+            [
+                {
+                    "provider": "grok_cli",
+                    "model": "grok-4.6",
+                    "prompt_tokens": 8_450_888,
+                    "cached_tokens": 2_631_168,
+                    "completion_tokens": 1_971_891,
+                    "provider_reported_cost_usd": 4.2136829,
+                }
+            ]
+        )
+
+        assert summary is not None
+        self.assertTrue(summary["available"])
+        self.assertEqual(summary["cost_usd"]["total"], 24.78637)
+        self.assertEqual(summary["provider_reported_cost_usd"], 4.213683)
+        self.assertIn("xai", summary["rate_card"]["sources"])
+
     def test_usd_cost_covers_benchmark_gpt_families_at_standard_rates(self) -> None:
         summary = summarize_usd_cost(
             [

@@ -269,13 +269,21 @@ class ObserverTests(unittest.TestCase):
         self.assertEqual(config.agents, 5)
         self.assertEqual(config.model, "z-ai/glm-5.2")
         self.assertEqual(config.reasoning_effort, "medium")
-        self.assertEqual(config.max_workers, 1)
+        self.assertEqual(config.max_workers, 4)
         self.assertEqual(config.world_config.seed, 11)
         self.assertEqual(config.world_config.action_points_per_tick, 4)
         self.assertEqual(config.world_config.carried_food_spoil_interval, 6)
         self.assertEqual(config.world_config.starter_resource_radius, 1)
         self.assertEqual(config.world_config.wild_food_density, 0.35)
         self.assertEqual(config.world_config.wild_fiber_density, 0.85)
+
+    def test_run_config_accepts_forty_workers_and_rejects_more(self) -> None:
+        self.assertEqual(_parse_run_config({"max_workers": 40}).max_workers, 40)
+        with self.assertRaises(ValueError):
+            _parse_run_config({"max_workers": 41})
+
+    def test_worker_input_allows_forty(self) -> None:
+        self.assertIn('id="run-workers" class="lock" type="number" min="1" max="40"', HTML)
 
     def test_run_config_parses_world_knobs(self) -> None:
         config = _parse_run_config(

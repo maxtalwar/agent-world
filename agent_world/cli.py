@@ -18,7 +18,9 @@ from agent_world.benchmarks import (
     BENCHMARK_ALLOWED_SEEDS,
     BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
     BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS,
+    BENCHMARK_DEFAULT_MAX_WORKERS,
     BENCHMARK_DIAGNOSTIC_TICKS,
+    BENCHMARK_PROVIDER_MAX_WORKERS,
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_QUOTA_WAIT_HOURS,
     aggregate_benchmark_reports,
@@ -49,6 +51,7 @@ from agent_world.replay import format_event, read_events
 from agent_world.run_report import format_comparison, load_run_files, write_report
 from agent_world.session import SimulationSession
 from agent_world.devin_brain import DevinBrain
+from agent_world.grok_brain import GrokBrain
 from agent_world.usage import (
     append_usage_records,
     summarize_codex_simulation_credits,
@@ -105,14 +108,14 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--specialization-mode", choices=["generalists", "specialists"], default=None)
     run_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok"],
         default=None,
     )
     run_parser.add_argument(
         "--model",
         default=None,
         help=(
-            "Model for --brain openrouter/codex/claude/cursor/devin. "
+            "Model for --brain openrouter/codex/claude/cursor/devin/grok. "
             "Uses the selected brain's environment default."
         ),
     )
@@ -132,7 +135,7 @@ def main(argv: list[str] | None = None) -> None:
         choices=["minimal", "low", "medium", "high", "xhigh", "max"],
         default=None,
         help=(
-            "Reasoning effort for --brain openrouter/codex/claude/cursor/devin. "
+            "Reasoning effort for --brain openrouter/codex/claude/cursor/devin/grok. "
             "Uses the selected brain's environment default."
         ),
     )
@@ -164,11 +167,12 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--resume-checkpoint", type=Path, default=None, help="Resume a trusted local checkpoint; --ticks may extend its total target.")
     run_parser.add_argument("--no-agent-io-log", action="store_true", help="Do not log private observations/prompts.")
     run_parser.add_argument("--sequential-decisions", action="store_true", help="Disable same-tick concurrent brain calls.")
-    run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. Provider-backed brains default to one worker.")
+    run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. Provider-backed brains default to four workers.")
     run_parser.add_argument("--codex-max-workers", type=int, default=None)
     run_parser.add_argument("--claude-max-workers", type=int, default=None)
     run_parser.add_argument("--cursor-max-workers", type=int, default=None)
     run_parser.add_argument("--devin-max-workers", type=int, default=None)
+    run_parser.add_argument("--grok-max-workers", type=int, default=None)
     run_parser.add_argument(
         "--openrouter-max-workers",
         dest="openrouter_max_workers",
@@ -258,7 +262,7 @@ def main(argv: list[str] | None = None) -> None:
     ablate_parser.add_argument("--seed", type=int, default=11)
     ablate_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok"],
         default="survival",
     )
     ablate_parser.add_argument("--model", default=None)
@@ -304,7 +308,7 @@ def main(argv: list[str] | None = None) -> None:
     experiment_parser.add_argument("--seeds", type=int, nargs="+", default=[11])
     experiment_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok"],
         default="survival",
         help="Defaults to the free local scripted brain. LLM calls occur only when explicitly selected.",
     )
@@ -400,6 +404,37 @@ def _check_resume_fingerprint(
         "The benchmark-defining code changed after this checkpoint; "
         f"resume would not be a valid {BENCHMARK_PROTOCOL_ID} replication."
     )
+
+
+_PROVIDER_WORKER_ARGUMENTS = {
+    "codex_cli": "codex_max_workers",
+    "claude_cli": "claude_max_workers",
+    "cursor_cli": "cursor_max_workers",
+    "devin_cli": "devin_max_workers",
+    "grok_cli": "grok_max_workers",
+    "openrouter": "openrouter_max_workers",
+}
+
+
+def _resolve_provider_max_workers(
+    args: argparse.Namespace, max_workers: int
+) -> dict[str, int]:
+    """Resolve provider defaults and clamp every semaphore to the global pool."""
+
+    if max_workers < 1:
+        raise ValueError("max_workers must be at least 1")
+    resolved: dict[str, int] = {}
+    for provider, argument in _PROVIDER_WORKER_ARGUMENTS.items():
+        requested = getattr(args, argument, None)
+        provider_workers = (
+            BENCHMARK_PROVIDER_MAX_WORKERS[provider]
+            if requested is None
+            else int(requested)
+        )
+        if provider_workers < 1:
+            raise ValueError(f"{argument} must be at least 1")
+        resolved[provider] = min(max_workers, provider_workers)
+    return resolved
 
 
 def _run(args: argparse.Namespace) -> None:
@@ -505,6 +540,7 @@ def _run(args: argparse.Namespace) -> None:
             "claude_max_workers",
             "cursor_max_workers",
             "devin_max_workers",
+            "grok_max_workers",
             "openrouter_max_workers",
             "decision_mode",
         ):
@@ -610,26 +646,13 @@ def _run(args: argparse.Namespace) -> None:
     args.model = brain_spec.model if not population_spec.mixed else None
     args.reasoning_effort = brain_spec.reasoning_effort if not population_spec.mixed else None
     args.max_workers = max_workers
-    # The per-provider ceiling was 4 everywhere, dating from an era when the
-    # OpenAI API rate-limited concurrent requests. Decisions now go through the
-    # provider CLIs against plan quota, and a measured 8/16/24/40/100-worker
-    # ramp found no provider-side throttling at all: per-decision latency stays
-    # flat to 24 (13.0s -> 12.6s -> 13.6s median) while tick wall-clock falls
-    # 2.4x. The real ceiling is local memory - each CLI subprocess costs ~70MB,
-    # so 100 concurrent workers drove the machine into sustained swapping.
-    # 24 is the measured knee; only codex_cli was measured, so the other CLI
-    # providers keep the conservative 4 until someone ramps them too.
-    provider_max_workers = {
-        "codex_cli": int(getattr(args, "codex_max_workers", None) or min(max_workers, 24)),
-        "claude_cli": int(getattr(args, "claude_max_workers", None) or min(max_workers, 4)),
-        "cursor_cli": int(getattr(args, "cursor_max_workers", None) or min(max_workers, 4)),
-        "devin_cli": int(
-            getattr(args, "devin_max_workers", None) or min(max_workers, 4)
-        ),
-        "openrouter": int(
-            getattr(args, "openrouter_max_workers", None) or min(max_workers, 2)
-        ),
-    }
+    # A matched desktop ramp found 40 Codex workers fastest while four
+    # simultaneous cells sustained 99 observed child processes without swap.
+    # Claude Code and Grok Build use a deliberately lower inferred default of
+    # 20 because their account limits preclude the same direct ramp. Provider
+    # values are ceilings inside the global pool: a 12-worker run therefore
+    # uses 12 Codex, Claude, or Grok workers, never 40 or 20.
+    provider_max_workers = _resolve_provider_max_workers(args, max_workers)
     decision_mode = args.decision_mode or "raw"
     startup_health_check_tick = getattr(args, "startup_health_check_tick", 5) or None
     quota_wait_hours = max(0.0, float(getattr(args, "quota_wait_hours", None) or 0.0))
@@ -749,6 +772,7 @@ def _run(args: argparse.Namespace) -> None:
                 "claude_max_workers": provider_max_workers["claude_cli"],
                 "cursor_max_workers": provider_max_workers["cursor_cli"],
                 "devin_max_workers": provider_max_workers["devin_cli"],
+                "grok_max_workers": provider_max_workers["grok_cli"],
                 "openrouter_max_workers": provider_max_workers["openrouter"],
                 "decision_mode": decision_mode,
                 "log_agent_io": not args.no_agent_io_log,
@@ -1006,7 +1030,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} uses one uniform model cohort; omit --population."
         )
-    if args.brain not in {"openrouter", "codex", "claude", "cursor", "devin"}:
+    if args.brain not in {"openrouter", "codex", "claude", "cursor", "devin", "grok"}:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} requires an explicit model-backed --brain."
         )
@@ -1014,6 +1038,11 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} requires simultaneous decision collection."
         )
+
+    benchmark_provider = BRAIN_TYPE_PROVIDERS[args.brain]
+    benchmark_max_workers = BENCHMARK_PROVIDER_MAX_WORKERS.get(
+        benchmark_provider, BENCHMARK_DEFAULT_MAX_WORKERS
+    )
 
     locked = {
         "ticks": 50,
@@ -1034,12 +1063,13 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         "assignment_seed": 0,
         "width": 16,
         "height": 16,
-        "max_workers": 4,
-        "codex_max_workers": 4,
-        "claude_max_workers": 4,
-        "cursor_max_workers": 4,
-        "devin_max_workers": 4,
-        "openrouter_max_workers": 4,
+        "max_workers": benchmark_max_workers,
+        "codex_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["codex_cli"],
+        "claude_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["claude_cli"],
+        "cursor_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["cursor_cli"],
+        "devin_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["devin_cli"],
+        "grok_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["grok_cli"],
+        "openrouter_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["openrouter"],
         "startup_health_check_tick": 5,
         "startup_health_max_failure_rate": 0.2,
     }
@@ -1177,6 +1207,8 @@ def _ablate(args: argparse.Namespace) -> None:
             return ClaudeBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         if args.brain == "cursor":
             return CursorBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
+        if args.brain == "grok":
+            return GrokBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         if args.brain == "devin":
             return DevinBrain(
                 model=args.model,

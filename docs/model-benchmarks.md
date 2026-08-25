@@ -1,6 +1,9 @@
 # Agent World model benchmarks
 
 Agent World Participant v7 is the current standardized model benchmark suite.
+The suite and scoring rules live in this document; operators launching,
+resuming, or finalizing a standardized benchmark must also follow the canonical
+[benchmark run protocol](benchmark-run-protocol.md).
 
 ## Participant v7: self-classified transfers
 
@@ -180,7 +183,7 @@ Every benchmark run uses:
 | Decisions | raw |
 | Action feedback | baseline |
 | Resolution | simultaneous |
-| Global/provider workers | 4 |
+| Global/provider workers | Provider-aware: Codex CLI 40; Claude CLI and Grok CLI 20; others 4 (all effectively at most 10 with this population) |
 | Connector | `stateless-v3` |
 | Provider conversation | stateless |
 | Private agent I/O | enabled |

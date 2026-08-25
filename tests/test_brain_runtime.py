@@ -19,6 +19,24 @@ from agent_world.world import WorldEngine
 
 
 class BrainRuntimeTests(unittest.TestCase):
+    def test_model_backed_brains_default_to_four_workers(self) -> None:
+        worker_env = {
+            "openrouter": "OPENROUTER_MAX_PARALLEL_AGENTS",
+            "codex": "CODEX_MAX_PARALLEL_AGENTS",
+            "claude": "CLAUDE_MAX_PARALLEL_AGENTS",
+            "cursor": "CURSOR_MAX_PARALLEL_AGENTS",
+            "devin": "DEVIN_MAX_PARALLEL_AGENTS",
+            "grok": "GROK_MAX_PARALLEL_AGENTS",
+        }
+        with patch.dict(os.environ, {}, clear=True):
+            for brain_type in worker_env:
+                with self.subTest(brain_type=brain_type):
+                    self.assertEqual(BrainSpec.resolve(brain_type).max_workers, 4)
+
+    def test_model_worker_environment_override_is_honored(self) -> None:
+        with patch.dict(os.environ, {"CODEX_MAX_PARALLEL_AGENTS": "7"}, clear=True):
+            self.assertEqual(BrainSpec.resolve("codex").max_workers, 7)
+
     def test_brain_spec_rejects_invalid_concurrency(self) -> None:
         with self.assertRaisesRegex(ValueError, "max_workers"):
             BrainSpec.resolve("codex", max_workers=0)

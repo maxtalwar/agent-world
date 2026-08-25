@@ -13,7 +13,7 @@ import time
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from agent_world.brain_factory import BrainSpec
+from agent_world.brain_factory import BrainSpec, DEFAULT_MODEL_MAX_WORKERS
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.env import load_dotenv
 from agent_world.metrics import compute_metrics, is_decision_failure_message, is_quota_failure_message
@@ -33,7 +33,7 @@ TUNED_OBSERVATORY_DEFAULTS = {
     "model": "z-ai/glm-5.2",
     "reasoning_effort": "medium",
     "log_agent_io": True,
-    "max_workers": 1,
+    "max_workers": DEFAULT_MODEL_MAX_WORKERS,
 }
 
 
@@ -45,7 +45,7 @@ class RunConfig:
     model: str | None = None
     reasoning_effort: str | None = None
     log_agent_io: bool = True
-    max_workers: int = 1
+    max_workers: int = DEFAULT_MODEL_MAX_WORKERS
     connector_profile: str = "stateless-v1"
     conversation_mode: str = "stateless"
     session_max_turns: int = 10
@@ -66,7 +66,7 @@ class RunStatus:
     model: str | None = None
     reasoning_effort: str | None = None
     log_agent_io: bool = True
-    max_workers: int = 1
+    max_workers: int = DEFAULT_MODEL_MAX_WORKERS
     started_at: float | None = None
     finished_at: float | None = None
     stop_requested: bool = False
@@ -263,9 +263,10 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         "claude",
         "cursor",
         "devin",
+        "grok",
     }:
         raise ValueError(
-            "brain must be survival, openrouter, codex, claude, cursor, or devin."
+            "brain must be survival, openrouter, codex, claude, cursor, devin, or grok."
         )
     if brain == "codex":
         model = str(payload.get("model") or os.environ.get("CODEX_MODEL") or "gpt-5.6-luna").strip()
@@ -276,6 +277,9 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
     elif brain == "cursor":
         model = str(payload.get("model") or os.environ.get("CURSOR_MODEL") or "cursor-grok-4.5").strip()
         default_effort = os.environ.get("CURSOR_REASONING_EFFORT", "low")
+    elif brain == "grok":
+        model = str(payload.get("model") or os.environ.get("GROK_MODEL") or "grok-4.6").strip()
+        default_effort = os.environ.get("GROK_REASONING_EFFORT", "medium")
     elif brain == "devin":
         model = str(
             payload.get("model")
@@ -350,16 +354,16 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         brain=brain,
         model=(
             model
-            if brain in {"openrouter", "codex", "claude", "cursor", "devin"}
+            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok"}
             else None
         ),
         reasoning_effort=(
             reasoning_effort
-            if brain in {"openrouter", "codex", "claude", "cursor", "devin"}
+            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok"}
             else None
         ),
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
-        max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=20),
+        max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=40),
         connector_profile=_bounded_choice(
             payload.get("connector_profile", "stateless-v1"),
             "connector_profile",

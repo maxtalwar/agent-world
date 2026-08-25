@@ -89,13 +89,13 @@ OPENROUTER_MAX_OUTPUT_TOKENS=8000
 OPENROUTER_REASONING_EFFORT=medium
 OPENROUTER_MAX_RETRIES=4
 OPENROUTER_MIN_REQUEST_INTERVAL_SECONDS=0.5
-OPENROUTER_MAX_PARALLEL_AGENTS=1
+OPENROUTER_MAX_PARALLEL_AGENTS=4
 SSL_CERT_FILE=/etc/ssl/cert.pem
 ```
 
-OpenRouter runs default to one request at a time to avoid token-per-minute
-bursts. Increase `OPENROUTER_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
-if your rate limits can handle it. Cost knobs include
+Ordinary runs default to four concurrent decisions. Change
+`OPENROUTER_MAX_PARALLEL_AGENTS` or pass `--max-workers` only when a different
+account or host limit has been measured. Cost knobs include
 `OPENROUTER_REASONING_EFFORT` and `OPENROUTER_MAX_OUTPUT_TOKENS`.
 If the API returns hard quota/credit exhaustion, the run stops early and reports `quota_failures` so the log is not mistaken for agent behavior.
 
@@ -144,9 +144,13 @@ outside the repository, and constrains the final response to an equivalent
 strict decision contract that the adapter normalizes back to Agent World's flat
 action shape.
 Codex-plan results should be labeled separately from raw API results because the
-Codex harness adds its own runtime instructions. Runs default to one concurrent
-Codex decision; raise `CODEX_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
-after benchmarking account limits and host load.
+Codex harness adds its own runtime instructions. Ordinary runs default to a
+four-worker global pool. Provider ceilings inside a larger pool default to 40
+for Codex, 20 for Claude Code and Grok Build, and 4 for the remaining
+harnesses. Every provider ceiling is clamped to the run's global worker count.
+Participant benchmarks use those provider-aware defaults, although the current
+ten-agent population can issue at most ten simultaneous decisions. Explicit
+provider worker flags still override ordinary-run defaults.
 
 ### Claude plan agents
 
@@ -297,7 +301,8 @@ Provider concurrency is independently bounded even when the global worker pool
 is larger:
 
 ```bash
---max-workers 8 --claude-max-workers 4 --codex-max-workers 4 --devin-max-workers 2
+--max-workers 30 --claude-max-workers 20 --codex-max-workers 30 \
+  --grok-max-workers 20 --devin-max-workers 2
 ```
 
 For a mixed native/Cursor run, for example:

@@ -21,34 +21,169 @@ masqueraded as model behavior — append an entry.** Rules:
   silently delete.
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
+## 2026-08-24 -- Codex process count was not the desktop's limiting resource
+
+**Four simultaneous Codex cells sustained an aggregate 99 observed child
+processes without swapping, while the 40-worker cell remained the fastest
+setting tested.** Matched 40-agent, five-tick cells at 10, 20, 30, and 40
+workers finished in 372.5, 241.5, 218.4, and 168.4 seconds respectively. All
+800 decisions succeeded with clean harness integrity. The 40-worker cell's
+median call slowed to 22.9 seconds from 16.2 at 10 workers, showing contention,
+but eliminating scheduling waves still delivered 2.21x whole-run throughput.
+During the four-way overlap WSL retained at least 12,273 MiB available memory
+and recorded zero swap use, page-ins, or page-outs. This is a harness/host
+capacity result, not model behavior: on this desktop 40 is a tested-safe Codex
+ceiling and the actual ceiling lies above the tested range.
+Evidence: `runs/experiments/desktop-worker-ramp-20260824/analysis.md`;
+`runs/experiments/desktop-worker-ramp-20260824/host-resource-samples.csv`;
+per-cell manifests and usage ledgers in that experiment directory.
+
+## 2026-08-24 — A provider ceiling is not an effective worker default
+
+**Raising a provider semaphore alone did not increase concurrency because the
+upstream global pool remained the binding limit.** Commit `58dc3b8` initially
+raised only `codex_cli`'s provider ceiling; `BrainSpec.resolve` still fell back
+to one global worker, and the isolated-cohort launcher did not inject a
+different value. The original ramp manifests confirm that every measured cell
+explicitly passed both `--max-workers` and `--codex-max-workers`. Ordinary
+provider-backed runs now default to a four-thread global pool. Inside a larger
+pool, provider defaults are 40 for Codex, 20 for Claude Code and Grok Build,
+and 4 for the remaining harnesses, with every provider value clamped to the
+global pool. The Codex value is supported by the desktop ramp; the Claude and
+Grok values are conservative inferences, not measured results. Because the
+current benchmark population has ten agents, all three larger configured
+limits still mean at most ten simultaneous decisions in that protocol.
+Evidence: commit `58dc3b8`; `agent_world/brain_factory.py`;
+`agent_world/cli.py`; `runs/experiments/worker-ramp-20260802/*/run-manifest.json`.
+
 
 ---
 
-## 2026-08-22 -- Repairing Ox Alpha's syntax did not repair its society
+## 2026-08-24 — Grok Build's cost telemetry is not an API-list-price estimate
 
-**A deterministic, lossless structural repair oracle raised Ox Alpha's
-Participant-v6 contract-valid decision rate from 17.8% to 91.9%, yet both
-repaired populations went extinct and pooled sustained competence remained
-zero.** Across seeds 11 and 41, the oracle modified 544/714 responses (76.2%):
-528 message-field renames and 20 memory-object conversions. It recovered 529
-otherwise invalid decisions, while 58 responses still failed the unchanged
-contract. There were no provider, quota, harness, or ambiguous-boundary
-failures and usage coverage was 100%, so the completed worlds isolate behavior
-after interface normalization rather than an operational incident.
+**Grok Build's subscription telemetry reported $4.213683 for the completed
+seed-11 run, while the same 8.451M input tokens and 1.972M output tokens cost
+$24.786370 at xAI's public Grok 4.6 API rates—a 5.88x difference—and a connector
+normalization bug initially hid most cache reads.** The CLI exposes uncached
+input (`inputTokens`) and cache reads (`cacheReadInputTokens`) as disjoint
+counts, whereas Agent World's common usage contract defines cached tokens as a
+subset of inclusive prompt tokens. The old connector copied only the uncached
+field into `prompt_tokens`; the generic cost calculator then capped 2,631,168
+reported cache-read tokens down to 455,064 because many individual cache counts
+exceeded the incorrectly narrow prompt count. This is entirely a harness and
+billing-basis artifact, not model behavior. The connector now writes inclusive
+prompt totals, the report loader deterministically upgrades historical Grok
+records from their preserved `grok_model_usage`, and reports retain the $4.21
+subscription figure separately from the comparable $24.79 API equivalent.
+Evidence:
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-usage.jsonl`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json`,
+`agent_world/grok_brain.py`, `agent_world/run_report.py`,
+`agent_world/usage.py`, and `tests/test_usage.py`.
 
-The normalized pooled execution score was 69.13, but execution did not become
-survival. All 20 agents died, with deaths starting at ticks 27 and 28; thirst
-appeared in 248 survival-damage records and hunger in 186. The agents completed
-seven structures and communicated 576 times, but accepted no trades, formed no
-groups or contracts, supplied no enterprise value, and converted only 13 farm
-actions into eight harvests. The result separates interface competence from
-world competence: Ox Alpha's raw schema mismatch concealed usable action
-selection, but it did not explain the societal collapse.
+## 2026-08-24 — Grok formed an informal winter shelter exchange but failed at basic water resilience
 
-This is deliberately not a leaderboard result. The repair oracle changed the
-transported decision shape on most calls, so 69.13 estimates the controlled
-variant rather than unassisted Ox Alpha. Evidence:
-`runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/ox-alpha-repair-oracle-analysis.{json,md}`.
+**Grok 4.6 Build created a ledger-real shelter-for-help network without any
+formal group, contract, or access-fee mechanism, yet the shelter owner died
+immediately after winter with zero water.** In the clean Participant v6 seed-11
+run, Agent 6 and Agent 10 completed shelter 14 at tick 36 with contributor
+shares of 62.5% and 37.5%. Their messages repeatedly framed access as being
+for food or help rather than additional equity; Agent 6 then granted shelter
+access to Agents 10, 7, 9, and 1, while Agent 10 delivered two food and Agent 9
+delivered four coins plus one food. Because the exchanges used gifts and
+discretionary access rather than formal fees, they initially went unscored. A
+subsequently frozen revision-2 classification identified five commercial gifts
+worth 22.5 accounting units as service income while leaving 7.0 units informal.
+The network nevertheless sheltered
+several agents through winter. Agent 6 survived the season but left the roof
+to recover supplies and died at tick 49 with energy 24, food 4, and water 0.
+This is model behavior rather than a harness artifact: all 500 decisions were
+successful with clean integrity and full usage coverage. It shows that Grok
+could improvise property rights, contributor shares, and reciprocal aid while
+still failing to manage the proprietor's most basic survival constraint.
+Evidence:
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run.jsonl`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/study-manifest.json`.
+
+## 2026-08-23 — Grok reported an exhausted balance as a successful process carrying an error envelope
+
+**Grok Build returned HTTP 402 quota exhaustion inside a JSON `type=error`
+envelope while the CLI process exited successfully, so the connector treated a
+provider refusal as an ambiguous payload-extraction failure and bypassed the
+benchmark's quota-wait policy.** Two independent Participant v6 cells reached
+the same account boundary after 210 and 200 successful decisions respectively.
+At seed 11 tick 21 and seed 41 tick 20, all ten attempted decisions preserved
+the exact message `Grok Build usage balance exhausted`; both worlds stopped at
+clean checkpoints with `decisions_unusable` instead of entering the configured
+12-hour wait. This was a harness artifact, not model behavior. The connector
+now recognizes explicit error envelopes regardless of process exit status, and
+the shared quota classifier recognizes the provider's `usage balance exhausted`
+wording. Regression coverage reproduces the exit-zero envelope and verifies
+that one refusal opens the run-scoped quota circuit before another agent call.
+Evidence:
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-usage-partial-tick-21.jsonl`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-usage-partial-tick-20.jsonl`,
+`agent_world/grok_brain.py`, `agent_world/provider_limits.py`,
+`tests/test_grok_brain.py`, `tests/test_provider_limits.py`.
+
+## 2026-08-22 -- Grok's backend model label poisoned its next request
+
+**The direct Grok CLI connector successfully obtained one decision per agent
+from Grok 4.6, then mistook the backend response label `grok-4.6-build` for a
+callable model ID and fabricated 360 wait actions after Grok rejected every
+subsequent request.** Both Participant-v6 seeds launched with the public model
+name `grok-4.6`. All 20 tick-0 calls succeeded, resolved to
+`grok-4.6-build`, and returned contract-valid decisions. The connector then
+assigned that response label to `resolved_model` and reused it in the next
+`--model` argument. From ticks 1 through 18, every one of 360 calls failed
+with the same `unknown model id` error. Because the connector returned a
+synthetic `wait` decision instead of stopping the world, all 20 agents died at
+tick 18 and the empty worlds advanced to tick 50.
+
+This is harness behavior, not Grok capability. The generated reports compound
+the error by claiming clean integrity, clean quality, zero decision failures,
+protocol compliance, and replication eligibility even though their own usage
+ledgers mark 180 ambiguous-boundary payload-extraction failures per seed. The
+frozen scorer mechanically pools the corrupted worlds to 22.20 execution and
+zero competence and entrepreneurship, but those numbers must never be used as
+a model result. The only genuine model evidence is first-turn behavior: 20/20
+contract-valid, purposeful decisions submitted 66 actions, of which 60 were
+feasible; successful calls had 30.59-second median latency, 41.14-second p95,
+31,876 reasoning tokens, and $0.14152364 of provider-reported usage. Evidence:
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-seeds11-41-20260822-233838/{study-manifest.json,grok-4-6-direct-v6-seed11,grok-4-6-direct-v6-seed41}`
+and launch commit `da4cf018e7be0cea68dca8c5f71d19f240b82167`.
+
+## 2026-08-22 -- Ox Alpha's repair oracle exposed both a capability split and a certification trap
+
+**Deterministic shape repair raised Ox Alpha's Participant-v6 contract-valid
+rate from 17.8% to 91.9%, but both repaired populations still went extinct—and
+the frozen aggregator would have mislabeled the controlled intervention
+“certified.”** Across seeds 11 and 41, the declared `ox-alpha-schema-v1`
+oracle modified 544/714 responses (76.2%): 528 message-field renames and 20
+memory-object conversions. Fifty-eight decisions still violated the unchanged
+contract after repair. Both cells had 100% usage coverage and no provider,
+quota, harness, or ambiguous-boundary failures.
+
+Frozen Participant-v6 tooling at the clean launch commit pools the repaired
+variant to 69.13 execution, 0.0 sustained competence, and 0.0 entrepreneurial
+agency. At tick 30 the two worlds still had nine and seven living agents with
+competence 58.27 and 53.34; by tick 40 only two and one remained, and all 20
+were dead by ticks 46 and 43. The agents completed seven structures and sent
+576 communications, but accepted no trades, formed no group or contract,
+supplied no enterprise value, and accumulated 710 invalid proposals. Interface
+normalization therefore recovered substantial action-selection ability without
+recovering survival or economic coordination.
+
+The certification failure is a harness-provenance issue, not model behavior.
+The study manifest correctly declares `raw_with_declared_structural_repair`
+and diagnostic-only status, and 544 usage rows preserve original and repaired
+payloads plus hashes. The generated run manifests nevertheless record
+`decision_mode=raw`, their reports mark `protocol_compliant=true`, and the
+launch-commit aggregator consequently prints `certified`. Artifact evidence
+overrides that label: the result belongs to a controlled diagnostic variant
+and must never enter the unassisted leaderboard. Evidence:
+`runs/benchmarks/ox-alpha-openrouter-participant-v6-repair-oracle-seeds11-41-20260821-170222/{study-manifest.json,ox-alpha-repair-v6-seed11,ox-alpha-repair-v6-seed41}`.
 
 ## 2026-08-21 -- Ox Alpha knew the decision keys but not their contract
 
@@ -182,15 +317,17 @@ down to ~4,000, sustained swapout growth, load average 86, and median decision
 latency degraded to 23.3s — nearly 2x the 8-worker baseline. Still zero
 provider failures. The laptop failed, not the account.
 
-Two consequences. First, 24 is now the default codex_cli worker ceiling for
-non-benchmark runs (the benchmark protocol stays locked at 4, which preserves
-comparability with the entire existing corpus). Second, this bounds
-large-population ambitions more sharply than cost does: a 100-agent world
-needs roughly 7GB of subprocess memory before the engine or the model bill is
-considered, so scaling past ~40 concurrent agents requires a materially larger
-machine or distribution across hosts. Notably the cloud sandboxes surveyed the
-same day (Codex Cloud 16GB/2 cores, Claude Cloud 15GB/4 vCPU) are SMALLER than
-the 24GB development laptop, so moving execution to them would buy
+Two consequences followed on the laptop. First, 24 became its default Codex
+worker ceiling. A 2026-08-24 desktop ramp superseded that machine-specific
+recommendation: 40 workers was fastest with no swap, so the desktop default is
+now 40. Claude Code and Grok Build use an inferred 20-worker default pending
+equivalent provider-specific ramps. Second, this bounds large-population
+ambitions more sharply than cost does: a 100-agent world needs roughly 7GB of
+subprocess memory before the engine or the model bill is considered, so scaling
+past ~40 concurrent agents requires a materially larger machine or distribution
+across hosts. Notably the cloud sandboxes surveyed the same day (Codex Cloud
+16GB/2 cores, Claude Cloud 15GB/4 vCPU) are SMALLER than the 24GB development
+laptop, so moving execution to them would buy
 laptop-independence and reliability but not headroom.
 Evidence: `runs/experiments/worker-ramp-20260802/{w16,w24,w40,w100}`, with
 per-cell resource samples in each directory and `w100/probe-status.txt`
@@ -415,7 +552,6 @@ Evidence: `runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-2026
 seed 11 of the same pair is clean at 89.6/85.1/55.8). Audit of all 37 v6
 ledgers found this the only run in which the corrected code path was
 reachable.
-
 ## 2026-07-31 — Opus 5 converted a small reasoning budget into the strongest society yet
 
 **Claude Opus 5 averaged only 287 estimated reasoning tokens per decision—about
