@@ -92,6 +92,13 @@ the study.
   Fable 5 and Opus 5. It remains a simulated position because its clean launch
   fingerprint has not been admitted as compatible with the closed canonical
   Participant-v6 pool.
+- Grok 4.5 has no valid cross-harness benchmark result. The Participant-v7
+  Grok Build cells both stopped at tick 5 after 20/50 and 13/50
+  ambiguous-boundary failures whose provider envelopes were marked
+  `stopReason=cancelled`. The older Cursor Participant-v6 seed-11 diagnostic
+  reached tick 50 but accumulated 35 ambiguous loop-detection failures and 8
+  confirmed output-contract violations. These runs support a harness-boundary
+  comparison only, not a capability ranking.
 - The direct Grok 4.6 Build study is retained as an invalid harness
   diagnostic. Only tick 0 reached the model before a connector identity bug
   converted 360 rejected requests into synthetic wait actions. It has no

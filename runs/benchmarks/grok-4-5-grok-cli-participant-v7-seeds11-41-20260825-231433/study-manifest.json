@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433",
-  "status": "launched_running",
+  "status": "stopped_startup_diagnostic",
   "created_at_utc": "2026-08-25T23:14:33Z",
   "launched_at_utc": "2026-08-25T23:16:32Z",
   "study_type": "benchmark_trial",
@@ -62,19 +62,43 @@
     "cells": {
       "grok-4-5-build-v7-seed-11": {
         "seed": 11,
-        "status": "running",
+        "status": "stopped_startup_health_check_failed",
         "cohort": "grok45-build-v7-s11-20260825",
         "target_tick": 50,
         "out": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed11/run.jsonl",
-        "snapshot": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed11/run-snapshot.json"
+        "snapshot": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed11/run-snapshot.json",
+        "final_tick": 5,
+        "ended_at_utc": "2026-08-25T23:17:57.633582+00:00",
+        "stop_reason": "startup_health_check_failed",
+        "usage_record_coverage_pct": 100.0,
+        "benchmark_integrity_status": "invalid",
+        "ambiguous_boundary_failure_events": 20,
+        "model_output_failure_events": 0,
+        "harness_failure_events": 0,
+        "provider_reported_subscription_cost_usd": 0.33508224,
+        "api_list_cost_usd": null,
+        "api_list_cost_unavailable_reason": "No maintained public rate-card entry maps the recorded grok-4.5 token classes.",
+        "report": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed11/run-report.json"
       },
       "grok-4-5-build-v7-seed-41": {
         "seed": 41,
-        "status": "running",
+        "status": "stopped_startup_health_check_failed",
         "cohort": "grok45-build-v7-s41-20260825",
         "target_tick": 50,
         "out": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed41/run.jsonl",
-        "snapshot": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed41/run-snapshot.json"
+        "snapshot": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed41/run-snapshot.json",
+        "final_tick": 5,
+        "ended_at_utc": "2026-08-25T23:18:16.548420+00:00",
+        "stop_reason": "startup_health_check_failed",
+        "usage_record_coverage_pct": 100.0,
+        "benchmark_integrity_status": "invalid",
+        "ambiguous_boundary_failure_events": 13,
+        "model_output_failure_events": 0,
+        "harness_failure_events": 0,
+        "provider_reported_subscription_cost_usd": 0.348964712,
+        "api_list_cost_usd": null,
+        "api_list_cost_unavailable_reason": "No maintained public rate-card entry maps the recorded grok-4.5 token classes.",
+        "report": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed41/run-report.json"
       }
     }
   },
@@ -105,13 +129,42 @@
     "quota_wait_hours": 12
   },
   "launcher": "scripts/run-isolated-cohort",
+  "diagnostic_summary": {
+    "cells_stopped_at_tick": 5,
+    "usage_calls": 100,
+    "ambiguous_boundary_failure_events": 33,
+    "model_output_failure_events": 0,
+    "failure_class": "payload_extraction_failure",
+    "provider_stop_reason": "cancelled",
+    "parseable_json_text_in_cancelled_envelopes": 30,
+    "gift_events": 0,
+    "classifier_status": "not_applicable_participant_v7"
+  },
   "analysis_readiness": {
     "schema_version": 1,
-    "status": "not_ready_running",
+    "status": "diagnostic_only",
+    "checked_at_utc": "2026-08-26T03:19:48Z",
+    "launch_commit": "2f49eb3e092b0a76cf2cec64372f69438eb64276",
+    "protocol": "participant-v7",
     "completed_seeds": [],
     "waiting_seeds": [],
+    "integrity": "invalid",
+    "usage_coverage_pct": 100.0,
+    "model_provenance": "Requested grok-4.5 through grok_cli; response telemetry contains grok-4.5 and grok-4.5-build labels.",
+    "cost_accounting": "unavailable_no_matching_api_rate_card",
+    "transfer_accounting": {
+      "mode": "self_declared_v7",
+      "complete": true,
+      "artifacts": []
+    },
+    "reports": [
+      "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed11/run-report.json",
+      "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed41/run-report.json"
+    ],
     "blockers": [
-      "Both benchmark cells must complete and pass finalization checks."
+      "Seed 11 stopped at tick 5 after 20/50 ambiguous-boundary payload-extraction failures triggered the startup health gate.",
+      "Seed 41 stopped at tick 5 after 13/50 ambiguous-boundary payload-extraction failures triggered the startup health gate.",
+      "Neither cell reached the official 50-tick endpoint, so the study cannot support a model-performance score or leaderboard position."
     ]
   }
 }

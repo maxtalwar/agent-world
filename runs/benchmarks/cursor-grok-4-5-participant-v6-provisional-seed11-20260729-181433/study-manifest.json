@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433",
-  "status": "running_provisional",
+  "status": "completed_diagnostic_only",
   "created_at_utc": "2026-07-29T18:14:33Z",
   "suite_id": "agent-world-participant-v6",
   "benchmark_protocol": "participant-v6",
@@ -29,12 +29,20 @@
         "seed": 11,
         "model": "cursor-grok-4.5",
         "resolved_model_expected": "cursor-grok-4.5-medium",
-        "status": "running",
+        "status": "completed_diagnostic_only",
         "cohort": "grok45-v6-seed11",
         "screen": "aw-bench-grok45-v6-s11",
         "target_tick": 50,
         "started_at_utc": "2026-07-29T18:15:51.913905+00:00",
-        "resolved_model_confirmed": "cursor-grok-4.5-medium"
+        "resolved_model_confirmed": "cursor-grok-4.5-medium",
+        "final_tick": 50,
+        "ended_at_utc": "2026-07-29T20:19:50.278800+00:00",
+        "usage_record_coverage_pct": 100.0,
+        "benchmark_integrity_status": "invalid",
+        "ambiguous_boundary_failure_events": 35,
+        "model_output_failure_events": 8,
+        "report": "runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11/run-report.json",
+        "gift_classification": "runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11/gift-classifications.json"
       }
     }
   },
@@ -120,5 +128,49 @@
   ],
   "outputs": [
     "runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11"
-  ]
+  ],
+  "diagnostic_result": {
+    "effective_execution": 86.2,
+    "sustained_competence": 74.68,
+    "entrepreneurial_agency": 40.33,
+    "living_agents": 7,
+    "initial_agents": 10,
+    "llm_calls": 485,
+    "ambiguous_boundary_failure_events": 35,
+    "model_output_failure_events": 8,
+    "gift_classification": {
+      "gift_count": 5,
+      "payment_for_service": 1,
+      "barter_settlement": 0,
+      "unrequited_transfer": 4,
+      "unclassifiable": 0
+    }
+  },
+  "analysis_readiness": {
+    "schema_version": 1,
+    "status": "diagnostic_only",
+    "checked_at_utc": "2026-08-26T03:19:48Z",
+    "launch_commit": "1e783cde804a4f178463af4e7ec1b5dc5930fa32",
+    "protocol": "participant-v6",
+    "completed_seeds": [11],
+    "waiting_seeds": [],
+    "integrity": "invalid",
+    "usage_coverage_pct": 100.0,
+    "model_provenance": "verified_cursor-grok-4.5-medium",
+    "cost_accounting": "unavailable_no_matching_api_rate_card",
+    "transfer_accounting": {
+      "mode": "frozen_judge_v6",
+      "complete": true,
+      "artifacts": [
+        "runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11/gift-classifications.json"
+      ]
+    },
+    "reports": [
+      "runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11/run-report.json"
+    ],
+    "blockers": [
+      "Only seed 11 was run; replicated certification requires seeds 11 and 41.",
+      "The completed cell has invalid integrity from 35 ambiguous-boundary failures and 8 confirmed model-output contract violations."
+    ]
+  }
 }

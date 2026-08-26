@@ -21,6 +21,30 @@ masqueraded as model behavior — append an entry.** Rules:
   silently delete.
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
+
+## 2026-08-25 — Grok 4.5 failed differently across Grok Build and Cursor
+
+**Grok Build was roughly four times faster than Cursor for Grok 4.5, but its
+direct boundary cancelled enough valid-looking startup responses to stop both
+worlds at tick 5; Cursor began cleanly and failed later through a concentrated
+loop-detector pathology.** In the Participant-v7 Grok Build cells, 20/50 seed-11
+decisions and 13/50 seed-41 decisions were ambiguous-boundary extraction
+failures. Every failed envelope carried `stopReason=cancelled`, yet 30 of the 33
+still contained syntactically parseable JSON text. The integrity fence correctly
+refused to score cancelled completions, and both cells stopped at the startup
+gate. Their median decision latencies were 10.04 and 10.98 seconds. The older
+Participant-v6 Cursor seed-11 diagnostic had zero failures in its first 50
+decisions and reached tick 50, but ended with 43/485 failures: 35 Cursor
+`Agent Looping Detected` boundary errors and 8 confirmed output-contract
+violations, concentrated mainly in Agents 10, 4, and 5. Its median latency was
+45.56 seconds. This is a harness-compatibility result, not a clean model
+comparison: protocol version, worker count (20 versus 4), run date/backend,
+response identity, and seed coverage also differ. It shows that a provider
+wrapper can trade speed for a much worse failure shape without establishing
+that the underlying model became less capable.
+Evidence:
+`runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/{grok-4-5-build-v7-seed11,grok-4-5-build-v7-seed41}`;
+`runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11`.
 ## 2026-08-24 -- Codex process count was not the desktop's limiting resource
 
 **Four simultaneous Codex cells sustained an aggregate 99 observed child
