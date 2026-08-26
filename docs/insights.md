@@ -22,6 +22,40 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-08-26 — Grok 4.5 Build exposed a model/tool-boundary failure that the integrity audit undercounted
+
+**Grok 4.5 Build attempted coding tools in 77 of its first 100 Agent World
+decisions despite an explicit no-tools system prompt, and the connector
+mistakenly admitted 44 of those cancelled turns as decisions; Grok 4.6 attempted
+tools in 0 of 992 preserved calls through the same CLI version and command.** A
+trace audit of both Participant-v7 Grok 4.5 cells found only 23/100 turns with a
+normal completed outcome. Thirty-two turns called list_dir (31 also called
+grep) and ended max_turns_reached at the one-turn limit; these are the 32
+max-turn cancellations among the 33 ambiguous-boundary failures recorded in the
+usage ledgers. Another 45 turns attempted run_terminal_command and ended
+permission_cancelled. The adapter rejected one of those but accepted 44
+because it checked the CLI exit/error envelope and payload shape without
+requiring a successful terminal stopReason. Those admitted payloads included
+invented actions such as idle, list_dir, give, grep, drink, ask, forage, and
+look, so the worlds were already behaviorally contaminated before the startup
+gate stopped them at tick 5.
+
+The model-facing system prompt was not missing: each retained session starts
+with “Do not inspect files, run commands, browse, call tools, or delegate” and
+contains the full Agent World action list. The connector command was also the
+same one used by the clean Grok 4.6 Build study, and both studies used Grok CLI
+1.0.5. The model difference is therefore real evidence about coding-harness
+instruction adherence, but two harness defects amplified and obscured it:
+passing an empty --tools allowlist leaves Grok Build's default tools available,
+and the adapter does not reject every non-success terminal reason. This entry
+corrects the 2026-08-25 interpretation below that all cancelled completions were
+fenced out; only the max-turn subset was consistently fenced out.
+Evidence:
+runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433;
+retained Grok sessions under ~/.grok/sessions;
+runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608;
+agent_world/grok_brain.py; Grok CLI 1.0.5 README.md tool-filtering semantics.
+
 ## 2026-08-25 — Grok 4.5 failed differently across Grok Build and Cursor
 
 **Grok Build was roughly four times faster than Cursor for Grok 4.5, but its
