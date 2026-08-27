@@ -31,20 +31,9 @@ GROK_HARNESS_INSTRUCTIONS = (
     "The simulation engine will validate every action."
 )
 
-GROK_DISALLOWED_TOOLS = ",".join(
-    (
-        "run_terminal_cmd",
-        "grep",
-        "read_file",
-        "search_replace",
-        "list_dir",
-        "web_search",
-        "web_fetch",
-        "todo_write",
-        "task",
-        "Agent",
-    )
-)
+# Grok treats an empty allowlist as no filter. An unmatched sentinel produces
+# an actual empty tool set and fails closed if future CLIs validate tool names.
+GROK_NO_TOOLS_SENTINEL = "__agent_world_no_tools__"
 
 
 class GrokBrain:
@@ -276,7 +265,7 @@ class GrokBrain:
             "--no-plan",
             "--max-turns", "1",
             "--permission-mode", "plan",
-            "--disallowed-tools", GROK_DISALLOWED_TOOLS,
+            "--tools", GROK_NO_TOOLS_SENTINEL,
             "--cwd", workspace,
         ]
 

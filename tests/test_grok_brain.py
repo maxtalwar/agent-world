@@ -85,12 +85,9 @@ class GrokBrainTests(unittest.TestCase):
         self.assertEqual(command[command.index("--max-turns") + 1], "1")
         self.assertIn("--disable-web-search", command)
         self.assertIn("--no-subagents", command)
-        self.assertNotIn("--tools", command)
-        disallowed_tools = set(
-            command[command.index("--disallowed-tools") + 1].split(",")
-        )
-        self.assertTrue(
-            {"run_terminal_cmd", "grep", "list_dir", "task", "Agent"} <= disallowed_tools
+        self.assertNotIn("--disallowed-tools", command)
+        self.assertEqual(
+            command[command.index("--tools") + 1], "__agent_world_no_tools__"
         )
         self.assertNotIn("XAI_API_KEY", run.call_args.kwargs["env"])
         record = brain.runtime.usage_records()[0]
