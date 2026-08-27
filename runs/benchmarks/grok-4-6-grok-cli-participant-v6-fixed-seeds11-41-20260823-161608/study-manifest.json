@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608",
-  "status": "provisional_seed11_complete_seed41_resumed",
+  "status": "replicated_complete_analytical_only",
   "created_at_utc": "2026-08-23T16:16:08Z",
   "study_type": "benchmark_trial",
   "suite_id": "agent-world-participant-v6",
@@ -58,17 +58,26 @@
       },
       "grok-4-6-build-v6-seed-41": {
         "seed": 41,
-        "status": "resumed",
+        "status": "completed",
         "cohort": "grok46-build-v6-fixed-s41-20260823",
         "target_tick": 50,
         "out": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run.jsonl",
         "snapshot": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-snapshot.json",
-        "final_tick": 20,
-        "stop_reason": "decisions_unusable",
-        "provider_boundary": "HTTP 402 Grok Build usage balance exhausted",
+        "final_tick": 50,
+        "completed_at_utc": "2026-08-25T00:12:21.967167+00:00",
         "resumed_at_utc": "2026-08-24T22:19:44Z",
         "resume_launch_commit": "8bbd62e6b1bc7dc09b6239d3b6d3c4df6e59c793",
         "resume_validation": "Tick 20 resumed with contract-valid grok-4.6-build decisions after grok.com device authentication.",
+        "resolved_model_confirmed": "grok-4.6-build",
+        "benchmark_integrity_status": "clean",
+        "model_output_failure_events": 0,
+        "ambiguous_boundary_failure_events": 0,
+        "harness_failure_events": 0,
+        "usage_record_coverage_pct": 100.0,
+        "provider_reported_subscription_cost_usd": 3.99601864,
+        "api_list_cost_equivalent_usd": 23.505992,
+        "report": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-report.json",
+        "gift_classification": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/gift-classifications.json",
         "checkpoint": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-checkpoint.pkl"
       }
     }
@@ -101,27 +110,55 @@
   },
   "launcher": "scripts/run-isolated-cohort",
   "result": {
-    "certification": "provisional_single_seed",
-    "seed": 11,
-    "replicated_certification_pending_seed": 41,
+    "certification": "replicated_complete_analytical_only",
+    "seeds": [11, 41],
     "source_fingerprint_compatible": false,
     "leaderboard_status": "analytical_only_not_admitted",
-    "effective_execution": 92.4,
-    "sustained_competence": 81.88,
-    "entrepreneurial_agency": 108.67,
-    "economic_productivity": 271.5,
-    "living_agents": 9,
-    "initial_agents": 10,
-    "llm_calls": 500,
-    "provider_reported_subscription_cost_usd": 4.2136829,
-    "api_list_cost_equivalent_usd": 24.78637,
+    "effective_execution": 91.45,
+    "sustained_competence": 82.41,
+    "entrepreneurial_agency": 92.6,
+    "economic_productivity": 303.5,
+    "living_agents": 17,
+    "initial_agents": 20,
+    "llm_calls": 992,
+    "provider_reported_subscription_cost_usd_total": 8.20970154,
+    "api_list_cost_equivalent_usd_total": 48.292362,
+    "api_list_cost_equivalent_usd_per_run": 24.146181,
     "gift_classification": {
       "revision": 2,
-      "gift_count": 11,
-      "payment_for_service": 5,
+      "gift_count": 14,
+      "payment_for_service": 6,
       "barter_settlement": 1,
-      "unrequited_transfer": 5,
+      "unrequited_transfer": 7,
       "unclassifiable": 0
     }
+  },
+  "analysis_readiness": {
+    "schema_version": 1,
+    "status": "diagnostic_only",
+    "checked_at_utc": "2026-08-25T02:38:20Z",
+    "launch_commit": "8bbd62e6b1bc7dc09b6239d3b6d3c4df6e59c793",
+    "protocol": "participant-v6",
+    "completed_seeds": [11, 41],
+    "waiting_seeds": [],
+    "integrity": "clean",
+    "usage_coverage_pct": 100.0,
+    "model_provenance": "verified",
+    "cost_accounting": "api_list_derived",
+    "transfer_accounting": {
+      "mode": "frozen_judge_v6",
+      "complete": true,
+      "artifacts": [
+        "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/gift-classifications.json",
+        "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/gift-classifications.json"
+      ]
+    },
+    "reports": [
+      "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json",
+      "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-report.json"
+    ],
+    "blockers": [
+      "The clean launch fingerprint has not been admitted as a compatible canonical Participant-v6 fingerprint, so the pooled result supports a simulated analytical placement only."
+    ]
   }
 }

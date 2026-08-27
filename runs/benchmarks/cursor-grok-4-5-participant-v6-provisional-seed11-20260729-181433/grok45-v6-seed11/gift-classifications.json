@@ -1,0 +1,77 @@
+{
+ "schema_version": 1,
+ "purpose": "Frozen per-gift transfer classifications consumed by Participant v6 scoring revision 2. Judged once from ledger evidence; scoring reads this file deterministically. Re-judging requires a new scoring revision.",
+ "run_jsonl_sha256": "f088c53eae2acfda84a2c48b01bd84babbbba0e1236a32412a97e9172ca2f755",
+ "judge": {
+  "model": "gpt-5.6-sol",
+  "runtime": "codex exec --ephemeral --sandbox read-only",
+  "reasoning_effort": "medium",
+  "prompt_sha256": "e4f66a5b80cd53945933e3dc9454606f5fa605311c37aa68a7709f4d770f6885",
+  "output_schema_sha256": "9bd59825acb515c4657e807aca72c07b5a8bc1f809ae17abc0de5f00d395f924",
+  "judged_at": "2026-07-31"
+ },
+ "verdict_policy": "payment_for_service and barter_settlement require a verbatim ledger evidence quote (verified); unrequited_transfer and unclassifiable are unscored. Unclassified defaults to unscored.",
+ "gift_count": 5,
+ "classifications": [
+  {
+   "gift_index": 0,
+   "tick": 32,
+   "giver": "agent-7",
+   "recipient": "agent-6",
+   "items": {
+    "fiber": 1
+   },
+   "verdict": "payment_for_service",
+   "evidence_quote": "Please grant_access me to shelter-10 and farm-6. Gifting 1 fiber for farm upkeep.",
+   "reasoning": "Agent-7 explicitly connects the fiber transfer to the requested structure access and farm upkeep performed by agent-6."
+  },
+  {
+   "gift_index": 1,
+   "tick": 39,
+   "giver": "agent-6",
+   "recipient": "agent-7",
+   "items": {
+    "food": 1
+   },
+   "verdict": "unrequited_transfer",
+   "evidence_quote": "",
+   "reasoning": "The food was given to relieve agent-7's hunger during winter, with no stated exchange or service obligation."
+  },
+  {
+   "gift_index": 2,
+   "tick": 41,
+   "giver": "agent-6",
+   "recipient": "agent-7",
+   "items": {
+    "water": 1
+   },
+   "verdict": "unrequited_transfer",
+   "evidence_quote": "",
+   "reasoning": "The water was given for agent-7 to consume while thirsty, with no evidence of consideration."
+  },
+  {
+   "gift_index": 3,
+   "tick": 48,
+   "giver": "agent-1",
+   "recipient": "agent-6",
+   "items": {
+    "food": 1
+   },
+   "verdict": "unrequited_transfer",
+   "evidence_quote": "",
+   "reasoning": "Agent-1 announces the food as a gift, and the context contains no agreed payment or goods exchange involving the transfer."
+  },
+  {
+   "gift_index": 4,
+   "tick": 49,
+   "giver": "agent-6",
+   "recipient": "agent-2",
+   "items": {
+    "food": 1
+   },
+   "verdict": "unrequited_transfer",
+   "evidence_quote": "",
+   "reasoning": "Agent-6 gives food to agent-2 without an agreed counter-leg or evidence that it settles a service obligation."
+  }
+ ]
+}

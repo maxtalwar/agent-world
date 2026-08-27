@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "purpose": "Frozen per-gift transfer classifications consumed by Participant v6 scoring revision 2. Judged once from ledger evidence; scoring reads this file deterministically. Re-judging requires a new scoring revision.",
+  "run_jsonl_sha256": "cdc8f521532884efdd951735cea76d713e57444601476c4ea94a5ec8fe1228e9",
+  "judge": {
+    "model": "gpt-5.6-sol",
+    "runtime": "codex exec --ephemeral --sandbox read-only",
+    "reasoning_effort": "medium",
+    "prompt_sha256": "c5bfff9674f0dd493d4a13ad158b222079358fcb9fb723bd6fc67639b461dd5b",
+    "output_schema_sha256": "aadaa6fd0c6c1088e7daf937783585ab66358fff055658267bba953006e9f58a",
+    "judged_at": "2026-08-25"
+  },
+  "verdict_policy": "payment_for_service and barter_settlement require a verbatim ledger evidence quote (verified); unrequited_transfer and unclassifiable are unscored. Unclassified defaults to unscored.",
+  "gift_count": 3,
+  "classifications": [
+    {
+      "gift_index": 0,
+      "tick": 6,
+      "giver": "agent-6",
+      "recipient": "agent-1",
+      "items": {"food": 2},
+      "verdict": "unrequited_transfer",
+      "evidence_quote": "",
+      "reasoning": "The ledger describes this as sharing surplus food and does not state that Agent 1 owed consideration."
+    },
+    {
+      "gift_index": 1,
+      "tick": 38,
+      "giver": "agent-9",
+      "recipient": "agent-1",
+      "items": {"water": 1},
+      "verdict": "unrequited_transfer",
+      "evidence_quote": "",
+      "reasoning": "The water is described as a gift responding to Agent 1's critical thirst, with no consideration owed."
+    },
+    {
+      "gift_index": 2,
+      "tick": 40,
+      "giver": "agent-1",
+      "recipient": "agent-9",
+      "items": {"fiber": 1},
+      "verdict": "payment_for_service",
+      "evidence_quote": "A9: gifting 1 fiber for shelter upkeep.",
+      "reasoning": "The message explicitly identifies the fiber as payment toward upkeep of Agent 9's shelter, which Agent 1 was using for winter protection."
+    }
+  ]
+}

@@ -21,6 +21,94 @@ masqueraded as model behavior — append an entry.** Rules:
   silently delete.
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
+
+## 2026-08-26 — Strict terminal validation separated Grok 4.5's tool-seeking from harness contamination
+
+**After the connector began accepting only `end_turn`, a matched seed-11
+diagnostic found 20/50 Grok 4.5 Build decisions still diverted into hidden
+coding tools while Grok 4.6 Build completed 50/50 decisions without one tool
+event.** Both five-tick cells used Grok CLI 1.0.5, the same pinned commit,
+frontier-generalists world, medium reasoning, stateless-v3 connector, four
+workers, and an expanded denylist covering every documented tool plus the
+aliases found in earlier traces. Grok 4.5 nevertheless attempted `use_tool`
+(9), `write` (4), `workflow` (3), `monitor` (2), and `enter_plan_mode` (2).
+Its raw sessions ended 31 completed and 19 cancelled; the repaired adapter
+fenced all non-success terminal states, yielding 19 ambiguous-boundary failures
+plus one independent output-contract violation and correctly failing the 20%
+startup-health gate at a 40% decision-failure rate. Grok 4.6's 50 raw sessions
+all ended completed, with zero tool events and zero decision failures.
+
+The failure is therefore not primarily excessive reasoning or an inability to
+emit JSON: several cancelled Grok 4.5 envelopes contained plausible JSON, but
+the model chose a coding-agent tool turn first. It is also not fully removable
+with Grok CLI 1.0.5's documented tool filter: an unknown-only `--tools`
+allowlist still exposed default/internal tools, and expanding the denylist made
+4.5 shift to new internal names. The reliable harness boundary is terminal
+validation plus an isolated empty provider workspace; the denylist is only
+defense in depth. Grok 4.6 paid for its clean adherence with much heavier
+deliberation in this diagnostic: median latency was 70.62 seconds and mean
+reasoning 2,501 tokens/call versus 18.80 seconds and 707 tokens/call for 4.5.
+Evidence:
+`runs/experiments/grok-tool-boundary-side-by-side-v3-20260827-030634`;
+retained Grok sessions under `~/.grok/sessions`; commits `f7eada1`, `ec547e2`.
+
+## 2026-08-26 — Grok 4.5 Build exposed a model/tool-boundary failure that the integrity audit undercounted
+
+**Grok 4.5 Build attempted coding tools in 77 of its first 100 Agent World
+decisions despite an explicit no-tools system prompt, and the connector
+mistakenly admitted 44 of those cancelled turns as decisions; Grok 4.6 attempted
+tools in 0 of 992 preserved calls through the same CLI version and command.** A
+trace audit of both Participant-v7 Grok 4.5 cells found only 23/100 turns with a
+normal completed outcome. Thirty-two turns called list_dir (31 also called
+grep) and ended max_turns_reached at the one-turn limit; these are the 32
+max-turn cancellations among the 33 ambiguous-boundary failures recorded in the
+usage ledgers. Another 45 turns attempted run_terminal_command and ended
+permission_cancelled. The adapter rejected one of those but accepted 44
+because it checked the CLI exit/error envelope and payload shape without
+requiring a successful terminal stopReason. Those admitted payloads included
+invented actions such as idle, list_dir, give, grep, drink, ask, forage, and
+look, so the worlds were already behaviorally contaminated before the startup
+gate stopped them at tick 5.
+
+The model-facing system prompt was not missing: each retained session starts
+with “Do not inspect files, run commands, browse, call tools, or delegate” and
+contains the full Agent World action list. The connector command was also the
+same one used by the clean Grok 4.6 Build study, and both studies used Grok CLI
+1.0.5. The model difference is therefore real evidence about coding-harness
+instruction adherence, but two harness defects amplified and obscured it:
+passing an empty --tools allowlist leaves Grok Build's default tools available,
+and the adapter does not reject every non-success terminal reason. This entry
+corrects the 2026-08-25 interpretation below that all cancelled completions were
+fenced out; only the max-turn subset was consistently fenced out.
+Evidence:
+runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433;
+retained Grok sessions under ~/.grok/sessions;
+runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608;
+agent_world/grok_brain.py; Grok CLI 1.0.5 README.md tool-filtering semantics.
+
+## 2026-08-25 — Grok 4.5 failed differently across Grok Build and Cursor
+
+**Grok Build was roughly four times faster than Cursor for Grok 4.5, but its
+direct boundary cancelled enough valid-looking startup responses to stop both
+worlds at tick 5; Cursor began cleanly and failed later through a concentrated
+loop-detector pathology.** In the Participant-v7 Grok Build cells, 20/50 seed-11
+decisions and 13/50 seed-41 decisions were ambiguous-boundary extraction
+failures. Every failed envelope carried `stopReason=cancelled`, yet 30 of the 33
+still contained syntactically parseable JSON text. The integrity fence correctly
+refused to score cancelled completions, and both cells stopped at the startup
+gate. Their median decision latencies were 10.04 and 10.98 seconds. The older
+Participant-v6 Cursor seed-11 diagnostic had zero failures in its first 50
+decisions and reached tick 50, but ended with 43/485 failures: 35 Cursor
+`Agent Looping Detected` boundary errors and 8 confirmed output-contract
+violations, concentrated mainly in Agents 10, 4, and 5. Its median latency was
+45.56 seconds. This is a harness-compatibility result, not a clean model
+comparison: protocol version, worker count (20 versus 4), run date/backend,
+response identity, and seed coverage also differ. It shows that a provider
+wrapper can trade speed for a much worse failure shape without establishing
+that the underlying model became less capable.
+Evidence:
+`runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/{grok-4-5-build-v7-seed11,grok-4-5-build-v7-seed41}`;
+`runs/benchmarks/cursor-grok-4-5-participant-v6-provisional-seed11-20260729-181433/grok45-v6-seed11`.
 ## 2026-08-24 -- Codex process count was not the desktop's limiting resource
 
 **Four simultaneous Codex cells sustained an aggregate 99 observed child
@@ -81,29 +169,31 @@ Evidence:
 `agent_world/grok_brain.py`, `agent_world/run_report.py`,
 `agent_world/usage.py`, and `tests/test_usage.py`.
 
-## 2026-08-24 — Grok formed an informal winter shelter exchange but failed at basic water resilience
+## 2026-08-25 — Grok repeatedly improvised shelter economies but failed at basic survival logistics
 
-**Grok 4.6 Build created a ledger-real shelter-for-help network without any
-formal group, contract, or access-fee mechanism, yet the shelter owner died
-immediately after winter with zero water.** In the clean Participant v6 seed-11
-run, Agent 6 and Agent 10 completed shelter 14 at tick 36 with contributor
-shares of 62.5% and 37.5%. Their messages repeatedly framed access as being
-for food or help rather than additional equity; Agent 6 then granted shelter
-access to Agents 10, 7, 9, and 1, while Agent 10 delivered two food and Agent 9
-delivered four coins plus one food. Because the exchanges used gifts and
-discretionary access rather than formal fees, they initially went unscored. A
-subsequently frozen revision-2 classification identified five commercial gifts
-worth 22.5 accounting units as service income while leaving 7.0 units informal.
-The network nevertheless sheltered
-several agents through winter. Agent 6 survived the season but left the roof
-to recover supplies and died at tick 49 with energy 24, food 4, and water 0.
-This is model behavior rather than a harness artifact: all 500 decisions were
-successful with clean integrity and full usage coverage. It shows that Grok
-could improvise property rights, contributor shares, and reciprocal aid while
-still failing to manage the proprietor's most basic survival constraint.
+**Across both clean seeds, Grok 4.6 Build improvised contributor shares,
+discretionary shelter access, and upkeep-for-roof exchanges without forming a
+single group, contract, or formal access-fee policy—then lost three agents to
+zero food or water.** In seed 11, Agents 6 and 10 completed shelter 14 with
+62.5%/37.5% contributor shares. Agent 6 admitted Agents 10, 7, 9, and 1 while
+messages explicitly negotiated food, coins, help, and winter access; the frozen
+classifier credited five commercial gifts worth 22.5 accounting units as
+service income. Agent 6 nevertheless died at tick 49 with water 0. Seed 41
+reproduced the same informal institution in a different form: Agent 9 made
+shelter 13 public, admitted Agents 1, 6, 8, and 7, and received one fiber from
+Agent 1 explicitly "for shelter upkeep." That was the run's only classified
+service payment. Meanwhile Agents 3 and 10 died at ticks 44 and 46 with both
+food and water at 0. The two frozen ledgers pool to 91.45 execution, 82.41
+competence, and 92.60 entrepreneurship, with 17/20 survivors and zero model,
+provider, quota, ambiguous-boundary, or harness failures. This is model
+behavior, not a harness artifact: Grok can invent working micro-property and
+reciprocity arrangements, but its high-level coordination does not reliably
+close individual subsistence loops.
 Evidence:
 `runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run.jsonl`,
-`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json`,
+`runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run.jsonl`,
+both `run-report.json` and `gift-classifications.json` artifacts in those seed
+directories,
 `runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/study-manifest.json`.
 
 ## 2026-08-23 — Grok reported an exhausted balance as a successful process carrying an error envelope

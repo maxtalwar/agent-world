@@ -385,10 +385,10 @@
     },
     {
       "model_key": "cursor-grok-4.5-diagnostic",
-      "label": "Grok 4.5 (diagnostic)",
+      "label": "Grok 4.5 via Cursor (diagnostic)",
       "kind": "diagnostic",
       "leaderboard_eligible": false,
-      "leaderboard_exclusion_reason": "Only one seed is present and the Cursor-backed run has invalid integrity and degraded quality flags.",
+      "leaderboard_exclusion_reason": "Only seed 11 is present. The Cursor-backed run reached tick 50 but has invalid integrity from 35 ambiguous-boundary loop-detection failures and 8 confirmed model-output contract violations; its Participant-v6 gift classification is complete.",
       "runs": [
         {
           "seed": 11,
@@ -479,12 +479,40 @@
       "label": "Grok 4.6 Build via Grok CLI",
       "kind": "benchmark_trial",
       "leaderboard_eligible": false,
-      "leaderboard_exclusion_reason": "Provisional clean seed 11 only; required seed 41 remains paused at its quota checkpoint, and the launch fingerprint has not been admitted as a compatible canonical Participant-v6 fingerprint.",
+      "leaderboard_exclusion_reason": "Both required seeds completed cleanly and are analytically poolable under Participant v6, but the launch fingerprint has not been admitted as a compatible canonical Participant-v6 fingerprint. Retain the two-seed result as a simulated placement, not an official leaderboard entry.",
       "runs": [
         {
           "seed": 11,
           "report_path": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json",
           "kind": "benchmark_trial"
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "xai-grok-4-5-build-grok-cli-startup-diagnostic",
+      "label": "Grok 4.5 Build via Grok CLI (startup diagnostic)",
+      "kind": "diagnostic",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "Both Participant-v7 cells stopped at the tick-5 startup health gate after 20/50 and 13/50 ambiguous-boundary payload-extraction failures. Neither cell reached the official endpoint.",
+      "runs": [
+        {
+          "seed": 11,
+          "report_path": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed11/run-report.json",
+          "kind": "diagnostic",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Stopped at tick 5 after 20/50 ambiguous-boundary payload-extraction failures triggered the startup health gate."
+        },
+        {
+          "seed": 41,
+          "report_path": "runs/benchmarks/grok-4-5-grok-cli-participant-v7-seeds11-41-20260825-231433/grok-4-5-build-v7-seed41/run-report.json",
+          "kind": "diagnostic",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Stopped at tick 5 after 13/50 ambiguous-boundary payload-extraction failures triggered the startup health gate."
         }
       ]
     },
