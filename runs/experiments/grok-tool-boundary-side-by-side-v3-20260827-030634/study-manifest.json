@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "study_id": "grok-tool-boundary-side-by-side-v3-20260827-030634",
+  "run_kind": "experiment",
+  "status": "completed_with_failed_cell",
+  "diagnostic_only": true,
+  "created_at_utc": "2026-08-27T03:06:34Z",
+  "question": "With all documented and trace-discovered Grok Build tools denied and strict end-turn validation, do Grok 4.5 Build and Grok 4.6 Build complete the same Agent World startup workload?",
+  "prior_attempts": [
+    "runs/experiments/grok-tool-boundary-side-by-side-20260827-023903",
+    "runs/experiments/grok-tool-boundary-side-by-side-v2-20260827-025904"
+  ],
+  "design": {
+    "seed": 11,
+    "agents": 10,
+    "target_tick": 5,
+    "decisions_per_cell": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "grok_max_workers": 4,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12
+  },
+  "provenance": {
+    "launch_commit": "ec547e2fb73a89087fc2da4dc0b5c5052140264f",
+    "launch_branch": "codex/harness-specific-worker-defaults",
+    "dirty_worktree": false,
+    "grok_cli_version": "1.0.5",
+    "tool_filter": "documented_and_trace_discovered_denylist",
+    "terminal_policy": "accept_end_turn_only"
+  },
+  "cells": {
+    "grok-4.5": {
+      "cohort": "grok45-deny-all-tools-s11-20260827",
+      "requested_model": "grok-4.5",
+      "expected_response_model": "grok-4.5-build",
+      "provider_workspace_root": "/tmp/agent-world-provider-workspaces/grok45-deny-all-tools-s11-20260827",
+      "status": "startup_health_check_failed",
+      "events": "runs/experiments/grok-tool-boundary-side-by-side-v3-20260827-030634/grok-4.5/run.jsonl",
+      "final_tick": 5,
+      "usage_records": 50,
+      "resolved_models": {
+        "grok-4.5-build": 49,
+        "grok-4.5": 1
+      },
+      "decision_failures": 20,
+      "decision_failure_rate_pct": 40.0,
+      "raw_session_outcomes": {
+        "completed": 31,
+        "cancelled": 19
+      },
+      "raw_tool_attempts": 20,
+      "raw_tool_attempts_by_name": {
+        "use_tool": 9,
+        "write": 4,
+        "workflow": 3,
+        "monitor": 2,
+        "enter_plan_mode": 2
+      }
+    },
+    "grok-4.6": {
+      "cohort": "grok46-deny-all-tools-s11-20260827",
+      "requested_model": "grok-4.6",
+      "expected_response_model": "grok-4.6-build",
+      "provider_workspace_root": "/tmp/agent-world-provider-workspaces/grok46-deny-all-tools-s11-20260827",
+      "status": "completed",
+      "events": "runs/experiments/grok-tool-boundary-side-by-side-v3-20260827-030634/grok-4.6/run.jsonl",
+      "final_tick": 5,
+      "usage_records": 50,
+      "resolved_models": {
+        "grok-4.6-build": 50
+      },
+      "decision_failures": 0,
+      "decision_failure_rate_pct": 0.0,
+      "raw_session_outcomes": {
+        "completed": 50,
+        "cancelled": 0
+      },
+      "raw_tool_attempts": 0,
+      "raw_tool_attempts_by_name": {}
+    }
+  },
+  "completion_condition": {
+    "required_final_tick": 5,
+    "required_usage_records_per_cell": 50,
+    "required_session_trace_coverage_pct": 100,
+    "required_tool_calls": 0
+  },
+  "result": {
+    "completed_at_utc": "2026-08-27T03:27:07Z",
+    "completion_condition_met": false,
+    "failed_conditions": [
+      "grok-4.5 required_tool_calls=0",
+      "grok-4.5 startup failure rate <= 20%"
+    ],
+    "finding": "The strict end-turn integrity patch correctly rejects Grok 4.5 cancelled tool turns. Grok 4.5 continued to select undocumented internal tools despite documented and trace-discovered tool denials, while Grok 4.6 completed the matched workload without a tool call or decision failure."
+  },
+  "transfer_accounting": {
+    "status": "not_required",
+    "reason": "No economic-performance claim is in scope."
+  },
+  "catalog_policy": "Diagnostic only; exclude from benchmark catalog and leaderboard."
+}

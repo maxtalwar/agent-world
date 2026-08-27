@@ -22,6 +22,36 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-08-26 — Strict terminal validation separated Grok 4.5's tool-seeking from harness contamination
+
+**After the connector began accepting only `end_turn`, a matched seed-11
+diagnostic found 20/50 Grok 4.5 Build decisions still diverted into hidden
+coding tools while Grok 4.6 Build completed 50/50 decisions without one tool
+event.** Both five-tick cells used Grok CLI 1.0.5, the same pinned commit,
+frontier-generalists world, medium reasoning, stateless-v3 connector, four
+workers, and an expanded denylist covering every documented tool plus the
+aliases found in earlier traces. Grok 4.5 nevertheless attempted `use_tool`
+(9), `write` (4), `workflow` (3), `monitor` (2), and `enter_plan_mode` (2).
+Its raw sessions ended 31 completed and 19 cancelled; the repaired adapter
+fenced all non-success terminal states, yielding 19 ambiguous-boundary failures
+plus one independent output-contract violation and correctly failing the 20%
+startup-health gate at a 40% decision-failure rate. Grok 4.6's 50 raw sessions
+all ended completed, with zero tool events and zero decision failures.
+
+The failure is therefore not primarily excessive reasoning or an inability to
+emit JSON: several cancelled Grok 4.5 envelopes contained plausible JSON, but
+the model chose a coding-agent tool turn first. It is also not fully removable
+with Grok CLI 1.0.5's documented tool filter: an unknown-only `--tools`
+allowlist still exposed default/internal tools, and expanding the denylist made
+4.5 shift to new internal names. The reliable harness boundary is terminal
+validation plus an isolated empty provider workspace; the denylist is only
+defense in depth. Grok 4.6 paid for its clean adherence with much heavier
+deliberation in this diagnostic: median latency was 70.62 seconds and mean
+reasoning 2,501 tokens/call versus 18.80 seconds and 707 tokens/call for 4.5.
+Evidence:
+`runs/experiments/grok-tool-boundary-side-by-side-v3-20260827-030634`;
+retained Grok sessions under `~/.grok/sessions`; commits `f7eada1`, `ec547e2`.
+
 ## 2026-08-26 — Grok 4.5 Build exposed a model/tool-boundary failure that the integrity audit undercounted
 
 **Grok 4.5 Build attempted coding tools in 77 of its first 100 Agent World
