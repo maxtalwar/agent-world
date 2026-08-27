@@ -1,0 +1,378 @@
+{
+  "agents": 5,
+  "brain": {
+    "api_style": null,
+    "base_url": null,
+    "max_workers": 1,
+    "model": "SurvivalBrain",
+    "provider": "local",
+    "reasoning_effort": null,
+    "type": "survival"
+  },
+  "condition": {
+    "applied_config_overrides": {
+      "economy_mode": "commerce",
+      "geography_mode": "dispersed",
+      "objective_mode": "individual"
+    },
+    "environment": "commerce",
+    "id": "commerce-individual",
+    "objective": "individual",
+    "requested_config_overrides": {
+      "economy_mode": "commerce",
+      "geography_mode": "dispersed",
+      "objective_mode": "individual"
+    },
+    "unsupported_config_overrides": {}
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "commerce",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "individual",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 23,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "created_at_utc": "2026-07-10T02:40:21.230980Z",
+  "error": null,
+  "execution_index": 1,
+  "experiment_id": "preflight-commerce-individual-seed23",
+  "final_ticks": 60,
+  "hashes": {
+    "experiments_source_sha256": "46f2f6e0dcf298f17a800bceadd3413a39895d1dc03b61bae7ca7f4a77a55733",
+    "initial_api_system_prompt_sha256": "6bacc9a9cb99c0ead517089367b11718976444944965f342885d715aa6b14e57",
+    "initial_api_user_prompt_sha256": "c4e334dd1915f363c6ed2794191366655a5ef42a7d50e6b7fedbd2274edc89da",
+    "initial_static_context_sha256": "583755b249f1fb01f698005eb841e81cb75b834af3285a3e0981b5bcccc4f1f6",
+    "interface_source_sha256": "b210360bf6ded2974b0f2b3737f84e075d08f4b837ef827ff9a16c863f3446fe",
+    "maps_source_sha256": "e7d85834a7e2cddd95221489bf0c742f6b9459317893b5ddaac9ad71c4ddd3cc",
+    "models_source_sha256": "4b8955c226663a654e51a110c02868f346c2b86427023cf8c7dbd4dd07a1bde8",
+    "openai_brain_source_sha256": "8292bc86825f5604b282c7b45fcc95f3e319e186e006953b4d2b7cb7dcd2767c",
+    "rules_source_sha256": "432243318ea15ab42a70e109d04d2e908144f67e031f31e39de602fb4b53c465",
+    "runner_source_sha256": "af51b13005f44c5646e2e250d31f78f2577f41ae1e9e60b5f1fb7286ced3fe60",
+    "world_source_sha256": "7f885ca7f3237b5d8601b08c2a2fb6afd052dcfe4a89d99ed153781affe01fb0"
+  },
+  "outputs": {
+    "directory": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/preflight-commerce-individual-seed23/commerce-individual-seed-23",
+    "events": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/preflight-commerce-individual-seed23/commerce-individual-seed-23/run.jsonl",
+    "manifest": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/preflight-commerce-individual-seed23/commerce-individual-seed-23/manifest.json",
+    "report_json": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/preflight-commerce-individual-seed23/commerce-individual-seed-23/run-report.json",
+    "report_markdown": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/preflight-commerce-individual-seed23/commerce-individual-seed-23/run-report.md",
+    "snapshot": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/preflight-commerce-individual-seed23/commerce-individual-seed-23/run-snapshot.json",
+    "usage": null
+  },
+  "provenance": {
+    "git_dirty": true,
+    "git_root": "/Users/maxtalwar/Desktop/agent-world",
+    "git_sha": "215e191c4bfa66f189e96b746ef6d0259f85f741",
+    "platform": "macOS-15.7.3-arm64-arm-64bit",
+    "python_version": "3.10.2"
+  },
+  "run_id": "commerce-individual-seed-23",
+  "schema_version": 1,
+  "seed": 23,
+  "status": "completed",
+  "stop_reason": null,
+  "summary": {
+    "event_counts": {
+      "agent_response": 121,
+      "agent_spawned": 5,
+      "chop": 7,
+      "consume": 22,
+      "death": 5,
+      "food_spoilage": 2,
+      "gather": 7,
+      "invalid_action": 158,
+      "mine": 2,
+      "move": 22,
+      "run_completed": 1,
+      "run_started": 1,
+      "survival_damage": 91,
+      "world_created": 1
+    },
+    "headline": {
+      "asset_adjusted_gini": 0.23529411764705888,
+      "complete_structures": 0,
+      "construction_contribution_events": 0,
+      "construction_contribution_value": 0,
+      "contract_actions": 0,
+      "division_of_labor_index": 0.551,
+      "final_tick": 60,
+      "gift_units": 0,
+      "gift_value": 0,
+      "gifts": 0,
+      "groups": 0,
+      "living_agents": 0,
+      "llm_cost_usd": 0.0,
+      "market_actions": 0,
+      "market_conversion_pct": 0.0,
+      "productive_asset_value": 0,
+      "survival_rate": 0.0,
+      "trade_offers": 0,
+      "trade_volume": 0,
+      "trades_accepted": 0,
+      "wealth_gini": 0.23529411764705888
+    },
+    "metrics": {
+      "agents": {
+        "dead": 5,
+        "living": 0,
+        "max_lifespan": 30,
+        "median_lifespan": 21.0,
+        "min_lifespan": 19,
+        "total": 5
+      },
+      "capacity": {
+        "agent_ticks_with_spare_capacity_pct": 87.6,
+        "median_energy": 0.0,
+        "median_spare_action_points": 1.0,
+        "samples": 121
+      },
+      "claims": {
+        "item_piles": 0,
+        "structures": 0,
+        "tiles": 0
+      },
+      "construction": {
+        "contributions": 0,
+        "cooperative_sites": 0,
+        "in_progress_by_type": {},
+        "sites_completed": 0,
+        "sites_in_progress": 0,
+        "sites_started": 0
+      },
+      "economic_flows": {
+        "contracts": {
+          "accept_contract": 0,
+          "create_contract": 0,
+          "default_contract": 0,
+          "fulfill_contract": 0,
+          "repay_contract": 0
+        },
+        "gifts": {
+          "actions": 0,
+          "by_item": {},
+          "edges": {},
+          "productive_input_units": 0,
+          "reciprocal_pairs": 0,
+          "subsistence_units": 0,
+          "units": 0,
+          "value": 0,
+          "within_final_group_actions": 0
+        },
+        "market": {
+          "accepted": 0,
+          "completed_price_history": 0,
+          "conversion_pct": 0.0,
+          "invalid_accept_attempts": 0,
+          "median_acceptance_ticks": 0.0,
+          "offers": 0,
+          "transfer_value": 0
+        }
+      },
+      "events": {
+        "agent_response": 121,
+        "agent_spawned": 5,
+        "chop": 7,
+        "consume": 22,
+        "death": 5,
+        "food_spoilage": 2,
+        "gather": 7,
+        "invalid_action": 158,
+        "mine": 2,
+        "move": 22,
+        "run_completed": 1,
+        "run_started": 1,
+        "survival_damage": 91,
+        "world_created": 1
+      },
+      "groups": {
+        "agreements": 0,
+        "claimed_tiles": 0,
+        "count": 0,
+        "memberships": 0,
+        "owned_structures": 0,
+        "rules": 0
+      },
+      "infrastructure": {
+        "build_readiness": {
+          "ready_counts": {}
+        },
+        "builds": 0,
+        "ever_buildable": [
+          "farm_plot",
+          "storage",
+          "well"
+        ],
+        "farm_actions": 0,
+        "farm_plots": 0,
+        "harvest_actions": 0,
+        "houses": 0,
+        "improved_food_gather_actions": 0,
+        "never_buildable": [
+          "house",
+          "shelter",
+          "workshop"
+        ],
+        "retrieve_actions": 0,
+        "storage_capacity": 0,
+        "storage_used": 0,
+        "store_actions": 0,
+        "structures_by_type": {},
+        "wells": 0,
+        "workshops": 0
+      },
+      "invalid_actions": {
+        "reasons": {
+          "Moving into mountain requires 3 action points.": 3,
+          "No stone is available.": 4,
+          "No water is available.": 1,
+          "Not enough energy to move.": 79,
+          "chop requires 5 energy.": 5,
+          "gather requires 3 energy.": 66
+        },
+        "total": 158
+      },
+      "llm": {
+        "decision_failures": 0,
+        "quota_failures": 0,
+        "rate_limit_failures": 0
+      },
+      "productive_assets": {
+        "agent_wealth_including_asset_shares": {
+          "agent-1": 13,
+          "agent-2": 9,
+          "agent-3": 16,
+          "agent-4": 3,
+          "agent-5": 10
+        },
+        "asset_adjusted_gini": 0.23529411764705888,
+        "structure_replacement_value": {},
+        "value_by_owner": {}
+      },
+      "resources": {
+        "fiber": 471,
+        "food": 244,
+        "ore": 98,
+        "stone": 359,
+        "water": 912,
+        "wood": 970
+      },
+      "specialization": {
+        "agents": {
+          "agent-1": {
+            "actions": {
+              "chop": 3
+            },
+            "activity_concentration": 1.0,
+            "dominant_activity": "chop"
+          },
+          "agent-2": {
+            "actions": {
+              "chop": 1,
+              "gather": 2
+            },
+            "activity_concentration": 0.556,
+            "dominant_activity": "gather"
+          },
+          "agent-3": {
+            "actions": {
+              "mine": 2
+            },
+            "activity_concentration": 1.0,
+            "dominant_activity": "mine"
+          },
+          "agent-4": {
+            "actions": {
+              "chop": 1,
+              "gather": 3
+            },
+            "activity_concentration": 0.625,
+            "dominant_activity": "gather"
+          },
+          "agent-5": {
+            "actions": {
+              "chop": 2,
+              "gather": 2
+            },
+            "activity_concentration": 0.5,
+            "dominant_activity": "gather"
+          }
+        },
+        "division_of_labor_index": 0.551,
+        "mean_agent_activity_concentration": 0.736
+      },
+      "tick": 60,
+      "trade": {
+        "accepted": 0,
+        "expired": 0,
+        "open": 0,
+        "public_accepted": 0,
+        "public_open": 0,
+        "rejected": 0,
+        "volume": 0
+      },
+      "wealth": {
+        "agent-1": 13,
+        "agent-2": 9,
+        "agent-3": 16,
+        "agent-4": 3,
+        "agent-5": 10
+      },
+      "wealth_gini": 0.23529411764705888
+    },
+    "report_summary": {
+      "completed": true,
+      "stop_reason": null,
+      "usage": {
+        "cache_hit_rate_pct": 0.0,
+        "calls": 0,
+        "completion_tokens": 0,
+        "prompt_tokens": 0,
+        "reasoning_tokens": 0,
+        "total_cost_usd": 0
+      }
+    }
+  },
+  "target_ticks": 60,
+  "updated_at_utc": "2026-07-10T02:40:21.684657Z",
+  "valid_for_analysis": true
+}

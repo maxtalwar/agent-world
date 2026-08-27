@@ -1,0 +1,73 @@
+{
+  "aggregate_summary": null,
+  "created_at_utc": "2026-07-10T02:41:19.028071Z",
+  "design": {
+    "conditions": [
+      {
+        "config_overrides": {
+          "economy_mode": "commerce",
+          "geography_mode": "dispersed",
+          "objective_mode": "individual"
+        },
+        "environment": "commerce",
+        "id": "commerce-individual",
+        "objective": "individual"
+      }
+    ],
+    "counterbalanced_execution": true,
+    "environment_axis": {
+      "commerce": {
+        "economy_mode": "commerce",
+        "geography_mode": "dispersed"
+      }
+    },
+    "objective_axis": {
+      "individual": {
+        "objective_mode": "individual"
+      }
+    },
+    "seeds": [
+      23
+    ],
+    "type": "factorial"
+  },
+  "experiment_id": "glm52-commerce-individual-seed23",
+  "outputs": {
+    "manifest": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/glm52-commerce-individual-seed23/experiment-manifest.json",
+    "root": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/glm52-commerce-individual-seed23",
+    "summary_json": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/glm52-commerce-individual-seed23/summary.json",
+    "summary_markdown": "/Users/maxtalwar/Desktop/agent-world/runs/experiments/glm52-commerce-individual-seed23/summary.md"
+  },
+  "provenance": {
+    "git_dirty": false,
+    "git_root": "/Users/maxtalwar/Desktop/agent-world",
+    "git_sha": "3b732ec11b23b673137caeea8536e8b74ed11d27",
+    "platform": "macOS-15.7.3-arm64-arm-64bit",
+    "python_version": "3.10.2"
+  },
+  "run_settings": {
+    "agents": 5,
+    "api_style": "chat",
+    "base_url": "https://openrouter.ai/api/v1",
+    "brain": "llm",
+    "height": 16,
+    "log_agent_io": true,
+    "max_output_tokens": 12000,
+    "max_workers": 1,
+    "model": "z-ai/glm-5.2",
+    "provider": "openrouter",
+    "provider_order": [
+      "Z.AI",
+      "Alibaba",
+      "StreamLake",
+      "Parasail"
+    ],
+    "reasoning_effort": "medium",
+    "target_ticks": 60,
+    "width": 16
+  },
+  "runs": [],
+  "schema_version": 1,
+  "status": "running",
+  "updated_at_utc": "2026-07-10T02:41:19.028071Z"
+}

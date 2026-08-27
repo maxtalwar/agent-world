@@ -1,0 +1,195 @@
+{
+  "actions": {
+    "counts": {
+      "agent_spawned": 5,
+      "consume": 15,
+      "fish": 3,
+      "food_spoilage": 15,
+      "gather": 35,
+      "invalid_action": 46,
+      "move": 28,
+      "wait": 1,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Destination occupancy limit is full or terrain is impassable.": 2,
+      "Fishing requires fishable food in current or adjacent water.": 6,
+      "No action points remain this tick.": 1,
+      "No fiber is available on this tile.": 3,
+      "No food available to consume.": 5,
+      "No food is available on this tile.": 28,
+      "No water is available on this tile or adjacent water.": 1
+    },
+    "invalid_total": 46,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "consume": 2,
+        "food_spoilage": 3,
+        "gather": 11,
+        "invalid_action": 6,
+        "move": 3
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "consume": 1,
+        "fish": 1,
+        "food_spoilage": 3,
+        "gather": 5,
+        "invalid_action": 11,
+        "move": 5
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "consume": 5,
+        "food_spoilage": 3,
+        "gather": 8,
+        "invalid_action": 13,
+        "move": 7
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "consume": 4,
+        "fish": 2,
+        "food_spoilage": 2,
+        "gather": 3,
+        "invalid_action": 12,
+        "move": 3,
+        "wait": 1
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "consume": 3,
+        "food_spoilage": 4,
+        "gather": 8,
+        "invalid_action": 4,
+        "move": 10
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {},
+    "says_total": 0
+  },
+  "config": {
+    "action_points_per_tick": 3,
+    "carried_food_spoil_interval": 4,
+    "carried_food_spoil_quantity": 1,
+    "default_carry_capacity": 18,
+    "exhaustion_damage": 2,
+    "height": 16,
+    "max_memory": 50,
+    "recent_event_limit": 20,
+    "seed": 7,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "width": 16
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "food_spoilage_events": 15,
+    "gift_network": {},
+    "gifts": 0,
+    "trades": {
+      "accepted": 0,
+      "accepted_detail": [],
+      "cancelled": 0,
+      "expired": 0,
+      "offered": 0,
+      "rejected": 0
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {},
+  "reliability": {
+    "invalid_action_rate_pct": 30.9,
+    "llm_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "final_tick": 20,
+    "stop_reason": null,
+    "target_ticks": null
+  },
+  "schema_version": 1,
+  "source": "llm-5a-20t-hardcore",
+  "structures": {
+    "complete": {},
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {},
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 7,
+          "water": 2
+        },
+        "wealth": 16
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 2,
+          "food": 1,
+          "water": 2
+        },
+        "wealth": 8
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 1,
+          "water": 2
+        },
+        "wealth": 4
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 2
+        },
+        "wealth": 4
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "food": 2,
+          "water": 2
+        },
+        "wealth": 6
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 5,
+    "survival_damage_events": 0
+  },
+  "transcript": [],
+  "usage": {
+    "cache_hit_rate_pct": 0.0,
+    "calls": 0,
+    "completion_tokens": 0,
+    "prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_cost_usd": 0
+  },
+  "wealth_gini": 0.2947
+}

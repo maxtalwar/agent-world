@@ -1,0 +1,1157 @@
+{
+  "actions": {
+    "counts": {
+      "accept_trade": 2,
+      "agent_spawned": 5,
+      "build": 12,
+      "chop": 27,
+      "consume": 152,
+      "craft": 7,
+      "drop": 4,
+      "equip": 6,
+      "expire_trade": 4,
+      "farm": 6,
+      "fish": 14,
+      "food_spoilage": 31,
+      "gather": 114,
+      "harvest": 43,
+      "inspect": 4,
+      "invalid_action": 100,
+      "maintain_structure": 38,
+      "mine": 9,
+      "move": 209,
+      "offer_trade": 9,
+      "pick_up": 1,
+      "reject_trade": 2,
+      "retrieve": 8,
+      "run_completed": 1,
+      "run_started": 1,
+      "say": 20,
+      "store": 12,
+      "structure_upkeep_missed": 20,
+      "structure_upkeep_paid": 24,
+      "survival_damage": 13,
+      "tool_broken": 6,
+      "wait": 170,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Building well requires 2 action points.": 1,
+      "Carrying capacity would be exceeded.": 1,
+      "Destination occupancy limit is full or terrain is impassable.": 1,
+      "Fishing requires fishable food in current or adjacent water.": 10,
+      "Maintenance requires carried upkeep materials.": 1,
+      "Moving into forest requires 2 action points.": 5,
+      "Moving into mountain requires 3 action points.": 4,
+      "Moving into water requires 2 action points.": 1,
+      "No action points remain this tick.": 21,
+      "No fiber is available on this tile.": 5,
+      "No fiber is available.": 1,
+      "No food available to consume.": 4,
+      "No food is available on this tile.": 3,
+      "No ore is available.": 5,
+      "No stone is available.": 2,
+      "No water available to consume.": 3,
+      "No water is available on this tile or adjacent water.": 6,
+      "No water is available on this tile, from an accessible well, or adjacent water.": 4,
+      "No water is available.": 2,
+      "No wood available in storage.": 1,
+      "No wood is available.": 10,
+      "Not enough source material or carrying capacity for the requested quantity.": 2,
+      "Offerer carrying capacity would be exceeded.": 1,
+      "This farm plot is already at its finite food capacity.": 1,
+      "Trade offerer is now outside visibility radius.": 3,
+      "fish requires 2 action points.": 1,
+      "harvest requires 2 action points.": 1
+    },
+    "invalid_total": 100,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "build": 2,
+        "chop": 6,
+        "consume": 42,
+        "expire_trade": 1,
+        "farm": 1,
+        "food_spoilage": 9,
+        "gather": 25,
+        "harvest": 18,
+        "inspect": 1,
+        "invalid_action": 15,
+        "maintain_structure": 12,
+        "move": 50,
+        "offer_trade": 1,
+        "structure_upkeep_missed": 1,
+        "structure_upkeep_paid": 11,
+        "survival_damage": 1,
+        "wait": 22
+      },
+      "agent-2": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "build": 3,
+        "chop": 5,
+        "consume": 24,
+        "expire_trade": 1,
+        "food_spoilage": 7,
+        "gather": 21,
+        "harvest": 13,
+        "invalid_action": 18,
+        "maintain_structure": 15,
+        "move": 33,
+        "offer_trade": 2,
+        "retrieve": 8,
+        "store": 10,
+        "structure_upkeep_missed": 5,
+        "structure_upkeep_paid": 9,
+        "wait": 40
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "build": 2,
+        "chop": 5,
+        "consume": 30,
+        "craft": 4,
+        "drop": 3,
+        "equip": 4,
+        "farm": 2,
+        "fish": 2,
+        "food_spoilage": 3,
+        "gather": 26,
+        "inspect": 2,
+        "invalid_action": 24,
+        "maintain_structure": 1,
+        "mine": 5,
+        "move": 57,
+        "pick_up": 1,
+        "reject_trade": 2,
+        "structure_upkeep_missed": 1,
+        "structure_upkeep_paid": 1,
+        "survival_damage": 12,
+        "tool_broken": 3,
+        "wait": 28
+      },
+      "agent-4": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "build": 3,
+        "chop": 5,
+        "consume": 28,
+        "expire_trade": 1,
+        "fish": 10,
+        "food_spoilage": 8,
+        "gather": 19,
+        "harvest": 6,
+        "invalid_action": 26,
+        "maintain_structure": 3,
+        "move": 26,
+        "offer_trade": 2,
+        "store": 2,
+        "structure_upkeep_missed": 4,
+        "wait": 43
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "build": 2,
+        "chop": 6,
+        "consume": 28,
+        "craft": 3,
+        "drop": 1,
+        "equip": 2,
+        "expire_trade": 1,
+        "farm": 3,
+        "fish": 2,
+        "food_spoilage": 4,
+        "gather": 23,
+        "harvest": 6,
+        "inspect": 1,
+        "invalid_action": 17,
+        "maintain_structure": 7,
+        "mine": 4,
+        "move": 43,
+        "offer_trade": 4,
+        "structure_upkeep_missed": 9,
+        "structure_upkeep_paid": 3,
+        "tool_broken": 3,
+        "wait": 37
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {
+      "agent-2": 3,
+      "agent-3": 5,
+      "agent-4": 7,
+      "agent-5": 5
+    },
+    "says_total": 20
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "commerce",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "individual",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 23,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "construction": {
+      "assets": {
+        "by_owner": {
+          "agent-1": {
+            "by_type": {
+              "farm_plot": 1,
+              "well": 1
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 10,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-1",
+              "structure-5"
+            ]
+          },
+          "agent-2": {
+            "by_type": {
+              "farm_plot": 1,
+              "storage": 1,
+              "well": 1
+            },
+            "complete": 3,
+            "count": 3,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 18,
+            "stored_inventory_value": 28,
+            "structure_ids": [
+              "structure-3",
+              "structure-6",
+              "structure-7"
+            ]
+          },
+          "agent-3": {
+            "by_type": {
+              "farm_plot": 1,
+              "well": 1
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 10,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-11",
+              "structure-12"
+            ]
+          },
+          "agent-4": {
+            "by_type": {
+              "farm_plot": 1,
+              "storage": 1,
+              "well": 1
+            },
+            "complete": 3,
+            "count": 3,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 18,
+            "stored_inventory_value": 4,
+            "structure_ids": [
+              "structure-10",
+              "structure-8",
+              "structure-9"
+            ]
+          },
+          "agent-5": {
+            "by_type": {
+              "farm_plot": 1,
+              "well": 1
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 10,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-2",
+              "structure-4"
+            ]
+          }
+        },
+        "by_owner_kind": {
+          "agent": 12
+        },
+        "complete": 12,
+        "count": 12,
+        "in_progress": 0,
+        "replacement_cost_value": 66,
+        "stored_inventory_value": 32
+      },
+      "contributions": {
+        "by_agent": {
+          "agent-1": {
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "events": 2,
+            "quantity": 4,
+            "structure_ids": [
+              "structure-1",
+              "structure-5"
+            ],
+            "value": 10
+          },
+          "agent-2": {
+            "by_item": {
+              "fiber": 3,
+              "wood": 4
+            },
+            "events": 3,
+            "quantity": 7,
+            "structure_ids": [
+              "structure-3",
+              "structure-6",
+              "structure-7"
+            ],
+            "value": 18
+          },
+          "agent-3": {
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "events": 2,
+            "quantity": 4,
+            "structure_ids": [
+              "structure-11",
+              "structure-12"
+            ],
+            "value": 10
+          },
+          "agent-4": {
+            "by_item": {
+              "fiber": 3,
+              "wood": 4
+            },
+            "events": 3,
+            "quantity": 7,
+            "structure_ids": [
+              "structure-10",
+              "structure-8",
+              "structure-9"
+            ],
+            "value": 18
+          },
+          "agent-5": {
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "events": 2,
+            "quantity": 4,
+            "structure_ids": [
+              "structure-2",
+              "structure-4"
+            ],
+            "value": 10
+          }
+        },
+        "by_item": {
+          "fiber": 12,
+          "wood": 14
+        },
+        "by_structure": {
+          "structure-1": {
+            "by_agent": {
+              "agent-1": {
+                "by_item": {
+                  "fiber": 1
+                },
+                "quantity": 1,
+                "value": 2
+              }
+            },
+            "by_item": {
+              "fiber": 1
+            },
+            "owner_id": "agent-1",
+            "owner_kind": "agent",
+            "quantity": 1,
+            "type": "farm_plot",
+            "value": 2
+          },
+          "structure-10": {
+            "by_agent": {
+              "agent-4": {
+                "by_item": {
+                  "fiber": 1
+                },
+                "quantity": 1,
+                "value": 2
+              }
+            },
+            "by_item": {
+              "fiber": 1
+            },
+            "owner_id": "agent-4",
+            "owner_kind": "agent",
+            "quantity": 1,
+            "type": "farm_plot",
+            "value": 2
+          },
+          "structure-11": {
+            "by_agent": {
+              "agent-3": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-3",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "well",
+            "value": 8
+          },
+          "structure-12": {
+            "by_agent": {
+              "agent-3": {
+                "by_item": {
+                  "fiber": 1
+                },
+                "quantity": 1,
+                "value": 2
+              }
+            },
+            "by_item": {
+              "fiber": 1
+            },
+            "owner_id": "agent-3",
+            "owner_kind": "agent",
+            "quantity": 1,
+            "type": "farm_plot",
+            "value": 2
+          },
+          "structure-2": {
+            "by_agent": {
+              "agent-5": {
+                "by_item": {
+                  "fiber": 1
+                },
+                "quantity": 1,
+                "value": 2
+              }
+            },
+            "by_item": {
+              "fiber": 1
+            },
+            "owner_id": "agent-5",
+            "owner_kind": "agent",
+            "quantity": 1,
+            "type": "farm_plot",
+            "value": 2
+          },
+          "structure-3": {
+            "by_agent": {
+              "agent-2": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-2",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "storage",
+            "value": 8
+          },
+          "structure-4": {
+            "by_agent": {
+              "agent-5": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-5",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "well",
+            "value": 8
+          },
+          "structure-5": {
+            "by_agent": {
+              "agent-1": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-1",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "well",
+            "value": 8
+          },
+          "structure-6": {
+            "by_agent": {
+              "agent-2": {
+                "by_item": {
+                  "fiber": 1
+                },
+                "quantity": 1,
+                "value": 2
+              }
+            },
+            "by_item": {
+              "fiber": 1
+            },
+            "owner_id": "agent-2",
+            "owner_kind": "agent",
+            "quantity": 1,
+            "type": "farm_plot",
+            "value": 2
+          },
+          "structure-7": {
+            "by_agent": {
+              "agent-2": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-2",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "well",
+            "value": 8
+          },
+          "structure-8": {
+            "by_agent": {
+              "agent-4": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-4",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "storage",
+            "value": 8
+          },
+          "structure-9": {
+            "by_agent": {
+              "agent-4": {
+                "by_item": {
+                  "fiber": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 8
+              }
+            },
+            "by_item": {
+              "fiber": 1,
+              "wood": 2
+            },
+            "owner_id": "agent-4",
+            "owner_kind": "agent",
+            "quantity": 3,
+            "type": "well",
+            "value": 8
+          }
+        },
+        "events": 12,
+        "quantity": 26,
+        "value": 66
+      },
+      "contributor_ownership": {
+        "agent-1": {
+          "contributed_quantity": 4,
+          "contributed_value": 10,
+          "contribution_value_by_owner": {
+            "agent-1": 10
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 10,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 10
+        },
+        "agent-2": {
+          "contributed_quantity": 7,
+          "contributed_value": 18,
+          "contribution_value_by_owner": {
+            "agent-2": 18
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 18,
+          "owned_asset_count": 3,
+          "owned_asset_replacement_cost_value": 18
+        },
+        "agent-3": {
+          "contributed_quantity": 4,
+          "contributed_value": 10,
+          "contribution_value_by_owner": {
+            "agent-3": 10
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 10,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 10
+        },
+        "agent-4": {
+          "contributed_quantity": 7,
+          "contributed_value": 18,
+          "contribution_value_by_owner": {
+            "agent-4": 18
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 18,
+          "owned_asset_count": 3,
+          "owned_asset_replacement_cost_value": 18
+        },
+        "agent-5": {
+          "contributed_quantity": 4,
+          "contributed_value": 10,
+          "contribution_value_by_owner": {
+            "agent-5": 10
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 10,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 10
+        }
+      }
+    },
+    "food_spoilage_events": 31,
+    "gift_by_item": {},
+    "gift_categories": {
+      "materials": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      },
+      "subsistence": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      }
+    },
+    "gift_detail": [],
+    "gift_event_categories": {
+      "empty": 0,
+      "materials_only": 0,
+      "mixed": 0,
+      "subsistence_only": 0
+    },
+    "gift_group_status": {
+      "in_group": 0,
+      "out_group": 0,
+      "unknown": 0
+    },
+    "gift_network": {},
+    "gift_network_quantity": {},
+    "gift_network_value": {},
+    "gift_quantity": 0,
+    "gift_value": 0,
+    "gift_value_by_item": {},
+    "gifts": 0,
+    "institutions": {
+      "access_fees": {
+        "by_item": {},
+        "by_structure": {},
+        "payments": 0,
+        "policies_set": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contracts": {
+        "accepted": 0,
+        "advance_value": 0,
+        "collateral_value": 0,
+        "defaulted": 0,
+        "fulfilled": 0,
+        "offered": 0,
+        "repayment_value": 0,
+        "status": {}
+      },
+      "dividends": {
+        "by_item": {},
+        "claims": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "market_history_entries": 2,
+      "upkeep": {
+        "by_item": {
+          "fiber": 23,
+          "wood": 15
+        },
+        "maintenance_actions": 38,
+        "missed_cycles": 20,
+        "paid_cycles": 24,
+        "supplied_value": 91
+      }
+    },
+    "trades": {
+      "accept_attempts": 6,
+      "accept_success_rate_pct": 33.3,
+      "acceptance_latency_ticks": {
+        "average": 2.5,
+        "max": 4,
+        "median": 2.5,
+        "min": 1,
+        "samples": 2
+      },
+      "accepted": 2,
+      "accepted_by_item": {
+        "food": 4,
+        "wood": 2
+      },
+      "accepted_detail": [
+        {
+          "accepted_by": "agent-2",
+          "accepted_count": 1,
+          "created_tick": 24,
+          "escrowed": false,
+          "expires_tick": 27,
+          "from_agent": "agent-4",
+          "give": {
+            "food": 2
+          },
+          "id": "trade-2",
+          "lots_remaining": 0,
+          "lots_total": 1,
+          "market_scope": "local",
+          "public": false,
+          "receive": {
+            "wood": 1
+          },
+          "standing": false,
+          "status": "accepted",
+          "to_agent": "agent-2"
+        },
+        {
+          "accepted_by": "agent-4",
+          "accepted_count": 1,
+          "created_tick": 28,
+          "escrowed": false,
+          "expires_tick": 33,
+          "from_agent": "agent-2",
+          "give": {
+            "food": 2
+          },
+          "id": "trade-4",
+          "lots_remaining": 0,
+          "lots_total": 1,
+          "market_scope": "local",
+          "public": false,
+          "receive": {
+            "wood": 1
+          },
+          "standing": false,
+          "status": "accepted",
+          "to_agent": "agent-4"
+        }
+      ],
+      "accepted_give_value": 8,
+      "accepted_group_status": {
+        "in_group": 0,
+        "out_group": 2,
+        "unknown": 0
+      },
+      "accepted_receive_value": 6,
+      "accepted_transfer_detail": [
+        {
+          "from": "agent-4",
+          "give": {
+            "food": 2
+          },
+          "give_value": 4,
+          "group_status": "out_group",
+          "latency_ticks": 1,
+          "receive": {
+            "wood": 1
+          },
+          "receive_value": 3,
+          "shared_groups": [],
+          "tick": 25,
+          "to": "agent-2",
+          "trade_id": "trade-2"
+        },
+        {
+          "from": "agent-2",
+          "give": {
+            "food": 2
+          },
+          "give_value": 4,
+          "group_status": "out_group",
+          "latency_ticks": 4,
+          "receive": {
+            "wood": 1
+          },
+          "receive_value": 3,
+          "shared_groups": [],
+          "tick": 32,
+          "to": "agent-4",
+          "trade_id": "trade-4"
+        }
+      ],
+      "accepted_value": 14,
+      "cancelled": 0,
+      "conversion_rate_pct": 22.2,
+      "direct_offered": 8,
+      "expired": 4,
+      "invalid_accept_reasons": {
+        "Offerer carrying capacity would be exceeded.": 1,
+        "Trade offerer is now outside visibility radius.": 3
+      },
+      "invalid_accepts": 4,
+      "offered": 9,
+      "offered_group_status": {
+        "in_group": 0,
+        "out_group": 8,
+        "unknown": 1
+      },
+      "open": 1,
+      "public_offered": 1,
+      "rejected": 2,
+      "resolution_rate_pct": 88.9,
+      "resolved_conversion_rate_pct": 25.0,
+      "status_counts": {
+        "accepted": 2,
+        "expired": 4,
+        "open": 1,
+        "rejected": 2
+      }
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "accept_trade": 25,
+    "build": 0,
+    "craft": 14,
+    "offer_trade": 13
+  },
+  "reliability": {
+    "invalid_action_rate_pct": 9.3,
+    "llm_failure_events": 0,
+    "llm_failures_by_agent": {},
+    "llm_quota_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "completion_evidence": "run_completed",
+    "final_tick": 60,
+    "status": "completed",
+    "stop_reason": null,
+    "target_ticks": 60
+  },
+  "schema_version": 1,
+  "source": "run",
+  "structures": {
+    "complete": {
+      "farm_plot": 5,
+      "storage": 2,
+      "well": 5
+    },
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {
+      "agent-1": 2,
+      "agent-2": 3,
+      "agent-3": 2,
+      "agent-4": 3,
+      "agent-5": 2
+    },
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 98,
+        "inventory": {
+          "fiber": 1,
+          "food": 5,
+          "water": 1,
+          "wood": 1
+        },
+        "wealth": 16
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 1,
+          "wood": 2
+        },
+        "wealth": 8
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [],
+        "health": 36,
+        "inventory": {
+          "food": 2,
+          "ore": 1,
+          "tool": 1,
+          "wood": 1
+        },
+        "wealth": 27
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 1,
+          "water": 1,
+          "wood": 1
+        },
+        "wealth": 6
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 3
+        },
+        "wealth": 6
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 5,
+    "survival_damage_events": 13
+  },
+  "transcript": [
+    {
+      "agent": "agent-5",
+      "message": "Trade offer: 1 food for 1 stone. You look hungry, this helps us both.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent 3, my trade offer for 1 stone still stands. I'm heading to my farm now.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-3",
+      "message": "Thanks for the trade. Tool crafted, heading to mine soon.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-2, I'm a fisher nearby. Your well needs wood upkeep - I can help if you grant me water access. Open to trade food for resources too.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-4, thanks for the offer. I've repaired my well and storage. Open to trading food for wood or fiber in future. Let's stay in touch.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-4",
+      "message": "I'm at (1,2) with food to trade. Need wood or fiber. Open to dealing next tick.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-4",
+      "message": "Fishing now, then heading to (2,2). Want to trade 2 food for 2 wood. Deal?",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-2",
+      "message": "Interested in trading wood for food. Can offer 1 wood for 2 food next tick.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-4",
+      "message": "Moving to (2,2). Offering 2 food for 1 wood as discussed.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-2",
+      "message": "Accepted your trade. Thanks for the food.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-4",
+      "message": "Trade still open - 2 food for 1 wood. Moving to water access, will check back.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-4",
+      "message": "Agent-2, I have wood for your well upkeep. Offering 1 wood for 2 food. I'll be at (2,2).",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-4",
+      "message": "Still offering 1 wood for 2 food. Moving to (2,1) to forage. Your well needs wood upkeep - let's trade.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-3",
+      "message": "Need 1 wood for well. Offer 1 food for 1 wood. Water critical.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-3",
+      "message": "Water at 2, critical! Can you gift water or share water source? Will trade fiber for wood.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-3",
+      "message": "Building my own well at (13,11). Water at 0, survival critical.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-5",
+      "message": "Trade offer: 2 stone for 1 wood. Need wood to craft replacement tool. Fair deal for mountain neighbor.",
+      "scope": "local",
+      "tick": 57
+    },
+    {
+      "agent": "agent-5",
+      "message": "Offering 2 fiber for 1 wood - need it to craft replacement tool. Fair trade?",
+      "scope": "local",
+      "tick": 58
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent 3, I'll trade 2 stone for 1 wood - stone is harder to get than fiber. Need wood to craft replacement tool, mine is about to break.",
+      "scope": "local",
+      "tick": 59
+    },
+    {
+      "agent": "agent-3",
+      "message": "Need my wood for farm upkeep. Good luck finding some.",
+      "scope": "local",
+      "tick": 59
+    }
+  ],
+  "usage": {
+    "cache_hit_rate_pct": 55.4,
+    "calls": 300,
+    "completion_tokens": 452251,
+    "prompt_tokens": 1387304,
+    "reasoning_tokens": 402641,
+    "total_cost_usd": 3.0566
+  },
+  "wealth_gini": 0.3302
+}

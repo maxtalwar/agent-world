@@ -1,0 +1,852 @@
+{
+  "actions": {
+    "counts": {
+      "agent_spawned": 5,
+      "build": 1,
+      "chop": 5,
+      "claimed_item_taken": 1,
+      "consume": 95,
+      "drop": 8,
+      "expire_trade": 1,
+      "farm": 1,
+      "fish": 13,
+      "food_spoilage": 21,
+      "gather": 79,
+      "gift": 5,
+      "grant_access": 5,
+      "harvest": 27,
+      "inspect": 4,
+      "invalid_action": 109,
+      "maintain_structure": 3,
+      "mine": 3,
+      "move": 128,
+      "offer_trade": 1,
+      "run_completed": 1,
+      "run_started": 1,
+      "say": 43,
+      "structure_upkeep_paid": 2,
+      "survival_damage": 25,
+      "wait": 109,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Agent cannot accept their own trade offer.": 1,
+      "Agent does not control that subject.": 1,
+      "Agent lacks gifted items.": 1,
+      "Farming requires a farm plot on this tile.": 1,
+      "Fishing requires fishable food in current or adjacent water.": 8,
+      "Food on this improved tile requires access to its farm plot.": 1,
+      "Moving into forest requires 2 action points.": 1,
+      "No action points remain this tick.": 3,
+      "No fiber is available.": 4,
+      "No food available to consume.": 4,
+      "No food is available on this tile.": 4,
+      "No food is available.": 13,
+      "No ore is available.": 3,
+      "No stone is available.": 1,
+      "No water available to consume.": 17,
+      "No water is available on this tile, from an accessible well, or adjacent water.": 3,
+      "No water is available.": 33,
+      "No wood is available.": 3,
+      "Offerer carrying capacity would be exceeded.": 1,
+      "Recipient lacks requested goods.": 1,
+      "Target carrying capacity would be exceeded.": 4,
+      "farm requires 7 energy.": 1
+    },
+    "invalid_total": 109,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "consume": 23,
+        "drop": 2,
+        "expire_trade": 1,
+        "food_spoilage": 5,
+        "gather": 22,
+        "gift": 2,
+        "harvest": 6,
+        "inspect": 1,
+        "invalid_action": 15,
+        "move": 29,
+        "offer_trade": 1,
+        "survival_damage": 1,
+        "wait": 15
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "chop": 3,
+        "consume": 10,
+        "drop": 2,
+        "food_spoilage": 4,
+        "gather": 16,
+        "inspect": 1,
+        "invalid_action": 48,
+        "move": 28,
+        "survival_damage": 15,
+        "wait": 19
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "consume": 22,
+        "drop": 3,
+        "fish": 1,
+        "food_spoilage": 1,
+        "gather": 13,
+        "harvest": 5,
+        "inspect": 1,
+        "invalid_action": 13,
+        "mine": 3,
+        "move": 33,
+        "survival_damage": 6,
+        "wait": 15
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "consume": 21,
+        "fish": 12,
+        "food_spoilage": 6,
+        "gather": 16,
+        "invalid_action": 22,
+        "move": 21,
+        "wait": 30
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "build": 1,
+        "chop": 2,
+        "claimed_item_taken": 1,
+        "consume": 19,
+        "drop": 1,
+        "farm": 1,
+        "food_spoilage": 5,
+        "gather": 12,
+        "gift": 3,
+        "grant_access": 5,
+        "harvest": 16,
+        "inspect": 1,
+        "invalid_action": 11,
+        "maintain_structure": 3,
+        "move": 17,
+        "structure_upkeep_paid": 2,
+        "survival_damage": 3,
+        "wait": 30
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {
+      "agent-1": 19,
+      "agent-3": 11,
+      "agent-5": 13
+    },
+    "says_total": 43
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "organic",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "neutral",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 29,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "economy": {
+    "access_grants": 5,
+    "claimed_tiles": 0,
+    "construction": {
+      "assets": {
+        "by_owner": {
+          "agent-5": {
+            "by_type": {
+              "farm_plot": 1
+            },
+            "complete": 1,
+            "count": 1,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 10,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-1"
+            ]
+          }
+        },
+        "by_owner_kind": {
+          "agent": 1
+        },
+        "complete": 1,
+        "count": 1,
+        "in_progress": 0,
+        "replacement_cost_value": 10,
+        "stored_inventory_value": 0
+      },
+      "contributions": {
+        "by_agent": {
+          "agent-5": {
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "events": 1,
+            "quantity": 4,
+            "structure_ids": [
+              "structure-1"
+            ],
+            "value": 10
+          }
+        },
+        "by_item": {
+          "fiber": 2,
+          "wood": 2
+        },
+        "by_structure": {
+          "structure-1": {
+            "by_agent": {
+              "agent-5": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-5",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          }
+        },
+        "events": 1,
+        "quantity": 4,
+        "value": 10
+      },
+      "contributor_ownership": {
+        "agent-5": {
+          "contributed_quantity": 4,
+          "contributed_value": 10,
+          "contribution_value_by_owner": {
+            "agent-5": 10
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 10,
+          "owned_asset_count": 1,
+          "owned_asset_replacement_cost_value": 10
+        }
+      }
+    },
+    "food_spoilage_events": 21,
+    "gift_by_item": {
+      "food": 2,
+      "water": 3
+    },
+    "gift_categories": {
+      "materials": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      },
+      "subsistence": {
+        "by_item": {
+          "food": 2,
+          "water": 3
+        },
+        "quantity": 5,
+        "value": 7
+      }
+    },
+    "gift_detail": [
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 11,
+        "to": "agent-5",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-5",
+        "group_status": "out_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 20,
+        "to": "agent-3",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-5",
+        "group_status": "out_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 23,
+        "to": "agent-3",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-1",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 34,
+        "to": "agent-5",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-5",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 38,
+        "to": "agent-1",
+        "value": 1
+      }
+    ],
+    "gift_event_categories": {
+      "empty": 0,
+      "materials_only": 0,
+      "mixed": 0,
+      "subsistence_only": 5
+    },
+    "gift_group_status": {
+      "in_group": 0,
+      "out_group": 5,
+      "unknown": 0
+    },
+    "gift_network": {
+      "agent-1->agent-5": 2,
+      "agent-5->agent-1": 1,
+      "agent-5->agent-3": 2
+    },
+    "gift_network_quantity": {
+      "agent-1->agent-5": 2,
+      "agent-5->agent-1": 1,
+      "agent-5->agent-3": 2
+    },
+    "gift_network_value": {
+      "agent-1->agent-5": 2,
+      "agent-5->agent-1": 1,
+      "agent-5->agent-3": 4
+    },
+    "gift_quantity": 5,
+    "gift_value": 7,
+    "gift_value_by_item": {
+      "food": 4,
+      "water": 3
+    },
+    "gifts": 5,
+    "institutions": {
+      "access_fees": {
+        "by_item": {},
+        "by_structure": {},
+        "payments": 0,
+        "policies_set": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contracts": {
+        "accepted": 0,
+        "advance_value": 0,
+        "collateral_value": 0,
+        "defaulted": 0,
+        "fulfilled": 0,
+        "offered": 0,
+        "repayment_value": 0,
+        "status": {}
+      },
+      "dividends": {
+        "by_item": {},
+        "claims": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "market_history_entries": 0,
+      "upkeep": {
+        "by_item": {
+          "fiber": 3
+        },
+        "maintenance_actions": 3,
+        "missed_cycles": 0,
+        "paid_cycles": 2,
+        "supplied_value": 6
+      }
+    },
+    "trades": {
+      "accept_attempts": 3,
+      "accept_success_rate_pct": 0.0,
+      "acceptance_latency_ticks": {
+        "average": null,
+        "max": null,
+        "median": null,
+        "min": null,
+        "samples": 0
+      },
+      "accepted": 0,
+      "accepted_by_item": {},
+      "accepted_detail": [],
+      "accepted_give_value": 0,
+      "accepted_group_status": {
+        "in_group": 0,
+        "out_group": 0,
+        "unknown": 0
+      },
+      "accepted_receive_value": 0,
+      "accepted_transfer_detail": [],
+      "accepted_value": 0,
+      "cancelled": 0,
+      "conversion_rate_pct": 0.0,
+      "direct_offered": 1,
+      "expired": 1,
+      "invalid_accept_reasons": {
+        "Agent cannot accept their own trade offer.": 1,
+        "Offerer carrying capacity would be exceeded.": 1,
+        "Recipient lacks requested goods.": 1
+      },
+      "invalid_accepts": 3,
+      "offered": 1,
+      "offered_group_status": {
+        "in_group": 0,
+        "out_group": 1,
+        "unknown": 0
+      },
+      "open": 0,
+      "public_offered": 0,
+      "rejected": 0,
+      "resolution_rate_pct": 100.0,
+      "resolved_conversion_rate_pct": 0.0,
+      "status_counts": {
+        "expired": 1
+      }
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "build": 12,
+    "gift": 11,
+    "grant_access": 14,
+    "offer_trade": 27
+  },
+  "reliability": {
+    "invalid_action_rate_pct": 15.6,
+    "llm_failure_events": 0,
+    "llm_failures_by_agent": {},
+    "llm_quota_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "completion_evidence": "run_completed",
+    "final_tick": 40,
+    "status": "completed",
+    "stop_reason": null,
+    "target_ticks": 40
+  },
+  "schema_version": 1,
+  "source": "run",
+  "structures": {
+    "complete": {
+      "farm_plot": 1
+    },
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {
+      "agent-5": 1
+    },
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 95,
+        "inventory": {
+          "coin": 4,
+          "fiber": 7
+        },
+        "wealth": 18
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 26,
+        "inventory": {
+          "coin": 4,
+          "fiber": 5,
+          "wood": 2
+        },
+        "wealth": 20
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [],
+        "health": 77,
+        "inventory": {
+          "coin": 4,
+          "fiber": 3,
+          "ore": 1,
+          "water": 1
+        },
+        "wealth": 19
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "coin": 4,
+          "fiber": 4,
+          "food": 1,
+          "water": 2
+        },
+        "wealth": 16
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 85,
+        "inventory": {
+          "coin": 4,
+          "fiber": 3,
+          "food": 7
+        },
+        "wealth": 24
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 5,
+    "survival_damage_events": 25
+  },
+  "transcript": [
+    {
+      "agent": "agent-3",
+      "message": "Water is west; gather there immediately.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-1",
+      "message": "I gifted water; open water is west at 11,7.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-3",
+      "message": "I am mining at the mountain north.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-5",
+      "message": "Building and tending a farm plot here.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-5",
+      "message": "I am resting to recover energy.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-1",
+      "message": "Can you grant me access to your farm plot? I can help tend it.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-3",
+      "message": "Can you share food? I need fuel.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent 1, access granted. Agent 3, I will share food after farming.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-1",
+      "message": "Please grant me access to your farm plot; I can tend it.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-1",
+      "message": "I will share food shortly.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-3",
+      "message": "I can't grant access to Agent 1's farm plot.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-1",
+      "message": "I am farming now; I will share food when capacity allows.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant me access to your farm plot. I need food; I can pay coins.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-5",
+      "message": "Access granted. Harvest the farm plot.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-3, farm access granted. Harvest food here.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, please grant me farm access. I need food and can pay coins.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-1",
+      "message": "Thanks for the farm access; harvesting food.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-3",
+      "message": "Please grant me access to the farm; I need food.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-5",
+      "message": "Farm access is granted; sharing this harvest.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-1",
+      "message": "Please share water if available.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-5",
+      "message": "Sharing water.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-1",
+      "message": "I am securing water and will share if needed.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-3",
+      "message": "I can't transfer water while your carry is full; please drop space.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-3",
+      "message": "I will gather stone here; please grant me farm access when possible.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-1",
+      "message": "Can you grant me farm access? I can help maintain it.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5 controls the farm; please ask them for access.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-5",
+      "message": "Farm access granted to Agent 1.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, please grant me farm access. I can provide fiber for upkeep.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, please accept trade-1 for the fiber and water.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-5, trade-1 is ready; please accept it here.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent 1, please free carry space so I can accept trade-1.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-5",
+      "message": "Please consume or drop 2 water so I can accept trade-1 before it expires.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-1",
+      "message": "Please drop 2 fiber or food, then accept trade-1.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-5",
+      "message": "Please drop 2 fiber or food, then retry the trade.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-5",
+      "message": "I am maintaining the farm and seeking a workable water trade.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-1",
+      "message": "I\u2019ll share water; please grant me farm access.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-1",
+      "message": "Please grant me access to your farm plot; I can share water.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-5",
+      "message": "Farm access granted.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-5",
+      "message": "Please share water when convenient.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-1",
+      "message": "I cannot access water here.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-3",
+      "message": "Please share water when possible.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent 5, please grant farm access and share water.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent 5, please grant me access to your farm tile.",
+      "scope": "local",
+      "tick": 39
+    }
+  ],
+  "usage": {
+    "cache_hit_rate_pct": 0.0,
+    "calls": 200,
+    "completion_tokens": 97690,
+    "prompt_tokens": 705800,
+    "reasoning_tokens": 85258,
+    "total_cost_usd": 1.4682
+  },
+  "wealth_gini": 0.0742
+}

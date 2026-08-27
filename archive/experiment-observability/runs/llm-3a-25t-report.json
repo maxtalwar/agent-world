@@ -1,0 +1,191 @@
+{
+  "actions": {
+    "counts": {
+      "accept_trade": 1,
+      "agent_spawned": 3,
+      "chop": 8,
+      "consume": 18,
+      "gather": 38,
+      "invalid_action": 13,
+      "move": 10,
+      "offer_trade": 1,
+      "say": 1,
+      "wait": 5,
+      "whisper": 3,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Carrying capacity would be exceeded.": 1,
+      "No action points remain this tick.": 1,
+      "No fiber is available on this tile.": 2,
+      "No food is available on this tile.": 5,
+      "Trade is not open.": 1,
+      "gather cannot produce wood.": 1,
+      "gather requires 4 energy.": 2
+    },
+    "invalid_total": 13,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "chop": 4,
+        "consume": 6,
+        "gather": 9,
+        "invalid_action": 3,
+        "move": 3,
+        "wait": 2
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "chop": 4,
+        "consume": 5,
+        "gather": 8,
+        "invalid_action": 3,
+        "move": 4,
+        "offer_trade": 1,
+        "wait": 2,
+        "whisper": 3
+      },
+      "agent-3": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "consume": 7,
+        "gather": 21,
+        "invalid_action": 7,
+        "move": 3,
+        "wait": 1
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {
+      "agent-3": 1
+    },
+    "says_total": 1
+  },
+  "config": {
+    "action_points_per_tick": 3,
+    "default_carry_capacity": 24,
+    "height": 16,
+    "max_memory": 50,
+    "recent_event_limit": 20,
+    "seed": 43,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "width": 16
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "food_spoilage_events": 0,
+    "gift_network": {},
+    "gifts": 0,
+    "trades": {
+      "accepted": 1,
+      "accepted_detail": [
+        {
+          "created_tick": 20,
+          "expires_tick": 22,
+          "from_agent": "agent-2",
+          "give": {
+            "wood": 1
+          },
+          "id": "trade-1",
+          "receive": {
+            "water": 1
+          },
+          "status": "accepted",
+          "to_agent": "agent-3"
+        }
+      ],
+      "cancelled": 0,
+      "expired": 0,
+      "offered": 1,
+      "rejected": 0
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "accept_trade": 21,
+    "offer_trade": 20
+  },
+  "reliability": {
+    "invalid_action_rate_pct": 12.7,
+    "llm_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "final_tick": 25,
+    "stop_reason": null,
+    "target_ticks": null
+  },
+  "schema_version": 1,
+  "source": "llm-3a-25t",
+  "structures": {
+    "complete": {},
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {},
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 2,
+          "food": 9,
+          "wood": 5
+        },
+        "wealth": 37
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 1,
+          "food": 11,
+          "wood": 3
+        },
+        "wealth": 33
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 10,
+          "food": 7,
+          "wood": 1
+        },
+        "wealth": 37
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 3,
+    "survival_damage_events": 0
+  },
+  "transcript": [
+    {
+      "agent": "agent-3",
+      "message": "I\u2019m gathering food and fiber here at 8,8.",
+      "scope": "local",
+      "tick": 0
+    }
+  ],
+  "usage": {
+    "cache_hit_rate_pct": 0.0,
+    "calls": 0,
+    "completion_tokens": 0,
+    "prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_cost_usd": 0
+  },
+  "wealth_gini": 0.0249
+}

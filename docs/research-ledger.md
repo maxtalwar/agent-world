@@ -9,10 +9,10 @@ chat history.
 > branch (July 2026), whose code was superseded by main and never merged. The
 > findings and decisions below still stand — several (the boundary-treatment and
 > turn-mode experiments) explain defaults main uses today. The run artifacts the
-> entries cite are committed on that archived branch, not on main, and the
-> `catalog-runs` command mentioned below exists only there. Newer insights are
-> recorded in `docs/insights.md`; this file preserves the pre-benchmark-era
-> experiment record.
+> entries cite now live under `archive/experiment-observability/`; their source
+> commit and Git blob IDs are recorded in that directory's
+> `SOURCE-MANIFEST.tsv`. Newer insights are recorded in `docs/insights.md`;
+> this file preserves the pre-benchmark-era experiment record.
 
 ## Recording rule
 
@@ -31,11 +31,13 @@ experimental units for causal inference; agents inside one world interact and ar
 independent samples. Report unadjusted signals separately from multiple-comparison
 corrected results.
 
-Local run artifacts are intentionally gitignored because they are large. Rebuild their
-searchable index with `python3 -m agent_world.cli catalog-runs`; completed CLI,
-factorial, and observatory runs refresh `runs/catalog.json` and `runs/catalog.md`
-automatically. The catalog is derived, while event logs, snapshots, manifests, reports,
-usage logs, and checkpoints are canonical.
+The archived catalog snapshots are
+`archive/experiment-observability/runs/catalog.json` and
+`archive/experiment-observability/runs/catalog.md`. Their old
+`catalog-runs` implementation was superseded and is not
+available on main. The archived manifests, reports, analyses, and usage
+summaries are the preserved evidence; do not treat them as current
+benchmark-catalog entries.
 
 ## 2026-07-13 — Model-facing boundary treatments
 
@@ -47,14 +49,14 @@ without steering strategy or crowding out social attention?
 ### Evidence
 
 - Full grounding screen and replications:
-  `runs/experiments/agent-boundary-ab-20260713-152124/` and
-  `runs/experiments/agent-boundary-replication-20260713-160725/`.
+  `archive/experiment-observability/runs/experiments/agent-boundary-ab-20260713-152124/` and
+  `archive/experiment-observability/runs/experiments/agent-boundary-replication-20260713-160725/`.
 - Lightweight three-condition screen:
-  `runs/experiments/lightweight-boundary-abc-20260713-171022/`. Assignment 108's
+  `archive/experiment-observability/runs/experiments/lightweight-boundary-abc-20260713-171022/`. Assignment 108's
   first body-only condition was degraded and the clean replacement is
   `assignment-108/body-only-v3-retry/`.
 - Longer paired comparison:
-  `runs/experiments/indexed-vs-compact-30t-20260713-194735/`. The initial compact run
+  `archive/experiment-observability/runs/experiments/indexed-vs-compact-30t-20260713-194735/`. The initial compact run
   had a transient model-capacity failure at tick 22 and is retained but excluded. The
   clean control is `compact-v2-retry/`; the treatment is `indexed-v3/`.
 
@@ -113,7 +115,7 @@ The generalist screening stage used three paired world seeds (11, 23, 41), 20 ag
 20 ticks, stratified assignment seeds 211–213, `compact-v2`, raw decisions, and low
 reasoning. Each world contained four Luna, four Sonnet, three Terra, three Opus, three
 Sol, and three Fable agents. The intended run artifacts and complete analysis are at
-`runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/`:
+`archive/experiment-observability/runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/`:
 
 - Seed 11:
   `seed-11/simultaneous-v1/` and `seed-11/shuffled-sequential-v1/`.
@@ -176,7 +178,7 @@ conflicts, communication, and physical trades?
 
 ### Evidence and finding
 
-The 60-tick Lakeside GLM-5.2 run is summarized in `reports/lakeside-settlement.md` and
+The 60-tick Lakeside GLM-5.2 run is summarized in `archive/experiment-observability/reports/lakeside-settlement.md` and
 the older run reports. It produced 27 gifts, eight offers, and one accepted trade; 23
 gift actions were food/water aid and only four moved productive materials. Agents also
 formed one five-member group, created six group-owned structures, and completed two
@@ -203,7 +205,7 @@ How do five Sol, five Terra, and five Luna agents behave in one organic generali
 world when every cohort uses medium reasoning? The 50-tick run used world seed 11,
 stratified assignment seed 117, `compact-v2`, raw decisions, and simultaneous turns.
 The complete artifact directory is
-`runs/experiments/sol-terra-luna-medium-15a-50t-20260717-004547/`; the detailed durable
+`archive/experiment-observability/runs/experiments/sol-terra-luna-medium-15a-50t-20260717-004547/`; the detailed durable
 interpretation is `run-analysis.md` inside it. No conditions were excluded or retried.
 
 ### Findings and uncertainty
@@ -260,11 +262,11 @@ ran 50 ticks with world seed 11, stratified assignment seed 117,
 
 Exact artifact paths:
 
-- Low, included: `runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low-retry-1/`
-- Medium, included: `runs/experiments/sol-terra-luna-medium-15a-50t-20260717-004547/`
-- High, included: `runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/high/`
-- Low, preserved and excluded: `runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low/`. Sol agent 6 hit transient model capacity at tick 0, producing one LLM failure and 99.85% usage coverage.
-- Durable comparison: `runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/reasoning-effort-comparison-analysis.{json,md}`.
+- Low, included: `archive/experiment-observability/runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low-retry-1/`
+- Medium, included: `archive/experiment-observability/runs/experiments/sol-terra-luna-medium-15a-50t-20260717-004547/`
+- High, included: `archive/experiment-observability/runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/high/`
+- Low, preserved and excluded: `archive/experiment-observability/runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/low/`. Sol agent 6 hit transient model capacity at tick 0, producing one LLM failure and 99.85% usage coverage.
+- Durable comparison: `archive/experiment-observability/runs/experiments/reasoning-effort-sol-terra-luna-15a-50t-20260717-134957/reasoning-effort-comparison-analysis.{json,md}`.
 
 All included conditions completed 50/50 ticks with zero LLM failures and 100% usage
 coverage. Assignments, spawns, configuration, and static game-context hashes matched.
@@ -317,11 +319,12 @@ for five Sol, five Terra, and five Luna agents? The batch used world seed 23,
 assignment seed 117, `organic-generalists`, `compact-v2`, raw decisions, and
 `simultaneous-v1`. Exact batch record:
 
-`runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/reasoning-effort-replication-incident-summary.{json,md}`
+`archive/experiment-observability/runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/reasoning-effort-replication-incident-summary.{json,md}`
 
-The six preserved attempt directories are listed in that summary. Their raw event
-streams, snapshots, checkpoints, manifests, reports, usage logs, and run logs remain
-in place.
+The archived branch tracked the six attempt directories' manifests, reports, and
+incident summary; those tracked files are preserved here. The event streams,
+snapshots, checkpoints, usage logs, and run logs described at the time were
+gitignored and are not recoverable from the remote branch.
 
 ### Findings and uncertainty
 
