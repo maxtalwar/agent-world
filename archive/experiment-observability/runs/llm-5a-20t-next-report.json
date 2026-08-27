@@ -1,0 +1,188 @@
+{
+  "actions": {
+    "counts": {
+      "agent_spawned": 5,
+      "consume": 28,
+      "gather": 77,
+      "invalid_action": 16,
+      "move": 15,
+      "survival_damage": 6,
+      "wait": 3,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Carrying capacity would be exceeded.": 2,
+      "No fiber is available on this tile.": 3,
+      "No food is available on this tile.": 9,
+      "gather requires 4 energy.": 2
+    },
+    "invalid_total": 16,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "consume": 4,
+        "gather": 14,
+        "invalid_action": 2,
+        "move": 2,
+        "wait": 1
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "consume": 4,
+        "gather": 16,
+        "invalid_action": 3,
+        "move": 4,
+        "wait": 1
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "consume": 3,
+        "gather": 13,
+        "invalid_action": 4,
+        "move": 4
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "consume": 12,
+        "gather": 15,
+        "invalid_action": 3,
+        "move": 2,
+        "survival_damage": 3
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "consume": 5,
+        "gather": 19,
+        "invalid_action": 4,
+        "move": 3,
+        "survival_damage": 3,
+        "wait": 1
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {},
+    "says_total": 0
+  },
+  "config": {
+    "action_points_per_tick": 3,
+    "default_carry_capacity": 18,
+    "height": 16,
+    "max_memory": 50,
+    "recent_event_limit": 20,
+    "seed": 7,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "width": 16
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "food_spoilage_events": 0,
+    "gift_network": {},
+    "gifts": 0,
+    "trades": {
+      "accepted": 0,
+      "accepted_detail": [],
+      "cancelled": 0,
+      "expired": 0,
+      "offered": 0,
+      "rejected": 0
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {},
+  "reliability": {
+    "invalid_action_rate_pct": 10.6,
+    "llm_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "final_tick": 20,
+    "stop_reason": null,
+    "target_ticks": null
+  },
+  "schema_version": 1,
+  "source": "llm-5a-20t-next",
+  "structures": {
+    "complete": {},
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {},
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 3,
+          "food": 3,
+          "water": 7
+        },
+        "wealth": 19
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 4,
+          "food": 11,
+          "water": 1
+        },
+        "wealth": 31
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 5,
+          "food": 10
+        },
+        "wealth": 30
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 97,
+        "inventory": {
+          "fiber": 1,
+          "food": 3,
+          "water": 2
+        },
+        "wealth": 10
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 97,
+        "inventory": {
+          "fiber": 7,
+          "food": 10
+        },
+        "wealth": 34
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 5,
+    "survival_damage_events": 6
+  },
+  "transcript": [],
+  "usage": {
+    "cache_hit_rate_pct": 0.0,
+    "calls": 0,
+    "completion_tokens": 0,
+    "prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_cost_usd": 0
+  },
+  "wealth_gini": 0.1935
+}

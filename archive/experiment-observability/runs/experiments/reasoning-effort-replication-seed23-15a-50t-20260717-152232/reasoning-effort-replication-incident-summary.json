@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "status": "aborted_excluded",
+  "recorded_at_utc": "2026-07-17T19:09:11+00:00",
+  "question": "Does low, medium, or high reasoning change outcomes for a matched population of five Sol, five Terra, and five Luna agents across 50 ticks?",
+  "design": {
+    "world_seed": 23,
+    "assignment_seed": 117,
+    "ticks": 50,
+    "population": [
+      "5@gpt-5.6-sol",
+      "5@gpt-5.6-terra",
+      "5@gpt-5.6-luna"
+    ],
+    "conditions": ["low", "medium", "high"],
+    "preset": "organic-generalists",
+    "observation_mode": "compact-v2",
+    "decision_mode": "raw",
+    "turn_mode": "simultaneous-v1"
+  },
+  "cause": {
+    "provider": "gpt-5.6-sol",
+    "incident": "User reported an OpenAI status page showing Codex 5.6-sol experiencing increased server-overload errors.",
+    "evidence": "The user-provided status screenshot in the conversation, plus repeated Codex decision failures concentrated in the Sol cohort."
+  },
+  "attempts": [
+    {
+      "condition": "low",
+      "path": "runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/low/",
+      "status": "completed_but_degraded",
+      "final_tick": 50,
+      "llm_failure_events": 6,
+      "usage_record_coverage_pct": 99.15,
+      "simulation_credits": 409.300525
+    },
+    {
+      "condition": "medium",
+      "path": "runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/medium/",
+      "status": "completed_but_degraded",
+      "final_tick": 50,
+      "llm_failure_events": 10,
+      "usage_record_coverage_pct": 98.58,
+      "simulation_credits": 474.359462
+    },
+    {
+      "condition": "high",
+      "path": "runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/high/",
+      "status": "completed_but_degraded",
+      "final_tick": 50,
+      "llm_failure_events": 10,
+      "usage_record_coverage_pct": 98.58,
+      "simulation_credits": 519.847412
+    },
+    {
+      "condition": "low",
+      "path": "runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/low-retry-1/",
+      "status": "completed_but_degraded",
+      "final_tick": 50,
+      "llm_failure_events": 1,
+      "usage_record_coverage_pct": 99.84,
+      "simulation_credits": 327.289812
+    },
+    {
+      "condition": "medium",
+      "path": "runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/medium-retry-1/",
+      "status": "completed_but_degraded",
+      "final_tick": 50,
+      "llm_failure_events": 5,
+      "usage_record_coverage_pct": 99.27,
+      "simulation_credits": 445.323308
+    },
+    {
+      "condition": "high",
+      "path": "runs/experiments/reasoning-effort-replication-seed23-15a-50t-20260717-152232/high-retry-1/",
+      "status": "interrupted_excluded",
+      "final_tick": 42,
+      "llm_failure_events": 3,
+      "usage_record_coverage_pct": 101.9,
+      "simulation_credits": 453.798088
+    }
+  ],
+  "totals": {
+    "attempt_count": 6,
+    "simulation_credits": 2629.918607,
+    "valid_complete_conditions": 0
+  },
+  "decision": "Do not analyze or pool these runs as a reasoning-effort comparison. Preserve every artifact, exclude the entire seed-23 batch, and rerun only after the Sol service incident has cleared.",
+  "next_question": "After Sol capacity is healthy, does the low/medium/high reasoning ordering replicate on a fresh matched seed with zero provider failures and complete usage coverage?"
+}

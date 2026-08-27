@@ -1,0 +1,453 @@
+{
+  "actions": {
+    "counts": {
+      "accept_trade": 1,
+      "agent_spawned": 5,
+      "build": 3,
+      "chop": 4,
+      "consume": 15,
+      "farm": 3,
+      "gather": 17,
+      "harvest": 7,
+      "invalid_action": 11,
+      "mine": 2,
+      "move": 6,
+      "offer_trade": 3,
+      "run_stopped": 1,
+      "say": 30,
+      "survival_damage": 1,
+      "wait": 17,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Carrying capacity would be exceeded.": 3,
+      "No fiber is available on this tile.": 4,
+      "No food is available on this tile.": 3,
+      "Target carrying capacity would be exceeded.": 1
+    },
+    "invalid_total": 11,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "build": 1,
+        "consume": 4,
+        "farm": 2,
+        "gather": 5,
+        "harvest": 2,
+        "invalid_action": 2,
+        "offer_trade": 1,
+        "wait": 3
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "build": 1,
+        "consume": 3,
+        "farm": 1,
+        "gather": 4,
+        "harvest": 3,
+        "invalid_action": 2,
+        "move": 1,
+        "wait": 4
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "build": 1,
+        "consume": 3,
+        "gather": 6,
+        "harvest": 2,
+        "invalid_action": 3,
+        "move": 1,
+        "offer_trade": 1,
+        "wait": 3
+      },
+      "agent-4": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "chop": 2,
+        "consume": 2,
+        "invalid_action": 3,
+        "mine": 1,
+        "move": 3,
+        "offer_trade": 1,
+        "survival_damage": 1,
+        "wait": 2
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "chop": 2,
+        "consume": 3,
+        "gather": 2,
+        "invalid_action": 1,
+        "mine": 1,
+        "move": 1,
+        "wait": 5
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {
+      "agent-1": 7,
+      "agent-2": 7,
+      "agent-3": 6,
+      "agent-4": 5,
+      "agent-5": 5
+    },
+    "says_total": 30
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "default_carry_capacity": 10,
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 11,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "food_spoilage_events": 0,
+    "gift_network": {},
+    "gifts": 0,
+    "trades": {
+      "accepted": 1,
+      "accepted_detail": [
+        {
+          "accepted_by": "agent-4",
+          "created_tick": 3,
+          "escrowed": false,
+          "expires_tick": 8,
+          "from_agent": "agent-3",
+          "give": {
+            "fiber": 1
+          },
+          "id": "trade-1",
+          "public": false,
+          "receive": {
+            "wood": 1
+          },
+          "status": "accepted",
+          "to_agent": "agent-4"
+        }
+      ],
+      "cancelled": 0,
+      "expired": 0,
+      "offered": 3,
+      "rejected": 0
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "accept_trade": 4,
+    "build": 2,
+    "offer_trade": 3
+  },
+  "reliability": {
+    "invalid_action_rate_pct": 8.7,
+    "llm_failure_events": 0
+  },
+  "run": {
+    "completed": false,
+    "final_tick": 6,
+    "stop_reason": "insufficient_quota",
+    "target_ticks": 40
+  },
+  "schema_version": 1,
+  "source": "llm-5a-40t-4ap-seed11-partial6t",
+  "structures": {
+    "complete": {
+      "farm_plot": 3
+    },
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {
+      "agent-1": 1,
+      "agent-2": 1,
+      "agent-3": 1
+    },
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "food": 2,
+          "water": 1
+        },
+        "wealth": 5
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 1,
+          "food": 4,
+          "water": 1
+        },
+        "wealth": 11
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "food": 2,
+          "water": 3,
+          "wood": 1
+        },
+        "wealth": 10
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 95,
+        "inventory": {
+          "fiber": 1,
+          "stone": 1
+        },
+        "wealth": 6
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "fiber": 1,
+          "food": 1,
+          "stone": 1,
+          "wood": 2
+        },
+        "wealth": 14
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 5,
+    "survival_damage_events": 1
+  },
+  "transcript": [
+    {
+      "agent": "agent-1",
+      "message": "Let's coordinate. I'll gather fiber and food here. We should build storage and tools soon.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-2",
+      "message": "I'm gathering food and water nearby. We should coordinate to build a settlement here - good resources all around.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-3",
+      "message": "I'm gathering food, fiber, and water here. We should coordinate to build shared infrastructure.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-5",
+      "message": "I'm at the forest gathering wood and fiber. There's stone at the mountain nearby. Let's coordinate to build tools and a settlement.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-1",
+      "message": "I'm at (8,8) with good foraging skills. I can gather food and water efficiently. Let's build a settlement here - I'll contribute fiber and water.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-2",
+      "message": "I've moved north to (8,7) to gather food and fiber. I support building a settlement here - water nearby, forest for wood, mountain for stone. Let's pool materials for a storage and farm_plot.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-4",
+      "message": "I'm at the forest with Agent 5 chopping wood. I'll help build tools and settlement. I can grab stone from the mountain (7,9) soon.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-5",
+      "message": "I'm chopping wood here. Next tick I'll head to the mountain for stone, then craft a tool. Let's pool resources for a settlement - I can bring wood and fiber.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-1",
+      "message": "Building a farm_plot at (8,8). I have foraging 6 so I'll tend it and gather. Someone bring wood/fiber for storage next. Let's create a group to coordinate claims.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-2",
+      "message": "Building a farm_plot at (8,7). I have 1 fiber left. Need 2 wood for storage - can agents 4 or 5 bring wood here? Agent 1, let's coordinate build site for storage.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-3",
+      "message": "I'm on the fiber plains at (8,9). I'll gather water from the adjacent lake and fiber here. We should coordinate settlement near the water and mountain.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-4",
+      "message": "Heading to mountain (7,9) to mine stone. I have 2 wood ready. Once I get stone and fiber, I'll craft a tool. Who has spare fiber?",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-5",
+      "message": "Moving to mountain for stone. I have fiber and wood ready - will craft a tool next tick. Let's coordinate on settlement.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-1",
+      "message": "Harvesting and tending my farm at (8,8). I have 1 fiber I can spare for tool crafting - who needs it most? Agents 4 and 5, let me know if you want it. Once we have tools, let's build storage here.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-2",
+      "message": "Harvesting and tending my farm_plot at (8,7). I need 2 wood for storage - Agent 4 or 5, can you bring wood here? I have food and water to trade.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-3",
+      "message": "I'm building a farm_plot at (8,9). I have spare fiber to trade for wood - agent-4, let's make tools and settle near water.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-4",
+      "message": "I'm mining stone here. I have 2 wood - can you spare 1 fiber? I'll trade 1 wood for 1 fiber so I can craft a tool next tick.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-5",
+      "message": "Mined stone at (7,9). I'll craft a tool next tick. Agent-4, there's plenty of stone here for both of us. Let's coordinate on settlement near water.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent 4, I have fiber to trade for 2 wood. I'm planning to build storage at my farm (8,8). Let's coordinate - I'll also share food if needed.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent 2, once I get wood from trade I'll build storage next tick at (8,8). You can store goods there too.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-2",
+      "message": "Energy low, recovering briefly then harvesting my farm. Still need 2 wood for storage at (8,7). Agent 1, let's coordinate - I have food/water to trade for wood. Agents 4/5, any spare wood?",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-3",
+      "message": "My farm at (8,9) is producing. Still offering 1 fiber for 1 wood (trade-1) - let's get you a tool so we can all build storage.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-4",
+      "message": "Thanks agent-3 for the fiber! Now I have fiber+stone, just need wood again. I'll move to forest next tick to chop, then craft tool. Let's settle near water at (8,9).",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-4, I need my fiber for tool crafting so I'll pass on the trade. I'm mining stone now and will craft a tool next tick. Once we both have tools, let's coordinate settlement near water at (9,9).",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-4, I don't have fiber right now so trade-3 may not complete. Focus on your thirst first - get to water at (9,9) or (9,8). I'm harvesting food at my farm (8,8) and can share food if needed.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent 1, I'm harvesting my farm at (8,7). If you build storage at (8,8), please grant me access so I can offload food. I have 1 fiber and can trade for wood.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent 3, I need 2 wood for storage at (8,7). Can you spare 2 wood? I can offer 2 food in return. I want to keep my 1 fiber for the storage build.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-4, gave you 2 water for your thirst. I have wood from our trade and need 1 fiber + 1 stone to craft a tool. Can anyone spare stone? I'll gather fiber next tick. Let's settle around (8,9)-(9,9) near water.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-5, when you craft your tool, could you spare 1 stone? I'll trade food or fiber in return. We need tools and storage to build a lasting settlement here.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-4",
+      "message": "Thanks for letting me know. My water was critical so I had to drink first. Moving to forest (7,8) for wood now. Let's settle near water at (8,9)/(9,9) once we both have tools.",
+      "scope": "local",
+      "tick": 5
+    }
+  ],
+  "usage": {
+    "cache_hit_rate_pct": 70.1,
+    "calls": 29,
+    "completion_tokens": 38676,
+    "prompt_tokens": 105832,
+    "reasoning_tokens": 33418,
+    "total_cost_usd": 0.1906
+  },
+  "wealth_gini": 0.2
+}

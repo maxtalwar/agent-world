@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "question": "Does resolving a reproducibly shuffled agent activation before the next agent decides improve action validity or emergent social and economic behavior relative to simultaneous decisions?",
+  "design": {
+    "stage": "generalist screening",
+    "preset": "organic-generalists",
+    "observation_mode": "compact-v2",
+    "decision_mode": "raw",
+    "agents_per_run": 20,
+    "ticks_per_run": 20,
+    "world_seeds": [
+      11,
+      23,
+      41
+    ],
+    "assignment_seeds": [
+      211,
+      212,
+      213
+    ],
+    "assignment_strategy": "stratified",
+    "population": {
+      "gpt-5.6-luna": 4,
+      "claude-sonnet-5": 4,
+      "gpt-5.6-terra": 3,
+      "claude-opus-4-8": 3,
+      "gpt-5.6-sol": 3,
+      "fable": 3
+    },
+    "reasoning_effort": "low",
+    "claude_thinking_budget_tokens": 0,
+    "experimental_unit": "paired world seed",
+    "statistical_method": "Two-sided exact paired sign-flip permutation test over three world-seed deltas. Benjamini-Hochberg correction was applied to the preselected outcome family. With n=3, the smallest attainable nonzero two-sided p-value is 0.25."
+  },
+  "runs": {
+    "seed_11": {
+      "simultaneous": "seed-11/simultaneous-v1/",
+      "sequential": "seed-11/shuffled-sequential-v1/"
+    },
+    "seed_23": {
+      "simultaneous": "seed-23/simultaneous-v1/",
+      "sequential": "seed-23/shuffled-sequential-v1/"
+    },
+    "seed_41": {
+      "simultaneous": "seed-41/simultaneous-v1/",
+      "sequential": "seed-41/shuffled-sequential-v1-retry-1/"
+    }
+  },
+  "excluded_runs": [
+    {
+      "path": "seed-41/shuffled-sequential-v1/",
+      "reason": "Launch command omitted the 3-agent gpt-5.6-sol cohort and routed fable through the wrong provider. The 17-agent run was stopped after 12 decision calls and replaced without deleting its artifacts."
+    }
+  ],
+  "quality": {
+    "intended_runs": 6,
+    "completed_clean_runs": 6,
+    "decision_attempts_per_run": 400,
+    "decision_failure_rate_pct": 0.0,
+    "usage_record_coverage_pct": 100.0,
+    "assignment_maps_matched_within_pairs": true
+  },
+  "paired_results": {
+    "invalid_action_rate_pct": {
+      "simultaneous_mean": 26.1,
+      "sequential_mean": 27.3,
+      "mean_delta": 1.2,
+      "paired_deltas": [
+        0.3,
+        1.2,
+        2.1
+      ],
+      "exact_p_two_sided": 0.25,
+      "bh_q": 0.6
+    },
+    "known_invalid_actions": {
+      "simultaneous_mean": 158.6667,
+      "sequential_mean": 176.0,
+      "mean_delta": 17.3333,
+      "paired_deltas": [
+        8,
+        13,
+        31
+      ],
+      "exact_p_two_sided": 0.25,
+      "bh_q": 0.6
+    },
+    "unobserved_prior_resolution_invalid_actions": {
+      "simultaneous_mean": 318.3333,
+      "sequential_mean": 0.0,
+      "mean_delta": -318.3333,
+      "paired_deltas": [
+        -326,
+        -331,
+        -298
+      ],
+      "exact_p_two_sided": 0.25,
+      "interpretation": "Sequential observations contained prior same-tick resolutions as designed, but this did not reduce total invalid actions."
+    },
+    "speech_events": {
+      "simultaneous_mean": 124.3333,
+      "sequential_mean": 97.3333,
+      "mean_delta": -27.0,
+      "paired_deltas": [
+        -65,
+        -20,
+        4
+      ],
+      "exact_p_two_sided": 0.5,
+      "bh_q": 0.8571
+    },
+    "trade_offers": {
+      "simultaneous_mean": 24.3333,
+      "sequential_mean": 18.3333,
+      "mean_delta": -6.0,
+      "paired_deltas": [
+        2,
+        0,
+        -20
+      ],
+      "exact_p_two_sided": 1.0,
+      "bh_q": 1.0
+    },
+    "accepted_trades": {
+      "simultaneous_mean": 0.6667,
+      "sequential_mean": 1.0,
+      "mean_delta": 0.3333,
+      "paired_deltas": [
+        0,
+        0,
+        1
+      ],
+      "exact_p_two_sided": 1.0,
+      "bh_q": 1.0
+    },
+    "accepted_trade_value": {
+      "simultaneous_mean": 7.3333,
+      "sequential_mean": 7.3333,
+      "mean_delta": 0.0,
+      "paired_deltas": [
+        0,
+        -6,
+        6
+      ],
+      "exact_p_two_sided": 1.0
+    },
+    "survival_damage_events": {
+      "simultaneous_mean": 62.3333,
+      "sequential_mean": 50.3333,
+      "mean_delta": -12.0,
+      "paired_deltas": [
+        -16,
+        -11,
+        -9
+      ],
+      "exact_p_two_sided": 0.25,
+      "bh_q": 0.6
+    },
+    "mean_final_health": {
+      "simultaneous_mean": 83.3667,
+      "sequential_mean": 86.7333,
+      "mean_delta": 3.3667,
+      "paired_deltas": [
+        2.3,
+        5.2,
+        2.6
+      ],
+      "exact_p_two_sided": 0.25,
+      "bh_q": 0.6
+    },
+    "wealth_gini": {
+      "simultaneous_mean": 0.186,
+      "sequential_mean": 0.1479,
+      "mean_delta": -0.0381,
+      "paired_deltas": [
+        -0.0343,
+        -0.0691,
+        -0.011
+      ],
+      "exact_p_two_sided": 0.25,
+      "bh_q": 0.6
+    },
+    "complete_structures": {
+      "simultaneous_mean": 0.6667,
+      "sequential_mean": 0.0,
+      "mean_delta": -0.6667,
+      "paired_deltas": [
+        -1,
+        -1,
+        0
+      ],
+      "exact_p_two_sided": 0.5,
+      "bh_q": 0.8571
+    },
+    "runtime_minutes": {
+      "simultaneous_mean": 11.137,
+      "sequential_mean": 69.0427,
+      "mean_delta": 57.9057,
+      "paired_deltas": [
+        58.806,
+        58.516,
+        56.395
+      ],
+      "exact_p_two_sided": 0.25
+    },
+    "codex_simulation_credits": {
+      "simultaneous_mean": 115.7049,
+      "sequential_mean": 102.6613,
+      "mean_delta": -13.0435,
+      "paired_deltas": [
+        -21.644,
+        -3.4728,
+        -14.0139
+      ],
+      "exact_p_two_sided": 0.25
+    }
+  },
+  "model_descriptive_invalid_rate_delta_pct_points": {
+    "gpt-5.6-sol": -8.5,
+    "gpt-5.6-luna": -1.433,
+    "claude-opus-4-8": -1.1,
+    "gpt-5.6-terra": 2.6,
+    "claude-sonnet-5": 4.633,
+    "fable": 10.867
+  },
+  "usage": {
+    "total_decision_calls_intended_runs": 2400,
+    "total_prompt_tokens": 22600721,
+    "total_completion_tokens": 929214,
+    "total_reasoning_tokens": 238654,
+    "total_codex_simulation_credits": 655.0985,
+    "simultaneous_codex_simulation_credits": 347.114574,
+    "sequential_codex_simulation_credits": 307.983926,
+    "account_level_codex_weekly_usage_observed": {
+      "before_first_run_pct": 1,
+      "after_last_run_pct": 8,
+      "note": "This is an overlapping account-level window and may include non-simulation Codex activity. It must not be summed across concurrent run reports."
+    }
+  },
+  "findings": [
+    "Sequential activation successfully exposed earlier same-tick events: an average of 201 decisions per run observed same-tick events and 98 decisions followed same-tick speech.",
+    "Fresh same-tick state did not improve mechanical validity. Invalid action rates and observation-known invalid counts increased in all three paired seeds, with no consistent early-to-late activation-position gradient.",
+    "Economic evidence was neutral to negative at this horizon. Sequential runs created one additional accepted trade overall, but accepted trade value was identical, offers fell, and completed structures fell from two total to zero.",
+    "Sequential runs consistently ended with less survival damage, higher mean health, and lower wealth inequality. These are credible hypotheses for future targeted study, not confirmatory findings at n=3.",
+    "The treatment was roughly 6.2 times slower in wall-clock time. Prompt size was essentially unchanged and exact Codex simulation credits were about 11.3 percent lower."
+  ],
+  "decision": {
+    "advance_to_specialist_stage": false,
+    "reason": "The screening treatment did not improve the primary validity outcome or economic output, and its large latency cost outweighed the exploratory health and inequality gains.",
+    "product": "Keep simultaneous-v1 as the default. Retain shuffled-sequential-v1 as an explicit experimental treatment for targeted coordination, contention, survival, or inequality studies."
+  },
+  "next_question": "Can a lighter multi-phase turn preserve independent planning while allowing a narrow reaction or settlement phase for conflicts, communication, and physical trades?"
+}

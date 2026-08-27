@@ -1,0 +1,266 @@
+{
+  "assignment_source_manifest": null,
+  "command": [
+    "python3",
+    "-m",
+    "agent_world.cli",
+    "run",
+    "--ticks",
+    "20",
+    "--seed",
+    "23",
+    "--preset",
+    "organic-generalists",
+    "--population",
+    "4@gpt-5.6-luna:low",
+    "--population",
+    "4@claude-sonnet-5:low",
+    "--population",
+    "3@gpt-5.6-terra:low",
+    "--population",
+    "3@claude-opus-4-8:low",
+    "--population",
+    "3@gpt-5.6-sol:low",
+    "--population",
+    "3@claude:fable:low",
+    "--claude-thinking-budget-tokens",
+    "0",
+    "--assignment-strategy",
+    "stratified",
+    "--assignment-seed",
+    "212",
+    "--max-workers",
+    "8",
+    "--codex-max-workers",
+    "4",
+    "--claude-max-workers",
+    "4",
+    "--decision-mode",
+    "raw",
+    "--observation-mode",
+    "compact-v2",
+    "--turn-mode",
+    "simultaneous-v1",
+    "--out",
+    "runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1/run.jsonl",
+    "--snapshot",
+    "runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1/run-snapshot.json",
+    "--progress"
+  ],
+  "concurrency": {
+    "global": 8,
+    "providers": {
+      "claude_cli": 4,
+      "codex_cli": 4,
+      "openai_compatible": 2
+    }
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "organic",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "memory_char_budget": 2400,
+    "memory_update_max_chars": 240,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "neutral",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 23,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "specialization_mode": "generalists",
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "decision_mode": "raw",
+  "ended_at_utc": "2026-07-16T16:26:43.800067+00:00",
+  "error": null,
+  "final_tick": 20,
+  "observation_mode": "compact-v2",
+  "outputs": {
+    "checkpoint": "runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1/run-checkpoint.pkl",
+    "events": "runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1/run.jsonl",
+    "report_json": "runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1/run-report.json",
+    "report_markdown": "runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1/run-report.md",
+    "snapshot": "runs/experiments/turn-mode-stage1-20a-20t-3seeds-20260716-110620/seed-23/simultaneous-v1/run-snapshot.json"
+  },
+  "population": {
+    "assignment_seed": 212,
+    "assignment_strategy": "stratified",
+    "assignments": {
+      "agent-1": "cohort-1",
+      "agent-10": "cohort-3",
+      "agent-11": "cohort-3",
+      "agent-12": "cohort-2",
+      "agent-13": "cohort-2",
+      "agent-14": "cohort-5",
+      "agent-15": "cohort-4",
+      "agent-16": "cohort-6",
+      "agent-17": "cohort-1",
+      "agent-18": "cohort-6",
+      "agent-19": "cohort-5",
+      "agent-2": "cohort-1",
+      "agent-20": "cohort-2",
+      "agent-3": "cohort-2",
+      "agent-4": "cohort-1",
+      "agent-5": "cohort-6",
+      "agent-6": "cohort-3",
+      "agent-7": "cohort-4",
+      "agent-8": "cohort-4",
+      "agent-9": "cohort-5"
+    },
+    "groups": [
+      {
+        "billing_mode": "chatgpt_plan",
+        "count": 4,
+        "id": "cohort-1",
+        "max_workers": 8,
+        "model": "gpt-5.6-luna",
+        "provider": "codex_cli",
+        "reasoning_effort": "low",
+        "thinking_budget_tokens": null,
+        "type": "codex"
+      },
+      {
+        "billing_mode": "claude_plan",
+        "count": 4,
+        "id": "cohort-2",
+        "max_workers": 8,
+        "model": "claude-sonnet-5",
+        "provider": "claude_cli",
+        "reasoning_effort": "low",
+        "thinking_budget_tokens": 0,
+        "type": "claude"
+      },
+      {
+        "billing_mode": "chatgpt_plan",
+        "count": 3,
+        "id": "cohort-3",
+        "max_workers": 8,
+        "model": "gpt-5.6-terra",
+        "provider": "codex_cli",
+        "reasoning_effort": "low",
+        "thinking_budget_tokens": null,
+        "type": "codex"
+      },
+      {
+        "billing_mode": "claude_plan",
+        "count": 3,
+        "id": "cohort-4",
+        "max_workers": 8,
+        "model": "claude-opus-4-8",
+        "provider": "claude_cli",
+        "reasoning_effort": "low",
+        "thinking_budget_tokens": 0,
+        "type": "claude"
+      },
+      {
+        "billing_mode": "chatgpt_plan",
+        "count": 3,
+        "id": "cohort-5",
+        "max_workers": 8,
+        "model": "gpt-5.6-sol",
+        "provider": "codex_cli",
+        "reasoning_effort": "low",
+        "thinking_budget_tokens": null,
+        "type": "codex"
+      },
+      {
+        "billing_mode": "claude_plan",
+        "count": 3,
+        "id": "cohort-6",
+        "max_workers": 8,
+        "model": "fable",
+        "provider": "claude_cli",
+        "reasoning_effort": "low",
+        "thinking_budget_tokens": 0,
+        "type": "claude"
+      }
+    ],
+    "total_agents": 20,
+    "type": "mixed"
+  },
+  "preset": "organic-generalists",
+  "provenance": {
+    "dirty_worktree": true,
+    "git_sha": "b12b3b5bb945e40dc1ff8b4809ffc604188629cd"
+  },
+  "provider_context_parity": {
+    "providers": {
+      "claude_cli": {
+        "formats": [
+          "static_context_v2+compact_dynamic_v2"
+        ],
+        "records": 200,
+        "static_context_sha256": [
+          "055045e371902736dae740ca21296ab20344a50e82094919462c155c451fb603"
+        ]
+      },
+      "codex_cli": {
+        "formats": [
+          "static_context_v2+compact_dynamic_v2"
+        ],
+        "records": 200,
+        "static_context_sha256": [
+          "055045e371902736dae740ca21296ab20344a50e82094919462c155c451fb603"
+        ]
+      }
+    },
+    "same_context_format": true,
+    "same_static_game_context": true
+  },
+  "provider_settings": {
+    "claude_cli": {
+      "thinking_budget_tokens": [
+        0
+      ]
+    }
+  },
+  "resolved_models": {
+    "claude-fable-5": 60,
+    "claude-opus-4-8": 60,
+    "claude-sonnet-5": 80,
+    "gpt-5.6-luna": 80,
+    "gpt-5.6-sol": 60,
+    "gpt-5.6-terra": 60
+  },
+  "schema_version": 1,
+  "started_at_utc": "2026-07-16T16:16:19.816244+00:00",
+  "status": "completed",
+  "stop_reason": null,
+  "target_ticks": 20,
+  "turn_mode": "simultaneous-v1"
+}

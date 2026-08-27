@@ -1,0 +1,275 @@
+{
+  "actions": {
+    "counts": {
+      "agent_spawned": 5,
+      "build": 4,
+      "chop": 11,
+      "claim_tile": 1,
+      "consume": 34,
+      "drop": 1,
+      "fish": 2,
+      "food_spoilage": 10,
+      "gather": 37,
+      "gift": 1,
+      "harvest": 14,
+      "invalid_action": 61,
+      "move": 23,
+      "store": 2,
+      "survival_damage": 9,
+      "wait": 45,
+      "whisper": 1,
+      "world_created": 1
+    },
+    "invalid_reasons": {
+      "Agent lacks gifted items.": 2,
+      "Cannot build on another agent's claimed tile without access.": 1,
+      "Carrying capacity would be exceeded.": 3,
+      "Fishing requires fishable food in current or adjacent water.": 1,
+      "Gift target must be adjacent or on the same tile.": 1,
+      "No action points remain this tick.": 13,
+      "No fiber is available on this tile.": 3,
+      "No food available in storage.": 1,
+      "No food available to consume.": 3,
+      "No food available to store.": 1,
+      "No food is available on this tile.": 10,
+      "No water available to consume.": 4,
+      "No water is available on this tile or adjacent water.": 5,
+      "No wood is available on this tile.": 1,
+      "Structure is not on this tile.": 1,
+      "Whisper target must be adjacent or on the same tile.": 1,
+      "chop requires 2 action points.": 3,
+      "fish requires 6 energy.": 1,
+      "gather requires 3 energy.": 3,
+      "harvest requires 2 action points.": 2,
+      "mine requires 6 energy.": 1
+    },
+    "invalid_total": 61,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "consume": 7,
+        "drop": 1,
+        "fish": 1,
+        "food_spoilage": 1,
+        "gather": 14,
+        "gift": 1,
+        "invalid_action": 11,
+        "move": 9,
+        "survival_damage": 1,
+        "wait": 10,
+        "whisper": 1
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "build": 1,
+        "consume": 8,
+        "food_spoilage": 3,
+        "gather": 6,
+        "harvest": 9,
+        "invalid_action": 10,
+        "move": 3,
+        "survival_damage": 2,
+        "wait": 8
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "build": 1,
+        "chop": 3,
+        "consume": 7,
+        "food_spoilage": 3,
+        "gather": 4,
+        "harvest": 5,
+        "invalid_action": 11,
+        "move": 5,
+        "survival_damage": 3,
+        "wait": 10
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "build": 1,
+        "chop": 6,
+        "consume": 5,
+        "food_spoilage": 1,
+        "gather": 5,
+        "invalid_action": 15,
+        "move": 2,
+        "store": 2,
+        "survival_damage": 2,
+        "wait": 9
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "build": 1,
+        "chop": 2,
+        "claim_tile": 1,
+        "consume": 7,
+        "fish": 1,
+        "food_spoilage": 2,
+        "gather": 8,
+        "invalid_action": 14,
+        "move": 4,
+        "survival_damage": 1,
+        "wait": 8
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {},
+    "says_total": 0
+  },
+  "config": {
+    "action_points_per_tick": 3,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "default_carry_capacity": 10,
+    "energy_reserve_max": 25,
+    "energy_reserve_start": 20,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 15,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "height": 16,
+    "max_memory": 50,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 5,
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 15,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 1,
+    "food_spoilage_events": 10,
+    "gift_network": {
+      "agent-1->agent-5": 1
+    },
+    "gifts": 1,
+    "trades": {
+      "accepted": 0,
+      "accepted_detail": [],
+      "cancelled": 0,
+      "expired": 0,
+      "offered": 0,
+      "rejected": 0
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "build": 5,
+    "claim_tile": 18,
+    "gift": 15
+  },
+  "reliability": {
+    "invalid_action_rate_pct": 23.3,
+    "llm_failure_events": 0
+  },
+  "run": {
+    "completed": true,
+    "final_tick": 20,
+    "stop_reason": null,
+    "target_ticks": null
+  },
+  "schema_version": 1,
+  "source": "mini-medium-5000-cheap-storage-20t",
+  "structures": {
+    "complete": {},
+    "coop_builds": [],
+    "in_progress": {
+      "farm_plot": 2,
+      "storage": 2
+    },
+    "ownership": {
+      "agent-2": 1,
+      "agent-3": 1,
+      "agent-4": 1,
+      "agent-5": 1
+    },
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 98,
+        "inventory": {
+          "fiber": 7,
+          "water": 1
+        },
+        "wealth": 15
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 93,
+        "inventory": {
+          "fiber": 2,
+          "food": 4
+        },
+        "wealth": 12
+      },
+      "agent-3": {
+        "alive": true,
+        "groups": [],
+        "health": 84,
+        "inventory": {
+          "wood": 3
+        },
+        "wealth": 9
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 87,
+        "inventory": {
+          "wood": 3
+        },
+        "wealth": 9
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 95,
+        "inventory": {
+          "fiber": 1,
+          "water": 2
+        },
+        "wealth": 4
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 5,
+    "survival_damage_events": 9
+  },
+  "transcript": [],
+  "usage": {
+    "cache_hit_rate_pct": 0.0,
+    "calls": 0,
+    "completion_tokens": 0,
+    "prompt_tokens": 0,
+    "reasoning_tokens": 0,
+    "total_cost_usd": 0
+  },
+  "wealth_gini": 0.2041
+}

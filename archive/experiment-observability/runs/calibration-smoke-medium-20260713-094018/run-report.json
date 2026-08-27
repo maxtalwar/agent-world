@@ -1,0 +1,596 @@
+{
+  "actions": {
+    "counts": {
+      "agent_spawned": 2,
+      "gather": 3,
+      "move": 1,
+      "run_completed": 1,
+      "run_started": 1,
+      "wait": 1,
+      "world_created": 1
+    },
+    "diagnostics": {
+      "decisions": 2,
+      "invalid_actions_per_decision": 0.0,
+      "invalid_actions_per_proposed_action_pct": 0.0,
+      "mean_proposed_actions_per_decision": 2.5,
+      "observation_attribution": {},
+      "observation_attribution_note": "Diagnostic classification from the logged pre-tick observation. Potential state changes include other-agent contention and earlier actions in the same submitted plan.",
+      "proposed_actions": 5,
+      "reason_categories": {}
+    },
+    "invalid_reasons": {},
+    "invalid_total": 0,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "gather": 2,
+        "move": 1,
+        "wait": 1
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "gather": 1
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {},
+    "says_total": 0
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "organic",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "memory_char_budget": 2400,
+    "memory_update_max_chars": 240,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "neutral",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 11,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "specialization_mode": "generalists",
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "construction": {
+      "assets": {
+        "by_owner": {},
+        "by_owner_kind": {},
+        "complete": 0,
+        "count": 0,
+        "in_progress": 0,
+        "replacement_cost_value": 0,
+        "stored_inventory_value": 0
+      },
+      "contributions": {
+        "by_agent": {},
+        "by_item": {},
+        "by_structure": {},
+        "events": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contributor_ownership": {}
+    },
+    "food_spoilage_events": 0,
+    "gift_by_item": {},
+    "gift_categories": {
+      "materials": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      },
+      "subsistence": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      }
+    },
+    "gift_detail": [],
+    "gift_event_categories": {
+      "empty": 0,
+      "materials_only": 0,
+      "mixed": 0,
+      "subsistence_only": 0
+    },
+    "gift_group_status": {
+      "in_group": 0,
+      "out_group": 0,
+      "unknown": 0
+    },
+    "gift_network": {},
+    "gift_network_quantity": {},
+    "gift_network_value": {},
+    "gift_quantity": 0,
+    "gift_value": 0,
+    "gift_value_by_item": {},
+    "gifts": 0,
+    "institutions": {
+      "access_fees": {
+        "by_item": {},
+        "by_structure": {},
+        "payments": 0,
+        "policies_set": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contracts": {
+        "accepted": 0,
+        "advance_value": 0,
+        "collateral_value": 0,
+        "defaulted": 0,
+        "fulfilled": 0,
+        "offered": 0,
+        "repayment_value": 0,
+        "status": {}
+      },
+      "dividends": {
+        "by_item": {},
+        "claims": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "market_history_entries": 0,
+      "upkeep": {
+        "by_item": {},
+        "maintenance_actions": 0,
+        "missed_cycles": 0,
+        "paid_cycles": 0,
+        "supplied_value": 0
+      }
+    },
+    "trades": {
+      "accept_attempts": 0,
+      "accept_success_rate_pct": 0.0,
+      "acceptance_latency_ticks": {
+        "average": null,
+        "max": null,
+        "median": null,
+        "min": null,
+        "samples": 0
+      },
+      "accepted": 0,
+      "accepted_by_item": {},
+      "accepted_detail": [],
+      "accepted_give_value": 0,
+      "accepted_group_status": {
+        "in_group": 0,
+        "out_group": 0,
+        "unknown": 0
+      },
+      "accepted_receive_value": 0,
+      "accepted_transfer_detail": [],
+      "accepted_value": 0,
+      "cancelled": 0,
+      "conversion_rate_pct": 0.0,
+      "direct_offered": 0,
+      "expired": 0,
+      "funnel": {
+        "acceptance_failure_stages": {},
+        "counterparty_offer_observations": 0,
+        "offer_creation_attempts": 0,
+        "offer_creation_invalid": 0,
+        "offer_creation_invalid_reasons": {},
+        "offers_completed": 0,
+        "offers_created": 0,
+        "offers_expired_without_acceptance_attempt": 0,
+        "offers_observed_by_counterparty": 0,
+        "offers_reaching_meeting_and_inventory_checks": 0,
+        "offers_with_acceptance_attempt": 0
+      },
+      "invalid_accept_reasons": {},
+      "invalid_accepts": 0,
+      "offered": 0,
+      "offered_group_status": {
+        "in_group": 0,
+        "out_group": 0,
+        "unknown": 0
+      },
+      "open": 0,
+      "public_offered": 0,
+      "rejected": 0,
+      "resolution_rate_pct": 0.0,
+      "resolved_conversion_rate_pct": 0.0,
+      "status_counts": {}
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {},
+  "population": {
+    "assignment_seed": 11,
+    "assignment_strategy": "stratified",
+    "assignments": {
+      "agent-1": "cohort-1",
+      "agent-2": "cohort-2"
+    },
+    "cohorts": {
+      "cohort-1": {
+        "actions": {
+          "agent_spawned": 1,
+          "gather": 2,
+          "move": 1,
+          "wait": 1
+        },
+        "agents": [
+          "agent-1"
+        ],
+        "billing_mode": "claude_plan",
+        "brain": "claude",
+        "communication": 0,
+        "dead": 0,
+        "decisions": 1,
+        "gifts_sent": 0,
+        "initial_agents": 1,
+        "invalid_actions": 0,
+        "invalid_actions_per_decision": 0.0,
+        "invalid_actions_per_proposed_action_pct": 0.0,
+        "living": 1,
+        "model": "claude-sonnet-5",
+        "offer_conversion_rate_pct": 0.0,
+        "proposed_actions": 4,
+        "provider": "claude_cli",
+        "reasoning_effort": "medium",
+        "successful_offers": 0,
+        "trades_accepted": 0,
+        "trades_offered": 0,
+        "usage": {
+          "cached_tokens": 0,
+          "calls": 1,
+          "completion_tokens": 1186,
+          "prompt_tokens": 4653,
+          "resolved_models": {
+            "claude-sonnet-5": 1
+          },
+          "simulation_credits": null,
+          "total_cost_usd": 0
+        }
+      },
+      "cohort-2": {
+        "actions": {
+          "agent_spawned": 1,
+          "gather": 1
+        },
+        "agents": [
+          "agent-2"
+        ],
+        "billing_mode": "chatgpt_plan",
+        "brain": "codex",
+        "communication": 0,
+        "dead": 0,
+        "decisions": 1,
+        "gifts_sent": 0,
+        "initial_agents": 1,
+        "invalid_actions": 0,
+        "invalid_actions_per_decision": 0.0,
+        "invalid_actions_per_proposed_action_pct": 0.0,
+        "living": 1,
+        "model": "gpt-5.6-luna",
+        "offer_conversion_rate_pct": 0.0,
+        "proposed_actions": 1,
+        "provider": "codex_cli",
+        "reasoning_effort": "medium",
+        "successful_offers": 0,
+        "trades_accepted": 0,
+        "trades_offered": 0,
+        "usage": {
+          "cached_tokens": 0,
+          "calls": 1,
+          "completion_tokens": 159,
+          "prompt_tokens": 11939,
+          "resolved_models": {
+            "gpt-5.6-luna": 1
+          },
+          "simulation_credits": {
+            "attribution": "Exact token usage from Codex decisions made by this simulation run only.",
+            "available": true,
+            "cached_input_tokens": 0,
+            "calls": 1,
+            "credits": {
+              "cached_input": 0.0,
+              "output": 0.02385,
+              "total": 0.322325,
+              "uncached_input": 0.298475
+            },
+            "models": {
+              "gpt-5.6-luna": {
+                "cached_input_tokens": 0,
+                "calls": 1,
+                "credits": 0.322325,
+                "output_tokens": 159,
+                "rates_per_million_tokens": {
+                  "cached_input": 2.5,
+                  "input": 25.0,
+                  "output": 150.0
+                },
+                "uncached_input_tokens": 11939
+              }
+            },
+            "output_tokens": 159,
+            "rate_card": {
+              "effective_date": "2026-07-10",
+              "source": "https://help.openai.com/en/articles/20001106-codex-rate-card-2",
+              "unit": "credits_per_million_tokens"
+            },
+            "reasoning_output_tokens": 109,
+            "uncached_input_tokens": 11939,
+            "unknown_models": []
+          },
+          "total_cost_usd": 0
+        }
+      }
+    },
+    "interaction_matrices": {
+      "accepted_trades": {},
+      "construction_contributions": {},
+      "gifts": {}
+    },
+    "specialties": {
+      "by_specialty": {
+        "generalist": {
+          "agents": [
+            "agent-1",
+            "agent-2"
+          ],
+          "dead": 0,
+          "decisions": 2,
+          "gifts_sent": 0,
+          "initial_agents": 2,
+          "invalid_actions": 0,
+          "invalid_actions_per_proposed_action_pct": 0.0,
+          "living": 2,
+          "proposed_actions": 5,
+          "structures_owned": 0,
+          "trades_accepted": 0,
+          "trades_offered": 0
+        }
+      },
+      "cohort_specialty_matrix": {
+        "cohort-1:generalist": {
+          "agents": [
+            "agent-1"
+          ],
+          "dead": 0,
+          "decisions": 1,
+          "gifts_sent": 0,
+          "initial_agents": 1,
+          "invalid_actions": 0,
+          "invalid_actions_per_proposed_action_pct": 0.0,
+          "living": 1,
+          "proposed_actions": 4,
+          "structures_owned": 0,
+          "trades_accepted": 0,
+          "trades_offered": 0
+        },
+        "cohort-2:generalist": {
+          "agents": [
+            "agent-2"
+          ],
+          "dead": 0,
+          "decisions": 1,
+          "gifts_sent": 0,
+          "initial_agents": 1,
+          "invalid_actions": 0,
+          "invalid_actions_per_proposed_action_pct": 0.0,
+          "living": 1,
+          "proposed_actions": 1,
+          "structures_owned": 0,
+          "trades_accepted": 0,
+          "trades_offered": 0
+        }
+      }
+    },
+    "total_agents": 2,
+    "type": "mixed"
+  },
+  "reliability": {
+    "decision_attempts": 2,
+    "decision_failure_rate_pct": 0.0,
+    "invalid_action_rate_pct": 0.0,
+    "invalid_actions_per_decision": 0.0,
+    "invalid_actions_per_proposed_action_pct": 0.0,
+    "invalid_event_share_pct": 0.0,
+    "llm_failure_events": 0,
+    "llm_failures_by_agent": {},
+    "llm_quota_failure_events": 0,
+    "quality_flags": [],
+    "quality_status": "clean",
+    "usage_record_coverage_pct": 100.0
+  },
+  "run": {
+    "completed": true,
+    "completion_evidence": "run_completed",
+    "final_tick": 1,
+    "status": "completed",
+    "stop_reason": null,
+    "target_ticks": 1
+  },
+  "schema_version": 2,
+  "source": "run",
+  "structures": {
+    "complete": {},
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {},
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "coin": 4,
+          "fiber": 1,
+          "food": 2,
+          "water": 2
+        },
+        "wealth": 12
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 100,
+        "inventory": {
+          "coin": 4,
+          "food": 2,
+          "water": 2
+        },
+        "wealth": 10
+      }
+    },
+    "dead": 0,
+    "deaths": [],
+    "living": 2,
+    "survival_damage_events": 0
+  },
+  "transcript": [],
+  "usage": {
+    "cache_hit_rate_pct": 0.0,
+    "calls": 2,
+    "completion_tokens": 1345,
+    "dynamic_input_components": {
+      "mean_chars": {
+        "local_map": 611.0,
+        "recent_events": 233.0,
+        "self": 265.5,
+        "tick": 1.0
+      },
+      "samples": 2
+    },
+    "efficiency": {
+      "mean_agent_dynamic_observation_chars": 1157.5,
+      "mean_agent_static_context_chars": 6493.0,
+      "mean_output_tokens_per_call": 672.5,
+      "mean_prompt_tokens_per_call": 8296.0,
+      "mean_request_payload_bytes": 8442.0,
+      "mean_uncached_input_tokens_per_call": 8296.0
+    },
+    "plan_limits": {
+      "attribution": "Account-level observed delta during this run; concurrent Codex usage on the same account may be included.",
+      "available": true,
+      "buckets": {
+        "codex": {
+          "credits": {
+            "after_balance": "2658.8093750000",
+            "balance_delta": "0E-10",
+            "before_balance": "2658.8093750000",
+            "has_credits": true,
+            "unlimited": false
+          },
+          "limit_name": null,
+          "plan_type": "prolite",
+          "primary": {
+            "after_resets_at": 1784491779,
+            "after_used_percent": 4,
+            "before_resets_at": 1784491779,
+            "before_used_percent": 4,
+            "same_window": true,
+            "used_percent_delta": 0,
+            "window_duration_mins": 10080
+          },
+          "rate_limit_reached_type": null,
+          "secondary": null
+        },
+        "codex_bengalfox": {
+          "credits": null,
+          "limit_name": "GPT-5.3-Codex-Spark",
+          "plan_type": "prolite",
+          "primary": {
+            "after_resets_at": 1784554834,
+            "after_used_percent": 0,
+            "before_resets_at": 1784554819,
+            "before_used_percent": 0,
+            "same_window": false,
+            "used_percent_delta": null,
+            "window_duration_mins": 10080
+          },
+          "rate_limit_reached_type": null,
+          "secondary": null
+        }
+      },
+      "checkpoint_count": 2,
+      "ended_at_utc": "2026-07-13T13:40:33.672332+00:00",
+      "started_at_utc": "2026-07-13T13:40:19.079479+00:00",
+      "successful_checkpoint_count": 2
+    },
+    "prompt_tokens": 16592,
+    "reasoning_tokens": 109,
+    "simulation_credits": {
+      "attribution": "Exact token usage from Codex decisions made by this simulation run only.",
+      "available": true,
+      "cached_input_tokens": 0,
+      "calls": 1,
+      "credits": {
+        "cached_input": 0.0,
+        "output": 0.02385,
+        "total": 0.322325,
+        "uncached_input": 0.298475
+      },
+      "models": {
+        "gpt-5.6-luna": {
+          "cached_input_tokens": 0,
+          "calls": 1,
+          "credits": 0.322325,
+          "output_tokens": 159,
+          "rates_per_million_tokens": {
+            "cached_input": 2.5,
+            "input": 25.0,
+            "output": 150.0
+          },
+          "uncached_input_tokens": 11939
+        }
+      },
+      "output_tokens": 159,
+      "rate_card": {
+        "effective_date": "2026-07-10",
+        "source": "https://help.openai.com/en/articles/20001106-codex-rate-card-2",
+        "unit": "credits_per_million_tokens"
+      },
+      "reasoning_output_tokens": 109,
+      "uncached_input_tokens": 11939,
+      "unknown_models": []
+    },
+    "total_cost_usd": 0
+  },
+  "wealth_gini": 0.0455
+}

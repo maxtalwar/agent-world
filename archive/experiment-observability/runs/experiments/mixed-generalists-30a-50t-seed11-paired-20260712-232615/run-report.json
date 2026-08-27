@@ -1,0 +1,3873 @@
+{
+  "actions": {
+    "counts": {
+      "accept_trade": 3,
+      "agent_spawned": 30,
+      "broadcast": 194,
+      "chop": 18,
+      "consume": 371,
+      "death": 15,
+      "drop": 18,
+      "expire_trade": 65,
+      "fish": 32,
+      "food_spoilage": 55,
+      "gather": 466,
+      "gift": 5,
+      "inspect": 36,
+      "invalid_action": 1516,
+      "mine": 15,
+      "move": 756,
+      "offer_trade": 70,
+      "pick_up": 2,
+      "reject_trade": 2,
+      "run_completed": 1,
+      "run_started": 1,
+      "say": 293,
+      "survival_damage": 509,
+      "wait": 644,
+      "whisper": 10,
+      "world_created": 1
+    },
+    "diagnostics": {
+      "decisions": 1314,
+      "invalid_actions_per_decision": 1.154,
+      "invalid_actions_per_proposed_action_pct": 37.3,
+      "mean_proposed_actions_per_decision": 3.094,
+      "observation_attribution": {
+        "coordination_state_uncertain": 30,
+        "known_constraint_or_plan_sequence": 254,
+        "known_invalid_from_observation": 923,
+        "not_classified": 56,
+        "potential_same_tick_or_plan_state_change": 253
+      },
+      "observation_attribution_note": "Diagnostic classification from the logged pre-tick observation. Potential state changes include other-agent contention and earlier actions in the same submitted plan.",
+      "proposed_actions": 4066,
+      "reason_categories": {
+        "action_budget_or_energy": 254,
+        "movement_or_occupancy": 133,
+        "other": 17,
+        "resource_or_access_unavailable": 1043,
+        "target_or_carry_constraint": 22,
+        "trade_coordination_or_state": 47
+      }
+    },
+    "invalid_reasons": {
+      "Agent cannot accept their own trade offer.": 8,
+      "Agent lacks gifted items.": 4,
+      "Both parties must meet at (10, 12) to exchange the physical goods.": 3,
+      "Both parties must meet at (12, 3) to exchange the physical goods.": 1,
+      "Both parties must meet at (12, 7) to exchange the physical goods.": 1,
+      "Both parties must meet at (14, 4) to exchange the physical goods.": 1,
+      "Both parties must meet at (4, 13) to exchange the physical goods.": 1,
+      "Both parties must meet at (8, 5) to exchange the physical goods.": 1,
+      "Both parties must meet at (9, 4) to exchange the physical goods.": 2,
+      "Both parties must meet at (9, 5) to exchange the physical goods.": 4,
+      "Cannot inspect beyond visibility radius.": 7,
+      "Cannot inspect outside world bounds.": 7,
+      "Destination is outside world bounds.": 5,
+      "Destination occupancy limit is full or terrain is impassable.": 121,
+      "Fishing requires fishable food in current or adjacent water.": 110,
+      "Gift target must be adjacent or on the same tile.": 3,
+      "Harvesting requires an accessible farm plot on this tile.": 7,
+      "Missing inputs: {'stone': 1}": 1,
+      "Moving into forest requires 2 action points.": 11,
+      "Moving into mountain requires 3 action points.": 9,
+      "Moving into water requires 2 action points.": 3,
+      "No action points remain this tick.": 208,
+      "No fiber is available on this tile.": 137,
+      "No fiber is available.": 30,
+      "No food available to consume.": 136,
+      "No food is available on this tile.": 314,
+      "No food is available.": 68,
+      "No matching item pile on this tile.": 3,
+      "No ore is available on this tile.": 10,
+      "No ore is available.": 17,
+      "No stone is available.": 3,
+      "No water available to consume.": 46,
+      "No water is available on this tile, from an accessible well, or adjacent water.": 29,
+      "No water is available.": 114,
+      "No wood is available on this tile.": 1,
+      "No wood is available.": 18,
+      "Not enough energy to move.": 4,
+      "Not enough source material or carrying capacity for the requested quantity.": 8,
+      "Offerer does not currently hold the offered goods.": 5,
+      "Only the trade recipient can accept this offer.": 2,
+      "Recipient carrying capacity would be exceeded.": 1,
+      "Recipient lacks requested goods.": 9,
+      "Target carrying capacity would be exceeded.": 1,
+      "Trade is not open.": 3,
+      "Trade target is outside visibility radius.": 5,
+      "Whisper target does not exist or is not alive.": 1,
+      "Whisper target must be adjacent or on the same tile.": 9,
+      "chop requires 2 action points.": 2,
+      "fish requires 2 action points.": 12,
+      "fish requires 6 energy.": 1,
+      "gather cannot produce wood.": 3,
+      "gather requires 1 energy.": 2,
+      "harvest requires 2 action points.": 1,
+      "harvest requires 4 energy.": 1,
+      "mine requires 2 action points.": 2
+    },
+    "invalid_total": 1516,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "broadcast": 3,
+        "consume": 14,
+        "expire_trade": 3,
+        "food_spoilage": 1,
+        "gather": 20,
+        "invalid_action": 31,
+        "move": 28,
+        "offer_trade": 4,
+        "survival_damage": 21,
+        "wait": 23,
+        "whisper": 1
+      },
+      "agent-10": {
+        "agent_spawned": 1,
+        "broadcast": 28,
+        "consume": 14,
+        "death": 1,
+        "drop": 1,
+        "expire_trade": 1,
+        "food_spoilage": 2,
+        "gather": 21,
+        "inspect": 12,
+        "invalid_action": 59,
+        "move": 37,
+        "offer_trade": 1,
+        "survival_damage": 20,
+        "wait": 17
+      },
+      "agent-11": {
+        "agent_spawned": 1,
+        "broadcast": 17,
+        "consume": 8,
+        "death": 1,
+        "expire_trade": 3,
+        "food_spoilage": 1,
+        "gather": 16,
+        "inspect": 4,
+        "invalid_action": 36,
+        "move": 28,
+        "offer_trade": 3,
+        "survival_damage": 17,
+        "wait": 25
+      },
+      "agent-12": {
+        "agent_spawned": 1,
+        "chop": 3,
+        "consume": 21,
+        "drop": 1,
+        "expire_trade": 3,
+        "fish": 5,
+        "food_spoilage": 2,
+        "gather": 20,
+        "inspect": 1,
+        "invalid_action": 86,
+        "move": 11,
+        "offer_trade": 4,
+        "survival_damage": 2,
+        "wait": 17
+      },
+      "agent-13": {
+        "agent_spawned": 1,
+        "broadcast": 1,
+        "chop": 1,
+        "consume": 14,
+        "death": 1,
+        "expire_trade": 1,
+        "food_spoilage": 2,
+        "gather": 10,
+        "invalid_action": 25,
+        "mine": 1,
+        "move": 37,
+        "offer_trade": 1,
+        "survival_damage": 22,
+        "wait": 23,
+        "whisper": 2
+      },
+      "agent-14": {
+        "agent_spawned": 1,
+        "broadcast": 10,
+        "consume": 15,
+        "expire_trade": 1,
+        "fish": 4,
+        "gather": 12,
+        "inspect": 1,
+        "invalid_action": 97,
+        "move": 6,
+        "offer_trade": 1,
+        "survival_damage": 19,
+        "wait": 12
+      },
+      "agent-15": {
+        "agent_spawned": 1,
+        "broadcast": 14,
+        "chop": 1,
+        "consume": 13,
+        "drop": 1,
+        "expire_trade": 6,
+        "fish": 3,
+        "food_spoilage": 2,
+        "gather": 20,
+        "inspect": 2,
+        "invalid_action": 77,
+        "move": 32,
+        "offer_trade": 6,
+        "survival_damage": 19,
+        "wait": 18,
+        "whisper": 2
+      },
+      "agent-16": {
+        "agent_spawned": 1,
+        "broadcast": 15,
+        "consume": 35,
+        "expire_trade": 6,
+        "fish": 2,
+        "food_spoilage": 1,
+        "gather": 39,
+        "invalid_action": 59,
+        "move": 18,
+        "offer_trade": 6,
+        "pick_up": 1,
+        "survival_damage": 6,
+        "wait": 24
+      },
+      "agent-17": {
+        "agent_spawned": 1,
+        "broadcast": 3,
+        "chop": 1,
+        "consume": 5,
+        "death": 1,
+        "expire_trade": 2,
+        "food_spoilage": 4,
+        "gather": 10,
+        "invalid_action": 16,
+        "move": 15,
+        "offer_trade": 2,
+        "survival_damage": 17,
+        "wait": 45
+      },
+      "agent-18": {
+        "agent_spawned": 1,
+        "broadcast": 19,
+        "consume": 17,
+        "drop": 3,
+        "expire_trade": 3,
+        "food_spoilage": 2,
+        "gather": 26,
+        "inspect": 4,
+        "invalid_action": 58,
+        "mine": 1,
+        "move": 48,
+        "offer_trade": 3,
+        "survival_damage": 14,
+        "wait": 20
+      },
+      "agent-19": {
+        "agent_spawned": 1,
+        "broadcast": 10,
+        "consume": 16,
+        "drop": 3,
+        "expire_trade": 2,
+        "fish": 2,
+        "food_spoilage": 4,
+        "gather": 30,
+        "invalid_action": 74,
+        "move": 31,
+        "offer_trade": 2,
+        "survival_damage": 9,
+        "wait": 20,
+        "whisper": 1
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "chop": 1,
+        "consume": 17,
+        "fish": 4,
+        "food_spoilage": 6,
+        "gather": 23,
+        "gift": 4,
+        "invalid_action": 14,
+        "move": 28,
+        "survival_damage": 9,
+        "wait": 22
+      },
+      "agent-20": {
+        "agent_spawned": 1,
+        "broadcast": 6,
+        "chop": 2,
+        "consume": 8,
+        "death": 1,
+        "expire_trade": 3,
+        "food_spoilage": 1,
+        "gather": 11,
+        "invalid_action": 18,
+        "move": 31,
+        "offer_trade": 3,
+        "survival_damage": 24,
+        "wait": 14
+      },
+      "agent-21": {
+        "agent_spawned": 1,
+        "consume": 16,
+        "drop": 1,
+        "food_spoilage": 5,
+        "gather": 24,
+        "invalid_action": 36,
+        "move": 24,
+        "offer_trade": 1,
+        "reject_trade": 1,
+        "survival_damage": 14,
+        "wait": 57
+      },
+      "agent-22": {
+        "agent_spawned": 1,
+        "broadcast": 4,
+        "chop": 1,
+        "consume": 13,
+        "expire_trade": 4,
+        "gather": 15,
+        "invalid_action": 101,
+        "move": 19,
+        "offer_trade": 4,
+        "survival_damage": 26,
+        "wait": 18
+      },
+      "agent-23": {
+        "agent_spawned": 1,
+        "broadcast": 10,
+        "consume": 5,
+        "death": 1,
+        "expire_trade": 4,
+        "food_spoilage": 1,
+        "gather": 3,
+        "inspect": 3,
+        "invalid_action": 36,
+        "mine": 4,
+        "move": 20,
+        "offer_trade": 4,
+        "survival_damage": 17,
+        "wait": 11
+      },
+      "agent-24": {
+        "agent_spawned": 1,
+        "chop": 2,
+        "consume": 8,
+        "death": 1,
+        "fish": 2,
+        "food_spoilage": 1,
+        "gather": 8,
+        "invalid_action": 103,
+        "move": 12,
+        "survival_damage": 17,
+        "wait": 13
+      },
+      "agent-25": {
+        "agent_spawned": 1,
+        "broadcast": 2,
+        "consume": 8,
+        "death": 1,
+        "drop": 3,
+        "food_spoilage": 2,
+        "gather": 14,
+        "invalid_action": 41,
+        "mine": 1,
+        "move": 22,
+        "survival_damage": 19,
+        "wait": 30
+      },
+      "agent-26": {
+        "agent_spawned": 1,
+        "consume": 14,
+        "drop": 1,
+        "expire_trade": 4,
+        "fish": 1,
+        "food_spoilage": 2,
+        "gather": 19,
+        "gift": 1,
+        "invalid_action": 30,
+        "move": 39,
+        "offer_trade": 4,
+        "survival_damage": 13,
+        "wait": 22
+      },
+      "agent-27": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "broadcast": 1,
+        "chop": 4,
+        "consume": 13,
+        "death": 1,
+        "drop": 1,
+        "expire_trade": 1,
+        "gather": 8,
+        "invalid_action": 109,
+        "move": 17,
+        "offer_trade": 1,
+        "survival_damage": 24,
+        "wait": 17
+      },
+      "agent-28": {
+        "agent_spawned": 1,
+        "broadcast": 18,
+        "consume": 4,
+        "death": 1,
+        "drop": 1,
+        "expire_trade": 2,
+        "gather": 1,
+        "inspect": 3,
+        "invalid_action": 34,
+        "mine": 4,
+        "move": 12,
+        "offer_trade": 3,
+        "reject_trade": 1,
+        "survival_damage": 14,
+        "wait": 11
+      },
+      "agent-29": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "broadcast": 2,
+        "consume": 15,
+        "expire_trade": 3,
+        "fish": 2,
+        "food_spoilage": 2,
+        "gather": 18,
+        "invalid_action": 31,
+        "move": 33,
+        "offer_trade": 3,
+        "pick_up": 1,
+        "survival_damage": 19,
+        "wait": 28
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "broadcast": 3,
+        "consume": 4,
+        "death": 1,
+        "expire_trade": 4,
+        "gather": 1,
+        "inspect": 2,
+        "invalid_action": 12,
+        "mine": 1,
+        "move": 18,
+        "offer_trade": 4,
+        "survival_damage": 14,
+        "wait": 11,
+        "whisper": 1
+      },
+      "agent-30": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "broadcast": 11,
+        "chop": 1,
+        "consume": 9,
+        "death": 1,
+        "expire_trade": 1,
+        "fish": 1,
+        "gather": 12,
+        "invalid_action": 85,
+        "move": 17,
+        "offer_trade": 1,
+        "survival_damage": 14,
+        "wait": 15
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "consume": 14,
+        "expire_trade": 3,
+        "fish": 1,
+        "food_spoilage": 3,
+        "gather": 21,
+        "invalid_action": 40,
+        "move": 36,
+        "offer_trade": 3,
+        "survival_damage": 22,
+        "wait": 45,
+        "whisper": 1
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "broadcast": 4,
+        "consume": 8,
+        "death": 1,
+        "expire_trade": 1,
+        "fish": 1,
+        "food_spoilage": 3,
+        "gather": 10,
+        "invalid_action": 18,
+        "move": 29,
+        "offer_trade": 2,
+        "survival_damage": 20,
+        "wait": 16
+      },
+      "agent-6": {
+        "agent_spawned": 1,
+        "chop": 1,
+        "consume": 15,
+        "fish": 2,
+        "food_spoilage": 1,
+        "gather": 15,
+        "inspect": 1,
+        "invalid_action": 104,
+        "move": 21,
+        "survival_damage": 23,
+        "wait": 14
+      },
+      "agent-7": {
+        "agent_spawned": 1,
+        "broadcast": 3,
+        "consume": 13,
+        "drop": 1,
+        "expire_trade": 1,
+        "fish": 2,
+        "food_spoilage": 4,
+        "gather": 21,
+        "inspect": 1,
+        "invalid_action": 37,
+        "move": 30,
+        "offer_trade": 1,
+        "survival_damage": 17,
+        "wait": 15
+      },
+      "agent-8": {
+        "agent_spawned": 1,
+        "broadcast": 7,
+        "consume": 5,
+        "death": 1,
+        "drop": 1,
+        "expire_trade": 2,
+        "food_spoilage": 1,
+        "gather": 3,
+        "invalid_action": 16,
+        "mine": 3,
+        "move": 21,
+        "offer_trade": 2,
+        "survival_damage": 16,
+        "wait": 27
+      },
+      "agent-9": {
+        "agent_spawned": 1,
+        "broadcast": 3,
+        "consume": 10,
+        "death": 1,
+        "expire_trade": 1,
+        "food_spoilage": 2,
+        "gather": 15,
+        "inspect": 2,
+        "invalid_action": 33,
+        "move": 36,
+        "offer_trade": 1,
+        "survival_damage": 21,
+        "wait": 14,
+        "whisper": 2
+      }
+    }
+  },
+  "communication": {
+    "says_per_agent": {
+      "agent-1": 4,
+      "agent-10": 8,
+      "agent-11": 12,
+      "agent-12": 28,
+      "agent-13": 4,
+      "agent-14": 17,
+      "agent-15": 19,
+      "agent-16": 16,
+      "agent-17": 8,
+      "agent-18": 10,
+      "agent-19": 25,
+      "agent-2": 1,
+      "agent-20": 5,
+      "agent-21": 1,
+      "agent-22": 23,
+      "agent-23": 16,
+      "agent-24": 4,
+      "agent-25": 1,
+      "agent-26": 7,
+      "agent-27": 8,
+      "agent-28": 3,
+      "agent-29": 16,
+      "agent-3": 2,
+      "agent-30": 15,
+      "agent-4": 5,
+      "agent-5": 7,
+      "agent-6": 9,
+      "agent-7": 2,
+      "agent-8": 5,
+      "agent-9": 12
+    },
+    "says_total": 293
+  },
+  "config": {
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "organic",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "memory_char_budget": 2400,
+    "memory_update_max_chars": 240,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "neutral",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "seed": 11,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "specialization_mode": "generalists",
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "construction": {
+      "assets": {
+        "by_owner": {},
+        "by_owner_kind": {},
+        "complete": 0,
+        "count": 0,
+        "in_progress": 0,
+        "replacement_cost_value": 0,
+        "stored_inventory_value": 0
+      },
+      "contributions": {
+        "by_agent": {},
+        "by_item": {},
+        "by_structure": {},
+        "events": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contributor_ownership": {}
+    },
+    "food_spoilage_events": 55,
+    "gift_by_item": {
+      "food": 1,
+      "water": 4
+    },
+    "gift_categories": {
+      "materials": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      },
+      "subsistence": {
+        "by_item": {
+          "food": 1,
+          "water": 4
+        },
+        "quantity": 5,
+        "value": 6
+      }
+    },
+    "gift_detail": [
+      {
+        "category": "subsistence_only",
+        "from": "agent-2",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 18,
+        "to": "agent-13",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-2",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 23,
+        "to": "agent-13",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-26",
+        "group_status": "out_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 35,
+        "to": "agent-21",
+        "value": 2
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-2",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 36,
+        "to": "agent-13",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-2",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 37,
+        "to": "agent-13",
+        "value": 1
+      }
+    ],
+    "gift_event_categories": {
+      "empty": 0,
+      "materials_only": 0,
+      "mixed": 0,
+      "subsistence_only": 5
+    },
+    "gift_group_status": {
+      "in_group": 0,
+      "out_group": 5,
+      "unknown": 0
+    },
+    "gift_network": {
+      "agent-2->agent-13": 4,
+      "agent-26->agent-21": 1
+    },
+    "gift_network_quantity": {
+      "agent-2->agent-13": 4,
+      "agent-26->agent-21": 1
+    },
+    "gift_network_value": {
+      "agent-2->agent-13": 4,
+      "agent-26->agent-21": 2
+    },
+    "gift_quantity": 5,
+    "gift_value": 6,
+    "gift_value_by_item": {
+      "food": 2,
+      "water": 4
+    },
+    "gifts": 5,
+    "institutions": {
+      "access_fees": {
+        "by_item": {},
+        "by_structure": {},
+        "payments": 0,
+        "policies_set": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contracts": {
+        "accepted": 0,
+        "advance_value": 0,
+        "collateral_value": 0,
+        "defaulted": 0,
+        "fulfilled": 0,
+        "offered": 0,
+        "repayment_value": 0,
+        "status": {}
+      },
+      "dividends": {
+        "by_item": {},
+        "claims": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "market_history_entries": 3,
+      "upkeep": {
+        "by_item": {},
+        "maintenance_actions": 0,
+        "missed_cycles": 0,
+        "paid_cycles": 0,
+        "supplied_value": 0
+      }
+    },
+    "trades": {
+      "accept_attempts": 40,
+      "accept_success_rate_pct": 7.5,
+      "acceptance_latency_ticks": {
+        "average": 1.67,
+        "max": 2,
+        "median": 2.0,
+        "min": 1,
+        "samples": 3
+      },
+      "accepted": 3,
+      "accepted_by_item": {
+        "coin": 1,
+        "fiber": 3,
+        "water": 3
+      },
+      "accepted_detail": [
+        {
+          "accepted_by": "agent-27",
+          "accepted_count": 1,
+          "created_tick": 21,
+          "escrow_position": {
+            "x": 1,
+            "y": 4
+          },
+          "escrowed": false,
+          "expires_tick": 24,
+          "from_agent": "agent-12",
+          "give": {
+            "water": 1
+          },
+          "id": "trade-32",
+          "lots_remaining": 0,
+          "lots_total": 1,
+          "market_scope": "local",
+          "public": false,
+          "receive": {
+            "coin": 1
+          },
+          "standing": false,
+          "status": "accepted",
+          "to_agent": "agent-27"
+        },
+        {
+          "accepted_by": "agent-30",
+          "accepted_count": 1,
+          "created_tick": 24,
+          "escrow_position": {
+            "x": 13,
+            "y": 12
+          },
+          "escrowed": false,
+          "expires_tick": 26,
+          "from_agent": "agent-5",
+          "give": {
+            "fiber": 1
+          },
+          "id": "trade-39",
+          "lots_remaining": 0,
+          "lots_total": 1,
+          "market_scope": "local",
+          "public": false,
+          "receive": {
+            "water": 1
+          },
+          "standing": false,
+          "status": "accepted",
+          "to_agent": "agent-30"
+        },
+        {
+          "accepted_by": "agent-29",
+          "accepted_count": 1,
+          "created_tick": 30,
+          "escrow_position": {
+            "x": 7,
+            "y": 14
+          },
+          "escrowed": false,
+          "expires_tick": 33,
+          "from_agent": "agent-1",
+          "give": {
+            "fiber": 2
+          },
+          "id": "trade-51",
+          "lots_remaining": 0,
+          "lots_total": 1,
+          "market_scope": "local",
+          "public": false,
+          "receive": {
+            "water": 1
+          },
+          "standing": false,
+          "status": "accepted",
+          "to_agent": "agent-29"
+        }
+      ],
+      "accepted_give_value": 7,
+      "accepted_group_status": {
+        "in_group": 0,
+        "out_group": 3,
+        "unknown": 0
+      },
+      "accepted_receive_value": 3,
+      "accepted_transfer_detail": [
+        {
+          "from": "agent-12",
+          "give": {
+            "water": 1
+          },
+          "give_value": 1,
+          "group_status": "out_group",
+          "latency_ticks": 2,
+          "receive": {
+            "coin": 1
+          },
+          "receive_value": 1,
+          "shared_groups": [],
+          "tick": 23,
+          "to": "agent-27",
+          "trade_id": "trade-32"
+        },
+        {
+          "from": "agent-5",
+          "give": {
+            "fiber": 1
+          },
+          "give_value": 2,
+          "group_status": "out_group",
+          "latency_ticks": 1,
+          "receive": {
+            "water": 1
+          },
+          "receive_value": 1,
+          "shared_groups": [],
+          "tick": 25,
+          "to": "agent-30",
+          "trade_id": "trade-39"
+        },
+        {
+          "from": "agent-1",
+          "give": {
+            "fiber": 2
+          },
+          "give_value": 4,
+          "group_status": "out_group",
+          "latency_ticks": 2,
+          "receive": {
+            "water": 1
+          },
+          "receive_value": 1,
+          "shared_groups": [],
+          "tick": 32,
+          "to": "agent-29",
+          "trade_id": "trade-51"
+        }
+      ],
+      "accepted_value": 10,
+      "cancelled": 0,
+      "conversion_rate_pct": 4.3,
+      "direct_offered": 52,
+      "expired": 65,
+      "funnel": {
+        "acceptance_failure_stages": {
+          "buyer_payment_unavailable": 9,
+          "eligibility_or_counterparty_state": 10,
+          "meeting_not_complete": 14,
+          "offer_already_resolved": 3,
+          "settlement_capacity_or_escrow": 1
+        },
+        "counterparty_offer_observations": 248,
+        "offer_creation_attempts": 81,
+        "offer_creation_invalid": 11,
+        "offer_creation_invalid_reasons": {
+          "No action points remain this tick.": 1,
+          "Offerer does not currently hold the offered goods.": 5,
+          "Trade target is outside visibility radius.": 5
+        },
+        "offers_completed": 3,
+        "offers_created": 70,
+        "offers_expired_without_acceptance_attempt": 47,
+        "offers_observed_by_counterparty": 66,
+        "offers_reaching_meeting_and_inventory_checks": 10,
+        "offers_with_acceptance_attempt": 22
+      },
+      "invalid_accept_reasons": {
+        "Agent cannot accept their own trade offer.": 8,
+        "Both parties must meet at (10, 12) to exchange the physical goods.": 3,
+        "Both parties must meet at (12, 3) to exchange the physical goods.": 1,
+        "Both parties must meet at (12, 7) to exchange the physical goods.": 1,
+        "Both parties must meet at (14, 4) to exchange the physical goods.": 1,
+        "Both parties must meet at (4, 13) to exchange the physical goods.": 1,
+        "Both parties must meet at (8, 5) to exchange the physical goods.": 1,
+        "Both parties must meet at (9, 4) to exchange the physical goods.": 2,
+        "Both parties must meet at (9, 5) to exchange the physical goods.": 4,
+        "Only the trade recipient can accept this offer.": 2,
+        "Recipient carrying capacity would be exceeded.": 1,
+        "Recipient lacks requested goods.": 9,
+        "Trade is not open.": 3
+      },
+      "invalid_accepts": 37,
+      "offered": 70,
+      "offered_group_status": {
+        "in_group": 0,
+        "out_group": 52,
+        "unknown": 18
+      },
+      "open": 0,
+      "public_offered": 18,
+      "rejected": 2,
+      "resolution_rate_pct": 100.0,
+      "resolved_conversion_rate_pct": 4.3,
+      "status_counts": {
+        "accepted": 3,
+        "expired": 65,
+        "rejected": 2
+      }
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "accept_trade": 23,
+    "death": 25,
+    "gift": 18,
+    "offer_trade": 3
+  },
+  "population": {
+    "assignment_seed": 101,
+    "assignment_strategy": "stratified",
+    "assignments": {
+      "agent-1": "cohort-2",
+      "agent-10": "cohort-1",
+      "agent-11": "cohort-1",
+      "agent-12": "cohort-3",
+      "agent-13": "cohort-2",
+      "agent-14": "cohort-1",
+      "agent-15": "cohort-3",
+      "agent-16": "cohort-3",
+      "agent-17": "cohort-4",
+      "agent-18": "cohort-3",
+      "agent-19": "cohort-3",
+      "agent-2": "cohort-2",
+      "agent-20": "cohort-2",
+      "agent-21": "cohort-4",
+      "agent-22": "cohort-1",
+      "agent-23": "cohort-1",
+      "agent-24": "cohort-1",
+      "agent-25": "cohort-4",
+      "agent-26": "cohort-2",
+      "agent-27": "cohort-1",
+      "agent-28": "cohort-1",
+      "agent-29": "cohort-2",
+      "agent-3": "cohort-2",
+      "agent-30": "cohort-1",
+      "agent-4": "cohort-4",
+      "agent-5": "cohort-2",
+      "agent-6": "cohort-1",
+      "agent-7": "cohort-2",
+      "agent-8": "cohort-4",
+      "agent-9": "cohort-2"
+    },
+    "cohorts": {
+      "cohort-1": {
+        "actions": {
+          "accept_trade": 2,
+          "agent_spawned": 10,
+          "broadcast": 99,
+          "chop": 9,
+          "consume": 104,
+          "death": 7,
+          "drop": 3,
+          "expire_trade": 17,
+          "fish": 9,
+          "food_spoilage": 6,
+          "gather": 111,
+          "inspect": 24,
+          "invalid_action": 764,
+          "mine": 8,
+          "move": 189,
+          "offer_trade": 18,
+          "reject_trade": 1,
+          "say": 115,
+          "survival_damage": 191,
+          "wait": 153
+        },
+        "agents": [
+          "agent-10",
+          "agent-11",
+          "agent-14",
+          "agent-22",
+          "agent-23",
+          "agent-24",
+          "agent-27",
+          "agent-28",
+          "agent-30",
+          "agent-6"
+        ],
+        "billing_mode": "claude_plan",
+        "brain": "claude",
+        "communication": 115,
+        "dead": 7,
+        "decisions": 417,
+        "gifts_sent": 0,
+        "initial_agents": 10,
+        "invalid_actions": 764,
+        "invalid_actions_per_decision": 1.832,
+        "invalid_actions_per_proposed_action_pct": 54.0,
+        "living": 3,
+        "model": "claude-sonnet-5",
+        "offer_conversion_rate_pct": 0.0,
+        "proposed_actions": 1416,
+        "provider": "claude_cli",
+        "reasoning_effort": "low",
+        "successful_offers": 0,
+        "trades_accepted": 2,
+        "trades_offered": 18,
+        "usage": {
+          "cached_tokens": 1741465,
+          "calls": 417,
+          "completion_tokens": 148581,
+          "prompt_tokens": 2665668,
+          "resolved_models": {
+            "claude-sonnet-5": 417
+          },
+          "simulation_credits": null,
+          "total_cost_usd": 0
+        }
+      },
+      "cohort-2": {
+        "actions": {
+          "accept_trade": 1,
+          "agent_spawned": 10,
+          "broadcast": 25,
+          "chop": 4,
+          "consume": 117,
+          "death": 5,
+          "drop": 2,
+          "expire_trade": 21,
+          "fish": 10,
+          "food_spoilage": 23,
+          "gather": 148,
+          "gift": 5,
+          "inspect": 5,
+          "invalid_action": 249,
+          "mine": 2,
+          "move": 309,
+          "offer_trade": 23,
+          "pick_up": 1,
+          "say": 60,
+          "survival_damage": 180,
+          "wait": 188,
+          "whisper": 6
+        },
+        "agents": [
+          "agent-1",
+          "agent-13",
+          "agent-2",
+          "agent-20",
+          "agent-26",
+          "agent-29",
+          "agent-3",
+          "agent-5",
+          "agent-7",
+          "agent-9"
+        ],
+        "billing_mode": "chatgpt_plan",
+        "brain": "codex",
+        "communication": 60,
+        "dead": 5,
+        "decisions": 446,
+        "gifts_sent": 5,
+        "initial_agents": 10,
+        "invalid_actions": 249,
+        "invalid_actions_per_decision": 0.558,
+        "invalid_actions_per_proposed_action_pct": 21.9,
+        "living": 5,
+        "model": "gpt-5.6-luna",
+        "offer_conversion_rate_pct": 8.7,
+        "proposed_actions": 1138,
+        "provider": "codex_cli",
+        "reasoning_effort": "low",
+        "successful_offers": 2,
+        "trades_accepted": 1,
+        "trades_offered": 23,
+        "usage": {
+          "cached_tokens": 3348992,
+          "calls": 446,
+          "completion_tokens": 154244,
+          "prompt_tokens": 5556894,
+          "resolved_models": {
+            "gpt-5.6-luna": 446
+          },
+          "simulation_credits": {
+            "attribution": "Exact token usage from Codex decisions made by this simulation run only.",
+            "available": true,
+            "cached_input_tokens": 3348992,
+            "calls": 446,
+            "credits": {
+              "cached_input": 8.37248,
+              "output": 23.1366,
+              "total": 86.70663,
+              "uncached_input": 55.19755
+            },
+            "models": {
+              "gpt-5.6-luna": {
+                "cached_input_tokens": 3348992,
+                "calls": 446,
+                "credits": 86.70663,
+                "output_tokens": 154244,
+                "rates_per_million_tokens": {
+                  "cached_input": 2.5,
+                  "input": 25.0,
+                  "output": 150.0
+                },
+                "uncached_input_tokens": 2207902
+              }
+            },
+            "output_tokens": 154244,
+            "rate_card": {
+              "effective_date": "2026-07-10",
+              "source": "https://help.openai.com/en/articles/20001106-codex-rate-card-2",
+              "unit": "credits_per_million_tokens"
+            },
+            "reasoning_output_tokens": 118507,
+            "uncached_input_tokens": 2207902,
+            "unknown_models": []
+          },
+          "total_cost_usd": 0
+        }
+      },
+      "cohort-3": {
+        "actions": {
+          "agent_spawned": 5,
+          "broadcast": 58,
+          "chop": 4,
+          "consume": 102,
+          "drop": 8,
+          "expire_trade": 20,
+          "fish": 12,
+          "food_spoilage": 11,
+          "gather": 135,
+          "inspect": 7,
+          "invalid_action": 354,
+          "mine": 1,
+          "move": 140,
+          "offer_trade": 21,
+          "pick_up": 1,
+          "say": 98,
+          "survival_damage": 50,
+          "wait": 99,
+          "whisper": 3
+        },
+        "agents": [
+          "agent-12",
+          "agent-15",
+          "agent-16",
+          "agent-18",
+          "agent-19"
+        ],
+        "billing_mode": "claude_plan",
+        "brain": "claude",
+        "communication": 98,
+        "dead": 0,
+        "decisions": 250,
+        "gifts_sent": 0,
+        "initial_agents": 5,
+        "invalid_actions": 354,
+        "invalid_actions_per_decision": 1.416,
+        "invalid_actions_per_proposed_action_pct": 39.9,
+        "living": 5,
+        "model": "claude-opus-4-8",
+        "offer_conversion_rate_pct": 4.8,
+        "proposed_actions": 888,
+        "provider": "claude_cli",
+        "reasoning_effort": "low",
+        "successful_offers": 1,
+        "trades_accepted": 0,
+        "trades_offered": 21,
+        "usage": {
+          "cached_tokens": 1062199,
+          "calls": 250,
+          "completion_tokens": 114886,
+          "prompt_tokens": 1691955,
+          "resolved_models": {
+            "claude-opus-4-8": 250
+          },
+          "simulation_credits": null,
+          "total_cost_usd": 0
+        }
+      },
+      "cohort-4": {
+        "actions": {
+          "agent_spawned": 5,
+          "broadcast": 12,
+          "chop": 1,
+          "consume": 48,
+          "death": 3,
+          "drop": 5,
+          "expire_trade": 7,
+          "fish": 1,
+          "food_spoilage": 15,
+          "gather": 72,
+          "invalid_action": 149,
+          "mine": 4,
+          "move": 118,
+          "offer_trade": 8,
+          "reject_trade": 1,
+          "say": 20,
+          "survival_damage": 88,
+          "wait": 204,
+          "whisper": 1
+        },
+        "agents": [
+          "agent-17",
+          "agent-21",
+          "agent-25",
+          "agent-4",
+          "agent-8"
+        ],
+        "billing_mode": "chatgpt_plan",
+        "brain": "codex",
+        "communication": 20,
+        "dead": 3,
+        "decisions": 201,
+        "gifts_sent": 0,
+        "initial_agents": 5,
+        "invalid_actions": 149,
+        "invalid_actions_per_decision": 0.741,
+        "invalid_actions_per_proposed_action_pct": 23.9,
+        "living": 2,
+        "model": "gpt-5.6-terra",
+        "offer_conversion_rate_pct": 0.0,
+        "proposed_actions": 624,
+        "provider": "codex_cli",
+        "reasoning_effort": "low",
+        "successful_offers": 0,
+        "trades_accepted": 0,
+        "trades_offered": 8,
+        "usage": {
+          "cached_tokens": 1343232,
+          "calls": 201,
+          "completion_tokens": 40360,
+          "prompt_tokens": 2752503,
+          "resolved_models": {
+            "gpt-5.6-terra": 201
+          },
+          "simulation_credits": {
+            "attribution": "Exact token usage from Codex decisions made by this simulation run only.",
+            "available": true,
+            "cached_input_tokens": 1343232,
+            "calls": 201,
+            "credits": {
+              "cached_input": 8.3952,
+              "output": 15.135,
+              "total": 111.609638,
+              "uncached_input": 88.079438
+            },
+            "models": {
+              "gpt-5.6-terra": {
+                "cached_input_tokens": 1343232,
+                "calls": 201,
+                "credits": 111.609638,
+                "output_tokens": 40360,
+                "rates_per_million_tokens": {
+                  "cached_input": 6.25,
+                  "input": 62.5,
+                  "output": 375.0
+                },
+                "uncached_input_tokens": 1409271
+              }
+            },
+            "output_tokens": 40360,
+            "rate_card": {
+              "effective_date": "2026-07-10",
+              "source": "https://help.openai.com/en/articles/20001106-codex-rate-card-2",
+              "unit": "credits_per_million_tokens"
+            },
+            "reasoning_output_tokens": 22690,
+            "uncached_input_tokens": 1409271,
+            "unknown_models": []
+          },
+          "total_cost_usd": 0
+        }
+      }
+    },
+    "interaction_matrices": {
+      "accepted_trades": {
+        "cohort-2->cohort-1": 1,
+        "cohort-2->cohort-2": 1,
+        "cohort-3->cohort-1": 1
+      },
+      "construction_contributions": {},
+      "gifts": {
+        "cohort-2->cohort-2": 4,
+        "cohort-2->cohort-4": 1
+      }
+    },
+    "specialties": {
+      "by_specialty": {
+        "generalist": {
+          "agents": [
+            "agent-1",
+            "agent-10",
+            "agent-11",
+            "agent-12",
+            "agent-13",
+            "agent-14",
+            "agent-15",
+            "agent-16",
+            "agent-17",
+            "agent-18",
+            "agent-19",
+            "agent-2",
+            "agent-20",
+            "agent-21",
+            "agent-22",
+            "agent-23",
+            "agent-24",
+            "agent-25",
+            "agent-26",
+            "agent-27",
+            "agent-28",
+            "agent-29",
+            "agent-3",
+            "agent-30",
+            "agent-4",
+            "agent-5",
+            "agent-6",
+            "agent-7",
+            "agent-8",
+            "agent-9"
+          ],
+          "dead": 15,
+          "decisions": 1314,
+          "gifts_sent": 5,
+          "initial_agents": 30,
+          "invalid_actions": 1516,
+          "invalid_actions_per_proposed_action_pct": 37.3,
+          "living": 15,
+          "proposed_actions": 4066,
+          "structures_owned": 0,
+          "trades_accepted": 3,
+          "trades_offered": 70
+        }
+      },
+      "cohort_specialty_matrix": {
+        "cohort-1:generalist": {
+          "agents": [
+            "agent-10",
+            "agent-11",
+            "agent-14",
+            "agent-22",
+            "agent-23",
+            "agent-24",
+            "agent-27",
+            "agent-28",
+            "agent-30",
+            "agent-6"
+          ],
+          "dead": 7,
+          "decisions": 417,
+          "gifts_sent": 0,
+          "initial_agents": 10,
+          "invalid_actions": 764,
+          "invalid_actions_per_proposed_action_pct": 54.0,
+          "living": 3,
+          "proposed_actions": 1416,
+          "structures_owned": 0,
+          "trades_accepted": 2,
+          "trades_offered": 18
+        },
+        "cohort-2:generalist": {
+          "agents": [
+            "agent-1",
+            "agent-13",
+            "agent-2",
+            "agent-20",
+            "agent-26",
+            "agent-29",
+            "agent-3",
+            "agent-5",
+            "agent-7",
+            "agent-9"
+          ],
+          "dead": 5,
+          "decisions": 446,
+          "gifts_sent": 5,
+          "initial_agents": 10,
+          "invalid_actions": 249,
+          "invalid_actions_per_proposed_action_pct": 21.9,
+          "living": 5,
+          "proposed_actions": 1138,
+          "structures_owned": 0,
+          "trades_accepted": 1,
+          "trades_offered": 23
+        },
+        "cohort-3:generalist": {
+          "agents": [
+            "agent-12",
+            "agent-15",
+            "agent-16",
+            "agent-18",
+            "agent-19"
+          ],
+          "dead": 0,
+          "decisions": 250,
+          "gifts_sent": 0,
+          "initial_agents": 5,
+          "invalid_actions": 354,
+          "invalid_actions_per_proposed_action_pct": 39.9,
+          "living": 5,
+          "proposed_actions": 888,
+          "structures_owned": 0,
+          "trades_accepted": 0,
+          "trades_offered": 21
+        },
+        "cohort-4:generalist": {
+          "agents": [
+            "agent-17",
+            "agent-21",
+            "agent-25",
+            "agent-4",
+            "agent-8"
+          ],
+          "dead": 3,
+          "decisions": 201,
+          "gifts_sent": 0,
+          "initial_agents": 5,
+          "invalid_actions": 149,
+          "invalid_actions_per_proposed_action_pct": 23.9,
+          "living": 2,
+          "proposed_actions": 624,
+          "structures_owned": 0,
+          "trades_accepted": 0,
+          "trades_offered": 8
+        }
+      }
+    },
+    "total_agents": 30,
+    "type": "mixed"
+  },
+  "reliability": {
+    "decision_attempts": 1314,
+    "decision_failure_rate_pct": 0.0,
+    "invalid_action_rate_pct": 37.3,
+    "invalid_actions_per_decision": 1.154,
+    "invalid_actions_per_proposed_action_pct": 37.3,
+    "invalid_event_share_pct": 29.6,
+    "llm_failure_events": 0,
+    "llm_failures_by_agent": {},
+    "llm_quota_failure_events": 0,
+    "quality_flags": [],
+    "quality_status": "clean",
+    "usage_record_coverage_pct": 100.0
+  },
+  "run": {
+    "completed": true,
+    "completion_evidence": "run_completed",
+    "final_tick": 50,
+    "status": "completed",
+    "stop_reason": null,
+    "target_ticks": 50
+  },
+  "schema_version": 2,
+  "source": "run",
+  "structures": {
+    "complete": {},
+    "coop_builds": [],
+    "in_progress": {},
+    "ownership": {},
+    "timeline": []
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 12,
+        "inventory": {
+          "fiber": 4
+        },
+        "wealth": 8
+      },
+      "agent-10": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 10
+        },
+        "wealth": 20
+      },
+      "agent-11": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 2,
+          "water": 3
+        },
+        "wealth": 7
+      },
+      "agent-12": {
+        "alive": true,
+        "groups": [],
+        "health": 90,
+        "inventory": {
+          "coin": 5,
+          "fiber": 4,
+          "wood": 3
+        },
+        "wealth": 22
+      },
+      "agent-13": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "coin": 2,
+          "fiber": 2,
+          "food": 1,
+          "ore": 1,
+          "wood": 1
+        },
+        "wealth": 19
+      },
+      "agent-14": {
+        "alive": true,
+        "groups": [],
+        "health": 39,
+        "inventory": {
+          "coin": 4,
+          "water": 3
+        },
+        "wealth": 7
+      },
+      "agent-15": {
+        "alive": true,
+        "groups": [],
+        "health": 14,
+        "inventory": {
+          "fiber": 2,
+          "water": 1
+        },
+        "wealth": 5
+      },
+      "agent-16": {
+        "alive": true,
+        "groups": [],
+        "health": 77,
+        "inventory": {
+          "coin": 4,
+          "fiber": 4,
+          "water": 1
+        },
+        "wealth": 13
+      },
+      "agent-17": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 6,
+          "wood": 1
+        },
+        "wealth": 15
+      },
+      "agent-18": {
+        "alive": true,
+        "groups": [],
+        "health": 38,
+        "inventory": {
+          "fiber": 5
+        },
+        "wealth": 10
+      },
+      "agent-19": {
+        "alive": true,
+        "groups": [],
+        "health": 66,
+        "inventory": {
+          "coin": 4,
+          "fiber": 2,
+          "water": 4
+        },
+        "wealth": 12
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 64,
+        "inventory": {
+          "coin": 4,
+          "fiber": 3,
+          "food": 1,
+          "wood": 1
+        },
+        "wealth": 15
+      },
+      "agent-20": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "coin": 4,
+          "fiber": 1,
+          "water": 2,
+          "wood": 2
+        },
+        "wealth": 14
+      },
+      "agent-21": {
+        "alive": true,
+        "groups": [],
+        "health": 34,
+        "inventory": {
+          "coin": 4,
+          "fiber": 7,
+          "food": 1
+        },
+        "wealth": 20
+      },
+      "agent-22": {
+        "alive": true,
+        "groups": [],
+        "health": 10,
+        "inventory": {
+          "coin": 1,
+          "fiber": 3,
+          "wood": 1
+        },
+        "wealth": 10
+      },
+      "agent-23": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {},
+        "wealth": 0
+      },
+      "agent-24": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "coin": 4,
+          "fiber": 4,
+          "wood": 3
+        },
+        "wealth": 21
+      },
+      "agent-25": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "coin": 4,
+          "stone": 2
+        },
+        "wealth": 12
+      },
+      "agent-26": {
+        "alive": true,
+        "groups": [],
+        "health": 21,
+        "inventory": {
+          "coin": 4,
+          "fiber": 6
+        },
+        "wealth": 16
+      },
+      "agent-27": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "coin": 1,
+          "fiber": 1,
+          "wood": 2
+        },
+        "wealth": 9
+      },
+      "agent-28": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "ore": 1
+        },
+        "wealth": 8
+      },
+      "agent-29": {
+        "alive": true,
+        "groups": [],
+        "health": 19,
+        "inventory": {
+          "fiber": 6
+        },
+        "wealth": 12
+      },
+      "agent-3": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {},
+        "wealth": 0
+      },
+      "agent-30": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "coin": 4,
+          "fiber": 4,
+          "wood": 1
+        },
+        "wealth": 15
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 19,
+        "inventory": {
+          "coin": 1,
+          "fiber": 8
+        },
+        "wealth": 17
+      },
+      "agent-5": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "coin": 4,
+          "fiber": 6
+        },
+        "wealth": 16
+      },
+      "agent-6": {
+        "alive": true,
+        "groups": [],
+        "health": 21,
+        "inventory": {
+          "coin": 4,
+          "fiber": 4,
+          "wood": 2
+        },
+        "wealth": 18
+      },
+      "agent-7": {
+        "alive": true,
+        "groups": [],
+        "health": 25,
+        "inventory": {
+          "coin": 4,
+          "fiber": 4,
+          "water": 3
+        },
+        "wealth": 15
+      },
+      "agent-8": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {},
+        "wealth": 0
+      },
+      "agent-9": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "coin": 4,
+          "fiber": 4
+        },
+        "wealth": 12
+      }
+    },
+    "dead": 15,
+    "deaths": [
+      {
+        "agent": "agent-28",
+        "message": "Agent 28 died.",
+        "tick": 25
+      },
+      {
+        "agent": "agent-3",
+        "message": "Agent 3 died.",
+        "tick": 26
+      },
+      {
+        "agent": "agent-23",
+        "message": "Agent 23 died.",
+        "tick": 28
+      },
+      {
+        "agent": "agent-8",
+        "message": "Agent 8 died.",
+        "tick": 29
+      },
+      {
+        "agent": "agent-17",
+        "message": "Agent 17 died.",
+        "tick": 30
+      },
+      {
+        "agent": "agent-11",
+        "message": "Agent 11 died.",
+        "tick": 37
+      },
+      {
+        "agent": "agent-5",
+        "message": "Agent 5 died.",
+        "tick": 38
+      },
+      {
+        "agent": "agent-20",
+        "message": "Agent 20 died.",
+        "tick": 38
+      },
+      {
+        "agent": "agent-24",
+        "message": "Agent 24 died.",
+        "tick": 39
+      },
+      {
+        "agent": "agent-25",
+        "message": "Agent 25 died.",
+        "tick": 39
+      },
+      {
+        "agent": "agent-30",
+        "message": "Agent 30 died.",
+        "tick": 39
+      },
+      {
+        "agent": "agent-9",
+        "message": "Agent 9 died.",
+        "tick": 42
+      },
+      {
+        "agent": "agent-10",
+        "message": "Agent 10 died.",
+        "tick": 46
+      },
+      {
+        "agent": "agent-27",
+        "message": "Agent 27 died.",
+        "tick": 46
+      },
+      {
+        "agent": "agent-13",
+        "message": "Agent 13 died.",
+        "tick": 47
+      }
+    ],
+    "living": 15,
+    "survival_damage_events": 509
+  },
+  "transcript": [
+    {
+      "agent": "agent-28",
+      "message": "Hello, mining stone and ore here at mountain tile.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-29",
+      "message": "I am gathering food here; open water is nearby.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-23",
+      "message": "Offering 2 ore for 2 food, meet at my position.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-23",
+      "message": "Cancelling ore-for-food offer, out of ore. Looking to trade coin for food/water instead.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-9",
+      "message": "Do you know where water is?",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-19",
+      "message": "Trading fiber for food/coin - anyone have spare food?",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-26",
+      "message": "No water visible nearby.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-9",
+      "message": "No water visible nearby; I am searching north.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-24",
+      "message": "Heading to water at (0,10), low on food/water.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-3",
+      "message": "I have 2 coin; can you trade 2 food at [12,3]?",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-29",
+      "message": "Please accept trade-8 for food.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-10",
+      "message": "Anyone know where water is nearby? My water reserve is critical.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-11",
+      "message": "Low on water, anyone know a nearby water source?",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-23",
+      "message": "Agent-3, I'll trade ore1+stone1 for food2+water2, meet at [14,4] or your escrow.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-29",
+      "message": "Please accept trade-8 for my water; I need food.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-15",
+      "message": "Anyone with food to trade for coin or fiber?",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-23",
+      "message": "Agent-3, please accept trade-12 (ore1+stone1 for food2+water2) at [14,4] - I'm critical on food/water.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-3",
+      "message": "Accepted trade-12; I am moving to [14,4] to settle.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-30",
+      "message": "Water tiles at (11,7),(10,8),(9,9) near me at (11,9). Can trade water for food/coin.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-8",
+      "message": "Need food; offering 4 coin for 2 food here.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-9",
+      "message": "Need water soon. Can anyone share or trade water?",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-23",
+      "message": "Heading to [14,4] to settle trade-12, please meet me there with food/water.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-28",
+      "message": "Accepting trade-2, desperate for food, thanks!",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-29",
+      "message": "Please accept trade-8 for food.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-30",
+      "message": "Have water(2) and fiber(5), 4 coin. Trading water for food if anyone has spare.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-12",
+      "message": "Trading food/fiber for coin at (1,4).",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-19",
+      "message": "Starving-can anyone spare food? I have fiber/coin to trade.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-28",
+      "message": "At (12,3), trying to settle trade-2, 4 coin for food, critically need it now.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-29",
+      "message": "I can trade water for food.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-30",
+      "message": "Heading to (12,12) forest for food. Still have water(2)+fiber(6)+4coin to trade for food.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-8",
+      "message": "Need food/water now; please accept trade-14 or gift if able.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-8",
+      "message": "Need food/water now; can trade ore/stone.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-12",
+      "message": "Water for sale, coin. Food/fiber also at (1,4).",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-19",
+      "message": "Agent-22, 3 fiber for 2 food-starving. Meet at 2,6.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-23",
+      "message": "I have no food/water/ore/stone left to trade. Reserves critical, need help urgently.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-26",
+      "message": "Agent-19, I offer 3 fiber for 2 food at my position (1,6).",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-30",
+      "message": "Found food at (12,12) forest tile, gathering here.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-11",
+      "message": "Trading 5 fiber for 2 water, I'm critical thirst. Please accept!",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-12",
+      "message": "Water/food/fiber for coin at (1,4). Trades open.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-13",
+      "message": "Please give me water when I reach you.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-19",
+      "message": "Agent-22, trade-19 open: 3 fiber for 2 food. Meet 2,6, I'm starving.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-23",
+      "message": "Critical food0/water0, moving south to search for water/food. Anyone with surplus please help.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-30",
+      "message": "I only carry 1 water right now, low inventory despite ok reserves. Will gather more to trade soon.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-1",
+      "message": "I offer 1 fiber for 1 food.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-10",
+      "message": "agent-30, I'm at 0 water, offering 4 coin for 3 water, meeting you nearby!",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-11",
+      "message": "agent-30 moving to your position to trade 5 fiber for 2 water, water critical!",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-11",
+      "message": "agent-30 I'm at your tile now, please accept trade-22 for water, I'm critical!",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-12",
+      "message": "Water for coin at (1,4), trade-18 open. a27 thirst critical-come settle.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-16",
+      "message": "agent-7: open water at 10,5 / 9,6 / 10,6 right by you\u2014gather water there.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-18",
+      "message": "At your tile now, dying of thirst. Please accept trade-23: coin4+fiber3 for 2 water. Adding ore1 as bonus. Save me!",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-23",
+      "message": "Heading to [14,7] for food, critical hunger/thirst.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-24",
+      "message": "agent-29, I'll trade 2 fiber or coin for food, I'm starving.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-25",
+      "message": "Water critical\u2014please gift water if possible.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-27",
+      "message": "agent-12, I need water urgently - offering 2 coin for 2 water, trade posted. I'm at [1,2].",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-30",
+      "message": "I only have 1 water right now, not enough for any trade. Will gather more and come back to help.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-5",
+      "message": "agent-30, please gift or trade me water; thirst critical.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-8",
+      "message": "Please gift 1 food and water if you have any; I am critical.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-8",
+      "message": "Please gift 1 food and water if you have any; I am critical.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-10",
+      "message": "agent-25: I'm at 0 water too, do you know a water source? Offering 5 fiber for water.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-10",
+      "message": "Anyone near water/well? I'm at 0 water, offering 5 fiber for water!",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-11",
+      "message": "I'm right here at [12,12], water critical! Please accept trade-22: 5 fiber for 2 water.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-12",
+      "message": "Water for coin at (1,4), trade-18 open. a27 come settle thirst.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-15",
+      "message": "agent-30 I'm at [12,12] with you now. 3 fiber for 2 water, water at 0, dying. Please accept my trade!",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-16",
+      "message": "Open water at 10,5/9,6/10,6 right by you\u2014gather there fast.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-18",
+      "message": "On your tile, water0, dying. New offer: fiber2+ore1 (all I have) for 2 water. Please accept/gift, will die otherwise!",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-19",
+      "message": "agent-12: offering 3 fiber for 3 food, come to (1,6) to settle.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-23",
+      "message": "At [14,7] gathering food, critical starvation. Need water next.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-24",
+      "message": "agent-29, still offering 2 fiber or 2 coin for any food, I'm at 0 food taking damage.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-30",
+      "message": "I only have 1 water right now, can't fulfill your trades yet. Searching for a water source - will help when I can.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-5",
+      "message": "agent-30, please move south to my tile and gift 2 water; I can give fiber.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-1",
+      "message": "Please accept trade-24 for food.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-11",
+      "message": "agent-30 my trade-22 (5 fiber for 2 water) expires this tick! Please accept, I'm at 0 water taking damage.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-12",
+      "message": "agent-27: I have water at (1,4)/(1,3), meet to settle your trade-27 for 2 coin.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-15",
+      "message": "agent-30: water 0, dying. 3 fiber for just 1 water \u2014 best rate anyone offers. Please accept trade-28 or my new offer. I'm at your tile.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-18",
+      "message": "Water 0, taking damage, empty inventory-can't pay. Please gift me 1 water to survive, I'll repay with fiber/foraging labor. Begging.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-19",
+      "message": "Strong forager here. Food scarce but I can gather fiber. Coin buyers welcome.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-23",
+      "message": "Critical thirst, water0. Searching south from [14,7] for water source.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-27",
+      "message": "agent-12, moving to your position [1,4] now to trade coin for water, thirst critical.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-27",
+      "message": "Coming to [1,4] to settle trade-18/trade-27 for water, please accept.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-30",
+      "message": "I only have 1 water myself, can't spare more without risking my own reserves. Sorry.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-5",
+      "message": "agent-30, please gift me 1 water urgently; I am at 0 water and will meet you.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-11",
+      "message": "agent-30: offering all 4 of my coins for just 2 water. I'm at 0 water/food, taking damage right now. Please accept the trade!",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-11",
+      "message": "agent-30: offering all 4 of my coins for just 2 water. I'm at 0 water/food taking damage. Please accept!",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-12",
+      "message": "I have 1 water now at (1,4), 1 coin. Accept and I'll gather more for trade-27.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-14",
+      "message": "agent-1 what does trade-24 offer/require? I have 0 food and could use it, but need to check terms.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-15",
+      "message": "Dying of thirst. Gathering fiber now, offering 3 fiber for 1 water. Please accept, I'm nearby.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-18",
+      "message": "agent-30: dying, water 0. Offering fiber 3 for 1 water, or please gift 1 to save me. High foraging, will repay labor.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-19",
+      "message": "Strong forager, fiber and wood for sale for coin. Meet me at (2,6).",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-23",
+      "message": "Critical water0. Searching south from [14,8] for water source.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-27",
+      "message": "agent-12, accepting trade-27 now, thanks for the water!",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-30",
+      "message": "Sorry, only have 1 water myself - can't fulfill trades yet. Looking for a water source.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-5",
+      "message": "agent-30, please gift me 1 water urgently; I can pay coin or fiber.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-11",
+      "message": "Please accept trade-31: 4 coins for 2 water, I'm at 0 water/food taking damage. Desperate!",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-12",
+      "message": "agent-27, gathering water now, will settle trade-27 shortly.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-14",
+      "message": "agent-1, accepting trade-24, thanks!",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-15",
+      "message": "Dying, water 0. Offering 3 fiber for 1 water, escrow ready. Please accept or gift 1 to save me - I have foraging 13 and will repay.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-18",
+      "message": "I now HOLD fiber2+ore1 (ore is high-value). Trading all for just 1 water. I'm adjacent, dying at water0. Please accept trade-offer.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-19",
+      "message": "Forager here - fiber & wood for coin. Meet me nearby.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-23",
+      "message": "Still critical on water, searching west/south for a source.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-27",
+      "message": "Thanks agent-12, accepting trade-32 for water now.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-30",
+      "message": "Only have 1 water, can't fill your trades needing 2-3. Will gather more and try to help soon.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent 30, please accept my offer of 4 coins for 2 water here.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-6",
+      "message": "Fishing at 8,7 near water, food critical.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-9",
+      "message": "Please clear one space at 9,5 so I can meet for trade-34.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-11",
+      "message": "agent-30 please accept trade-31 (4 coins for 2 water) or my fiber offer - I'm dying at 0 water/food!",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-11",
+      "message": "agent-30 please accept trade-31 (4 coins for 2 water) or my fiber offer - I'm dying at 0 water/food!",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-12",
+      "message": "agent-27, trade-32 (1 water/1 coin) is open here at (1,4) - accept to settle.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-14",
+      "message": "Food critical (2). Anyone have spare food to trade for coin or fiber?",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-15",
+      "message": "agent-30: dying, water 0. 1 fiber for 1 water, escrow at your tile. Please accept or gift - foraging 13, will repay.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-19",
+      "message": "Forager here - fiber & wood for coin. Meet me at 2,4.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-20",
+      "message": "Agent 30, please gift 1 water if possible.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-23",
+      "message": "Water critical, searching south for a source. Anyone know where water is?",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-27",
+      "message": "Dropping wood to make room, then accepting trade-32 for water.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-5",
+      "message": "agent-30, accept my 1 fiber for 1 water here; water is critical.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent 29, do you have food to share or trade?",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-11",
+      "message": "agent-30 can't fulfill trades, canceling wait - heading to search for water myself. Anyone know an actual water tile nearby?",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-12",
+      "message": "agent-27 accept trade-32 to settle water/coin here.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-14",
+      "message": "Food critical here too, heading to water tile at [3,14] to gather food.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-16",
+      "message": "Clearing 9,5 now - come settle trade-34, 4 fiber for 2 food.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-17",
+      "message": "Please accept trade-35 now; I am at zero water.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-17",
+      "message": "Please accept trade-35 now; I am at zero water.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-19",
+      "message": "Forager at 2,4 - fiber, wood, food for coin. Meet here.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-20",
+      "message": "Agent 30, please gift me 1 water when I reach you.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-23",
+      "message": "Water0, health25, critical. Anyone near water or a well? Need help urgently.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-29",
+      "message": "I have water, no spare food. Can anyone trade food?",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-30",
+      "message": "I only have 1 water in inventory, can't fulfill 2-water trades yet. Will trade fiber/wood/coin once I find a water source.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-5",
+      "message": "Please accept trade-39 for 1 water; I am at escrow now and urgently need it.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-1",
+      "message": "I need food urgently; offering 4 fiber for 1 food at my position.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-12",
+      "message": "Have food/water for coin. Meet at 1,4.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-14",
+      "message": "Food at 0, heading to [3,14] to gather food resource there. Anyone with spare food please trade.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-17",
+      "message": "Water please; I can trade 2 coin now.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-19",
+      "message": "Forager here - fiber & wood for coin or food. agent-27 need food/water? I can trade.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-20",
+      "message": "Agent-30, please gift 1 water urgently; I can repay with fiber.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-19, offering 3 coin for 3 food, trade posted. I'm at (1,5), can come to you.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-23",
+      "message": "agent-30, I'm dying of thirst (water0, hp20). Please trade any water for fiber/coin, I'm at [12,12]-[12,11].",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-29",
+      "message": "I can trade 1 water for 1 food.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-30",
+      "message": "Fulfilled trade-39 with 1 water. Still searching for a water source to help others.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-7",
+      "message": "I moved west; please enter [9,5] so we can settle trade-34.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-9",
+      "message": "Agent-16, meet me at 9,5 to settle trade-34.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-12",
+      "message": "Water for coin, meet at 1,4. Anyone have food? I'll pay coin.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-14",
+      "message": "Food at 0, critical. Heading to [3,14] to gather/fish. Anyone with spare food, I have 6 fiber and 4 coin to trade.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-17",
+      "message": "Need water urgently\u20142 coin for 1 water.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-17",
+      "message": "Need water urgently\u20142 coin for 1 water.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-19",
+      "message": "Forager here: fiber & wood for coin or food. agent-13/27 need food?",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-12, offering 3 coin for 3 food, I'm here at (1,4).",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-12, offering 3 coin for 3 food, I'm here at (1,4).",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-24",
+      "message": "Sorry agent-29, I have no spare food right now, my reserves are low too.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-30",
+      "message": "I have 0 water right now, can't fulfill trades. Searching for a water tile - will trade when I find one.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-4",
+      "message": "I have fiber; need food urgently. Can trade.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-4",
+      "message": "I have fiber; need food urgently. Can trade.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-12",
+      "message": "Need food myself, no surplus. Selling water/wood for coin at (1,4).",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-14",
+      "message": "Food at 0, critical! Offering 6 fiber or 4 coin for any food, at [3,14]/[4,14] area.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-16",
+      "message": "agent-9: new trade 4 fiber->2 food, meet me at 9,5 to settle. Food urgent for both.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-19",
+      "message": "Forager: fiber & wood for coin or food. agent-13/22/27 need food? Let's trade.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-12, still offering 3 coin for 3 food, I'm nearby. Anyone with food please trade!",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-27",
+      "message": "Heading to [4,3] for food, low on food/water.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-4",
+      "message": "I need food urgently; heading toward you.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-6",
+      "message": "Heading to (9,8) to fish, food critical.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-12",
+      "message": "Foraging food now; will fill trade-44 (3food/3coin) once I have surplus.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-13",
+      "message": "Agent 27, trade 2 coin for 1 food here?",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-14",
+      "message": "Food at 0, critical! Offering 6 fiber or 4 coin for any food, at [4,14].",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-16",
+      "message": "trade-45 still open at 9,4 (4 fiber->2 food) if you have food to spare, agent-9.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-17",
+      "message": "Water please\u2014dying.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-19",
+      "message": "Forager: fiber & wood for coin or food. agent-4/22/27 need food - I trade fiber.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-22",
+      "message": "Still need food urgently, will trade 1 coin for food, anyone nearby?",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-23",
+      "message": "agent-11, dying hp5 water0 - please gift 1 water, I'll repay with fiber later!",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-6",
+      "message": "Fishing at (8,8) adjacent to water (9,8), food critical.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-12",
+      "message": "Fishing food now; trade-44 (3food/3coin) still open, will fill soon.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-16",
+      "message": "trade-45 open at 9,4: 4 fiber for 2 food. Any food seller welcome.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-17",
+      "message": "Please trade water now\u20142 coin offered.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-22",
+      "message": "Trading 3 fiber for 2 food, agent-19 - I'm at (1,5), food critical.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-9",
+      "message": "Please move north to 9,4 so we can settle trade-45.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-16",
+      "message": "Moving to 9,4 to settle trade-45: 4 fiber for 2 food.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-17",
+      "message": "Please accept trade-47 now; I have 2 HP.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-19",
+      "message": "agent-22: I have only 1 food, can't fill your trade. Can trade fiber for water/coin.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-20",
+      "message": "Trade 2 water for 1 food? Same tile.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-19, I'm at (2,5) now with your trade offer active - 3 fiber for 2 food, please accept, food critical!",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-29",
+      "message": "Agent-1, I need food. Can you gift or trade 1 food for fiber?",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-4",
+      "message": "Urgent: 1 water for 1 food?",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-9",
+      "message": "Move north to 9,4 now so we can settle trade-45.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-12",
+      "message": "a22/a4: fishing now, will have food for trade-44/49 shortly.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-16",
+      "message": "Re-offered 3 fiber for 2 food, agent-9. Trade at 9,5 area. I'll fish too.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-19",
+      "message": "a22/a4: I have no food to trade right now, only fiber/water. Try agent-12 who's fishing.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-20",
+      "message": "I gathered 2 water and offer it for 1 food here.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-19, at (1,5) now, please accept trade-48: 3 fiber for 2 food, food is critical!",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-12",
+      "message": "a22/a4: no fishable food here now; hold trades, I'll relocate to find food.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-16",
+      "message": "trade-52 fiber->food open at 9,4 if you have food, agent-9.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-19",
+      "message": "a22/a4: still no food, only fiber/water. Moving to forage food. Try agent-12.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-19, please accept trade-48 (3 fiber for 2 food) at (1,5) - I'm starving, food=0!",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-9",
+      "message": "Moving north to settle trade-52.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-12",
+      "message": "a22/a4: still no food here, relocating south to find some. Hold your trades.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-15",
+      "message": "agent-20 I have no food yet. Fishing now.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-19",
+      "message": "a22/a4: foraging food east now, will trade soon.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-19 left, trade-48 stale. Moving to water at (0,5) to survive, will forage food after.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-27",
+      "message": "Heading to [1,2]/[1,1] area for food, low on food myself.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-9",
+      "message": "Please offer food for fiber at 9,4.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-12",
+      "message": "Still hunting food, heading to the water south. Hold trades a bit longer.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-14",
+      "message": "agent-1, I have coin/fiber, desperately need food. Can we trade?",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-15",
+      "message": "agent-20 fishing now; will pay food for water if I catch surplus",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-16",
+      "message": "agent-9: I have 0 fiber now; trade-52 won't settle. Anyone with food? I pay coin.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-22",
+      "message": "Food critical, trying harvest/gather at (1,5) forest. Any food trades welcome.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-26",
+      "message": "I can help with food.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-12",
+      "message": "Found food near water south, fishing now. a22/a4 hold your trades a bit more.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-14",
+      "message": "agent-1, will trade coin+fiber for food, please respond!",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-15",
+      "message": "Have fiber to trade for food if anyone has surplus.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-16",
+      "message": "agent-7: I pay 4 coin for 2 food at 9,5. Trade posted, please accept - I'm food-critical.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-22",
+      "message": "Food critical at 0, offering 3 fiber for 2 food, anyone nearby?",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-29",
+      "message": "Accepting trade; meeting at escrow.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-12",
+      "message": "Fishing food at water south now. a22/a4 hold trades, will supply if catch.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-13",
+      "message": "Please share water when we meet.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-14",
+      "message": "agent-1, I have 4 coin, desperately need food - please trade any amount for coin!",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-15",
+      "message": "Have fiber to trade for food.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-16",
+      "message": "Food-critical. I'll give 4 fiber for 2 food, offer posted at 9,5. Please accept.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-19",
+      "message": "a22/a4: have fiber to trade, foraging food now.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-12, I'm at 0 food/critical health. Can you spare 1-2 food? I'll pay coin or fiber.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-7",
+      "message": "I will meet at 9,5, settle for 2 food, then share 1 food with agent-9.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-9",
+      "message": "Return south to (8,5) to settle the food trade.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-12",
+      "message": "a22/a4 hold on, fishing food now, will supply if I catch.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-13",
+      "message": "Please gift me 1 water; I am dehydrated.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-14",
+      "message": "agent-1, agent-29: will trade coin for food, energy back up, fishing now.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-15",
+      "message": "Have fiber for food trade at (14-15,7).",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-16",
+      "message": "Reclaiming my fiber, will fill your 3-fiber-for-3-food trade at 8,5 next tick. Food-critical, please hold.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-19",
+      "message": "agent-7: heading to your 8,5 food trade. Have fiber+coin to pay.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-21",
+      "message": "I need food too; foraging here.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-12, still critical on food here at (1,5)/(2,6), any spare food appreciated, will pay coin/fiber.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-9",
+      "message": "Please move west to (8,5) now so I can accept trade-57 before expiry.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-12",
+      "message": "a22/a4 fishing now, will supply food if I catch. Hold trades.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-14",
+      "message": "agent-1, agent-29: still offering 4 coin for food if either has spare.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-16",
+      "message": "I'm at 9,5 with 4 fiber. Take 4 fiber for 3 food now - I'm food-critical. Then you can share with agent-9.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-19",
+      "message": "a9: I need food not fiber. Anyone selling food for fiber/coin?",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-2",
+      "message": "I will bring water.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-29",
+      "message": "Can you trade 1 food for 2 coin?",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-30",
+      "message": "agent-21, trading 4 fiber for 2 water, I'm critical 0/0/0, please meet me at (10,15)!",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-12",
+      "message": "Fishing dry here, moving south to plains food. Will supply if I catch.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-14",
+      "message": "Still need food urgently, offering 4 coin for food, agent-1/agent-29.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-16",
+      "message": "Coming to 8,5 with fiber to trade for food. Hold on.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-19",
+      "message": "a7: trade 4 fiber for 3 food? I'm water-restocking at 9,5.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-22",
+      "message": "Still critical on food at (1,6). Anyone with spare food, I'll pay coin/fiber/wood.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-30",
+      "message": "agent-21, please accept my trade at (10,15), 4 fiber for 2 water - I'm dying!",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-12",
+      "message": "Foraging food on plains now. a22/a4 hold trades, will supply once I catch.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-14",
+      "message": "Offering 4 coin for any food, urgent - agent-1 or agent-29 please trade!",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-16",
+      "message": "Gathering fiber now, will trade 4 fiber for 3 food. Hold food for me.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-19",
+      "message": "a19: fishing at 9,5 for food. Still have 6 fiber to trade if anyone has spare food.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-12",
+      "message": "Foraging food; will bring food north once I stock. a22/a4 hold trades.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-6",
+      "message": "Searching for water urgently, water reserve at 0.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-10",
+      "message": "Food available at (11,15)/(12,15) forest tiles, water at (3,15)/(4,15).",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-6",
+      "message": "agent-29, offering 4 coin for 2 water, I'm at (3,12) area, critical thirst!",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-15",
+      "message": "I have fiber2, need food. Bring food to me at (11,8)?",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-22",
+      "message": "Starving at 0 food, near you. Will trade coin+fiber+wood for any food, please!",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-6",
+      "message": "agent-29, still interested in trading 4 coin for water if you're near (3,12)/(2,12).",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-9",
+      "message": "Meet here for 4 fiber for 3 food.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-10",
+      "message": "Gathering food at (12,15), water low too. Heading to water at (3,15) after this.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-19",
+      "message": "Have 4 fiber+4 coin, need food. Trade fiber for food here at 9,5.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-4, I'm starving (0 food, health dropping). Offering coin+fiber for any food you can spare, right here.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-29",
+      "message": "agent-6, please gift 1 food urgently; I can trade fiber later.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-10",
+      "message": "Food low, water critical at 4. Gathering food then rushing west to water at (3,15).",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-15",
+      "message": "Have fiber2, need food urgently at (11,8).",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-19",
+      "message": "Food scarce here too. Fishing 9,6. Have fiber+coin.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-4, still offering coin+fiber for any food, trade-69 open at (1,8) if you have spare food.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-26",
+      "message": "Food trade escrowed here at [12,9]: 2 food for 1 coin + 2 fiber. Accept now.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-29",
+      "message": "agent-6, please gift 1 food now; I am at zero food and will trade fiber later.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-10",
+      "message": "Food=1,water=2 critical, rushing west to water source at (3,15)/(4,15).",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-15",
+      "message": "Need food urgently at (11,8), have fiber2. Bring food, I'll pay fiber.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-4, trade-69 still open: 1 coin+2 fiber for 2 food, right here at (1,8). Please accept if you can spare it.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-26",
+      "message": "I offered 2 fiber for 1 food at [12,9]; come here to settle.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-29",
+      "message": "Please gift me 1 food urgently.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-6",
+      "message": "Heading to (2,13) for food, critical hunger.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-15",
+      "message": "agent-26: no coin, but I have fiber2. Trade 2 food for 2 fiber? Meet at (12,9).",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-18",
+      "message": "Agent-10, food at (8,15)/(9,15) tiles here, water far west (3,15). Hang on.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-4, trade-69 still open: 1 coin+2 fiber for 2 food. I'm starving, please help!",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-4, trade-69 still open: 1 coin+2 fiber for 2 food. I'm starving, please help!",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-26",
+      "message": "Please accept trade-70 and come to [12,9] now.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-6",
+      "message": "Moving to (2,13) for food, critical hunger.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-12",
+      "message": "No food to spare yet; foraging now. Fiber/water trade later.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-15",
+      "message": "agent-26: I'll bring fiber2 to (12,9) for 2 food once I stabilize. Fishing now.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-18",
+      "message": "Food at (6,15) tile, water far west (3,15). Wells none nearby.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-15",
+      "message": "I need food not fiber. Do you have food to sell for fiber2? I'll come to (12,9).",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-18",
+      "message": "Food at (6,15); water at (3,15)(4,15).",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-22",
+      "message": "agent-4, please come back to (1,8) escrow - trade-69: 1 coin+2 fiber for 2 food. I'm dying of hunger!",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-26",
+      "message": "I'm at (12,9); please settle trade-70 here as soon as you have food.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-29",
+      "message": "Agent-6, please share 1 food urgently.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-4",
+      "message": "I can't meet the trade in time.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-15",
+      "message": "agent-26: I have no food yet, only fiber2. Fishing fails here. If you have food, I'll trade fiber2 at (12,9).",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-18",
+      "message": "Food at (6,15); water at (3,15)(4,15).",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-22",
+      "message": "Energy at 0, must wait to recover. Still need food urgently - any help appreciated.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-29",
+      "message": "Agent-12, please share 1 food urgently if available.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-14",
+      "message": "Low on food too, but will share coin for food if anyone has extra.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-18",
+      "message": "Food at (6,15); water at (3,15)(4,15).",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-29",
+      "message": "Agent-12, please gift 1 food urgently.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-6",
+      "message": "Food critical, moving to gather at water tile.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-12",
+      "message": "No spare food now, my inventory is empty. Restocking.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-14",
+      "message": "Fishing at [4,14], offering 4 coin for food if anyone has extra.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-15",
+      "message": "Have fiber2 to trade for food if anyone can spare some.",
+      "scope": "local",
+      "tick": 49
+    }
+  ],
+  "usage": {
+    "cache_hit_rate_pct": 59.2,
+    "calls": 1314,
+    "completion_tokens": 458071,
+    "dynamic_input_components": {
+      "mean_chars": {
+        "local_map": 631.1,
+        "market_history": 17.6,
+        "memory": 902.2,
+        "nearby_agents": 332.4,
+        "open_trades": 121.3,
+        "recent_action_feedback": 488.7,
+        "recent_events": 893.8,
+        "self": 281.9,
+        "tick": 1.8
+      },
+      "samples": 1314
+    },
+    "efficiency": {
+      "mean_agent_dynamic_observation_chars": 3770.4,
+      "mean_agent_static_context_chars": 6493.0,
+      "mean_output_tokens_per_call": 348.6,
+      "mean_prompt_tokens_per_call": 9640.0,
+      "mean_request_payload_bytes": 11053.8,
+      "mean_uncached_input_tokens_per_call": 3935.4
+    },
+    "plan_limits": {
+      "attribution": "Account-level observed delta during this run; concurrent Codex usage on the same account may be included.",
+      "available": true,
+      "buckets": {
+        "codex": {
+          "credits": {
+            "after_balance": "2658.8093750000",
+            "balance_delta": "0E-10",
+            "before_balance": "2658.8093750000",
+            "has_credits": true,
+            "unlimited": false
+          },
+          "limit_name": null,
+          "plan_type": "prolite",
+          "primary": {
+            "after_resets_at": 1784491778,
+            "after_used_percent": 3,
+            "before_resets_at": 1784491778,
+            "before_used_percent": 1,
+            "same_window": true,
+            "used_percent_delta": 2,
+            "window_duration_mins": 10080
+          },
+          "rate_limit_reached_type": null,
+          "secondary": null
+        },
+        "codex_bengalfox": {
+          "credits": null,
+          "limit_name": "GPT-5.3-Codex-Spark",
+          "plan_type": "prolite",
+          "primary": {
+            "after_resets_at": 1784519745,
+            "after_used_percent": 0,
+            "before_resets_at": 1784517976,
+            "before_used_percent": 0,
+            "same_window": false,
+            "used_percent_delta": null,
+            "window_duration_mins": 10080
+          },
+          "rate_limit_reached_type": null,
+          "secondary": null
+        }
+      },
+      "checkpoint_count": 2,
+      "ended_at_utc": "2026-07-13T03:55:44.827367+00:00",
+      "started_at_utc": "2026-07-13T03:26:16.448232+00:00",
+      "successful_checkpoint_count": 2
+    },
+    "prompt_tokens": 12667020,
+    "reasoning_tokens": 141197,
+    "simulation_credits": {
+      "attribution": "Exact token usage from Codex decisions made by this simulation run only.",
+      "available": true,
+      "cached_input_tokens": 4692224,
+      "calls": 647,
+      "credits": {
+        "cached_input": 16.76768,
+        "output": 38.2716,
+        "total": 198.316268,
+        "uncached_input": 143.276988
+      },
+      "models": {
+        "gpt-5.6-luna": {
+          "cached_input_tokens": 3348992,
+          "calls": 446,
+          "credits": 86.70663,
+          "output_tokens": 154244,
+          "rates_per_million_tokens": {
+            "cached_input": 2.5,
+            "input": 25.0,
+            "output": 150.0
+          },
+          "uncached_input_tokens": 2207902
+        },
+        "gpt-5.6-terra": {
+          "cached_input_tokens": 1343232,
+          "calls": 201,
+          "credits": 111.609638,
+          "output_tokens": 40360,
+          "rates_per_million_tokens": {
+            "cached_input": 6.25,
+            "input": 62.5,
+            "output": 375.0
+          },
+          "uncached_input_tokens": 1409271
+        }
+      },
+      "output_tokens": 194604,
+      "rate_card": {
+        "effective_date": "2026-07-10",
+        "source": "https://help.openai.com/en/articles/20001106-codex-rate-card-2",
+        "unit": "credits_per_million_tokens"
+      },
+      "reasoning_output_tokens": 141197,
+      "uncached_input_tokens": 3617173,
+      "unknown_models": []
+    },
+    "total_cost_usd": 0
+  },
+  "wealth_gini": 0.2734
+}
