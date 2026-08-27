@@ -85,6 +85,13 @@ class GrokBrainTests(unittest.TestCase):
         self.assertEqual(command[command.index("--max-turns") + 1], "1")
         self.assertIn("--disable-web-search", command)
         self.assertIn("--no-subagents", command)
+        self.assertNotIn("--tools", command)
+        disallowed_tools = set(
+            command[command.index("--disallowed-tools") + 1].split(",")
+        )
+        self.assertTrue(
+            {"run_terminal_cmd", "grep", "list_dir", "task", "Agent"} <= disallowed_tools
+        )
         self.assertNotIn("XAI_API_KEY", run.call_args.kwargs["env"])
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["provider"], "grok_cli")
@@ -151,6 +158,27 @@ class GrokBrainTests(unittest.TestCase):
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "model_output")
         self.assertEqual(record["failed_raw_response"], '{"intent":"move"')
+
+    def test_cancelled_structured_output_is_boundary_failure(self) -> None:
+        result = json.loads(_successful_stdout("intermediate answer"))
+        result["stopReason"] = "cancelled"
+        result["structuredOutputError"] = "turn requested a tool"
+        completed = subprocess.CompletedProcess(
+            ["grok"], 0, stdout=json.dumps(result), stderr=""
+        )
+        with patch("agent_world.grok_brain.subprocess.run", return_value=completed):
+            brain = GrokBrain(executable="grok")
+            decision = brain.decide({"tick": 3, "self": {"id": "agent-1"}})
+
+        self.assertEqual(decision.actions, [{"type": "wait"}])
+        self.assertEqual(
+            decision.intent,
+            "Grok boundary failed: unexpected stopReason 'cancelled': turn requested a tool",
+        )
+        record = brain.runtime.usage_records()[0]
+        self.assertEqual(record["decision_failure_origin"], "ambiguous_boundary")
+        self.assertEqual(record["decision_failure_class"], "payload_extraction_failure")
+        self.assertIn('"stopReason": "cancelled"', record["failed_raw_provider_envelope"])
 
     def test_extracts_structured_output_and_resolved_build(self) -> None:
         decision, usage, model = extract_grok_result(

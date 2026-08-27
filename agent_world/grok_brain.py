@@ -31,6 +31,21 @@ GROK_HARNESS_INSTRUCTIONS = (
     "The simulation engine will validate every action."
 )
 
+GROK_DISALLOWED_TOOLS = ",".join(
+    (
+        "run_terminal_cmd",
+        "grep",
+        "read_file",
+        "search_replace",
+        "list_dir",
+        "web_search",
+        "web_fetch",
+        "todo_write",
+        "task",
+        "Agent",
+    )
+)
+
 
 class GrokBrain:
     """Stateless agent brain using the user's saved grok.com login."""
@@ -157,6 +172,20 @@ class GrokBrain:
                     {**request_meta, **ambiguous_boundary_metadata(completed.stdout, detail)},
                 )
                 return _failure_decision(f"Grok boundary failed: {detail}")
+            stop_reason = result.get("stopReason")
+            if stop_reason != "end_turn":
+                structured_error = result.get("structuredOutputError")
+                detail = f"unexpected stopReason {stop_reason!r}"
+                if isinstance(structured_error, str) and structured_error.strip():
+                    detail += f": {structured_error.strip()}"
+                usage, response_model = _best_effort_grok_metadata(result)
+                self._record_usage(
+                    usage,
+                    response_model or self.resolved_model,
+                    result,
+                    {**request_meta, **ambiguous_boundary_metadata(completed.stdout, detail)},
+                )
+                return _failure_decision(f"Grok boundary failed: {detail}")
             try:
                 decision, usage, response_model = extract_grok_result(result)
             except Exception as exc:
@@ -247,7 +276,7 @@ class GrokBrain:
             "--no-plan",
             "--max-turns", "1",
             "--permission-mode", "plan",
-            "--tools", "",
+            "--disallowed-tools", GROK_DISALLOWED_TOOLS,
             "--cwd", workspace,
         ]
 
