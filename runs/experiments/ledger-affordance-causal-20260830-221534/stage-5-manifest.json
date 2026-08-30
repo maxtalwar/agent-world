@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "study_id": "ledger-affordance-causal-20260830-221534-stage-5",
+  "declared_at": "2026-08-30T23:14:00Z",
+  "status": "declared",
+  "diagnostic_only": true,
+  "stage_4_results": {
+    "perspective_original": {"notes": 0, "authors": 0},
+    "perspective_free": {"notes": 0, "authors": 0},
+    "private_value_original": {"notes": 14, "authors": 8},
+    "decision_rule_original": {"notes": 24, "authors": 10},
+    "control_action4_exact_cost1": {"notes": 0, "authors": 0},
+    "interpretation": "Perspective knowledge is necessary to understand public novelty but does not enter planning by itself. A concrete conditional trigger is sufficient under the original action slot and AP price; private motivation is helpful but weaker."
+  },
+  "selected_fix": {
+    "prompt_mode": "decision_rule",
+    "textual_components": [
+      "ledger is durable and world-global",
+      "exact action shape",
+      "compare concrete information against recent public notes",
+      "post only absent, nonlocal-useful specialty/resource/supply/need/offer facts",
+      "do not repeat unchanged information"
+    ],
+    "mechanics_unchanged": {"action_output_limit": 4, "ledger_action_cost": 1}
+  },
+  "cells": [
+    {
+      "id": "sol_baseline",
+      "model": "gpt-5.6-sol",
+      "population": 10,
+      "ticks": 10,
+      "seed": 11,
+      "prompt_mode": "baseline"
+    },
+    {
+      "id": "sol_decision_rule",
+      "model": "gpt-5.6-sol",
+      "population": 10,
+      "ticks": 10,
+      "seed": 11,
+      "prompt_mode": "decision_rule"
+    },
+    {
+      "id": "luna_long_decision_rule",
+      "model": "gpt-5.6-luna",
+      "population": 20,
+      "ticks": 25,
+      "seed": 11,
+      "prompt_mode": "decision_rule"
+    }
+  ],
+  "common_config": {"preset": "frontier-generalists", "specialization_mode": "specialists", "objective": "neutral", "reasoning_effort": "medium", "ledger_action_cost": 1, "action_output_limit": 4, "seed_mode": "none"},
+  "primary_endpoints": ["ledger_notes", "unique_authors", "notes_by_tick", "usefulness_and_repetition"],
+  "secondary_endpoints": ["references_to_ledger_information", "trade_contract_group_activity", "survival", "decision_failures"],
+  "success_rule": "Fix generalizes if Sol changes from near-zero to broad useful adoption and the longer Luna run continues posting new facts without per-tick spam."
+}
