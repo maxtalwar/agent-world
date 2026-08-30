@@ -850,13 +850,28 @@ def _provider_workspace_root() -> Path:
     return root
 
 
+def _codex_agent_decision_schema() -> dict[str, Any]:
+    schema = json.loads(json.dumps(CODEX_AGENT_DECISION_SCHEMA))
+    raw_limit = os.environ.get("AGENT_WORLD_CODEX_ACTION_MAX_ITEMS", "4")
+    try:
+        action_limit = max(1, min(16, int(raw_limit)))
+    except ValueError:
+        action_limit = 4
+    schema["properties"]["actions"]["maxItems"] = action_limit
+    if os.environ.get("AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE") == "1":
+        modes = schema["properties"]["messages"]["items"]["properties"]["mode"]["enum"]
+        modes.append("ledger")
+        schema["properties"]["messages"]["items"]["properties"]["text"]["description"] = (
+            "For ledger mode, put a short title on the first line and the durable note body after it."
+        )
+    return schema
+
+
 def _write_codex_schema(directory: Path) -> Path:
     schema_path = directory / "agent-decision.schema.json"
-    if not schema_path.exists():
-        schema_path.write_text(
-            json.dumps(CODEX_AGENT_DECISION_SCHEMA, sort_keys=True),
-            encoding="utf-8",
-        )
+    serialized = json.dumps(_codex_agent_decision_schema(), sort_keys=True)
+    if not schema_path.exists() or schema_path.read_text(encoding="utf-8") != serialized:
+        schema_path.write_text(serialized, encoding="utf-8")
     return schema_path
 
 

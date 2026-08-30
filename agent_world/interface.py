@@ -164,6 +164,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "town_ledger_action_cost": getattr(state.config, "town_ledger_action_cost", 1),
             "town_ledger_prompt_mode": getattr(state.config, "town_ledger_prompt_mode", "baseline"),
             "town_ledger_seed_mode": getattr(state.config, "town_ledger_seed_mode", "none"),
+            "town_ledger_output_mode": getattr(state.config, "town_ledger_output_mode", "action"),
             "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
             "trade_settlement": (
                 "physical_meeting_at_escrow_position"
@@ -378,18 +379,34 @@ def build_static_context(world: dict[str, Any]) -> str:
     lines.extend(_prompt_rules(world))
     lines.append(objective_instruction(world))
     ledger_prompt_mode = str(world.get("town_ledger_prompt_mode", "baseline"))
-    if world.get("economy_mode") == "organic" and ledger_prompt_mode in {"salient", "mandated"}:
+    ledger_output_mode = str(world.get("town_ledger_output_mode", "action"))
+    ledger_submission = (
+        'add {"mode":"ledger","text":"Short title\\nConcrete body","to":""} to messages'
+        if ledger_output_mode == "message"
+        else "include a post_ledger_note action"
+    )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode in {
+        "salient",
+        "mandated",
+        "bootstrap_one",
+    }:
         lines.append(
             "The town ledger is the only durable world-global communication channel. "
             "Every living agent can read its recent notes from anywhere on later ticks. "
-            "Use post_ledger_note for information that should outlive recent events or "
+            f"To post, {ledger_submission}. Use it for information that should outlive recent events or "
             "reach agents beyond local speech and broadcast range; use free-form messages "
             "for immediate local conversation."
         )
     if world.get("economy_mode") == "organic" and ledger_prompt_mode == "mandated":
         lines.append(
-            "Capability check: on tick 0, include one post_ledger_note action that states "
-            "your specialty or intended role and one useful resource fact."
+            f"Capability check: on tick 0, {ledger_submission} to state your specialty "
+            "or intended role and one useful resource fact."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "bootstrap_one":
+        lines.append(
+            f"One-time institutional bootstrap: only if self.id is agent-1 and tick is 0, "
+            f"{ledger_submission} with your specialty and one concrete local resource fact. "
+            "All other posting remains your choice."
         )
     lines.append("")
     lines.append(

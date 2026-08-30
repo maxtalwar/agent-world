@@ -86,6 +86,7 @@ class WorldConfig:
     town_ledger_action_cost: int = 1
     town_ledger_prompt_mode: str = "baseline"
     town_ledger_seed_mode: str = "none"
+    town_ledger_output_mode: str = "action"
     # Frontier world variant: seasons, storms, exposure, roads, irrigation.
     # "classic" leaves every prior preset byte-identical.
     world_variant: str = "classic"
@@ -107,10 +108,12 @@ class WorldConfig:
             raise ValueError("objective_mode must be neutral, collective, or individual")
         if self.action_feedback_mode not in {"baseline", "causal", "minimal", "none"}:
             raise ValueError("action_feedback_mode must be baseline, causal, minimal, or none")
-        if self.town_ledger_prompt_mode not in {"baseline", "salient", "mandated"}:
-            raise ValueError("town_ledger_prompt_mode must be baseline, salient, or mandated")
-        if self.town_ledger_seed_mode not in {"none", "demo"}:
-            raise ValueError("town_ledger_seed_mode must be none or demo")
+        if self.town_ledger_prompt_mode not in {"baseline", "salient", "mandated", "bootstrap_one"}:
+            raise ValueError("town_ledger_prompt_mode must be baseline, salient, mandated, or bootstrap_one")
+        if self.town_ledger_seed_mode not in {"none", "demo", "peer_demo"}:
+            raise ValueError("town_ledger_seed_mode must be none, demo, or peer_demo")
+        if self.town_ledger_output_mode not in {"action", "message"}:
+            raise ValueError("town_ledger_output_mode must be action or message")
         if self.town_ledger_action_cost < 0:
             raise ValueError("town_ledger_action_cost cannot be negative")
         for name in ("communication_action_cost", "group_admin_action_cost"):

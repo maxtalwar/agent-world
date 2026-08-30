@@ -208,15 +208,27 @@ def main(argv: list[str] | None = None) -> None:
     )
     run_parser.add_argument(
         "--town-ledger-prompt-mode",
-        choices=["baseline", "salient", "mandated"],
+        choices=["baseline", "salient", "mandated", "bootstrap_one"],
         default=None,
         help="Town-ledger prompt treatment; mandated is a direct capability check.",
     )
     run_parser.add_argument(
         "--town-ledger-seed-mode",
-        choices=["none", "demo"],
+        choices=["none", "demo", "peer_demo"],
         default=None,
         help="Cold-start treatment that optionally places a founding note in the ledger.",
+    )
+    run_parser.add_argument(
+        "--town-ledger-output-mode",
+        choices=["action", "message"],
+        default=None,
+        help="Represent ledger posting as a regular action or as a dedicated communication mode.",
+    )
+    run_parser.add_argument(
+        "--codex-action-max-items",
+        type=int,
+        default=None,
+        help="Codex-only structured-output action limit for an explicit representation treatment.",
     )
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
     run_parser.add_argument(
@@ -628,10 +640,20 @@ def _run(args: argparse.Namespace) -> None:
             town_ledger_action_cost=getattr(args, "town_ledger_action_cost", None) if getattr(args, "town_ledger_action_cost", None) is not None else 1,
             town_ledger_prompt_mode=getattr(args, "town_ledger_prompt_mode", None) or "baseline",
             town_ledger_seed_mode=getattr(args, "town_ledger_seed_mode", None) or "none",
+            town_ledger_output_mode=getattr(args, "town_ledger_output_mode", None) or "action",
             world_variant=getattr(args, "world_variant", None) or "classic",
         )
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
+
+    if getattr(engine.state.config, "town_ledger_output_mode", "action") == "message":
+        os.environ["AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE"] = "1"
+    else:
+        os.environ.pop("AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE", None)
+    codex_action_max_items = getattr(args, "codex_action_max_items", None) or 4
+    if codex_action_max_items < 1 or codex_action_max_items > 16:
+        raise ValueError("--codex-action-max-items must be between 1 and 16")
+    os.environ["AGENT_WORLD_CODEX_ACTION_MAX_ITEMS"] = str(codex_action_max_items)
 
     if args.ticks < engine.state.tick:
         raise ValueError(
@@ -753,6 +775,8 @@ def _run(args: argparse.Namespace) -> None:
         "town_ledger_action_cost": engine.state.config.town_ledger_action_cost,
         "town_ledger_prompt_mode": engine.state.config.town_ledger_prompt_mode,
         "town_ledger_seed_mode": engine.state.config.town_ledger_seed_mode,
+        "town_ledger_output_mode": engine.state.config.town_ledger_output_mode,
+        "codex_action_max_items": codex_action_max_items,
         "action_feedback_mode": getattr(engine.state.config, "action_feedback_mode", "baseline"),
         "provider_max_workers": provider_max_workers,
         "global_max_workers": max_workers,

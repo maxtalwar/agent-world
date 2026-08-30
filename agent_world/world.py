@@ -99,6 +99,30 @@ class WorldEngine:
                 },
                 scope="public",
             )
+        elif config.economy_mode == "organic" and config.town_ledger_seed_mode == "peer_demo":
+            for author, title, body in (
+                (
+                    "agent-2",
+                    "Wood available in the west",
+                    "Forester operating in the western forest; wood is available and food or stone is wanted.",
+                ),
+                (
+                    "agent-3",
+                    "Ore and stone in the east",
+                    "Miner operating in the eastern mountains; ore and stone are available and food or wood is wanted.",
+                ),
+            ):
+                engine.log_event(
+                    "ledger_seed_note",
+                    message=f"A synthetic peer example from {author} was placed on the town ledger.",
+                    data={
+                        "author": author,
+                        "title": title,
+                        "body": body,
+                        "synthetic": True,
+                    },
+                    scope="public",
+                )
         engine.log_event("world_created", message="World initialized", scope="public")
         return engine
 
@@ -1001,6 +1025,18 @@ class WorldEngine:
 
     def _handle_message(self, agent: Agent, message: dict[str, Any], action_points: int) -> int:
         mode = str(message.get("mode", "say"))
+        if mode == "ledger" and getattr(self.state.config, "town_ledger_output_mode", "action") == "message":
+            text = str(message.get("text", "")).strip()
+            title, separator, body = text.partition("\n")
+            if not separator:
+                body = text
+                title = "Town note"
+            action = {
+                "type": "post_ledger_note",
+                "title": title[:60],
+                "body": body[:400],
+            }
+            return self._dispatch_action(agent, action, action_points)
         action = {"type": mode, "text": message.get("text", ""), "to": message.get("to")}
         if mode not in {"say", "whisper", "broadcast"}:
             action["type"] = "say"
