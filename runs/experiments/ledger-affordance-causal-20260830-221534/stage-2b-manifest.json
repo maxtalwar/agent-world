@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "study_id": "ledger-affordance-causal-20260830-221534-stage-2b",
+  "declared_at": "2026-08-30T22:48:00Z",
+  "status": "declared",
+  "diagnostic_only": true,
+  "stage_2_results": {
+    "action5_salient_free": 1,
+    "message_salient_free": 0,
+    "message_salient_cost1": 0,
+    "bootstrap_one_action": 1,
+    "bootstrap_one_message": 1,
+    "peer_seed_action": 0,
+    "interpretation": "The dedicated message channel and meaningful cold start are insufficient. Exact action grounding plus a free fifth slot produced one spontaneous note, requiring a matched decomposition."
+  },
+  "common_config": {
+    "preset": "frontier-generalists",
+    "specialization_mode": "specialists",
+    "objective": "neutral",
+    "population": 10,
+    "ticks": 10,
+    "seed": 11,
+    "model": "gpt-5.6-luna",
+    "reasoning_effort": "medium",
+    "prompt_mode": "salient_with_exact_action_shape",
+    "output_mode": "action"
+  },
+  "cells": [
+    {"id": "action4_exact_free", "action_output_limit": 4, "ledger_cost": 0},
+    {"id": "action4_exact_cost1", "action_output_limit": 4, "ledger_cost": 1},
+    {"id": "action5_exact_cost1", "action_output_limit": 5, "ledger_cost": 1}
+  ],
+  "primary_endpoint": "agent_authored_ledger_notes",
+  "decision_rule": "Compare with action5_salient_free to identify slot, price, and exact-shape contributions before designing the deliberation intervention."
+}
