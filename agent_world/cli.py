@@ -210,6 +210,7 @@ def main(argv: list[str] | None = None) -> None:
         "--town-ledger-prompt-mode",
         choices=[
             "baseline",
+            "legacy",
             "salient",
             "mandated",
             "bootstrap_one",
@@ -219,7 +220,10 @@ def main(argv: list[str] | None = None) -> None:
             "perspective",
         ],
         default=None,
-        help="Town-ledger prompt treatment; mandated is a direct capability check.",
+        help=(
+            "Town-ledger prompt treatment; baseline uses the validated public-novelty rule "
+            "and legacy preserves the old terse prompt."
+        ),
     )
     run_parser.add_argument(
         "--town-ledger-seed-mode",

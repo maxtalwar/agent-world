@@ -282,11 +282,15 @@ class TownLedgerTests(unittest.TestCase):
 
     def test_salient_and_mandated_prompt_treatments_are_explicit(self) -> None:
         baseline = _organic_engine(names=["A1"])
+        legacy = _organic_engine(names=["A1"], town_ledger_prompt_mode="legacy")
         salient = _organic_engine(names=["A1"], town_ledger_prompt_mode="salient")
         mandated = _organic_engine(names=["A1"], town_ledger_prompt_mode="mandated")
 
         baseline_prompt = build_static_context(
             build_observation(baseline.state, "agent-1")["world"]
+        )
+        legacy_prompt = build_static_context(
+            build_observation(legacy.state, "agent-1")["world"]
         )
         salient_prompt = build_static_context(
             build_observation(salient.state, "agent-1")["world"]
@@ -295,7 +299,9 @@ class TownLedgerTests(unittest.TestCase):
             build_observation(mandated.state, "agent-1")["world"]
         )
 
-        self.assertNotIn("only durable world-global", baseline_prompt)
+        self.assertIn("durable and world-global", baseline_prompt)
+        self.assertIn("LEDGER RULE", baseline_prompt)
+        self.assertNotIn("only durable world-global", legacy_prompt)
         self.assertIn("only durable world-global", salient_prompt)
         self.assertNotIn("Capability check", salient_prompt)
         self.assertIn("Capability check", mandated_prompt)
@@ -388,7 +394,7 @@ class OrganicInterfaceGatingTests(unittest.TestCase):
         static = build_static_context(observation["world"])
         actions = {action["type"] for action in observation["valid_actions"]}
         self.assertIn("DELIVERY CONTRACTS:", static)
-        self.assertIn("TOWN LEDGER:", static)
+        self.assertIn("LEDGER RULE:", static)
         self.assertIn("propose_contract", actions)
         self.assertIn("accept_contract", actions)
         self.assertIn("town_ledger", observation)

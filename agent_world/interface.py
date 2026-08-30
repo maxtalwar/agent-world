@@ -385,6 +385,14 @@ def build_static_context(world: dict[str, Any]) -> str:
         if ledger_output_mode == "message"
         else 'add {"type":"post_ledger_note","title":"Short title","body":"Concrete body"} to actions'
     )
+    if ledger_prompt_mode == "baseline":
+        if world.get("economy_mode") == "organic":
+            lines.append(
+                'LEDGER RULE: the town ledger is durable and world-global; distant agents cannot see local facts. '
+                "When a useful specialty/resource/supply/need/offer fact is absent from recent notes, "
+                f"{ledger_submission}; do not repeat unchanged facts."
+            )
+        ledger_prompt_mode = "legacy"
     if world.get("economy_mode") == "organic" and ledger_prompt_mode in {
         "salient",
         "mandated",
@@ -548,12 +556,17 @@ def build_static_context(world: dict[str, Any]) -> str:
                 "- propose_contract names an agent or open counterparty, give/payment bundles, an absolute deadline 1-20 ticks ahead, and optional proposer collateral; proposal moves nothing.",
                 "- accept_contract escrows the buyer's full payment and the proposer's collateral; deliver_contract settles one full delivery; missed deadlines return payment and forfeit collateral.",
                 "- each agent may have at most 3 unaccepted proposals and 5 active contracts as either party; unaccepted proposals expire after 5 ticks and may be cancelled by the proposer.",
-                "",
-                "TOWN LEDGER:",
-                "- post_ledger_note appends a public world-global note (title <=60 chars, body <=400); each agent may post once per tick.",
-                "- the latest 8 notes and total note count are in town_ledger. Notes can share prices, agreements, laws, or other durable public information.",
             ]
         )
+        if world.get("town_ledger_prompt_mode", "baseline") != "baseline":
+            lines.extend(
+                [
+                    "",
+                    "TOWN LEDGER:",
+                    "- post_ledger_note appends a public world-global note (title <=60 chars, body <=400); each agent may post once per tick.",
+                    "- the latest 8 notes and total note count are in town_ledger. Notes can share prices, agreements, laws, or other durable public information.",
+                ]
+            )
     lines.append("")
     for section_name, notes in COMPACT_MECHANICS.items():
         lines.append(f"{section_name}:")
