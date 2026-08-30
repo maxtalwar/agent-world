@@ -216,6 +216,7 @@ def main(argv: list[str] | None = None) -> None:
             "reflect",
             "private_value",
             "decision_rule",
+            "perspective",
         ],
         default=None,
         help="Town-ledger prompt treatment; mandated is a direct capability check.",

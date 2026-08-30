@@ -327,7 +327,7 @@ class TownLedgerTests(unittest.TestCase):
 
     def test_reflection_value_and_decision_rule_prompts_are_non_mandatory(self) -> None:
         prompts = {}
-        for mode in ("reflect", "private_value", "decision_rule"):
+        for mode in ("reflect", "private_value", "decision_rule", "perspective"):
             engine = _organic_engine(names=["A1"], town_ledger_prompt_mode=mode)
             prompts[mode] = build_static_context(
                 build_observation(engine.state, "agent-1")["world"]
@@ -338,6 +338,8 @@ class TownLedgerTests(unittest.TestCase):
         self.assertIn("your own long-term resilience", prompts["private_value"])
         self.assertIn("Ledger decision rule", prompts["decision_rule"])
         self.assertIn("Do not repeat unchanged information", prompts["decision_rule"])
+        self.assertIn("agents beyond local range cannot see", prompts["perspective"])
+        self.assertIn("not by whether you personally already know it", prompts["perspective"])
         self.assertNotIn("Capability check", "\n".join(prompts.values()))
 
     def test_request_seed_asks_for_actionable_reports_without_counting_as_agent_post(self) -> None:

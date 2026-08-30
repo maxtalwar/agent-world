@@ -110,11 +110,11 @@ class WorldConfig:
             raise ValueError("action_feedback_mode must be baseline, causal, minimal, or none")
         if self.town_ledger_prompt_mode not in {
             "baseline", "salient", "mandated", "bootstrap_one",
-            "reflect", "private_value", "decision_rule",
+            "reflect", "private_value", "decision_rule", "perspective",
         }:
             raise ValueError(
                 "town_ledger_prompt_mode must be baseline, salient, mandated, bootstrap_one, "
-                "reflect, private_value, or decision_rule"
+                "reflect, private_value, decision_rule, or perspective"
             )
         if self.town_ledger_seed_mode not in {"none", "demo", "peer_demo", "request"}:
             raise ValueError("town_ledger_seed_mode must be none, demo, peer_demo, or request")

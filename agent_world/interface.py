@@ -392,6 +392,7 @@ def build_static_context(world: dict[str, Any]) -> str:
         "reflect",
         "private_value",
         "decision_rule",
+        "perspective",
     }:
         lines.append(
             "The town ledger is the only durable world-global communication channel. "
@@ -428,6 +429,13 @@ def build_static_context(world: dict[str, Any]) -> str:
             "Ledger decision rule: when your specialty, a concrete resource location, a current supply, "
             "an unmet need, or an offer is useful beyond your local area and is not already represented "
             f"in recent notes, {ledger_submission}. Do not repeat unchanged information."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "perspective":
+        lines.append(
+            "Information perspective: agents beyond local range cannot see your specialty, local map, "
+            "inventory, nearby speech, or private observations. A fact familiar to you may still be new "
+            "to the town; judge public novelty by whether the concrete fact is already represented in "
+            "recent ledger notes, not by whether you personally already know it."
         )
     lines.append("")
     lines.append(
