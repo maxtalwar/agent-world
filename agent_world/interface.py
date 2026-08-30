@@ -383,7 +383,7 @@ def build_static_context(world: dict[str, Any]) -> str:
     ledger_submission = (
         'add {"mode":"ledger","text":"Short title\\nConcrete body","to":""} to messages'
         if ledger_output_mode == "message"
-        else "include a post_ledger_note action"
+        else 'add {"type":"post_ledger_note","title":"Short title","body":"Concrete body"} to actions'
     )
     if world.get("economy_mode") == "organic" and ledger_prompt_mode in {
         "salient",

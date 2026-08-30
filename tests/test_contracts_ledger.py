@@ -323,6 +323,7 @@ class TownLedgerTests(unittest.TestCase):
         self.assertIn("to messages", message_prompt)
         self.assertIn("only if self.id is agent-1 and tick is 0", bootstrap_prompt)
         self.assertIn("All other posting remains your choice", bootstrap_prompt)
+        self.assertIn('"title":"Short title"', bootstrap_prompt)
 
     def test_codex_schema_treatments_are_conditional(self) -> None:
         with patch.dict(

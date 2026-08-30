@@ -304,7 +304,7 @@ class CodexBrain:
                 return _failure_decision(f"Codex boundary failed: {detail}")
             attribution = attribute_decision_failure(
                 response_text,
-                CODEX_AGENT_DECISION_SCHEMA,
+                _codex_agent_decision_schema(),
                 codex_nested_arguments=True,
             )
             if attribution.origin == "model_output":
