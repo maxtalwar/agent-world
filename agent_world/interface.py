@@ -389,6 +389,9 @@ def build_static_context(world: dict[str, Any]) -> str:
         "salient",
         "mandated",
         "bootstrap_one",
+        "reflect",
+        "private_value",
+        "decision_rule",
     }:
         lines.append(
             "The town ledger is the only durable world-global communication channel. "
@@ -407,6 +410,24 @@ def build_static_context(world: dict[str, Any]) -> str:
             f"One-time institutional bootstrap: only if self.id is agent-1 and tick is 0, "
             f"{ledger_submission} with your specialty and one concrete local resource fact. "
             "All other posting remains your choice."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "reflect":
+        lines.append(
+            "Decision audit: begin intent with LEDGER POST or LEDGER SKIP and briefly state "
+            "whether you currently have novel information whose value to nonlocal agents "
+            "justifies a durable update. Posting remains your choice."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "private_value":
+        lines.append(
+            "Distant complementary agents cannot discover your specialty, supplies, or needs "
+            "through local speech. Durable discovery can bring you trade, materials, and aid, "
+            "so treat a concise ledger update as part of your own long-term resilience when it is novel."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "decision_rule":
+        lines.append(
+            "Ledger decision rule: when your specialty, a concrete resource location, a current supply, "
+            "an unmet need, or an offer is useful beyond your local area and is not already represented "
+            f"in recent notes, {ledger_submission}. Do not repeat unchanged information."
         )
     lines.append("")
     lines.append(

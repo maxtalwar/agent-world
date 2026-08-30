@@ -208,13 +208,21 @@ def main(argv: list[str] | None = None) -> None:
     )
     run_parser.add_argument(
         "--town-ledger-prompt-mode",
-        choices=["baseline", "salient", "mandated", "bootstrap_one"],
+        choices=[
+            "baseline",
+            "salient",
+            "mandated",
+            "bootstrap_one",
+            "reflect",
+            "private_value",
+            "decision_rule",
+        ],
         default=None,
         help="Town-ledger prompt treatment; mandated is a direct capability check.",
     )
     run_parser.add_argument(
         "--town-ledger-seed-mode",
-        choices=["none", "demo", "peer_demo"],
+        choices=["none", "demo", "peer_demo", "request"],
         default=None,
         help="Cold-start treatment that optionally places a founding note in the ledger.",
     )

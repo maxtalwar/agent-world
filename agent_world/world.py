@@ -123,6 +123,20 @@ class WorldEngine:
                     },
                     scope="public",
                 )
+        elif config.economy_mode == "organic" and config.town_ledger_seed_mode == "request":
+            engine.log_event(
+                "ledger_seed_note",
+                message="The town requested concrete local reports on the ledger.",
+                data={
+                    "author": "town",
+                    "title": "Request for local reports",
+                    "body": (
+                        "Please report a specialty, useful resource location, supply, or unmet need "
+                        "that distant agents could act on. Avoid repeating existing reports."
+                    ),
+                },
+                scope="public",
+            )
         engine.log_event("world_created", message="World initialized", scope="public")
         return engine
 

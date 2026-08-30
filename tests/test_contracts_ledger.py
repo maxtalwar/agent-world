@@ -325,6 +325,32 @@ class TownLedgerTests(unittest.TestCase):
         self.assertIn("All other posting remains your choice", bootstrap_prompt)
         self.assertIn('"title":"Short title"', bootstrap_prompt)
 
+    def test_reflection_value_and_decision_rule_prompts_are_non_mandatory(self) -> None:
+        prompts = {}
+        for mode in ("reflect", "private_value", "decision_rule"):
+            engine = _organic_engine(names=["A1"], town_ledger_prompt_mode=mode)
+            prompts[mode] = build_static_context(
+                build_observation(engine.state, "agent-1")["world"]
+            )
+
+        self.assertIn("LEDGER POST or LEDGER SKIP", prompts["reflect"])
+        self.assertIn("Posting remains your choice", prompts["reflect"])
+        self.assertIn("your own long-term resilience", prompts["private_value"])
+        self.assertIn("Ledger decision rule", prompts["decision_rule"])
+        self.assertIn("Do not repeat unchanged information", prompts["decision_rule"])
+        self.assertNotIn("Capability check", "\n".join(prompts.values()))
+
+    def test_request_seed_asks_for_actionable_reports_without_counting_as_agent_post(self) -> None:
+        engine = _organic_engine(names=["A1"], town_ledger_seed_mode="request")
+        ledger = build_dynamic_observation(
+            build_observation(engine.state, "agent-1")
+        )["town_ledger"]
+
+        self.assertEqual(ledger["total_count"], 1)
+        self.assertEqual(ledger["recent_notes"][0]["title"], "Request for local reports")
+        self.assertIn("distant agents", ledger["recent_notes"][0]["body"])
+        self.assertFalse(any(event.type == "ledger_note" for event in engine.state.events))
+
     def test_codex_schema_treatments_are_conditional(self) -> None:
         with patch.dict(
             os.environ,
