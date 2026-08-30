@@ -22,6 +22,47 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-08-30 — Agents mistook private familiarity for public knowledge until the prompt supplied a decision trigger
+
+**The town ledger's zero-use failure was not mechanical or a model-capability
+limit: agents omitted the optional institution from planning and, when forced
+to evaluate it, usually called their private local facts “not novel” even
+though the public ledger was empty.** Before intervention, 27 preserved organic
+reports spanning Luna, Sol, Grok 4.5/4.6, and DeepSeek variants contained 8,684
+decisions and zero authored ledger notes. In a matched eight-cell Luna screen,
+salience, zero AP cost, a collective objective, generic social proof, realistic
+peer examples, charging local speech, and the combined salience/free/seeded
+treatment all remained at zero; a mandated positive control produced 25 notes,
+proving the action and model capability were intact.
+
+The decisive diagnostic asked agents to begin their intent with LEDGER POST or
+LEDGER SKIP while leaving posting optional. At tick 0, nine of ten said they
+had no novel nonlocal information despite an empty board and private
+specialty/resource observations. Reflection alone produced 9 notes from 7
+authors; explaining private discovery/trade value produced 19 from all 10;
+defining novelty operationally against recent public notes produced 23 from all
+10. Perspective documentation by itself still produced 0/100 whether posting
+cost one AP or zero: the knowledge had to be coupled to a decision condition.
+Under the original four-action, one-AP mechanics, the rule produced 24/100 Luna
+notes from all 10 authors versus 0 in the exact-shape control.
+
+This generalized to the stronger model and unlocked a second institution. A
+matched Sol baseline produced 1 note by 1 author and no contract events; the
+rule produced 29 notes by all 10, 6 contracts proposed, 4 accepted, and 3
+settled. Notes carried moving/depleted fishing sites, a retracted false water
+coordinate, farm and artisan needs, offers, and live contract status. A longer
+20-agent Luna cell sustained 141 notes from all 20 over 500 decisions and 23 of
+25 ticks (130 unique author/title pairs), while compact production wording
+produced 18 notes from all 10 agents for both Luna and Sol with zero decision
+failures. The implemented fix keeps the original mechanics, adds an exact
+public-novelty decision rule to the default organic prompt, preserves the old
+behavior as `legacy`, and remains within the static-context budget at 7,678
+characters. This causally refines the 2026-08-02 “failure is in the affordance”
+entry below: that conclusion was directionally right, but action count and
+protocol complexity were not the primary mechanism.
+Evidence: `docs/ledger-affordance-causal-study.md` and
+`runs/experiments/ledger-affordance-causal-20260830-221534/`.
+
 ## 2026-08-26 — Strict terminal validation separated Grok 4.5's tool-seeking from harness contamination
 
 **After the connector began accepting only `end_turn`, a matched seed-11
@@ -441,6 +482,15 @@ two runs, **zero mention contracts, the ledger, deadlines, or promises at
 all**. The agents are not weighing the instrument and rejecting it, nor
 negotiating deals they then fail to formalize. It is simply absent from their
 conception of the world while they talk constantly about immediate exchange.
+
+**2026-08-30 causal update:** The non-adoption and absence-from-deliberation
+measurements stand, but the proposed mechanism below was incomplete. A 30-cell
+causal campaign found that AP price, action slots, output category, salience,
+and cold start were not sufficient explanations. The dominant failure was
+option neglect plus self-relative novelty: when forced to evaluate an empty
+ledger, nine of ten agents said their private local facts were not novel. A
+conditional public-novelty rule raised matched Sol adoption from 1 to 29 notes
+and activated 6 contract proposals, 4 acceptances, and 3 settlements.
 
 This answers the question the Sol cell was run to settle. Non-adoption is
 **not** a capability threshold — Sol is clearly the stronger agent here, with
