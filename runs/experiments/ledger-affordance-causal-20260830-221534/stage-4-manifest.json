@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "study_id": "ledger-affordance-causal-20260830-221534-stage-4",
+  "declared_at": "2026-08-30T23:04:00Z",
+  "status": "declared",
+  "diagnostic_only": true,
+  "stage_3_results": {
+    "reflect": {"notes": 9, "authors": 7},
+    "private_value": {"notes": 19, "authors": 10},
+    "decision_rule": {"notes": 23, "authors": 10},
+    "request": {"notes": 10, "authors": 10},
+    "reflection_finding": "At tick 0, nine of ten agents said they had no novel nonlocal information despite an empty ledger and private local observations. The model judged novelty relative to its own knowledge rather than the town's public knowledge.",
+    "content_finding": "Decision-rule notes were concrete and mostly non-repetitive: specialties and coordinates at ticks 0-1, then newly encountered resource coordinates at ticks 5-9.",
+    "interpretation": "The dominant cause is failure to represent information asymmetry and operationalize public novelty. Motivation matters; an external request creates one-shot compliance but not continued use."
+  },
+  "hypotheses": [
+    {
+      "id": "H12",
+      "claim": "A minimal information-perspective clarification is sufficient under the original ledger cost and action limit.",
+      "prediction": "Perspective at four action slots and one AP will exceed exact-shape-only control, which scored zero."
+    },
+    {
+      "id": "H13",
+      "claim": "If perspective alone is insufficient, cost is the remaining suppressor.",
+      "prediction": "Perspective with zero AP will exceed perspective with one AP."
+    },
+    {
+      "id": "H14",
+      "claim": "A conditional public-novelty rule remains effective despite original friction.",
+      "prediction": "Decision-rule at four slots and one AP will preserve useful adoption without forcing every tick."
+    }
+  ],
+  "common_config": {
+    "preset": "frontier-generalists",
+    "specialization_mode": "specialists",
+    "objective": "neutral",
+    "population": 10,
+    "ticks": 10,
+    "seed": 11,
+    "model": "gpt-5.6-luna",
+    "reasoning_effort": "medium",
+    "ledger_output_mode": "action",
+    "action_output_limit": 4,
+    "exact_action_shape": true,
+    "seed_mode": "none"
+  },
+  "cells": [
+    {"id": "perspective_original", "prompt_mode": "perspective", "ledger_cost": 1},
+    {"id": "perspective_free", "prompt_mode": "perspective", "ledger_cost": 0},
+    {"id": "decision_rule_original", "prompt_mode": "decision_rule", "ledger_cost": 1},
+    {"id": "private_value_original", "prompt_mode": "private_value", "ledger_cost": 1}
+  ],
+  "control_reference": {"id": "action4_exact_cost1", "notes": 0, "decisions": 100},
+  "follow_up_rule": "Select the least directive intervention with broad, useful adoption; replicate it against original baseline on Sol and in a longer Luna world."
+}
