@@ -194,6 +194,30 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Agent-facing failed-action feedback treatment. Defaults to baseline.",
     )
+    run_parser.add_argument(
+        "--communication-action-cost",
+        type=int,
+        default=None,
+        help="Override speech/broadcast action-point cost for an explicit experiment treatment.",
+    )
+    run_parser.add_argument(
+        "--town-ledger-action-cost",
+        type=int,
+        default=None,
+        help="Override post_ledger_note action-point cost; defaults to 1.",
+    )
+    run_parser.add_argument(
+        "--town-ledger-prompt-mode",
+        choices=["baseline", "salient", "mandated"],
+        default=None,
+        help="Town-ledger prompt treatment; mandated is a direct capability check.",
+    )
+    run_parser.add_argument(
+        "--town-ledger-seed-mode",
+        choices=["none", "demo"],
+        default=None,
+        help="Cold-start treatment that optionally places a founding note in the ledger.",
+    )
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
     run_parser.add_argument(
         "--startup-health-check-tick",
@@ -600,6 +624,10 @@ def _run(args: argparse.Namespace) -> None:
             geography_mode=getattr(args, "geography_mode", "shared_oasis"),
             specialization_mode=getattr(args, "specialization_mode", "generalists"),
             action_feedback_mode=getattr(args, "action_feedback_mode", None) or "baseline",
+            communication_action_cost=getattr(args, "communication_action_cost", None),
+            town_ledger_action_cost=getattr(args, "town_ledger_action_cost", None) if getattr(args, "town_ledger_action_cost", None) is not None else 1,
+            town_ledger_prompt_mode=getattr(args, "town_ledger_prompt_mode", None) or "baseline",
+            town_ledger_seed_mode=getattr(args, "town_ledger_seed_mode", None) or "none",
             world_variant=getattr(args, "world_variant", None) or "classic",
         )
         names = [f"Agent {index + 1}" for index in range(args.agents)]
@@ -721,6 +749,10 @@ def _run(args: argparse.Namespace) -> None:
         "turn_resolution": (
             "sequential" if args.sequential_decisions else "simultaneous"
         ),
+        "communication_action_cost": engine.state.config.communication_cost(),
+        "town_ledger_action_cost": engine.state.config.town_ledger_action_cost,
+        "town_ledger_prompt_mode": engine.state.config.town_ledger_prompt_mode,
+        "town_ledger_seed_mode": engine.state.config.town_ledger_seed_mode,
         "action_feedback_mode": getattr(engine.state.config, "action_feedback_mode", "baseline"),
         "provider_max_workers": provider_max_workers,
         "global_max_workers": max_workers,

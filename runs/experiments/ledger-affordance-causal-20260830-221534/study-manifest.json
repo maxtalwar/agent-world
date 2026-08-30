@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0",
+  "study_id": "ledger-affordance-causal-20260830-221534",
+  "declared_at": "2026-08-30T22:15:34Z",
+  "run_kind": "experiment",
+  "status": "declared",
+  "diagnostic_only": true,
+  "question": "Why do capable organic agents fail to adopt the town ledger, and what is the smallest intervention that produces voluntary, instrumentally useful adoption?",
+  "prior_evidence": {
+    "preserved_organic_reports": 27,
+    "preserved_decisions": 8684,
+    "authored_ledger_notes": 0,
+    "model_families": ["gpt-5.6-luna", "gpt-5.6-sol", "grok-4.5", "grok-4.6", "deepseek-v4-flash"],
+    "mechanics_audit": "The action is present in retained prompts and executes correctly in unit tests. Public speech is prominent and free; the persistent global ledger is the last regular action and costs one of four action points."
+  },
+  "hypotheses": [
+    {
+      "id": "H0",
+      "claim": "The ledger is mechanically broken or absent from model-visible context.",
+      "prediction": "A direct capability instruction will not reliably produce observable notes.",
+      "status_before_run": "mostly_falsified_by_audit"
+    },
+    {
+      "id": "H1",
+      "claim": "The model can comply, but overlooks the affordance because its unique utility is not salient.",
+      "prediction": "A concise explanation near the objective will increase voluntary posting over baseline."
+    },
+    {
+      "id": "H2",
+      "claim": "The one-action-point opportunity cost makes free local messaging dominate the ledger.",
+      "prediction": "Making ledger posts free, or equalizing messaging and ledger costs, will increase adoption."
+    },
+    {
+      "id": "H3",
+      "claim": "An empty ledger creates a cold-start and social-proof failure.",
+      "prediction": "A system-authored founding note will increase agent-authored notes."
+    },
+    {
+      "id": "H4",
+      "claim": "Neutral survival incentives do not create a strong enough need for durable global coordination.",
+      "prediction": "The collective objective will increase adoption."
+    },
+    {
+      "id": "H5",
+      "claim": "No single factor is sufficient, but salience, zero marginal cost, and social proof jointly unlock adoption.",
+      "prediction": "The combined treatment will produce the strongest adoption."
+    }
+  ],
+  "stage_1": {
+    "design": "matched_mechanism_screen",
+    "common_config": {
+      "preset": "frontier-generalists",
+      "specialization_mode": "specialists",
+      "objective": "neutral unless overridden by cell",
+      "population": 10,
+      "ticks": 10,
+      "seed": 11,
+      "width": 16,
+      "height": 16,
+      "brain": "codex",
+      "model": "gpt-5.6-luna",
+      "reasoning_effort": "medium",
+      "connector_profile": "stateless-v3",
+      "conversation_mode": "stateless",
+      "decision_mode": "raw",
+      "action_feedback_mode": "baseline",
+      "max_workers_per_cell": 10,
+      "startup_health_check_tick": 5,
+      "startup_health_max_failure_rate": 0.2,
+      "quota_wait_hours": 12
+    },
+    "rationale": "Ten matched ticks detect first adoption cheaply; follow-ups test persistence and frontier-model generalization.",
+    "cells": [
+      {"id": "baseline", "objective": "neutral", "ledger_cost": 1, "message_cost": 0, "prompt_mode": "baseline", "seed_mode": "none"},
+      {"id": "collective", "objective": "collective", "ledger_cost": 1, "message_cost": 0, "prompt_mode": "baseline", "seed_mode": "none"},
+      {"id": "free_ledger", "objective": "neutral", "ledger_cost": 0, "message_cost": 0, "prompt_mode": "baseline", "seed_mode": "none"},
+      {"id": "seeded_demo", "objective": "neutral", "ledger_cost": 1, "message_cost": 0, "prompt_mode": "baseline", "seed_mode": "demo"},
+      {"id": "salient", "objective": "neutral", "ledger_cost": 1, "message_cost": 0, "prompt_mode": "salient", "seed_mode": "none"},
+      {"id": "equalized_cost", "objective": "neutral", "ledger_cost": 1, "message_cost": 1, "prompt_mode": "baseline", "seed_mode": "none"},
+      {"id": "mandated_capability", "objective": "neutral", "ledger_cost": 1, "message_cost": 0, "prompt_mode": "mandated", "seed_mode": "none"},
+      {"id": "combined", "objective": "neutral", "ledger_cost": 0, "message_cost": 0, "prompt_mode": "salient", "seed_mode": "demo"}
+    ]
+  },
+  "primary_endpoints": ["agent_authored_ledger_notes", "unique_ledger_authors", "first_agent_note_tick", "notes_per_100_decisions"],
+  "secondary_endpoints": ["note_content_and_instrumental_relevance", "later_references_or_responses_to_notes", "messages_and_broadcasts", "contracts_and_trade", "survival_and_completion"],
+  "readiness_requirements": {
+    "expected_decisions_per_cell": 100,
+    "usage_completeness": 1.0,
+    "exact_model_match": true,
+    "retained_raw_io": true,
+    "transfer_accounting": "not_required_no_economic_outcome_claim"
+  },
+  "follow_up_rule": "Use matched ablations around the best non-mandated cell, then replicate the smallest sufficient intervention on gpt-5.6-sol and in a longer Luna world."
+}

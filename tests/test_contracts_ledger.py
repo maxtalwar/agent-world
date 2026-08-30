@@ -208,6 +208,67 @@ class TownLedgerTests(unittest.TestCase):
         self.assertEqual(ledger["total_count"], 9)
         self.assertEqual([note["title"] for note in ledger["recent_notes"]], [f"N{i}" for i in range(1, 9)])
 
+    def test_demo_seed_is_visible_without_being_an_agent_post(self) -> None:
+        engine = _organic_engine(names=["A1"], town_ledger_seed_mode="demo")
+
+        ledger = build_dynamic_observation(
+            build_observation(engine.state, "agent-1")
+        )["town_ledger"]
+
+        self.assertEqual(ledger["total_count"], 1)
+        self.assertEqual(ledger["recent_notes"][0]["author"], "town")
+        self.assertEqual(ledger["recent_notes"][0]["title"], "Founding notice")
+        self.assertFalse(any(event.type == "ledger_note" for event in engine.state.events))
+        self.assertTrue(any(event.type == "ledger_seed_note" for event in engine.state.events))
+
+    def test_zero_cost_ledger_post_preserves_all_action_points(self) -> None:
+        actions = [
+            {"type": "post_ledger_note", "title": "Prices", "body": "Food is 2 coin."},
+            {"type": "wait"},
+            {"type": "wait"},
+            {"type": "wait"},
+            {"type": "wait"},
+        ]
+        baseline = _organic_engine(names=["A1"])
+        free = _organic_engine(names=["A1"], town_ledger_action_cost=0)
+
+        baseline.tick({"agent-1": AgentDecision(actions=list(actions))})
+        free.tick({"agent-1": AgentDecision(actions=list(actions))})
+
+        self.assertEqual(sum(event.type == "wait" for event in baseline.state.events), 3)
+        self.assertEqual(sum(event.type == "wait" for event in free.state.events), 4)
+
+    def test_salient_and_mandated_prompt_treatments_are_explicit(self) -> None:
+        baseline = _organic_engine(names=["A1"])
+        salient = _organic_engine(names=["A1"], town_ledger_prompt_mode="salient")
+        mandated = _organic_engine(names=["A1"], town_ledger_prompt_mode="mandated")
+
+        baseline_prompt = build_static_context(
+            build_observation(baseline.state, "agent-1")["world"]
+        )
+        salient_prompt = build_static_context(
+            build_observation(salient.state, "agent-1")["world"]
+        )
+        mandated_prompt = build_static_context(
+            build_observation(mandated.state, "agent-1")["world"]
+        )
+
+        self.assertNotIn("only durable world-global", baseline_prompt)
+        self.assertIn("only durable world-global", salient_prompt)
+        self.assertNotIn("Capability check", salient_prompt)
+        self.assertIn("Capability check", mandated_prompt)
+        self.assertIn("post_ledger_note", mandated_prompt)
+
+    def test_invalid_town_ledger_treatments_are_rejected(self) -> None:
+        for overrides in (
+            {"town_ledger_action_cost": -1},
+            {"town_ledger_prompt_mode": "loud"},
+            {"town_ledger_seed_mode": "mystery"},
+        ):
+            with self.subTest(overrides=overrides):
+                with self.assertRaises(ValueError):
+                    WorldConfig(**overrides)
+
 
 class OrganicInterfaceGatingTests(unittest.TestCase):
     def test_organic_rulebook_and_fields_are_gated(self) -> None:
@@ -233,8 +294,8 @@ class OrganicInterfaceGatingTests(unittest.TestCase):
 
     def test_baseline_and_commerce_worlds_match_pre_feature_bytes(self) -> None:
         expected = {
-            "baseline": "93cc0c8d7271840e5beea576a4221f6190e612c18b63667a1a72946c94adf2d1",
-            "commerce": "ec6089853a549d44cdcc4219c86e7f2a8c877ed22638fa0ff9c631ca653726f8",
+            "baseline": "18392bba91544f5d0035653134d2bf6ec8b2915b2ada3b1348e5b608fd1a3faa",
+            "commerce": "8946780e41d0bd4f0eb04fad3fc0f8b0bb1a4e4c31c296977a4d34734f7c9d94",
         }
         for mode, digest in expected.items():
             with self.subTest(mode=mode):

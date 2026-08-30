@@ -88,6 +88,17 @@ class WorldEngine:
         engine = cls(state)
         for index, name in enumerate(agent_names or []):
             engine.spawn_agent(name=name, agent_id=f"agent-{index + 1}")
+        if config.economy_mode == "organic" and config.town_ledger_seed_mode == "demo":
+            engine.log_event(
+                "ledger_seed_note",
+                message="A founding notice was posted to the town ledger.",
+                data={
+                    "author": "town",
+                    "title": "Founding notice",
+                    "body": "The town ledger is open for durable reports from across the map.",
+                },
+                scope="public",
+            )
         engine.log_event("world_created", message="World initialized", scope="public")
         return engine
 
@@ -281,6 +292,10 @@ class WorldEngine:
 
     def _is_free_action(self, action: dict[str, Any]) -> bool:
         action_type = str(action.get("type", "")).strip()
+        if action_type == "post_ledger_note":
+            return (
+                getattr(self.state.config, "town_ledger_action_cost", 1) == 0
+            )
         return action_type in FREE_ACTION_TYPES and self._coordination_action_cost(action_type) == 0
 
     def _coordination_action_cost(self, action_type: str) -> int:
@@ -1528,7 +1543,7 @@ class WorldEngine:
             data={"author": agent.id, "tick": self.state.tick, "title": title, "body": body},
             scope="public",
         )
-        return action_points - 1
+        return action_points - getattr(self.state.config, "town_ledger_action_cost", 1)
 
     def _action_repay_contract(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         contract = self.state.contracts.get(str(action.get("contract_id", "")))

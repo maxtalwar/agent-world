@@ -138,7 +138,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "body": event.data.get("body", ""),
         }
         for event in state.events
-        if event.type == "ledger_note"
+        if event.type in {"ledger_note", "ledger_seed_note"}
     ]
     return {
         "tick": state.tick,
@@ -161,6 +161,9 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             # not itself described to model-backed agents.
             "action_feedback_mode": feedback_mode,
             "communication_action_cost": getattr(state.config, "communication_cost", lambda: 0)(),
+            "town_ledger_action_cost": getattr(state.config, "town_ledger_action_cost", 1),
+            "town_ledger_prompt_mode": getattr(state.config, "town_ledger_prompt_mode", "baseline"),
+            "town_ledger_seed_mode": getattr(state.config, "town_ledger_seed_mode", "none"),
             "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
             "trade_settlement": (
                 "physical_meeting_at_escrow_position"
@@ -374,6 +377,20 @@ def build_static_context(world: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.extend(_prompt_rules(world))
     lines.append(objective_instruction(world))
+    ledger_prompt_mode = str(world.get("town_ledger_prompt_mode", "baseline"))
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode in {"salient", "mandated"}:
+        lines.append(
+            "The town ledger is the only durable world-global communication channel. "
+            "Every living agent can read its recent notes from anywhere on later ticks. "
+            "Use post_ledger_note for information that should outlive recent events or "
+            "reach agents beyond local speech and broadcast range; use free-form messages "
+            "for immediate local conversation."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "mandated":
+        lines.append(
+            "Capability check: on tick 0, include one post_ledger_note action that states "
+            "your specialty or intended role and one useful resource fact."
+        )
     lines.append("")
     lines.append(
         f"WORLD: {world.get('width', '?')}x{world.get('height', '?')} grid, visible radius {world.get('visible_radius', '?')}, "
@@ -444,6 +461,8 @@ def build_static_context(world: dict[str, Any]) -> str:
         action_points = cost.get("action_points", 0)
         if action_type in COMMUNICATION_ACTION_TYPES:
             action_points = world.get("communication_action_cost", action_points)
+        elif action_type == "post_ledger_note":
+            action_points = world.get("town_ledger_action_cost", action_points)
         elif action_type in GROUP_ADMIN_ACTION_TYPES:
             action_points = world.get("group_admin_action_cost", action_points)
         energy = cost.get("energy", 0)

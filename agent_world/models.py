@@ -80,6 +80,12 @@ class WorldConfig:
     # society formation merely because the action budget is coarse.
     communication_action_cost: int | None = None
     group_admin_action_cost: int | None = None
+    # Experimental controls for the organic-world town ledger. The defaults
+    # preserve the original affordance exactly: one action point, an empty
+    # ledger, and the compact baseline description.
+    town_ledger_action_cost: int = 1
+    town_ledger_prompt_mode: str = "baseline"
+    town_ledger_seed_mode: str = "none"
     # Frontier world variant: seasons, storms, exposure, roads, irrigation.
     # "classic" leaves every prior preset byte-identical.
     world_variant: str = "classic"
@@ -101,6 +107,12 @@ class WorldConfig:
             raise ValueError("objective_mode must be neutral, collective, or individual")
         if self.action_feedback_mode not in {"baseline", "causal", "minimal", "none"}:
             raise ValueError("action_feedback_mode must be baseline, causal, minimal, or none")
+        if self.town_ledger_prompt_mode not in {"baseline", "salient", "mandated"}:
+            raise ValueError("town_ledger_prompt_mode must be baseline, salient, or mandated")
+        if self.town_ledger_seed_mode not in {"none", "demo"}:
+            raise ValueError("town_ledger_seed_mode must be none or demo")
+        if self.town_ledger_action_cost < 0:
+            raise ValueError("town_ledger_action_cost cannot be negative")
         for name in ("communication_action_cost", "group_admin_action_cost"):
             value = getattr(self, name)
             if value is not None and value < 0:
