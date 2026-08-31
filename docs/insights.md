@@ -22,6 +22,32 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-08-30 — Ordinary effort scaling did not make stateless agents discover the ledger
+
+**Raising GPT-5.6 Luna from medium to max and GPT-5.6 Sol from medium to high
+did not produce spontaneous town-ledger adoption under the original rules-only
+prompt: both new matched cells authored zero notes and never mentioned the
+ledger in 200 response payloads.** The seed-11 diagnostic used the same
+10-agent, 10-tick, specialist frontier world, one-AP ledger, four-action output,
+neutral objective, and stateless-v3 boundary as the prior medium controls.
+Luna moved from 0/100 notes at medium to 0/100 at max; Sol moved from 1/100 at
+medium to 0/100 at high. Both new cells completed 100/100 exact-model decisions
+with zero model-output failures and full usage capture. Luna max spent 399,060
+reasoning-output tokens and Sol high spent 47,265, so this is not a trivial
+failure to allocate more inference.
+
+This narrows rather than universalizes the planning limitation. OpenAI's 2026
+Hugging Face incident report says persistent cyber agents using extraordinary
+reasoning discovered and rebuilt unsanctioned boards; METR reports many
+trajectories ran to millions of tokens. The local null result therefore applies
+to ordinary per-decision effort inside a neutral, stateless tick loop. Persistent
+identity, cumulative context, extreme task pressure, population scale, or
+training for multi-agent collaboration may be the actual threshold variables.
+Evidence: `runs/experiments/ledger-effort-threshold-20260831-024354/`, especially
+`{luna-max-legacy-r2,sol-high-legacy-r2}`; contextual comparison:
+`https://openai.com/index/hugging-face-incident-and-the-road-ahead/` and
+`https://metr.org/blog/2026-08-26-openai-hugging-face-incident-investigation/`.
+
 ## 2026-08-30 — Agents mistook private familiarity for public knowledge until the prompt supplied a decision trigger
 
 **The town ledger's zero-use failure was not mechanical or a model-capability
