@@ -45,7 +45,7 @@ directory.
 
 - `agent_world/world.py`: source-of-truth world engine and action validation.
 - `agent_world/rules.py`: resources, terrain, recipes, action schema, and structure rules.
-- `agent_world/maps.py`: canonical handcrafted 16x16 world map.
+- `agent_world/maps.py`: canonical handcrafted 16x16 and 32x32 world maps.
 - `agent_world/interface.py`: per-agent observation and neutral prompt construction.
 - `agent_world/openrouter_brain.py`: OpenRouter-backed `AgentBrain` with retry/throttle handling.
 - `agent_world/codex_brain.py`: ChatGPT-plan-backed `AgentBrain` using isolated `codex exec` decisions.
@@ -56,10 +56,17 @@ directory.
 - `agent_world/observer.py`: local web observatory for live/replay visualization.
 - `agent_world/metrics.py`: aggregate run metrics and diagnostics.
 - `agent_world/run_report.py`: per-run structured data export (`-report.json`/`-report.md`) and cross-run comparison.
+- `agent_world/benchmark_db.py`: builds and queries the durable cross-model
+  SQLite capability database from frozen benchmark artifacts.
 - `agent_world/experiments.py`: reproducible multi-seed environment × objective experiments with provenance manifests and paired contrasts.
 - `tests/`: regression coverage for world rules, maps, observer, and provider adapters.
 - `docs/`: design notes and future handoff context.
 - `docs/insights.md`: the insights journal — dated, evidence-backed record of model quirks and emergent behaviors discovered across runs. Agents append to it whenever a result would surprise someone who has read every leaderboard.
+- `docs/model-leaderboard.md`: the canonical complete model-selection table,
+  including competence ranking, reasoning use, API-list-equivalent cost, and
+  clearly marked controlled variants.
+- `docs/model-metrics-database.md`: schema, latency definitions, query examples,
+  and maintenance instructions for `data/model-benchmarks.sqlite`.
 
 ## LLM Agents
 
@@ -82,13 +89,13 @@ OPENROUTER_MAX_OUTPUT_TOKENS=8000
 OPENROUTER_REASONING_EFFORT=medium
 OPENROUTER_MAX_RETRIES=4
 OPENROUTER_MIN_REQUEST_INTERVAL_SECONDS=0.5
-OPENROUTER_MAX_PARALLEL_AGENTS=1
+OPENROUTER_MAX_PARALLEL_AGENTS=4
 SSL_CERT_FILE=/etc/ssl/cert.pem
 ```
 
-OpenRouter runs default to one request at a time to avoid token-per-minute
-bursts. Increase `OPENROUTER_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
-if your rate limits can handle it. Cost knobs include
+Ordinary runs default to four concurrent decisions. Change
+`OPENROUTER_MAX_PARALLEL_AGENTS` or pass `--max-workers` only when a different
+account or host limit has been measured. Cost knobs include
 `OPENROUTER_REASONING_EFFORT` and `OPENROUTER_MAX_OUTPUT_TOKENS`.
 If the API returns hard quota/credit exhaustion, the run stops early and reports `quota_failures` so the log is not mistaken for agent behavior.
 
@@ -137,9 +144,13 @@ outside the repository, and constrains the final response to an equivalent
 strict decision contract that the adapter normalizes back to Agent World's flat
 action shape.
 Codex-plan results should be labeled separately from raw API results because the
-Codex harness adds its own runtime instructions. Runs default to one concurrent
-Codex decision; raise `CODEX_MAX_PARALLEL_AGENTS` or pass `--max-workers` only
-after benchmarking account limits and host load.
+Codex harness adds its own runtime instructions. Ordinary runs default to a
+four-worker global pool. Provider ceilings inside a larger pool default to 40
+for Codex, 20 for Claude Code, Grok Build, and ZCode, and 4 for the remaining
+harnesses. Every provider ceiling is clamped to the run's global worker count.
+Participant benchmarks use those provider-aware defaults, although the current
+ten-agent population can issue at most ten simultaneous decisions. Explicit
+provider worker flags still override ordinary-run defaults.
 
 ### Claude plan agents
 
@@ -180,6 +191,47 @@ tokens and ~a minute per decision); set `CLAUDE_MAX_THINKING_TOKENS` to a
 positive budget to re-enable it. Other environment knobs: `CLAUDE_MODEL`,
 `CLAUDE_REASONING_EFFORT`, `CLAUDE_TIMEOUT_SECONDS`, `CLAUDE_EXECUTABLE`,
 `CLAUDE_MAX_PARALLEL_AGENTS`.
+
+### ZCode / Z.ai Coding Plan agents
+
+`ZCodeBrain` runs GLM-5.3 through Z.ai's first-party ZCode Agent harness and
+the account's saved Z.ai Coding Plan, rather than OpenRouter or a metered API
+key. Install the official ZCode application and expose its bundled headless
+CLI as `zcode-cli`, then authenticate the CLI:
+
+```bash
+zcode-cli doctor --json
+zcode-cli login --no-browser
+```
+
+The second command prints an OAuth URL that can be opened on any signed-in
+browser. ZCode CLI 0.16.5 can retain an older local model catalog after login;
+the connector preflight refuses to launch unless that catalog includes
+`glm-5.3`. If needed, open ZCode Model Settings and enable GLM-5.3. Once login
+succeeds and the model is enabled, verify without spending a model turn and
+launch an ordinary run:
+
+```bash
+python3 -m agent_world.cli run \
+  --brain zcode --model glm-5.3 --reasoning-effort max \
+  --ticks 10 --agents 3 --progress \
+  --out runs/glm-5.3-zcode.jsonl \
+  --snapshot runs/glm-5.3-zcode-snapshot.json
+```
+
+The connector forces the exact built-in `zai/glm-5.3` model, removes ambient
+provider credential overrides, and passes only the saved ZCode Coding Plan
+credential and base URL to the ZCode child process. It records calls as
+`provider=zcode_cli`, `billing_mode=zai_coding_plan`, with zero marginal API
+cost. Each decision uses a stateless headless invocation in plan mode with the
+documented coding and browsing tools disallowed.
+
+ZCode CLI 0.16.5 advertises an effort option in top-level help but its actual
+headless parser does not accept it. Z.ai documents Max as GLM-5.3's native
+default, so this connector accepts only `reasoning_effort=max` rather than
+silently ignoring another requested treatment. Participant benchmark setup
+selects Max for ZCode and uses the v6 four-worker global and provider ceiling for the
+ten-agent benchmark population.
 
 ### Cursor subscription agents
 
@@ -291,7 +343,8 @@ Provider concurrency is independently bounded even when the global worker pool
 is larger:
 
 ```bash
---max-workers 8 --claude-max-workers 4 --codex-max-workers 4 --devin-max-workers 2
+--max-workers 30 --claude-max-workers 20 --codex-max-workers 30 \
+  --grok-max-workers 20 --devin-max-workers 2
 ```
 
 For a mixed native/Cursor run, for example:
@@ -353,6 +406,10 @@ preset, complete assignment, assignment seed, harness condition, concurrency,
 command, git provenance, resolved response-model versions, and output paths.
 
 ## Standardized model benchmarks
+
+For model selection and the latest complete cross-model comparison, start with
+[`docs/model-leaderboard.md`](docs/model-leaderboard.md). The shorter tables in
+benchmark narratives are presentation excerpts, not separate leaderboards.
 
 Agent World Participant v4 provides three versioned scores: effective execution
 and sustained competence are bounded from 0 to 100, while entrepreneurial
@@ -472,14 +529,14 @@ Invalid or unaffordable actions fail explicitly and are logged; they do not muta
 
 ## World Model
 
-- Standard 16x16 handcrafted world with a coast, river/lake system, forests, plains, and an eastern mountain range.
+- Standard handcrafted 16x16 and 32x32 worlds with coasts, river/lake systems, forests, plains, and mountain ranges.
 - Water tiles are not occupiable; agents gather water or fish from adjacent land.
 - Discrete ticks with a deterministic rotating resolution order, avoiding permanent first-mover priority.
 - Local observations filtered by visibility radius and event scope.
-- Inventories, item piles, structures, tile claims, groups, trade offers, and persistent memories.
+- Inventories, item piles, structures, tile claims, groups, trade offers, delivery contracts, a public town ledger, and persistent memories.
 - Trade offers can target a specific visible agent or be posted locally for any visible counterparty; offered goods are escrowed until the offer resolves.
 - Optional commerce treatments add global standing offers, completed-price history, secured credit, access fees, contributor dividends, and productive-asset upkeep/capacity.
-- The optional organic treatment keeps exchange physical and knowledge local: offers deposit goods at a tile, both parties must meet there, and expired escrow remains as an owned pile. It adds stronger comparative advantage, high-fixed-cost/high-capacity infrastructure, and carried coins without telling agents to use any of them.
+- The optional organic treatment keeps exchange physical and market knowledge local: offers deposit goods at a tile, both parties must meet there, and expired escrow remains as an owned pile. It also adds escrowed delivery contracts and a world-global append-only town ledger, alongside stronger comparative advantage, high-fixed-cost/high-capacity infrastructure, and carried coins without telling agents to use any of them.
 - Optional dispersed geography gives agents separated resource regions, different specialties, aptitudes, endowments, and needs so comparative advantage is mechanically meaningful.
 - Groups can receive access grants, directly own claimed tiles/structures, and keep persistent agreement ledgers, making shared infrastructure mechanically useful.
 - Survival pressure through food, water, energy, health, carrying capacity, action points, and carried-food spoilage.

@@ -57,7 +57,7 @@ class ZCodeBrainTests(unittest.TestCase):
             config = Path(root) / "config.json"
             config.write_text(
                 json.dumps(
-                    {"provider": {"zai": {"options": {"apiKey": "saved-plan-key"}, "models": {"glm-5.3": {"name": "GLM-5.3"}}}}}
+                    {"provider": {"zai": {"options": {"apiKey": "saved-plan-key", "baseURL": "https://coding.example"}, "models": {"glm-5.3": {"name": "GLM-5.3"}}}}}
                 ),
                 encoding="utf-8",
             )
@@ -69,6 +69,8 @@ class ZCodeBrainTests(unittest.TestCase):
         self.assertIsNone(error)
         self.assertEqual(run.call_args.args[0], ["zcode-cli", "doctor", "--json"])
         self.assertEqual(run.call_args.kwargs["env"]["ZCODE_MODEL"], "zai/glm-5.3")
+        self.assertEqual(run.call_args.kwargs["env"]["ZCODE_API_KEY"], "saved-plan-key")
+        self.assertEqual(run.call_args.kwargs["env"]["ZCODE_BASE_URL"], "https://coding.example")
 
     def test_preflight_explains_how_to_sign_in(self) -> None:
         completed = subprocess.CompletedProcess(
@@ -112,6 +114,7 @@ class ZCodeBrainTests(unittest.TestCase):
             {
                 "ANTHROPIC_API_KEY": "must-not-leak",
                 "ZAI_API_KEY": "must-not-leak",
+                "ZCODE_CONFIG_PATH": str(Path(tempfile.gettempdir()) / "missing-zcode-config.json"),
             },
         ), patch(
             "agent_world.zcode_brain.subprocess.run", return_value=completed
@@ -132,6 +135,8 @@ class ZCodeBrainTests(unittest.TestCase):
         self.assertNotIn("TodoWrite", deny_argument)
         self.assertNotIn("ANTHROPIC_API_KEY", run.call_args.kwargs["env"])
         self.assertNotIn("ZAI_API_KEY", run.call_args.kwargs["env"])
+        self.assertNotIn("ZCODE_API_KEY", run.call_args.kwargs["env"])
+        self.assertNotIn("ZCODE_BASE_URL", run.call_args.kwargs["env"])
         self.assertEqual(run.call_args.kwargs["env"]["ZCODE_MODEL"], "zai/glm-5.3")
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["provider"], "zcode_cli")
