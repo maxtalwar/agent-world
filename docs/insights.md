@@ -22,6 +22,26 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-01 — ZCode's environment model override bypassed its saved Coding Plan credential
+
+**A ZCode 0.16.5 process could pass login preflight yet fail every GLM-5.3
+decision before inference because setting `ZCODE_MODEL` selected an
+environment-configured provider without carrying over the saved Coding Plan
+credential.** The first frontier-generalists smoke cells ended in about 1.3
+seconds with zero tokens and an ambiguous `Turn execution failed` boundary.
+The matching local ZCode trace located the failure in `processing_input`, with
+`AiSdkModelAdapterError: Model provider is missing an API key: zai`; this was
+a harness configuration failure, not model behavior.
+
+ZCode's login-generated local catalog also initially contained only GLM-5.1
+and GLM-4.7 despite the installed 3.10.2 application and current GLM-5.3 Coding
+Plan documentation. After enabling GLM-5.3 locally and bridging only the saved
+provider credential and base URL into the child process, the clean pinned smoke
+completed one real decision: 11,087 input tokens, 2,587 output tokens, a
+1,000,000-token context window, three valid actions, and zero decision or
+invalid-action failures. Evidence:
+`runs/experiments/glm-5-3-zcode-frontier-smoke-20260901-163341`;
+commits `c832da8` and `ea50444`.
 ## 2026-08-26 — Strict terminal validation separated Grok 4.5's tool-seeking from harness contamination
 
 **After the connector began accepting only `end_turn`, a matched seed-11
