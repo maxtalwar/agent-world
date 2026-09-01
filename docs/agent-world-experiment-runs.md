@@ -18,26 +18,26 @@ question should offer the default and the currently available built-ins from
 `python3 -m agent_world.cli run --help`. Do not interrupt a checkpoint resume to ask again,
 and do not ask when the user already said to use defaults.
 
-The general experiment default is **`organic-generalists`**:
+The general experiment default is **`frontier-generalists`**:
 
-- classic world variant;
+- frontier world variant;
 - organic economy;
 - dispersed geography;
 - neutral objective; and
 - generalist agents.
 
-This is a broad economic sandbox without the frontier benchmark's seasons,
-storms, winter exposure, roads, and irrigation. Use it when the user says
-“default,” expresses no preference after being asked, or delegates the choice.
+It includes seasons, storms, winter exposure, roads, and irrigation. Use it
+when the user says “default,” expresses no preference after being asked, or
+delegates the choice.
 
 The built-in alternatives currently are:
 
 - `baseline`: classic world, baseline economy, shared oasis, neutral objective,
   generalists;
+- `organic-generalists`: classic world, organic economy, dispersed geography,
+  neutral objective, generalists;
 - `experimental-organic-specialists`: classic world, organic economy,
-  dispersed geography, neutral objective, specialists; and
-- `frontier-generalists`: organic/dispersed/neutral generalists in the frontier
-  world with seasons, storms, exposure, roads, and irrigation.
+  dispersed geography, neutral objective, specialists.
 
 The user may also choose explicit economy, geography, objective, or
 specialization overrides instead of relying on a named preset. Inspect current

@@ -90,6 +90,7 @@ RUN_PRESETS = {
         "world_variant": "frontier",
     },
 }
+DEFAULT_RUN_PRESET = "frontier-generalists"
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -563,7 +564,7 @@ def _run(args: argparse.Namespace) -> None:
     else:
         args.ticks = args.ticks if args.ticks is not None else 25
         args.seed = args.seed if args.seed is not None else 1
-        preset_name = getattr(args, "preset", None) or "baseline"
+        preset_name = getattr(args, "preset", None) or DEFAULT_RUN_PRESET
         preset = RUN_PRESETS[preset_name]
         args.objective_mode = getattr(args, "objective_mode", None) or preset["objective_mode"]
         args.economy_mode = getattr(args, "economy_mode", None) or preset["economy_mode"]
@@ -716,7 +717,7 @@ def _run(args: argparse.Namespace) -> None:
     if resumed:
         run_writer.rebase(engine)
     lifecycle_metadata = {
-        "preset": getattr(args, "preset", None) or "baseline",
+        "preset": getattr(args, "preset", None) or DEFAULT_RUN_PRESET,
         "objective_mode": engine.state.config.objective_mode,
         "economy_mode": engine.state.config.economy_mode,
         "geography_mode": engine.state.config.geography_mode,
@@ -940,7 +941,7 @@ def _ordinary_run_manifest(
         "started_at_utc": datetime.now(timezone.utc).isoformat(),
         "target_ticks": args.ticks,
         "final_tick": engine.state.tick,
-        "preset": getattr(args, "preset", None) or "baseline",
+        "preset": getattr(args, "preset", None) or DEFAULT_RUN_PRESET,
         "decision_mode": decision_mode,
         "turn_resolution": (
             "sequential" if args.sequential_decisions else "simultaneous"

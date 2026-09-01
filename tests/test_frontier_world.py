@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import unittest
 
+from agent_world.cli import DEFAULT_RUN_PRESET, RUN_PRESETS
 from agent_world.interface import build_dynamic_observation, build_observation, build_static_context
 from agent_world.models import AgentDecision, Position, Structure, WorldConfig
 from agent_world.rules import (
@@ -54,6 +55,14 @@ class FrontierRulesTests(unittest.TestCase):
         self.assertIn("irrigation", frontier)
         self.assertNotIn("road", structure_types_for_variant("classic"))
         self.assertIn("road", structure_types_for_variant("frontier"))
+
+    def test_frontier_generalists_is_the_ordinary_run_default(self) -> None:
+        self.assertEqual(DEFAULT_RUN_PRESET, "frontier-generalists")
+        self.assertEqual(
+            RUN_PRESETS[DEFAULT_RUN_PRESET]["world_variant"],
+            "frontier",
+        )
+
 
     def test_season_cycle_and_storm_determinism(self) -> None:
         self.assertEqual(current_season(1, 0), "spring")

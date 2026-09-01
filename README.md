@@ -312,7 +312,6 @@ for overlapping model families that should consume Cursor capacity:
 
 ```bash
 python3 -m agent_world.cli run \
-  --preset organic-generalists \
   --population 10@claude-sonnet-5 \
   --population 10@gpt-5.6-luna \
   --ticks 50 --seed 41 --economy-mode organic \
@@ -321,12 +320,14 @@ python3 -m agent_world.cli run \
   --snapshot runs/sonnet-luna-snapshot.json
 ```
 
-`--preset organic-generalists` expands to an organic, dispersed world with no
+Omitting `--preset` selects `frontier-generalists`: an organic, dispersed
+frontier world with seasons, storms, winter exposure, roads, irrigation, and no
 preset occupations or agent-specific production/need advantages. Use
-`--preset experimental-organic-specialists` to deliberately test preset
-farmer, forester, miner, fisher, and artisan roles with asymmetric aptitudes,
-starting inventories, and needs. That specialist preset is an experimental
-economic treatment, not the neutral/default society condition. The CLI
+`--preset organic-generalists` when a classic world without frontier mechanics
+is required. Use `--preset experimental-organic-specialists` to deliberately
+test preset farmer, forester, miner, fisher, and artisan roles with asymmetric
+aptitudes, starting inventories, and needs. That specialist preset is an
+experimental treatment, not the neutral/default society condition. The CLI
 prints the resolved world, population, assignment seed, concurrency, and harness
 before spending model capacity. Mixed populations default to deterministic
 stratified assignment within each specialty (or across all agents in the
