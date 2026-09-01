@@ -97,8 +97,10 @@ def _protocol_report(
             "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"]),
             "decision_mode": "raw",
             "turn_resolution": "simultaneous",
-            "global_max_workers": 40,
-            "provider_max_workers": {"codex_cli": 40},
+            # Worker ceilings are recorded scheduling metadata, not part of
+            # benchmark certification.
+            "global_max_workers": 3,
+            "provider_max_workers": {"codex_cli": 2},
             "agent_io_log": True,
             "action_feedback_mode": "baseline",
             "connector_profile": "connector-v3",
@@ -169,6 +171,26 @@ def _protocol_report(
 
 
 class BenchmarkTests(unittest.TestCase):
+    def setUp(self) -> None:
+        worker_defaults = (
+            40,
+            {
+                "openrouter": 4,
+                "codex_cli": 40,
+                "claude_cli": 20,
+                "cursor_cli": 4,
+                "devin_cli": 4,
+                "grok_cli": 20,
+                "zcode_cli": 20,
+            },
+        )
+        patcher = unittest.mock.patch(
+            "agent_world.cli.resolved_worker_recommendations",
+            return_value=worker_defaults,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def setUp(self) -> None:
         # _apply_benchmark_protocol sets the Claude deliberation envelope in
         # process env; restore whatever was there so other tests see defaults.
@@ -319,6 +341,22 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.max_workers, 20)
         self.assertEqual(args.zcode_max_workers, 20)
         self.assertEqual(args.reasoning_effort, "max")
+
+    def test_protocol_accepts_explicit_operational_worker_limits(self) -> None:
+        args = Namespace(
+            benchmark_protocol=BENCHMARK_PROTOCOL_ID,
+            population=None,
+            brain="codex",
+            sequential_decisions=False,
+            seed=None,
+            max_workers=7,
+            codex_max_workers=5,
+        )
+
+        _apply_benchmark_protocol(args)
+
+        self.assertEqual(args.max_workers, 7)
+        self.assertEqual(args.codex_max_workers, 5)
 
     def test_provider_defaults_are_clamped_to_run_workers(self) -> None:
         limits = _resolve_provider_max_workers(Namespace(), 12)
@@ -1237,6 +1275,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(result["extended_seeds"], [])
         self.assertEqual(result["raw"]["submitted_actions"], 20)
         self.assertEqual(result["status"], "certified")
+
         self.assertEqual(
             result["score_spread"]["effective_execution"]["n"],
             2,
@@ -1250,6 +1289,18 @@ class BenchmarkTests(unittest.TestCase):
         self.assertIn("Per-replication scores", leaderboard)
         self.assertIn("absolute seed difference", leaderboard)
         self.assertNotIn("95%", leaderboard)
+
+    def test_pre_host_profile_v7_report_remains_compatible(self) -> None:
+        report = _protocol_report(11, "pre-host-profile")
+        report["benchmarks"]["protocol"]["code_fingerprint_sha256"] = (
+            "b415c1b8582e8e075fc181540bb8b19283f6ee4c9f08039329bb91c0709f6c1e"
+        )
+
+        aggregate = aggregate_benchmark_reports([report])
+
+        self.assertEqual(aggregate["rejected"], [])
+        self.assertEqual(len(aggregate["results"]), 1)
+        self.assertEqual(aggregate["results"][0]["status"], "provisional")
 
     def test_optional_extended_seed_does_not_change_official_score(self) -> None:
         required_reports = [

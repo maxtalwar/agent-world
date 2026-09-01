@@ -7,7 +7,7 @@ Worktree mechanics remain documented in
 [isolated-run-worktrees.md](isolated-run-worktrees.md), and logs and checkpoints
 in [observability.md](observability.md).
 
-The run workflow produces evidence. The analysis workflow interprets and
+The run workflow produces evidence. The reporting workflow interprets and
 admits that evidence. A simulation reaching its last tick is not by itself an
 analysis-ready benchmark result.
 
@@ -42,6 +42,13 @@ behavior-defining setting. The current Participant v7 suite uses
 `frontier-generalists`; the full locked configuration is the Frozen trial table
 in `docs/model-benchmarks.md`. A requested override changes the run into an
 experiment or controlled diagnostic and cannot remain standard evidence.
+
+Worker count is not a behavior-defining setting or certification variable.
+The harness collects each tick's decisions concurrently against one frozen
+world state; machine-local worker ceilings only determine how many calls are
+in flight at once. Record the resolved values for operational and throughput
+analysis, but do not invalidate or reclassify a result because they differ
+between hosts.
 
 Do not copy a command from an older run until its protocol and flags have been
 checked against the current CLI and suite documentation.
@@ -253,7 +260,7 @@ status includes:
 
 The run workflow does not add a new result to `data/run-sources.json` or claim
 a leaderboard position. Once evidence is `ready` or `provisional_ready`, the
-analysis workflow validates it, interprets performance, and performs durable
+reporting workflow validates it, interprets performance, and performs durable
 catalog/database/leaderboard admission as one scoped change.
 
 ## Repository hygiene

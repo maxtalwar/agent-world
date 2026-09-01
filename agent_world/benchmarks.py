@@ -34,16 +34,6 @@ from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 # ceiling cannot be differentiated by any later rescoring.
 BENCHMARK_SUITE_ID = "agent-world-participant-v7"
 BENCHMARK_PROTOCOL_ID = "participant-v7"
-BENCHMARK_DEFAULT_MAX_WORKERS = 4
-BENCHMARK_PROVIDER_MAX_WORKERS = {
-    "openrouter": 4,
-    "codex_cli": 40,
-    "claude_cli": 20,
-    "cursor_cli": 4,
-    "devin_cli": 4,
-    "grok_cli": 20,
-    "zcode_cli": 20,
-}
 # Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
 # Anthropic ships no per-effort token number to borrow: stock Claude Code
 # drives adaptive thinking from the effort dial with NO token cap (measured
@@ -123,6 +113,13 @@ GIFT_VERDICTS = frozenset(
 # does not change prompts, observations, provider arguments, world transitions,
 # or scoring. Retaining them keeps existing v7 reports and checkpoints valid.
 #
+# The fingerprints beginning a643a4e5 through c674e107 are the unscoped and
+# provider-scoped v7 fingerprints at commit b1208a7, immediately before worker
+# ceilings became machine-local scheduling metadata. That change preserves
+# simultaneous frozen-state decision collection and cannot alter any completed
+# world transition or score. Retaining them keeps pre-change v7 reports and
+# checkpoints valid.
+#
 # The first two entries are v6 fingerprints and do not promote anything into
 # v7. A
 # resume is refused outright when the checkpoint's protocol is not the current
@@ -142,6 +139,14 @@ BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
         "9e43a228691bebe86c8863e7b5d64c6307d84afff690e0950b2c9dcbd699872d",
         "3d59a78e55fa86466815dbaa03d4f7abe00c3c1f9a12bf4dc1395bbc7241b22d",
         "a79bd51cd3e2e0acc34ad4ac9006b74fae4987e40ed2dfc9a3f97cf7714d4788",
+        "a643a4e531f7791d0428865cf6291e39419f02c42f99d7638d9249d711c1f20e",
+        "b415c1b8582e8e075fc181540bb8b19283f6ee4c9f08039329bb91c0709f6c1e",
+        "bc28024d258b8df85489f5817faedcea02bb3608fee849bd3089d4acc0ff1708",
+        "bce60949931c0ab2426ce0da0246cf0ed87e09d539d9c97ba6d6f34561f54cf1",
+        "43aba33001b434d462e0fd24e1777cf3273782b9c272bf7f45eed1dcc851d2c1",
+        "c446e0f2a61d49ead24f1a1b44856534b8352ed7f2f7abfd81bcd8a0ccdf4e99",
+        "aef3c0fa4dda2038629f450b49e208db456c8dc022c20255d3e254369c7a6a83",
+        "c674e107b10cff6c68907cf425ddf0d1efecebe1b092462490089b4f3f1423e7",
     }
 )
 
@@ -149,7 +154,18 @@ BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
 # cannot change their numbers. Membership is the audit: an entry is only added
 # after checking the intervening diff against the scoring path. Same entry and
 # rationale as BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS above.
-BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset()
+BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS: frozenset[str] = frozenset(
+    {
+        "a643a4e531f7791d0428865cf6291e39419f02c42f99d7638d9249d711c1f20e",
+        "b415c1b8582e8e075fc181540bb8b19283f6ee4c9f08039329bb91c0709f6c1e",
+        "bc28024d258b8df85489f5817faedcea02bb3608fee849bd3089d4acc0ff1708",
+        "bce60949931c0ab2426ce0da0246cf0ed87e09d539d9c97ba6d6f34561f54cf1",
+        "43aba33001b434d462e0fd24e1777cf3273782b9c272bf7f45eed1dcc851d2c1",
+        "c446e0f2a61d49ead24f1a1b44856534b8352ed7f2f7abfd81bcd8a0ccdf4e99",
+        "aef3c0fa4dda2038629f450b49e208db456c8dc022c20255d3e254369c7a6a83",
+        "c674e107b10cff6c68907cf425ddf0d1efecebe1b092462490089b4f3f1423e7",
+    }
+)
 
 # Scored reports from an EARLIER SUITE accepted as current-suite evidence
 # after an audit showing the suite change cannot touch their numbers. Keyed by
@@ -606,13 +622,11 @@ def benchmark_protocol() -> dict[str, Any]:
             "conversation_mode": "fresh-conversation",
             "population": "one uniform model cohort",
             "turn_resolution": "simultaneous",
-            "global_max_workers": BENCHMARK_DEFAULT_MAX_WORKERS,
-            "provider_max_workers": BENCHMARK_DEFAULT_MAX_WORKERS,
-            "provider_worker_overrides": {
-                provider: workers
-                for provider, workers in BENCHMARK_PROVIDER_MAX_WORKERS.items()
-                if workers != BENCHMARK_DEFAULT_MAX_WORKERS
-            },
+            "concurrency_policy": (
+                "Collect every tick's model decisions concurrently against the same "
+                "frozen world state. Worker ceilings are host scheduling settings, "
+                "recorded for observability but excluded from certification."
+            ),
             "agent_io_log": True,
             "model_output_failure_policy": (
                 "Independently validate each extracted decision against the "
@@ -1591,17 +1605,6 @@ def _trial_flags(
     flags: list[str] = []
 
     expected = benchmark_protocol()["trial"]
-    used_provider = next(
-        (
-            str(cohort.get("provider"))
-            for cohort in cohorts.values()
-            if cohort.get("provider")
-        ),
-        None,
-    )
-    expected_max_workers = expected.get("provider_worker_overrides", {}).get(
-        used_provider, expected["global_max_workers"]
-    )
     checks = {
         "agents": ((report.get("population") or {}).get("total_agents"), expected["agents"]),
         "ticks": (run.get("target_ticks"), expected["ticks"]),
@@ -1633,10 +1636,6 @@ def _trial_flags(
         "turn_resolution": (
             start_data.get("turn_resolution"),
             expected["turn_resolution"],
-        ),
-        "global_max_workers": (
-            start_data.get("global_max_workers"),
-            expected_max_workers,
         ),
     }
     for name, (actual, wanted) in checks.items():
@@ -1689,12 +1688,6 @@ def _trial_flags(
         flags.append("run_quality_not_clean")
     if reliability.get("usage_record_coverage_pct") != 100.0:
         flags.append("usage_coverage_not_complete")
-    provider_limits = start_data.get("provider_max_workers") or {}
-    if (
-        used_provider is None
-        or provider_limits.get(used_provider) != expected_max_workers
-    ):
-        flags.append("protocol_mismatch:provider_max_workers")
     if start_data.get("agent_io_log") is not True:
         flags.append("protocol_mismatch:agent_io_log")
     return flags

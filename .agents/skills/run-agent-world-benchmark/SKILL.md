@@ -39,7 +39,7 @@ Follow `AGENTS.md` for repository-wide isolation, quota, validation, commit, pus
 
 - Keep worktrees and checkpoints until analysis is complete.
 - Do not silently repair provenance, integrity, transfer accounting, or cost evidence merely to make a run leaderboard-eligible. Mark the exact blocker and retain the evidence.
-- Do not admit a result to the catalog or leaderboard from the run workflow. Durable admission and cross-model interpretation belong to `$analyze-agent-world-benchmarks` after the readiness gate.
+- Do not admit a result to the catalog or leaderboard from the run workflow. Durable admission and completed-run interpretation belong to `$report-agent-world-runs` after the readiness gate.
 - Report status with artifacts and state: completed seeds, waiting seeds, last completed tick, stop reason, quota deadline, launch commit, integrity, transfer-finalization mode, cost status, and readiness status.
 
 ## Finish repository work

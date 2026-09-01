@@ -6,6 +6,17 @@ The project goal is to study whether richer social behavior can emerge from worl
 
 ## Quick Start
 
+First configure the clone for the machine that will run it:
+
+```bash
+python3 -m agent_world.cli setup --write-profile
+```
+
+This detects the CPU and visible RAM, reports installed native harnesses, and
+writes machine-local worker recommendations to the user configuration
+directory. The profile is shared by isolated run worktrees and is never
+committed. Set `AGENT_WORLD_HOST_PROFILE` to choose another location.
+
 ```bash
 python3 -m unittest discover -s tests
 python3 -m agent_world.cli map
@@ -67,6 +78,9 @@ directory.
   clearly marked controlled variants.
 - `docs/model-metrics-database.md`: schema, latency definitions, query examples,
   and maintenance instructions for `data/model-benchmarks.sqlite`.
+- `.agents/skills/`: repository-tracked manuals for setup, benchmark runs,
+  ordinary experiments, and completed-run performance reports. `AGENTS.md`
+  routes agents that do not discover them automatically.
 
 ## LLM Agents
 
@@ -93,9 +107,9 @@ OPENROUTER_MAX_PARALLEL_AGENTS=4
 SSL_CERT_FILE=/etc/ssl/cert.pem
 ```
 
-Ordinary runs default to four concurrent decisions. Change
-`OPENROUTER_MAX_PARALLEL_AGENTS` or pass `--max-workers` only when a different
-account or host limit has been measured. Cost knobs include
+Ordinary runs default to four concurrent decisions. Provider ceilings come
+from the machine-local host profile when present; explicit `--max-workers` and
+provider-specific worker flags override its recommendations. Cost knobs include
 `OPENROUTER_REASONING_EFFORT` and `OPENROUTER_MAX_OUTPUT_TOKENS`.
 If the API returns hard quota/credit exhaustion, the run stops early and reports `quota_failures` so the log is not mistaken for agent behavior.
 
@@ -340,7 +354,8 @@ generalist condition); override with
 comparisons.
 
 Provider concurrency is independently bounded even when the global worker pool
-is larger:
+is larger. Run `python3 -m agent_world.cli setup --write-profile` once on a new
+machine to estimate those defaults from its effective CPU and RAM:
 
 ```bash
 --max-workers 30 --claude-max-workers 20 --codex-max-workers 30 \
