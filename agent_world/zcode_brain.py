@@ -38,7 +38,6 @@ ZCODE_HARNESS_INSTRUCTIONS = (
 ZCODE_DISALLOWED_TOOLS = ",".join(
     (
         "Bash", "Read", "Edit", "Write", "Grep", "Glob", "WebFetch", "WebSearch",
-        "Agent", "Task", "AskUserQuestion", "TodoWrite", "NotebookEdit", "Skill",
     )
 )
 
@@ -110,7 +109,7 @@ class ZCodeBrain:
         if completed.returncode != 0 or not isinstance(doctor, dict):
             detail = _failure_detail(None, completed.stdout, completed.stderr)
             return f"ZCode provider unavailable: CLI preflight failed: {detail}"
-        error = _coding_plan_config_error()
+        error = _coding_plan_config_error(self.model)
         if error is not None:
             return error
         self.resolved_model = self.model
@@ -410,7 +409,7 @@ def _coding_plan_environment(model: str) -> dict[str, str]:
     return child_env
 
 
-def _coding_plan_config_error() -> str | None:
+def _coding_plan_config_error(model: str) -> str | None:
     configured = os.environ.get("ZCODE_CONFIG_PATH")
     path = (
         Path(configured).expanduser()
@@ -432,6 +431,14 @@ def _coding_plan_config_error() -> str | None:
         return (
             "ZCode provider unavailable: Z.ai Coding Plan is not configured; "
             "run `zcode-cli login --no-browser`."
+        )
+    model_id = model.split("/", 1)[-1]
+    models = zai.get("models") if isinstance(zai, dict) else None
+    if not isinstance(models, dict) or model_id not in models:
+        return (
+            "ZCode provider unavailable: "
+            f"{model_id} is absent from the local Z.ai Coding Plan model catalog; "
+            "open ZCode Model Settings, enable the model, and retry."
         )
     return None
 

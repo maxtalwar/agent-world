@@ -57,7 +57,7 @@ class ZCodeBrainTests(unittest.TestCase):
             config = Path(root) / "config.json"
             config.write_text(
                 json.dumps(
-                    {"provider": {"zai": {"options": {"apiKey": "saved-plan-key"}}}}
+                    {"provider": {"zai": {"options": {"apiKey": "saved-plan-key"}, "models": {"glm-5.3": {"name": "GLM-5.3"}}}}}
                 ),
                 encoding="utf-8",
             )
@@ -80,6 +80,29 @@ class ZCodeBrainTests(unittest.TestCase):
             error = ZCodeBrain(executable="zcode-cli").preflight()
         self.assertIn("zcode-cli login --no-browser", error or "")
 
+    def test_preflight_rejects_stale_model_catalog(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["zcode-cli"], 0, stdout=json.dumps({"status": "ok"}), stderr=""
+        )
+        with tempfile.TemporaryDirectory() as root:
+            config = Path(root) / "config.json"
+            config.write_text(
+                json.dumps({
+                    "provider": {
+                        "zai": {
+                            "options": {"apiKey": "saved-plan-key"},
+                            "models": {"glm-5.1": {"name": "GLM-5.1"}},
+                        }
+                    }
+                }),
+                encoding="utf-8",
+            )
+            with patch.dict(os.environ, {"ZCODE_CONFIG_PATH": str(config)}), patch(
+                "agent_world.zcode_brain.subprocess.run", return_value=completed
+            ):
+                error = ZCodeBrain(executable="zcode-cli").preflight()
+        self.assertIn("glm-5.3 is absent", error or "")
+
     def test_decide_uses_native_model_tool_fence_and_plan_usage(self) -> None:
         completed = subprocess.CompletedProcess(
             ["zcode-cli"], 0, stdout=_successful_stdout("hold position"), stderr=""
@@ -101,6 +124,12 @@ class ZCodeBrainTests(unittest.TestCase):
         self.assertEqual(command[command.index("--output-format") + 1], "json")
         self.assertEqual(command[command.index("--mode") + 1], "plan")
         self.assertIn("--disallowed-tools=", " ".join(command))
+        deny_argument = next(
+            item for item in command if item.startswith("--disallowed-tools=")
+        )
+        self.assertIn("WebSearch", deny_argument)
+        self.assertNotIn("AskUserQuestion", deny_argument)
+        self.assertNotIn("TodoWrite", deny_argument)
         self.assertNotIn("ANTHROPIC_API_KEY", run.call_args.kwargs["env"])
         self.assertNotIn("ZAI_API_KEY", run.call_args.kwargs["env"])
         self.assertEqual(run.call_args.kwargs["env"]["ZCODE_MODEL"], "zai/glm-5.3")
