@@ -393,6 +393,16 @@ def _failure_detail(
     return " ".join(detail.split())[:1000]
 
 
+def _read_coding_plan_config() -> dict[str, Any] | None:
+    configured = os.environ.get("ZCODE_CONFIG_PATH")
+    path = Path(configured).expanduser() if configured else Path.home() / ".zcode" / "cli" / "config.json"
+    try:
+        config = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return config if isinstance(config, dict) else None
+
+
 def _coding_plan_environment(model: str) -> dict[str, str]:
     child_env = os.environ.copy()
     for key in (
@@ -402,23 +412,27 @@ def _coding_plan_environment(model: str) -> dict[str, str]:
         "ZHIPUAI_API_KEY",
         "ZCODE_API_KEY",
         "ZCODE_ENDPOINT",
+        "ZCODE_BASE_URL",
     ):
         child_env.pop(key, None)
+    config = _read_coding_plan_config() or {}
+    providers = config.get("provider") or config.get("providers")
+    zai = providers.get("zai") if isinstance(providers, dict) else None
+    options = zai.get("options") if isinstance(zai, dict) else None
+    api_key = options.get("apiKey") if isinstance(options, dict) else None
+    base_url = options.get("baseURL") if isinstance(options, dict) else None
+    if isinstance(api_key, str) and api_key.strip():
+        child_env["ZCODE_API_KEY"] = api_key
+    if isinstance(base_url, str) and base_url.strip():
+        child_env["ZCODE_BASE_URL"] = base_url
     child_env["ZCODE_MODEL"] = model if "/" in model else f"zai/{model}"
     child_env["NO_COLOR"] = "1"
     return child_env
 
 
 def _coding_plan_config_error(model: str) -> str | None:
-    configured = os.environ.get("ZCODE_CONFIG_PATH")
-    path = (
-        Path(configured).expanduser()
-        if configured
-        else Path.home() / ".zcode" / "cli" / "config.json"
-    )
-    try:
-        config = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    config = _read_coding_plan_config()
+    if config is None:
         return (
             "ZCode provider unavailable: Z.ai Coding Plan is not configured; "
             "run `zcode-cli login --no-browser`."

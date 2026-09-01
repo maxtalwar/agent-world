@@ -205,8 +205,11 @@ zcode-cli login --no-browser
 ```
 
 The second command prints an OAuth URL that can be opened on any signed-in
-browser. Once login succeeds, verify without spending a model turn and launch
-an ordinary run:
+browser. ZCode CLI 0.16.5 can retain an older local model catalog after login;
+the connector preflight refuses to launch unless that catalog includes
+`glm-5.3`. If needed, open ZCode Model Settings and enable GLM-5.3. Once login
+succeeds and the model is enabled, verify without spending a model turn and
+launch an ordinary run:
 
 ```bash
 python3 -m agent_world.cli run \
@@ -216,11 +219,12 @@ python3 -m agent_world.cli run \
   --snapshot runs/glm-5.3-zcode-snapshot.json
 ```
 
-The connector forces the exact built-in `zai/glm-5.3` model, strips API-key
-overrides from the child environment, and records calls as
+The connector forces the exact built-in `zai/glm-5.3` model, removes ambient
+provider credential overrides, and passes only the saved ZCode Coding Plan
+credential and base URL to the ZCode child process. It records calls as
 `provider=zcode_cli`, `billing_mode=zai_coding_plan`, with zero marginal API
-cost. It runs one stateless headless invocation per decision in plan mode with
-the coding, browsing, delegation, and skill tools disallowed.
+cost. Each decision uses a stateless headless invocation in plan mode with the
+documented coding and browsing tools disallowed.
 
 ZCode CLI 0.16.5 advertises an effort option in top-level help but its actual
 headless parser does not accept it. Z.ai documents Max as GLM-5.3's native
