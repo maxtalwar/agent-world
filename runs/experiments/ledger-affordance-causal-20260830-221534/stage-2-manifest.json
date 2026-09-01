@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "study_id": "ledger-affordance-causal-20260830-221534-stage-2",
+  "declared_at": "2026-08-30T22:34:00Z",
+  "status": "declared",
+  "diagnostic_only": true,
+  "stage_1_results": {
+    "decisions_per_cell": 100,
+    "voluntary_ledger_notes": {
+      "baseline": 0,
+      "collective": 0,
+      "free_ledger": 0,
+      "seeded_demo": 0,
+      "salient": 0,
+      "equalized_cost": 0,
+      "combined": 0
+    },
+    "mandated_capability_notes": 25,
+    "interpretation": "Mechanics and capability are intact. Action-point cost, generic salience, collective framing, and an empty-board system notice are individually and jointly insufficient."
+  },
+  "new_audit_evidence": {
+    "codex_action_schema_max_items": 4,
+    "engine_action_points_per_tick": 4,
+    "ledger_representation": "post_ledger_note is the last of many regular actions",
+    "speech_representation": "say, whisper, and broadcast also have a dedicated messages array with no item limit",
+    "action_slot_saturation": "Only 23-39% of voluntary decisions used all four slots, so slot scarcity may contribute but cannot alone explain zero adoption.",
+    "positive_control_pattern": "Concrete peer-authored role and resource reports populated the ledger; repeated useful notes followed through tick 7."
+  },
+  "hypotheses": [
+    {
+      "id": "H6",
+      "claim": "The ledger is categorized as a costly world action instead of communication, so it is omitted during communication planning.",
+      "prediction": "A ledger mode in the messages array will outperform an otherwise matched fifth action slot."
+    },
+    {
+      "id": "H7",
+      "claim": "A concrete peer example or a single initial institutional owner is required to bootstrap the norm; a generic system notice supplies no useful social proof.",
+      "prediction": "A single agent-1 bootstrap or realistic peer seed notes will induce later voluntary posts by other agents."
+    },
+    {
+      "id": "H8",
+      "claim": "Even after representation is corrected, a one-action-point price suppresses the public-good behavior.",
+      "prediction": "Free message-channel posting will exceed one-point message-channel posting."
+    }
+  ],
+  "common_config": {
+    "preset": "frontier-generalists",
+    "specialization_mode": "specialists",
+    "objective": "neutral",
+    "population": 10,
+    "ticks": 10,
+    "seed": 11,
+    "width": 16,
+    "height": 16,
+    "model": "gpt-5.6-luna",
+    "reasoning_effort": "medium",
+    "connector_profile": "stateless-v3",
+    "decision_mode": "raw",
+    "action_output_limit": 5,
+    "startup_health_check_tick": 5,
+    "quota_wait_hours": 12
+  },
+  "cells": [
+    {"id": "action5_salient_free", "output_mode": "action", "prompt_mode": "salient", "ledger_cost": 0, "seed_mode": "none"},
+    {"id": "message_salient_free", "output_mode": "message", "prompt_mode": "salient", "ledger_cost": 0, "seed_mode": "none"},
+    {"id": "message_salient_cost1", "output_mode": "message", "prompt_mode": "salient", "ledger_cost": 1, "seed_mode": "none"},
+    {"id": "bootstrap_one_action", "output_mode": "action", "prompt_mode": "bootstrap_one", "ledger_cost": 1, "seed_mode": "none"},
+    {"id": "bootstrap_one_message", "output_mode": "message", "prompt_mode": "bootstrap_one", "ledger_cost": 0, "seed_mode": "none"},
+    {"id": "peer_seed_action", "output_mode": "action", "prompt_mode": "salient", "ledger_cost": 1, "seed_mode": "peer_demo"}
+  ],
+  "primary_endpoints": ["ledger_notes", "unique_authors", "first_note_tick", "non_agent_1_notes_after_tick_0"],
+  "secondary_endpoints": ["note_content", "later note references", "action-count distribution", "messages", "decision failures"],
+  "follow_up_rule": "Replicate the smallest sufficient non-continuously-mandated intervention in longer Luna and matched Sol worlds."
+}

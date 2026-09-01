@@ -27,6 +27,10 @@ from agent_world.benchmarks import (
     benchmark_code_fingerprint,
     format_benchmark_leaderboard,
 )
+from agent_world.brain_boundary import (
+    normalize_connector_profile,
+    normalize_conversation_mode,
+)
 from agent_world.brain_factory import (
     BRAIN_TYPE_PROVIDERS,
     BrainSpec,
@@ -143,19 +147,21 @@ def main(argv: list[str] | None = None) -> None:
     )
     run_parser.add_argument(
         "--connector-profile",
-        choices=["stateless-v1", "stateless-v2", "stateless-v3"],
+        type=normalize_connector_profile,
+        choices=["connector-v1", "connector-v2", "connector-v3"],
         default=None,
         help=(
-            "Provider invocation profile. stateless-v1 preserves the historical connector; "
-            "stateless-v2 preserves the first lean experiment; stateless-v3 removes the "
+            "Provider invocation profile. connector-v1 preserves the historical connector; "
+            "connector-v2 preserves the first lean experiment; connector-v3 removes the "
             "remaining avoidable Codex harness and uses cross-process stable workspaces."
         ),
     )
     run_parser.add_argument(
         "--conversation-mode",
-        choices=["stateless", "bounded-session-v1"],
+        type=normalize_conversation_mode,
+        choices=["fresh-conversation", "persistent-conversation-v1"],
         default=None,
-        help="Agent conversation memory. bounded-session-v1 keeps one private, rotating provider session per agent.",
+        help="Agent conversation memory. persistent-conversation-v1 keeps one private, rotating provider session per agent.",
     )
     run_parser.add_argument(
         "--session-max-turns",
@@ -196,6 +202,55 @@ def main(argv: list[str] | None = None) -> None:
         choices=["baseline", "causal", "minimal", "none"],
         default=None,
         help="Agent-facing failed-action feedback treatment. Defaults to baseline.",
+    )
+    run_parser.add_argument(
+        "--communication-action-cost",
+        type=int,
+        default=None,
+        help="Override speech/broadcast action-point cost for an explicit experiment treatment.",
+    )
+    run_parser.add_argument(
+        "--town-ledger-action-cost",
+        type=int,
+        default=None,
+        help="Override post_ledger_note action-point cost; defaults to 1.",
+    )
+    run_parser.add_argument(
+        "--town-ledger-prompt-mode",
+        choices=[
+            "baseline",
+            "legacy",
+            "salient",
+            "mandated",
+            "bootstrap_one",
+            "reflect",
+            "private_value",
+            "decision_rule",
+            "perspective",
+        ],
+        default=None,
+        help=(
+            "Town-ledger prompt treatment; baseline uses the validated public-novelty rule "
+            "and legacy preserves the old terse prompt."
+        ),
+    )
+    run_parser.add_argument(
+        "--town-ledger-seed-mode",
+        choices=["none", "demo", "peer_demo", "request"],
+        default=None,
+        help="Cold-start treatment that optionally places a founding note in the ledger.",
+    )
+    run_parser.add_argument(
+        "--town-ledger-output-mode",
+        choices=["action", "message"],
+        default=None,
+        help="Represent ledger posting as a regular action or as a dedicated communication mode.",
+    )
+    run_parser.add_argument(
+        "--codex-action-max-items",
+        type=int,
+        default=None,
+        help="Codex-only structured-output action limit for an explicit representation treatment.",
     )
     run_parser.add_argument("--progress", action="store_true", help="Print progress after each tick.")
     run_parser.add_argument(
@@ -323,13 +378,15 @@ def main(argv: list[str] | None = None) -> None:
     )
     experiment_parser.add_argument(
         "--connector-profile",
-        choices=["stateless-v1", "stateless-v2", "stateless-v3"],
-        default="stateless-v1",
+        type=normalize_connector_profile,
+        choices=["connector-v1", "connector-v2", "connector-v3"],
+        default="connector-v1",
     )
     experiment_parser.add_argument(
         "--conversation-mode",
-        choices=["stateless", "bounded-session-v1"],
-        default="stateless",
+        type=normalize_conversation_mode,
+        choices=["fresh-conversation", "persistent-conversation-v1"],
+        default="fresh-conversation",
     )
     experiment_parser.add_argument("--session-max-turns", type=int, default=10)
     experiment_parser.add_argument(
@@ -484,8 +541,8 @@ def _run(args: argparse.Namespace) -> None:
                 raise ValueError("A checkpoint must be resumed with its original reasoning effort.")
             args.reasoning_effort = saved_effort if saved_effort is not None else args.reasoning_effort
             for name, default in (
-                ("connector_profile", "stateless-v1"),
-                ("conversation_mode", "stateless"),
+                ("connector_profile", "connector-v1"),
+                ("conversation_mode", "fresh-conversation"),
                 ("session_max_turns", 10),
             ):
                 requested = getattr(args, name, None)
@@ -572,8 +629,8 @@ def _run(args: argparse.Namespace) -> None:
         args.specialization_mode = getattr(args, "specialization_mode", None) or preset["specialization_mode"]
         args.world_variant = getattr(args, "world_variant", None) or preset.get("world_variant", "classic")
         args.decision_mode = getattr(args, "decision_mode", None) or "raw"
-        args.connector_profile = getattr(args, "connector_profile", None) or "stateless-v1"
-        args.conversation_mode = getattr(args, "conversation_mode", None) or "stateless"
+        args.connector_profile = getattr(args, "connector_profile", None) or "connector-v1"
+        args.conversation_mode = getattr(args, "conversation_mode", None) or "fresh-conversation"
         args.session_max_turns = getattr(args, "session_max_turns", None) or 10
         if args.session_max_turns < 1:
             raise ValueError("--session-max-turns must be at least 1")
@@ -605,10 +662,24 @@ def _run(args: argparse.Namespace) -> None:
             geography_mode=getattr(args, "geography_mode", "shared_oasis"),
             specialization_mode=getattr(args, "specialization_mode", "generalists"),
             action_feedback_mode=getattr(args, "action_feedback_mode", None) or "baseline",
+            communication_action_cost=getattr(args, "communication_action_cost", None),
+            town_ledger_action_cost=getattr(args, "town_ledger_action_cost", None) if getattr(args, "town_ledger_action_cost", None) is not None else 1,
+            town_ledger_prompt_mode=getattr(args, "town_ledger_prompt_mode", None) or "baseline",
+            town_ledger_seed_mode=getattr(args, "town_ledger_seed_mode", None) or "none",
+            town_ledger_output_mode=getattr(args, "town_ledger_output_mode", None) or "action",
             world_variant=getattr(args, "world_variant", None) or "classic",
         )
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
+
+    if getattr(engine.state.config, "town_ledger_output_mode", "action") == "message":
+        os.environ["AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE"] = "1"
+    else:
+        os.environ.pop("AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE", None)
+    codex_action_max_items = getattr(args, "codex_action_max_items", None) or 4
+    if codex_action_max_items < 1 or codex_action_max_items > 16:
+        raise ValueError("--codex-action-max-items must be between 1 and 16")
+    os.environ["AGENT_WORLD_CODEX_ACTION_MAX_ITEMS"] = str(codex_action_max_items)
 
     if args.ticks < engine.state.tick:
         raise ValueError(
@@ -623,10 +694,10 @@ def _run(args: argparse.Namespace) -> None:
             reasoning_effort=args.reasoning_effort,
             max_workers=args.max_workers,
             connector_profile=(
-                getattr(args, "connector_profile", None) or "stateless-v1"
+                getattr(args, "connector_profile", None) or "connector-v1"
             ),
             conversation_mode=(
-                getattr(args, "conversation_mode", None) or "stateless"
+                getattr(args, "conversation_mode", None) or "fresh-conversation"
             ),
             session_max_turns=getattr(args, "session_max_turns", None) or 10,
         )
@@ -726,6 +797,12 @@ def _run(args: argparse.Namespace) -> None:
         "turn_resolution": (
             "sequential" if args.sequential_decisions else "simultaneous"
         ),
+        "communication_action_cost": engine.state.config.communication_cost(),
+        "town_ledger_action_cost": engine.state.config.town_ledger_action_cost,
+        "town_ledger_prompt_mode": engine.state.config.town_ledger_prompt_mode,
+        "town_ledger_seed_mode": engine.state.config.town_ledger_seed_mode,
+        "town_ledger_output_mode": engine.state.config.town_ledger_output_mode,
+        "codex_action_max_items": codex_action_max_items,
         "action_feedback_mode": getattr(engine.state.config, "action_feedback_mode", "baseline"),
         "provider_max_workers": provider_max_workers,
         "global_max_workers": max_workers,
@@ -1061,8 +1138,8 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         "geography_mode": "dispersed",
         "specialization_mode": "generalists",
         "reasoning_effort": benchmark_reasoning_effort,
-        "connector_profile": "stateless-v3",
-        "conversation_mode": "stateless",
+        "connector_profile": "connector-v3",
+        "conversation_mode": "fresh-conversation",
         "session_max_turns": 10,
         "decision_mode": "raw",
         "action_feedback_mode": "baseline",
@@ -1145,8 +1222,8 @@ def _experiment(args: argparse.Namespace) -> None:
         brain=args.brain,
         model=args.model,
         reasoning_effort=args.reasoning_effort,
-        connector_profile=getattr(args, "connector_profile", "stateless-v1"),
-        conversation_mode=getattr(args, "conversation_mode", "stateless"),
+        connector_profile=getattr(args, "connector_profile", "connector-v1"),
+        conversation_mode=getattr(args, "conversation_mode", "fresh-conversation"),
         session_max_turns=getattr(args, "session_max_turns", 10),
         environments=environments,
         objectives=objectives,

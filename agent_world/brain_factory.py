@@ -13,6 +13,8 @@ from agent_world.brain_boundary import (
     CONNECTOR_PROFILES,
     CONVERSATION_MODES,
     DEFAULT_SESSION_MAX_TURNS,
+    normalize_connector_profile,
+    normalize_conversation_mode,
 )
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.claude_brain import ClaudeBrain
@@ -47,8 +49,8 @@ class BrainSpec:
     model: str | None = None
     reasoning_effort: str | None = None
     max_workers: int | None = None
-    connector_profile: str = "stateless-v1"
-    conversation_mode: str = "stateless"
+    connector_profile: str = "connector-v1"
+    conversation_mode: str = "fresh-conversation"
     session_max_turns: int = DEFAULT_SESSION_MAX_TURNS
 
     @classmethod
@@ -59,12 +61,14 @@ class BrainSpec:
         model: str | None = None,
         reasoning_effort: str | None = None,
         max_workers: int | None = None,
-        connector_profile: str = "stateless-v1",
-        conversation_mode: str = "stateless",
+        connector_profile: str = "connector-v1",
+        conversation_mode: str = "fresh-conversation",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ) -> "BrainSpec":
         # Read old manifests/checkpoints, but never emit the ambiguous legacy name.
         brain_type = "openrouter" if brain_type == "llm" else brain_type
+        connector_profile = normalize_connector_profile(connector_profile)
+        conversation_mode = normalize_conversation_mode(conversation_mode)
         if brain_type not in SUPPORTED_BRAIN_TYPES:
             raise ValueError(
                 "brain type must be survival, openrouter, codex, claude, cursor, devin, grok, or zcode"
@@ -75,20 +79,22 @@ class BrainSpec:
             raise ValueError("unsupported reasoning effort")
         if connector_profile not in CONNECTOR_PROFILES:
             raise ValueError(
-                "connector profile must be stateless-v1, stateless-v2, or stateless-v3"
+                "connector profile must be connector-v1, connector-v2, or connector-v3"
             )
         if conversation_mode not in CONVERSATION_MODES:
-            raise ValueError("conversation mode must be stateless or bounded-session-v1")
+            raise ValueError(
+                "conversation mode must be fresh-conversation or persistent-conversation-v1"
+            )
         if session_max_turns < 1:
             raise ValueError("session_max_turns must be at least 1")
-        if conversation_mode != "stateless" and brain_type not in {
+        if conversation_mode != "fresh-conversation" and brain_type not in {
             "codex",
             "claude",
             "cursor",
             "devin",
         }:
             raise ValueError(
-                "bounded-session-v1 is supported only by codex, claude, cursor, and devin brains"
+                "persistent-conversation-v1 is supported only by codex, claude, cursor, and devin brains"
             )
         defaults = {
             "openrouter": (
@@ -238,8 +244,8 @@ class PopulationSpec:
         *,
         reasoning_effort: str | None = None,
         max_workers: int | None = None,
-        connector_profile: str = "stateless-v1",
-        conversation_mode: str = "stateless",
+        connector_profile: str = "connector-v1",
+        conversation_mode: str = "fresh-conversation",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ) -> "PopulationSpec":
         groups = tuple(
@@ -270,8 +276,8 @@ class PopulationSpec:
                 model=raw.get("model"),
                 reasoning_effort=raw.get("reasoning_effort"),
                 max_workers=raw.get("max_workers"),
-                connector_profile=str(raw.get("connector_profile") or "stateless-v1"),
-                conversation_mode=str(raw.get("conversation_mode") or "stateless"),
+                connector_profile=str(raw.get("connector_profile") or "connector-v1"),
+                conversation_mode=str(raw.get("conversation_mode") or "fresh-conversation"),
                 session_max_turns=int(
                     raw.get("session_max_turns") or DEFAULT_SESSION_MAX_TURNS
                 ),

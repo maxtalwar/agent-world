@@ -171,7 +171,7 @@ python3 -m agent_world.cli run \
 ```
 
 Each living agent gets a tool-less `claude -p` invocation per tick. The default
-is session-less; `bounded-session-v1` can instead retain a private rotating
+is session-less; `persistent-conversation-v1` can instead retain a private rotating
 conversation per agent. The run's rulebook is a stable system prompt (so the
 provider prompt cache is reused) and a `--json-schema` constrained decision. The
 adapter runs in a stable empty directory with user/project settings, MCP
@@ -380,21 +380,25 @@ Provider invocation overhead and provider conversation memory are independent,
 versioned controls:
 
 ```bash
---connector-profile stateless-v3 \
---conversation-mode bounded-session-v1 \
+--connector-profile connector-v3 \
+--conversation-mode persistent-conversation-v1 \
 --session-max-turns 10
 ```
 
-`stateless-v3` keeps decisions stateless while giving Codex and Cursor
+`connector-v3` keeps decisions stateless while giving Codex and Cursor
 cross-process stable empty workspaces and removing irrelevant Codex tool,
 plugin, discovery, and skill instructions. Claude's
-already-lean stateless invocation is unchanged. `bounded-session-v1` is an
+already-lean stateless invocation is unchanged. `persistent-conversation-v1` is an
 optional behavioral treatment: it keeps one private provider conversation per
 agent, sends compact continuation observations, and rotates after the configured
 number of successful decisions. Checkpoint resume starts a fresh provider
 conversation from canonical simulation state so a partially submitted provider
 turn cannot leak across the completed-tick boundary. See
 [docs/agent-boundaries.md](docs/agent-boundaries.md).
+
+The canonical no-history mode is `fresh-conversation`. Historical
+`stateless-v1/v2/v3` connector names, `stateless` conversation mode, and
+`bounded-session-v1` remain accepted as read-time compatibility aliases.
 
 The run report includes each cohort's model, membership, survival, action mix,
 gifts, trades, token use, API cost, and Codex plan credits. A shared usage JSONL

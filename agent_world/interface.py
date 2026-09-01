@@ -138,7 +138,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "body": event.data.get("body", ""),
         }
         for event in state.events
-        if event.type == "ledger_note"
+        if event.type in {"ledger_note", "ledger_seed_note"}
     ]
     return {
         "tick": state.tick,
@@ -161,6 +161,10 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             # not itself described to model-backed agents.
             "action_feedback_mode": feedback_mode,
             "communication_action_cost": getattr(state.config, "communication_cost", lambda: 0)(),
+            "town_ledger_action_cost": getattr(state.config, "town_ledger_action_cost", 1),
+            "town_ledger_prompt_mode": getattr(state.config, "town_ledger_prompt_mode", "baseline"),
+            "town_ledger_seed_mode": getattr(state.config, "town_ledger_seed_mode", "none"),
+            "town_ledger_output_mode": getattr(state.config, "town_ledger_output_mode", "action"),
             "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
             "trade_settlement": (
                 "physical_meeting_at_escrow_position"
@@ -374,6 +378,73 @@ def build_static_context(world: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.extend(_prompt_rules(world))
     lines.append(objective_instruction(world))
+    ledger_prompt_mode = str(world.get("town_ledger_prompt_mode", "baseline"))
+    ledger_output_mode = str(world.get("town_ledger_output_mode", "action"))
+    ledger_submission = (
+        'add {"mode":"ledger","text":"Short title\\nConcrete body","to":""} to messages'
+        if ledger_output_mode == "message"
+        else 'add {"type":"post_ledger_note","title":"Short title","body":"Concrete body"} to actions'
+    )
+    if ledger_prompt_mode == "baseline":
+        if world.get("economy_mode") == "organic":
+            lines.append(
+                'LEDGER RULE: the town ledger is durable and world-global; distant agents cannot see local facts. '
+                "When a useful specialty/resource/supply/need/offer fact is absent from recent notes, "
+                f"{ledger_submission}; do not repeat unchanged facts."
+            )
+        ledger_prompt_mode = "legacy"
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode in {
+        "salient",
+        "mandated",
+        "bootstrap_one",
+        "reflect",
+        "private_value",
+        "decision_rule",
+        "perspective",
+    }:
+        lines.append(
+            "The town ledger is the only durable world-global communication channel. "
+            "Every living agent can read its recent notes from anywhere on later ticks. "
+            f"To post, {ledger_submission}. Use it for information that should outlive recent events or "
+            "reach agents beyond local speech and broadcast range; use free-form messages "
+            "for immediate local conversation."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "mandated":
+        lines.append(
+            f"Capability check: on tick 0, {ledger_submission} to state your specialty "
+            "or intended role and one useful resource fact."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "bootstrap_one":
+        lines.append(
+            f"One-time institutional bootstrap: only if self.id is agent-1 and tick is 0, "
+            f"{ledger_submission} with your specialty and one concrete local resource fact. "
+            "All other posting remains your choice."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "reflect":
+        lines.append(
+            "Decision audit: begin intent with LEDGER POST or LEDGER SKIP and briefly state "
+            "whether you currently have novel information whose value to nonlocal agents "
+            "justifies a durable update. Posting remains your choice."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "private_value":
+        lines.append(
+            "Distant complementary agents cannot discover your specialty, supplies, or needs "
+            "through local speech. Durable discovery can bring you trade, materials, and aid, "
+            "so treat a concise ledger update as part of your own long-term resilience when it is novel."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "decision_rule":
+        lines.append(
+            "Ledger decision rule: when your specialty, a concrete resource location, a current supply, "
+            "an unmet need, or an offer is useful beyond your local area and is not already represented "
+            f"in recent notes, {ledger_submission}. Do not repeat unchanged information."
+        )
+    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "perspective":
+        lines.append(
+            "Information perspective: agents beyond local range cannot see your specialty, local map, "
+            "inventory, nearby speech, or private observations. A fact familiar to you may still be new "
+            "to the town; judge public novelty by whether the concrete fact is already represented in "
+            "recent ledger notes, not by whether you personally already know it."
+        )
     lines.append("")
     lines.append(
         f"WORLD: {world.get('width', '?')}x{world.get('height', '?')} grid, visible radius {world.get('visible_radius', '?')}, "
@@ -444,6 +515,8 @@ def build_static_context(world: dict[str, Any]) -> str:
         action_points = cost.get("action_points", 0)
         if action_type in COMMUNICATION_ACTION_TYPES:
             action_points = world.get("communication_action_cost", action_points)
+        elif action_type == "post_ledger_note":
+            action_points = world.get("town_ledger_action_cost", action_points)
         elif action_type in GROUP_ADMIN_ACTION_TYPES:
             action_points = world.get("group_admin_action_cost", action_points)
         energy = cost.get("energy", 0)
@@ -483,12 +556,17 @@ def build_static_context(world: dict[str, Any]) -> str:
                 "- propose_contract names an agent or open counterparty, give/payment bundles, an absolute deadline 1-20 ticks ahead, and optional proposer collateral; proposal moves nothing.",
                 "- accept_contract escrows the buyer's full payment and the proposer's collateral; deliver_contract settles one full delivery; missed deadlines return payment and forfeit collateral.",
                 "- each agent may have at most 3 unaccepted proposals and 5 active contracts as either party; unaccepted proposals expire after 5 ticks and may be cancelled by the proposer.",
-                "",
-                "TOWN LEDGER:",
-                "- post_ledger_note appends a public world-global note (title <=60 chars, body <=400); each agent may post once per tick.",
-                "- the latest 8 notes and total note count are in town_ledger. Notes can share prices, agreements, laws, or other durable public information.",
             ]
         )
+        if world.get("town_ledger_prompt_mode", "baseline") != "baseline":
+            lines.extend(
+                [
+                    "",
+                    "TOWN LEDGER:",
+                    "- post_ledger_note appends a public world-global note (title <=60 chars, body <=400); each agent may post once per tick.",
+                    "- the latest 8 notes and total note count are in town_ledger. Notes can share prices, agreements, laws, or other durable public information.",
+                ]
+            )
     lines.append("")
     for section_name, notes in COMPACT_MECHANICS.items():
         lines.append(f"{section_name}:")

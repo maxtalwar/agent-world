@@ -79,8 +79,8 @@ class ClaudeBrain:
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
         agent_id: str | None = None,
-        connector_profile: str = "stateless-v1",
-        conversation_mode: str = "stateless",
+        connector_profile: str = "connector-v1",
+        conversation_mode: str = "fresh-conversation",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ):
         self.runtime = runtime or BrainRuntime()
@@ -90,8 +90,10 @@ class ClaudeBrain:
             conversation_mode=conversation_mode,
             max_turns=session_max_turns,
         )
-        self.connector_profile = connector_profile
-        self.conversation_mode = conversation_mode
+        self.connector_profile = self.boundary.connector_profile
+        self.conversation_mode = self.boundary.conversation_mode
+        connector_profile = self.connector_profile
+        conversation_mode = self.conversation_mode
         self.session_max_turns = session_max_turns
         self.model = model or os.environ.get("CLAUDE_MODEL", "claude-sonnet-5")
         self.reasoning_effort = reasoning_effort or os.environ.get("CLAUDE_REASONING_EFFORT", "low")
@@ -134,7 +136,7 @@ class ClaudeBrain:
             if invocation.full_context
             else build_claude_continuation_prompt(dynamic_json)
         )
-        fresh_session_id = str(uuid.uuid4()) if self.conversation_mode != "stateless" else None
+        fresh_session_id = str(uuid.uuid4()) if self.conversation_mode != "fresh-conversation" else None
 
         started_at = time.monotonic()
         try:
@@ -151,7 +153,7 @@ class ClaudeBrain:
                 except subprocess.TimeoutExpired:
                     if attempt >= self.timeout_retries:
                         raise
-                    if self.conversation_mode != "stateless":
+                    if self.conversation_mode != "fresh-conversation":
                         # A timed-out turn may already exist in the provider
                         # session, so retry from canonical simulation state.
                         self.boundary.reset("timeout_retry")
@@ -232,7 +234,7 @@ class ClaudeBrain:
                                 ),
                             },
                         )
-                        if self.conversation_mode != "stateless":
+                        if self.conversation_mode != "fresh-conversation":
                             self.boundary.reset("model_output_failure")
                         return _failure_decision(
                             f"Claude model output failed: {boundary_detail}"
@@ -251,7 +253,7 @@ class ClaudeBrain:
                             ),
                         },
                     )
-                    if self.conversation_mode != "stateless":
+                    if self.conversation_mode != "fresh-conversation":
                         self.boundary.reset("ambiguous_boundary_failure")
                     return _failure_decision(
                         f"Claude boundary failed: {boundary_detail}"
@@ -292,7 +294,7 @@ class ClaudeBrain:
                         **ambiguous_boundary_metadata(completed.stdout, detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("ambiguous_boundary_failure")
                 return _failure_decision(f"Claude boundary failed: {detail}")
 
@@ -313,7 +315,7 @@ class ClaudeBrain:
                         **attribution.usage_metadata(adapter_detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("model_output_failure")
                 return _failure_decision(
                     attributed_failure_message(
@@ -343,7 +345,7 @@ class ClaudeBrain:
                         **attribution.usage_metadata(adapter_detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset(f"{attribution.origin}_failure")
                 return _failure_decision(
                     attributed_failure_message(
@@ -368,7 +370,7 @@ class ClaudeBrain:
             self._mark_quota_unavailable(message)
             return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
-            if self.conversation_mode != "stateless":
+            if self.conversation_mode != "fresh-conversation":
                 self.boundary.reset("decision_failure")
             return _failure_decision(f"Claude decision failed: {exc}")
 
@@ -425,7 +427,7 @@ class ClaudeBrain:
             "--json-schema",
             json.dumps(CLAUDE_AGENT_DECISION_SCHEMA, sort_keys=True),
         ]
-        if self.conversation_mode == "stateless":
+        if self.conversation_mode == "fresh-conversation":
             command.append("--no-session-persistence")
         elif invocation.resume_session_id:
             command.extend(["--resume", invocation.resume_session_id])

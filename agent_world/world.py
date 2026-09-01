@@ -88,6 +88,55 @@ class WorldEngine:
         engine = cls(state)
         for index, name in enumerate(agent_names or []):
             engine.spawn_agent(name=name, agent_id=f"agent-{index + 1}")
+        if config.economy_mode == "organic" and config.town_ledger_seed_mode == "demo":
+            engine.log_event(
+                "ledger_seed_note",
+                message="A founding notice was posted to the town ledger.",
+                data={
+                    "author": "town",
+                    "title": "Founding notice",
+                    "body": "The town ledger is open for durable reports from across the map.",
+                },
+                scope="public",
+            )
+        elif config.economy_mode == "organic" and config.town_ledger_seed_mode == "peer_demo":
+            for author, title, body in (
+                (
+                    "agent-2",
+                    "Wood available in the west",
+                    "Forester operating in the western forest; wood is available and food or stone is wanted.",
+                ),
+                (
+                    "agent-3",
+                    "Ore and stone in the east",
+                    "Miner operating in the eastern mountains; ore and stone are available and food or wood is wanted.",
+                ),
+            ):
+                engine.log_event(
+                    "ledger_seed_note",
+                    message=f"A synthetic peer example from {author} was placed on the town ledger.",
+                    data={
+                        "author": author,
+                        "title": title,
+                        "body": body,
+                        "synthetic": True,
+                    },
+                    scope="public",
+                )
+        elif config.economy_mode == "organic" and config.town_ledger_seed_mode == "request":
+            engine.log_event(
+                "ledger_seed_note",
+                message="The town requested concrete local reports on the ledger.",
+                data={
+                    "author": "town",
+                    "title": "Request for local reports",
+                    "body": (
+                        "Please report a specialty, useful resource location, supply, or unmet need "
+                        "that distant agents could act on. Avoid repeating existing reports."
+                    ),
+                },
+                scope="public",
+            )
         engine.log_event("world_created", message="World initialized", scope="public")
         return engine
 
@@ -281,6 +330,10 @@ class WorldEngine:
 
     def _is_free_action(self, action: dict[str, Any]) -> bool:
         action_type = str(action.get("type", "")).strip()
+        if action_type == "post_ledger_note":
+            return (
+                getattr(self.state.config, "town_ledger_action_cost", 1) == 0
+            )
         return action_type in FREE_ACTION_TYPES and self._coordination_action_cost(action_type) == 0
 
     def _coordination_action_cost(self, action_type: str) -> int:
@@ -986,6 +1039,18 @@ class WorldEngine:
 
     def _handle_message(self, agent: Agent, message: dict[str, Any], action_points: int) -> int:
         mode = str(message.get("mode", "say"))
+        if mode == "ledger" and getattr(self.state.config, "town_ledger_output_mode", "action") == "message":
+            text = str(message.get("text", "")).strip()
+            title, separator, body = text.partition("\n")
+            if not separator:
+                body = text
+                title = "Town note"
+            action = {
+                "type": "post_ledger_note",
+                "title": title[:60],
+                "body": body[:400],
+            }
+            return self._dispatch_action(agent, action, action_points)
         action = {"type": mode, "text": message.get("text", ""), "to": message.get("to")}
         if mode not in {"say", "whisper", "broadcast"}:
             action["type"] = "say"
@@ -1528,7 +1593,7 @@ class WorldEngine:
             data={"author": agent.id, "tick": self.state.tick, "title": title, "body": body},
             scope="public",
         )
-        return action_points - 1
+        return action_points - getattr(self.state.config, "town_ledger_action_cost", 1)
 
     def _action_repay_contract(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         contract = self.state.contracts.get(str(action.get("contract_id", "")))

@@ -184,8 +184,8 @@ Every benchmark run uses:
 | Action feedback | baseline |
 | Resolution | simultaneous |
 | Global/provider workers | Provider-aware: Codex CLI 40; Claude CLI, Grok CLI, and ZCode CLI 20; others 4 (all effectively at most 10 with this population) |
-| Connector | `stateless-v3` |
-| Provider conversation | stateless |
+| Connector | `connector-v3` |
+| Provider conversation | `fresh-conversation` |
 | Private agent I/O | enabled |
 
 Launch the provisional seed:

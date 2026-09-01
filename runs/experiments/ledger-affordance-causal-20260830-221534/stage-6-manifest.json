@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "study_id": "ledger-affordance-causal-20260830-221534-stage-6",
+  "declared_at": "2026-08-30T23:24:00Z",
+  "status": "declared",
+  "diagnostic_only": true,
+  "purpose": "Validate the compact production default after removing duplicate ledger prose to preserve the 7800-character static prompt budget.",
+  "production_fix": {
+    "default_prompt_mode": "baseline",
+    "legacy_reproduction_mode": "legacy",
+    "action_output_limit": 4,
+    "ledger_action_cost": 1,
+    "compact_rule": "durable global channel + distant agents cannot see local facts + compare useful facts to recent public notes + exact action shape + no unchanged repeats"
+  },
+  "common_config": {
+    "preset": "frontier-generalists",
+    "specialization_mode": "specialists",
+    "objective": "neutral",
+    "population": 10,
+    "ticks": 10,
+    "seed": 11,
+    "reasoning_effort": "medium",
+    "connector_profile": "stateless-v3",
+    "prompt_mode": "default baseline (no explicit override)"
+  },
+  "cells": [
+    {"id": "luna_production_default", "model": "gpt-5.6-luna"},
+    {"id": "sol_production_default", "model": "gpt-5.6-sol"}
+  ],
+  "primary_endpoints": ["ledger_notes", "unique_authors", "useful_non_repetitive_notes"],
+  "secondary_endpoints": ["contracts", "decision_failures", "static_prompt_length"],
+  "success_rule": "Both models show broad useful adoption without increased mechanics or a per-tick mandate."
+}

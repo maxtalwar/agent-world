@@ -291,8 +291,8 @@ class DevinBrainTests(unittest.TestCase):
         ) as run:
             brain = DevinBrain(
                 executable="devin",
-                connector_profile="stateless-v2",
-                conversation_mode="bounded-session-v1",
+                connector_profile="connector-v2",
+                conversation_mode="persistent-conversation-v1",
             )
             brain.decide({"tick": 0, "self": {"id": "agent-1"}, "world": {}})
             brain.decide({"tick": 1, "self": {"id": "agent-1"}, "world": {}})

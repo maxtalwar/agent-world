@@ -13,6 +13,10 @@ import time
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from agent_world.brain_boundary import (
+    normalize_connector_profile,
+    normalize_conversation_mode,
+)
 from agent_world.brain_factory import BrainSpec, DEFAULT_MODEL_MAX_WORKERS
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.env import load_dotenv
@@ -46,8 +50,8 @@ class RunConfig:
     reasoning_effort: str | None = None
     log_agent_io: bool = True
     max_workers: int = DEFAULT_MODEL_MAX_WORKERS
-    connector_profile: str = "stateless-v1"
-    conversation_mode: str = "stateless"
+    connector_profile: str = "connector-v1"
+    conversation_mode: str = "fresh-conversation"
     session_max_turns: int = 10
     world_config: WorldConfig = field(default_factory=WorldConfig)
 
@@ -369,14 +373,18 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),
         max_workers=_bounded_int(payload.get("max_workers", TUNED_OBSERVATORY_DEFAULTS["max_workers"]), "max_workers", minimum=1, maximum=40),
         connector_profile=_bounded_choice(
-            payload.get("connector_profile", "stateless-v1"),
+            normalize_connector_profile(
+                str(payload.get("connector_profile", "connector-v1"))
+            ),
             "connector_profile",
-            {"stateless-v1", "stateless-v2", "stateless-v3"},
+            {"connector-v1", "connector-v2", "connector-v3"},
         ),
         conversation_mode=_bounded_choice(
-            payload.get("conversation_mode", "stateless"),
+            normalize_conversation_mode(
+                str(payload.get("conversation_mode", "fresh-conversation"))
+            ),
             "conversation_mode",
-            {"stateless", "bounded-session-v1"},
+            {"fresh-conversation", "persistent-conversation-v1"},
         ),
         session_max_turns=_bounded_int(
             payload.get("session_max_turns", 10),

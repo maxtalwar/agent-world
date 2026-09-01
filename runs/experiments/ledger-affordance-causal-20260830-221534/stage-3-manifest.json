@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "study_id": "ledger-affordance-causal-20260830-221534-stage-3",
+  "declared_at": "2026-08-30T22:55:00Z",
+  "status": "declared",
+  "diagnostic_only": true,
+  "prior_results": {
+    "stage_1_non_mandated_notes": 0,
+    "stage_1_non_mandated_decisions": 700,
+    "stage_2_non_bootstrap_notes": 1,
+    "stage_2_non_bootstrap_decisions": 400,
+    "stage_2_bootstrap_follow_on_notes": 0,
+    "stage_2b_notes": 0,
+    "stage_2b_decisions": 300,
+    "interpretation": "Mechanics, model capability, cost, action slots, output category, generic and realistic social proof, collective framing, and isolated salience do not explain adoption. The remaining causal candidates are failure to evaluate an optional public good, perceived private value, and absence of an actionable request or conditional decision policy."
+  },
+  "hypotheses": [
+    {
+      "id": "H9",
+      "claim": "Agents omit the ledger from deliberation rather than evaluating and rejecting it.",
+      "prediction": "Reflection will expose skip reasons and may increase posting merely by forcing evaluation."
+    },
+    {
+      "id": "H10",
+      "claim": "Agents see ledger posting as a public good with no immediate private return.",
+      "prediction": "Explaining discovery, trade, and aid benefits will increase voluntary posting."
+    },
+    {
+      "id": "H11",
+      "claim": "Agents need a concrete novelty threshold or actionable request, not merely feature documentation.",
+      "prediction": "A conditional novelty rule or a town request will produce useful, non-repetitive reports."
+    }
+  ],
+  "common_config": {
+    "preset": "frontier-generalists",
+    "specialization_mode": "specialists",
+    "objective": "neutral",
+    "population": 10,
+    "ticks": 10,
+    "seed": 11,
+    "model": "gpt-5.6-luna",
+    "reasoning_effort": "medium",
+    "ledger_output_mode": "action",
+    "ledger_action_cost": 0,
+    "action_output_limit": 5,
+    "exact_action_shape": true
+  },
+  "cells": [
+    {"id": "reflect", "prompt_mode": "reflect", "seed_mode": "none"},
+    {"id": "private_value", "prompt_mode": "private_value", "seed_mode": "none"},
+    {"id": "decision_rule", "prompt_mode": "decision_rule", "seed_mode": "none"},
+    {"id": "request", "prompt_mode": "salient", "seed_mode": "request"}
+  ],
+  "primary_endpoints": ["ledger_notes", "unique_authors", "first_note_tick", "useful_non_repetitive_notes"],
+  "reflection_endpoint": "verbatim LEDGER POST/SKIP intent rationales",
+  "follow_up_rule": "Take the least directive successful intervention back to the original four-slot, one-point configuration, then replicate the minimal durable fix on Sol."
+}

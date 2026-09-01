@@ -13,6 +13,10 @@ import tempfile
 import time
 from typing import Any
 
+from agent_world.brain_boundary import (
+    normalize_connector_profile,
+    normalize_conversation_mode,
+)
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.decision_failure import (
     ambiguous_boundary_metadata,
@@ -63,13 +67,15 @@ class GrokBrain:
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
         agent_id: str | None = None,
-        connector_profile: str = "stateless-v1",
-        conversation_mode: str = "stateless",
+        connector_profile: str = "connector-v1",
+        conversation_mode: str = "fresh-conversation",
         session_max_turns: int = 1,
     ):
         del session_max_turns
-        if conversation_mode != "stateless":
-            raise ValueError("GrokBrain supports only stateless conversation mode")
+        connector_profile = normalize_connector_profile(connector_profile)
+        conversation_mode = normalize_conversation_mode(conversation_mode)
+        if conversation_mode != "fresh-conversation":
+            raise ValueError("GrokBrain supports only fresh-conversation mode")
         self.runtime = runtime or BrainRuntime()
         self.agent_id = agent_id
         self.connector_profile = connector_profile
@@ -88,7 +94,7 @@ class GrokBrain:
             raise ValueError("Grok CLI is required for GrokBrain, but 'grok' was not found")
         self._stable_work_dir = (
             _grok_decision_working_directory(connector_profile)
-            if connector_profile in {"stateless-v2", "stateless-v3"}
+            if connector_profile in {"connector-v2", "connector-v3"}
             else None
         )
 
@@ -156,7 +162,7 @@ class GrokBrain:
                 "request_sha256": hashlib.sha256(request_payload.encode("utf-8")).hexdigest(),
                 "duration_seconds": round(elapsed, 3),
                 "connector_profile": self.connector_profile,
-                "conversation_mode": "stateless",
+                "conversation_mode": "fresh-conversation",
             }
             if (
                 completed.returncode != 0
@@ -434,11 +440,11 @@ def _is_provider_error(detail: str) -> bool:
     )
 
 
-def _grok_decision_working_directory(connector_profile: str = "stateless-v2") -> str:
-    if connector_profile == "stateless-v3":
+def _grok_decision_working_directory(connector_profile: str = "connector-v2") -> str:
+    if connector_profile == "connector-v3":
         configured = os.environ.get("AGENT_WORLD_PROVIDER_WORKSPACE_ROOT")
         root = Path(configured).expanduser() if configured else Path(tempfile.gettempdir()) / "agent-world-provider-workspaces"
-        directory = root / "grok-stateless-v3"
+        directory = root / "grok-connector-v3"
         directory.mkdir(parents=True, exist_ok=True)
         return str(directory)
     return tempfile.mkdtemp(prefix="agent-world-grok-stable-")

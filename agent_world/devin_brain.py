@@ -136,8 +136,8 @@ class DevinBrain:
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
         agent_id: str | None = None,
-        connector_profile: str = "stateless-v1",
-        conversation_mode: str = "stateless",
+        connector_profile: str = "connector-v1",
+        conversation_mode: str = "fresh-conversation",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ):
         self.runtime = runtime or BrainRuntime()
@@ -147,8 +147,10 @@ class DevinBrain:
             conversation_mode=conversation_mode,
             max_turns=session_max_turns,
         )
-        self.connector_profile = connector_profile
-        self.conversation_mode = conversation_mode
+        self.connector_profile = self.boundary.connector_profile
+        self.conversation_mode = self.boundary.conversation_mode
+        connector_profile = self.connector_profile
+        conversation_mode = self.conversation_mode
         self.session_max_turns = session_max_turns
         self.model = model or os.environ.get("DEVIN_MODEL", "swe-1-6-fast")
         self.reasoning_effort = reasoning_effort or os.environ.get(
@@ -173,8 +175,8 @@ class DevinBrain:
             )
         self._stable_work_dir = (
             _devin_decision_working_directory(connector_profile)
-            if connector_profile in {"stateless-v2", "stateless-v3"}
-            or conversation_mode != "stateless"
+            if connector_profile in {"connector-v2", "connector-v3"}
+            or conversation_mode != "fresh-conversation"
             else None
         )
 
@@ -285,7 +287,7 @@ class DevinBrain:
                 except subprocess.TimeoutExpired:
                     if attempt >= self.timeout_retries:
                         raise
-                    if self.conversation_mode != "stateless":
+                    if self.conversation_mode != "fresh-conversation":
                         self.boundary.reset("timeout_retry")
                         invocation = self.boundary.prepare()
                         prompt = full_prompt
@@ -310,7 +312,7 @@ class DevinBrain:
                         **ambiguous_boundary_metadata(turn.envelope(), detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("forbidden_tool_call")
                 return _failure_decision(f"Devin boundary failed: {detail}")
 
@@ -323,7 +325,7 @@ class DevinBrain:
                         **ambiguous_boundary_metadata(turn.envelope(), detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("ambiguous_boundary_failure")
                 return _failure_decision(f"Devin boundary failed: {detail}")
 
@@ -337,7 +339,7 @@ class DevinBrain:
                         **ambiguous_boundary_metadata(turn.envelope(), detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("ambiguous_boundary_failure")
                 return _failure_decision(f"Devin boundary failed: {detail}")
 
@@ -364,7 +366,7 @@ class DevinBrain:
                         **attribution.usage_metadata(adapter_detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("model_output_failure")
                 return _failure_decision(
                     attributed_failure_message("Devin", attribution, adapter_detail)
@@ -389,7 +391,7 @@ class DevinBrain:
                         **attribution.usage_metadata(adapter_detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset(f"{attribution.origin}_failure")
                 return _failure_decision(
                     attributed_failure_message("Devin", attribution, adapter_detail)
@@ -428,7 +430,7 @@ class DevinBrain:
                 message = f"Devin provider unavailable: {detail}"
                 self.runtime.mark_quota_unavailable(message)
                 return _failure_decision(message)
-            if self.conversation_mode != "stateless":
+            if self.conversation_mode != "fresh-conversation":
                 self.boundary.reset("ambiguous_boundary_failure")
             return _failure_decision(f"Devin boundary failed: {detail}")
         except (OSError, ValueError, json.JSONDecodeError) as exc:
@@ -438,7 +440,7 @@ class DevinBrain:
                 request_meta=request_meta,
                 duration_seconds=time.monotonic() - started_at,
             )
-            if self.conversation_mode != "stateless":
+            if self.conversation_mode != "fresh-conversation":
                 self.boundary.reset("decision_failure")
             return _failure_decision(f"Devin decision failed: {exc}")
 
@@ -1183,15 +1185,15 @@ def _nonnegative_int(value: Any) -> int:
 
 @lru_cache(maxsize=None)
 def _devin_decision_working_directory(
-    connector_profile: str = "stateless-v2",
+    connector_profile: str = "connector-v2",
 ) -> str:
-    if connector_profile == "stateless-v3":
+    if connector_profile == "connector-v3":
         configured = os.environ.get("AGENT_WORLD_PROVIDER_WORKSPACE_ROOT")
         if configured:
             root = Path(configured).expanduser()
         else:
             root = Path(tempfile.gettempdir()) / "agent-world-provider-workspaces"
-        directory = root / "devin-stateless-v3"
+        directory = root / "devin-connector-v3"
         directory.mkdir(parents=True, exist_ok=True)
         return str(directory)
     return tempfile.mkdtemp(prefix="agent-world-devin-stable-")

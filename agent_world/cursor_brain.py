@@ -57,8 +57,8 @@ class CursorBrain:
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
         agent_id: str | None = None,
-        connector_profile: str = "stateless-v1",
-        conversation_mode: str = "stateless",
+        connector_profile: str = "connector-v1",
+        conversation_mode: str = "fresh-conversation",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ):
         self.runtime = runtime or BrainRuntime()
@@ -68,8 +68,10 @@ class CursorBrain:
             conversation_mode=conversation_mode,
             max_turns=session_max_turns,
         )
-        self.connector_profile = connector_profile
-        self.conversation_mode = conversation_mode
+        self.connector_profile = self.boundary.connector_profile
+        self.conversation_mode = self.boundary.conversation_mode
+        connector_profile = self.connector_profile
+        conversation_mode = self.conversation_mode
         self.session_max_turns = session_max_turns
         self.model = model or os.environ.get("CURSOR_MODEL", "cursor-grok-4.5")
         self.reasoning_effort = reasoning_effort or os.environ.get("CURSOR_REASONING_EFFORT", "low")
@@ -84,8 +86,8 @@ class CursorBrain:
             )
         self._stable_work_dir = (
             _cursor_decision_working_directory(connector_profile)
-            if connector_profile in {"stateless-v2", "stateless-v3"}
-            or conversation_mode != "stateless"
+            if connector_profile in {"connector-v2", "connector-v3"}
+            or conversation_mode != "fresh-conversation"
             else None
         )
 
@@ -165,7 +167,7 @@ class CursorBrain:
                 except subprocess.TimeoutExpired:
                     if attempt >= self.timeout_retries:
                         raise
-                    if self.conversation_mode != "stateless":
+                    if self.conversation_mode != "fresh-conversation":
                         # A timed-out turn may already have mutated the saved
                         # chat. Retry in a new chat from Agent World state.
                         self.boundary.reset("timeout_retry")
@@ -227,7 +229,7 @@ class CursorBrain:
                             ),
                         },
                     )
-                    if self.conversation_mode != "stateless":
+                    if self.conversation_mode != "fresh-conversation":
                         self.boundary.reset("ambiguous_boundary_failure")
                     return _failure_decision(
                         f"Cursor boundary failed: {boundary_detail}"
@@ -265,7 +267,7 @@ class CursorBrain:
                         **ambiguous_boundary_metadata(completed.stdout, detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("ambiguous_boundary_failure")
                 return _failure_decision(f"Cursor boundary failed: {detail}")
 
@@ -287,7 +289,7 @@ class CursorBrain:
                         **attribution.usage_metadata(adapter_detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("model_output_failure")
                 return _failure_decision(
                     attributed_failure_message(
@@ -318,7 +320,7 @@ class CursorBrain:
                         **attribution.usage_metadata(adapter_detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset(f"{attribution.origin}_failure")
                 return _failure_decision(
                     attributed_failure_message(
@@ -341,7 +343,7 @@ class CursorBrain:
             self.runtime.mark_quota_unavailable(message)
             return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
-            if self.conversation_mode != "stateless":
+            if self.conversation_mode != "fresh-conversation":
                 self.boundary.reset("decision_failure")
             return _failure_decision(f"Cursor decision failed: {exc}")
 
@@ -573,14 +575,14 @@ def _is_provider_error(detail: str) -> bool:
 
 
 @lru_cache(maxsize=None)
-def _cursor_decision_working_directory(connector_profile: str = "stateless-v2") -> str:
-    if connector_profile == "stateless-v3":
+def _cursor_decision_working_directory(connector_profile: str = "connector-v2") -> str:
+    if connector_profile == "connector-v3":
         configured = os.environ.get("AGENT_WORLD_PROVIDER_WORKSPACE_ROOT")
         if configured:
             root = Path(configured).expanduser()
         else:
             root = Path(tempfile.gettempdir()) / "agent-world-provider-workspaces"
-        directory = root / "cursor-stateless-v3"
+        directory = root / "cursor-connector-v3"
         directory.mkdir(parents=True, exist_ok=True)
         return str(directory)
     return tempfile.mkdtemp(prefix="agent-world-cursor-stable-")
