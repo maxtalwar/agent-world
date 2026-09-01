@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953",
-  "status": "preflight_pending",
+  "status": "preflight_passed_ready_to_launch",
   "created_at_utc": "2026-09-01T17:19:53Z",
   "study_type": "benchmark_trial_controlled_variant",
   "suite_id": "agent-world-participant-v6",
@@ -45,7 +45,20 @@
     "local_model_catalog_contains": "glm-5.3",
     "preserved_smoke_evidence": "runs/experiments/glm-5-3-zcode-frontier-smoke-20260901-163341",
     "preserved_smoke_contract_valid": true,
-    "live_v6_schema_probe": "pending",
+    "live_v6_schema_probe": {
+      "status": "passed",
+      "cohort": "glm53-zcode-v6-schema-probe-s11-20260901",
+      "provider": "zcode_cli",
+      "model": "glm-5.3",
+      "response_model": "glm-5.3",
+      "reasoning_effort": "max",
+      "duration_seconds": 44.883,
+      "prompt_tokens": 10784,
+      "completion_tokens": 2945,
+      "decision_failure_origin": null,
+      "invalid_actions": 0,
+      "actions": ["gather", "gather", "move", "wait"]
+    },
     "validation": "377 tests passed with 1 intentional skip at the launch source commit."
   },
   "protocol_provenance": {
