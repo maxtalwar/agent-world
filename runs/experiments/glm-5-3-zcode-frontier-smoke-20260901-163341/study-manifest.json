@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "study_type": "smoke_test",
+  "status": "completed",
+  "purpose": "Verify native GLM-5.3 decisions through the saved ZCode Coding Plan credential bridge.",
+  "preset": "frontier-generalists",
+  "seed": 11,
+  "agents": 1,
+  "ticks": 1,
+  "brain": "zcode",
+  "model": "glm-5.3",
+  "reasoning_effort": "max",
+  "connector_profile": "stateless-v3",
+  "conversation_mode": "stateless",
+  "decision_mode": "raw",
+  "action_feedback_mode": "baseline",
+  "max_workers": 1,
+  "provider_max_workers": 1,
+  "launch_commit": "ea50444",
+  "cohort_id": "glm53-zcode-frontier-smoke-s11-20260901-163341",
+  "result": {
+    "decision_failures": 0,
+    "invalid_actions": 0,
+    "prompt_tokens": 11087,
+    "completion_tokens": 2587,
+    "context_window": 1000000,
+    "actions": ["gather", "move", "move"],
+    "run_status": "completed"
+  }
+}
