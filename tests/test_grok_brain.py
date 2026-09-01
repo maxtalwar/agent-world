@@ -189,18 +189,18 @@ class GrokBrainTests(unittest.TestCase):
         self.assertEqual(usage["output_tokens"], 90)
         self.assertEqual(model, "grok-4.6-build")
 
-    def test_stateless_v3_workspace_is_stable(self) -> None:
+    def test_connector_v3_workspace_is_stable(self) -> None:
         with tempfile.TemporaryDirectory() as root, patch.dict(
             os.environ, {"AGENT_WORLD_PROVIDER_WORKSPACE_ROOT": root}
         ):
-            first = _grok_decision_working_directory("stateless-v3")
-            second = _grok_decision_working_directory("stateless-v3")
+            first = _grok_decision_working_directory("connector-v3")
+            second = _grok_decision_working_directory("connector-v3")
         self.assertEqual(first, second)
-        self.assertTrue(first.endswith("grok-stateless-v3"))
+        self.assertTrue(first.endswith("grok-connector-v3"))
 
     def test_bounded_sessions_are_rejected(self) -> None:
-        with self.assertRaisesRegex(ValueError, "only stateless"):
-            GrokBrain(executable="grok", conversation_mode="bounded-session-v1")
+        with self.assertRaisesRegex(ValueError, "only fresh-conversation"):
+            GrokBrain(executable="grok", conversation_mode="persistent-conversation-v1")
 
 
 if __name__ == "__main__":

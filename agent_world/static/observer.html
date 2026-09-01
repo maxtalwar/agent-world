@@ -904,16 +904,16 @@
         <label class="field">
           <label for="run-connector-profile">Connector profile</label>
           <select id="run-connector-profile" class="lock">
-            <option value="stateless-v1">stateless-v1 (historical)</option>
-            <option value="stateless-v2">stateless-v2 (original lean experiment)</option>
-            <option value="stateless-v3" selected>stateless-v3 (corrected lean)</option>
+            <option value="connector-v1">connector-v1 (historical)</option>
+            <option value="connector-v2">connector-v2 (original lean experiment)</option>
+            <option value="connector-v3" selected>connector-v3 (corrected lean)</option>
           </select>
         </label>
         <label class="field">
           <label for="run-conversation-mode">Conversation memory</label>
           <select id="run-conversation-mode" class="lock">
-            <option value="stateless" selected>stateless</option>
-            <option value="bounded-session-v1">bounded session</option>
+            <option value="fresh-conversation" selected>fresh conversation (no provider history)</option>
+            <option value="persistent-conversation-v1">persistent conversation (rotating)</option>
           </select>
         </label>
         <label class="field">

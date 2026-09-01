@@ -251,7 +251,7 @@ class ClaudeBrainTests(unittest.TestCase):
             "agent_world.claude_brain.subprocess.run",
             side_effect=[failure, success],
         ) as run:
-            brain = ClaudeBrain(executable="claude", conversation_mode="stateless")
+            brain = ClaudeBrain(executable="claude", conversation_mode="fresh-conversation")
             decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
 
         # The retry used to be gated on a resumed session, so it never fired in
@@ -274,8 +274,8 @@ class ClaudeBrainTests(unittest.TestCase):
         with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
             brain = ClaudeBrain(
                 executable="claude",
-                connector_profile="stateless-v2",
-                conversation_mode="bounded-session-v1",
+                connector_profile="connector-v2",
+                conversation_mode="persistent-conversation-v1",
             )
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             brain.decide({"tick": 1, "self": {"id": "agent-1"}})

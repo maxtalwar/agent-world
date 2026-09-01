@@ -101,8 +101,8 @@ def _protocol_report(
             "provider_max_workers": {"codex_cli": 40},
             "agent_io_log": True,
             "action_feedback_mode": "baseline",
-            "connector_profile": "stateless-v3",
-            "conversation_mode": "stateless",
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
         },
     }
     responses = [
@@ -264,7 +264,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.preset, "frontier-generalists")
         self.assertEqual(args.world_variant, "frontier")
         self.assertEqual(args.reasoning_effort, "medium")
-        self.assertEqual(args.connector_profile, "stateless-v3")
+        self.assertEqual(args.connector_profile, "connector-v3")
         self.assertEqual(args.max_workers, 40)
         self.assertEqual(args.codex_max_workers, 40)
         # Scoped to the adapter this trial will invoke, not every adapter.

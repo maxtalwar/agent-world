@@ -6,9 +6,30 @@ from dataclasses import dataclass
 from typing import Any
 
 
-CONNECTOR_PROFILES = frozenset({"stateless-v1", "stateless-v2", "stateless-v3"})
-CONVERSATION_MODES = frozenset({"stateless", "bounded-session-v1"})
+CONNECTOR_PROFILES = frozenset({"connector-v1", "connector-v2", "connector-v3"})
+CONVERSATION_MODES = frozenset({"fresh-conversation", "persistent-conversation-v1"})
+LEGACY_CONNECTOR_PROFILE_ALIASES = {
+    "stateless-v1": "connector-v1",
+    "stateless-v2": "connector-v2",
+    "stateless-v3": "connector-v3",
+}
+LEGACY_CONVERSATION_MODE_ALIASES = {
+    "stateless": "fresh-conversation",
+    "bounded-session-v1": "persistent-conversation-v1",
+}
 DEFAULT_SESSION_MAX_TURNS = 10
+
+
+def normalize_connector_profile(value: str) -> str:
+    """Return the canonical connector profile, accepting historical names."""
+
+    return LEGACY_CONNECTOR_PROFILE_ALIASES.get(value, value)
+
+
+def normalize_conversation_mode(value: str) -> str:
+    """Return the canonical conversation mode, accepting historical names."""
+
+    return LEGACY_CONVERSATION_MODE_ALIASES.get(value, value)
 
 
 @dataclass(frozen=True)
@@ -44,6 +65,8 @@ class ConversationBoundary:
         conversation_mode: str,
         max_turns: int,
     ):
+        connector_profile = normalize_connector_profile(connector_profile)
+        conversation_mode = normalize_conversation_mode(conversation_mode)
         if connector_profile not in CONNECTOR_PROFILES:
             raise ValueError(f"unsupported connector profile: {connector_profile}")
         if conversation_mode not in CONVERSATION_MODES:
@@ -61,7 +84,7 @@ class ConversationBoundary:
         self.restored_checkpoint_session_id: str | None = None
 
     def prepare(self) -> ConversationInvocation:
-        if self.conversation_mode == "stateless":
+        if self.conversation_mode == "fresh-conversation":
             return ConversationInvocation(
                 resume_session_id=None,
                 full_context=True,
@@ -86,7 +109,7 @@ class ConversationBoundary:
         )
 
     def commit(self, invocation: ConversationInvocation, session_id: str | None) -> None:
-        if self.conversation_mode == "stateless":
+        if self.conversation_mode == "fresh-conversation":
             return
         if not session_id:
             raise ValueError("bounded provider conversation returned no session id")
@@ -117,9 +140,15 @@ class ConversationBoundary:
     def restore_checkpoint_metadata(self, state: dict[str, Any]) -> None:
         """Retain provenance while intentionally abandoning the mutable provider chat."""
 
-        if state.get("conversation_mode") != self.conversation_mode:
+        saved_conversation_mode = normalize_conversation_mode(
+            str(state.get("conversation_mode"))
+        )
+        saved_connector_profile = normalize_connector_profile(
+            str(state.get("connector_profile"))
+        )
+        if saved_conversation_mode != self.conversation_mode:
             raise ValueError("checkpoint conversation mode does not match the requested run")
-        if state.get("connector_profile") != self.connector_profile:
+        if saved_connector_profile != self.connector_profile:
             raise ValueError("checkpoint connector profile does not match the requested run")
         saved_agent = state.get("agent_id")
         if self.agent_id is not None and saved_agent not in {None, self.agent_id}:

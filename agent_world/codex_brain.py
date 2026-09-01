@@ -123,8 +123,8 @@ class CodexBrain:
         executable: str | None = None,
         runtime: BrainRuntime | None = None,
         agent_id: str | None = None,
-        connector_profile: str = "stateless-v1",
-        conversation_mode: str = "stateless",
+        connector_profile: str = "connector-v1",
+        conversation_mode: str = "fresh-conversation",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ):
         self.runtime = runtime or BrainRuntime()
@@ -134,8 +134,10 @@ class CodexBrain:
             conversation_mode=conversation_mode,
             max_turns=session_max_turns,
         )
-        self.connector_profile = connector_profile
-        self.conversation_mode = conversation_mode
+        self.connector_profile = self.boundary.connector_profile
+        self.conversation_mode = self.boundary.conversation_mode
+        connector_profile = self.connector_profile
+        conversation_mode = self.conversation_mode
         self.session_max_turns = session_max_turns
         self.model = model or os.environ.get("CODEX_MODEL", "gpt-5.6-luna")
         self.reasoning_effort = reasoning_effort or os.environ.get("CODEX_REASONING_EFFORT", "low")
@@ -150,12 +152,12 @@ class CodexBrain:
             raise ValueError("Codex CLI is required for CodexBrain, but 'codex' was not found on PATH.")
         self.cli_version = (
             _codex_version_text(self.executable)
-            if connector_profile in {"stateless-v2", "stateless-v3"}
+            if connector_profile in {"connector-v2", "connector-v3"}
             else "unrecorded"
         )
         self._stable_work_dir: str | None = None
         self._stable_schema_path: Path | None = None
-        if connector_profile in {"stateless-v2", "stateless-v3"} or conversation_mode != "stateless":
+        if connector_profile in {"connector-v2", "connector-v3"} or conversation_mode != "fresh-conversation":
             self._stable_work_dir = _codex_decision_working_directory(connector_profile)
             self._stable_schema_path = _write_codex_schema(Path(self._stable_work_dir))
 
@@ -214,7 +216,7 @@ class CodexBrain:
                 except subprocess.TimeoutExpired:
                     if attempt >= self.timeout_retries:
                         raise
-                    if self.conversation_mode != "stateless":
+                    if self.conversation_mode != "fresh-conversation":
                         # The provider may have accepted the timed-out turn.
                         # Never submit it twice into the same saved conversation.
                         self.boundary.reset("timeout_retry")
@@ -266,7 +268,7 @@ class CodexBrain:
                             ),
                         },
                     )
-                    if self.conversation_mode != "stateless":
+                    if self.conversation_mode != "fresh-conversation":
                         self.boundary.reset("ambiguous_boundary_failure")
                     return _failure_decision(
                         f"Codex boundary failed: {boundary_detail}"
@@ -299,7 +301,7 @@ class CodexBrain:
                         **ambiguous_boundary_metadata(completed.stdout, detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("ambiguous_boundary_failure")
                 return _failure_decision(f"Codex boundary failed: {detail}")
             attribution = attribute_decision_failure(
@@ -319,7 +321,7 @@ class CodexBrain:
                         **attribution.usage_metadata(detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset("model_output_failure")
                 return _failure_decision(
                     attributed_failure_message("Codex", attribution, detail)
@@ -337,7 +339,7 @@ class CodexBrain:
                         **attribution.usage_metadata(detail),
                     },
                 )
-                if self.conversation_mode != "stateless":
+                if self.conversation_mode != "fresh-conversation":
                     self.boundary.reset(f"{attribution.origin}_failure")
                 return _failure_decision(
                     attributed_failure_message("Codex", attribution, detail)
@@ -350,7 +352,7 @@ class CodexBrain:
             self._mark_quota_unavailable(message)
             return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
-            if self.conversation_mode != "stateless":
+            if self.conversation_mode != "fresh-conversation":
                 self.boundary.reset("decision_failure")
             return _failure_decision(f"Codex decision failed: {exc}")
 
@@ -359,7 +361,7 @@ class CodexBrain:
         prompt: str,
         invocation: ConversationInvocation,
     ) -> subprocess.CompletedProcess[str]:
-        if self.connector_profile == "stateless-v1" and self.conversation_mode == "stateless":
+        if self.connector_profile == "connector-v1" and self.conversation_mode == "fresh-conversation":
             with tempfile.TemporaryDirectory(prefix="agent-world-codex-") as temp_dir:
                 schema_path = _write_codex_schema(Path(temp_dir))
                 return self._run_command(prompt, invocation, temp_dir, schema_path)
@@ -399,7 +401,7 @@ class CodexBrain:
         ]
         if invocation.resumed:
             command.append("resume")
-        elif self.conversation_mode == "stateless":
+        elif self.conversation_mode == "fresh-conversation":
             command.append("--ephemeral")
         command.extend(
             [
@@ -421,11 +423,11 @@ class CodexBrain:
             'approval_policy="never"',
         ])
         disabled_features = list(_BASE_DISABLED_CODEX_FEATURES)
-        if self.connector_profile == "stateless-v3":
+        if self.connector_profile == "connector-v3":
             disabled_features.extend(_STATELESS_V3_DISABLED_CODEX_FEATURES)
         for feature in disabled_features:
             command.extend(["--disable", feature])
-        if self.connector_profile in {"stateless-v2", "stateless-v3"}:
+        if self.connector_profile in {"connector-v2", "connector-v3"}:
             command.extend(["--config", _disabled_codex_skills_config()])
         command.extend([
             "--output-schema",
@@ -832,9 +834,9 @@ def _is_provider_error(detail: str) -> bool:
 
 
 @lru_cache(maxsize=None)
-def _codex_decision_working_directory(connector_profile: str = "stateless-v2") -> str:
-    if connector_profile == "stateless-v3":
-        directory = _provider_workspace_root() / "codex-stateless-v3"
+def _codex_decision_working_directory(connector_profile: str = "connector-v2") -> str:
+    if connector_profile == "connector-v3":
+        directory = _provider_workspace_root() / "codex-connector-v3"
         directory.mkdir(parents=True, exist_ok=True)
         return str(directory)
     return tempfile.mkdtemp(prefix="agent-world-codex-stable-")

@@ -241,7 +241,7 @@ class CursorBrainTests(unittest.TestCase):
         with patch("agent_world.cursor_brain.subprocess.run", return_value=completed) as run:
             brain = CursorBrain(
                 executable="cursor-agent",
-                connector_profile="stateless-v2",
+                connector_profile="connector-v2",
             )
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -258,12 +258,12 @@ class CursorBrainTests(unittest.TestCase):
             {"AGENT_WORLD_PROVIDER_WORKSPACE_ROOT": root},
         ):
             _cursor_decision_working_directory.cache_clear()
-            first = _cursor_decision_working_directory("stateless-v3")
+            first = _cursor_decision_working_directory("connector-v3")
             _cursor_decision_working_directory.cache_clear()
-            second = _cursor_decision_working_directory("stateless-v3")
+            second = _cursor_decision_working_directory("connector-v3")
 
         self.assertEqual(first, second)
-        self.assertTrue(first.endswith("cursor-stateless-v3"))
+        self.assertTrue(first.endswith("cursor-connector-v3"))
 
     def test_bounded_session_resumes_with_compact_continuation(self) -> None:
         completed = subprocess.CompletedProcess(
@@ -272,8 +272,8 @@ class CursorBrainTests(unittest.TestCase):
         with patch("agent_world.cursor_brain.subprocess.run", return_value=completed) as run:
             brain = CursorBrain(
                 executable="cursor-agent",
-                connector_profile="stateless-v2",
-                conversation_mode="bounded-session-v1",
+                connector_profile="connector-v2",
+                conversation_mode="persistent-conversation-v1",
             )
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             brain.decide({"tick": 1, "self": {"id": "agent-1"}})

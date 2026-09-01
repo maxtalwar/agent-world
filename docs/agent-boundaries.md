@@ -7,15 +7,25 @@ Agent World versions two independent pieces of the model boundary:
 
 Keeping these axes separate makes token-efficiency and behavioral experiments interpretable.
 
+Canonical names describe only their own axis. Historical names remain accepted when
+reading CLI input, manifests, and checkpoints, but new output always uses the canonical
+name:
+
+| Historical alias | Canonical name |
+| --- | --- |
+| `stateless-v1`, `stateless-v2`, `stateless-v3` | `connector-v1`, `connector-v2`, `connector-v3` |
+| `stateless` | `fresh-conversation` |
+| `bounded-session-v1` | `persistent-conversation-v1` |
+
 ## Connector profiles
 
-### `stateless-v1`
+### `connector-v1`
 
 This is the historical control. Every decision starts a fresh provider conversation.
 Codex and Cursor use a newly named empty workspace for each decision. Codex selects
 the numerically newest local executable, including prerelease builds.
 
-### `stateless-v2`
+### `connector-v2`
 
 This preserves the first lean-connector experiment. It keeps the agent experience
 stateless while:
@@ -29,12 +39,12 @@ stateless while:
 - Claude keeps its existing lean path: its coding system prompt is already replaced,
   tools and settings are disabled, and its empty workspace is already stable.
 
-`stateless-v2` does not change the rulebook, observation, schema, or agent memory.
+`connector-v2` does not change the rulebook, observation, schema, or agent memory.
 Its workspace path is randomly created at process start, and it does not disable
 the CLI's plugin and skill-discovery features. Keep this profile available only
 to reproduce the original experiment.
 
-### `stateless-v3`
+### `connector-v3`
 
 This is the corrected lean stateless connector:
 
@@ -51,12 +61,12 @@ This is the corrected lean stateless connector:
 
 ## Conversation modes
 
-### `stateless`
+### `fresh-conversation`
 
 Every decision receives the full static rulebook plus current private observation in
 a fresh provider conversation.
 
-### `bounded-session-v1`
+### `persistent-conversation-v1`
 
 Each simulated agent gets its own private provider conversation. The first turn receives
 the full rulebook and observation. Later turns resume the same provider session and send
@@ -79,16 +89,16 @@ resume/full-context flags, rotation limit, and provider session ID where availab
 
 Behavioral effect of provider conversation memory:
 
-- Control: `stateless-v3` + `stateless`
-- Treatment: `stateless-v3` + `bounded-session-v1`
+- Control: `connector-v3` + `fresh-conversation`
+- Treatment: `connector-v3` + `persistent-conversation-v1`
 
 Infrastructure token effect:
 
-- Control: `stateless-v1` + `stateless`
-- Treatment: `stateless-v3` + `stateless`
+- Control: `connector-v1` + `fresh-conversation`
+- Treatment: `connector-v3` + `fresh-conversation`
 
 Use only matched Codex and Cursor cohorts for the infrastructure comparison. Claude is
-intentionally unchanged by the stateless-v3 optimization and would dilute the treatment.
+intentionally unchanged by the connector-v3 optimization and would dilute the treatment.
 Compare successful decision coverage, prompt and cached tokens, plan drawdown, latency,
 and provider failures before comparing world outcomes.
 
@@ -99,8 +109,8 @@ Lean stateless run:
 ```bash
 python3 -m agent_world.cli run \
   --brain codex --model gpt-5.6-luna \
-  --connector-profile stateless-v3 \
-  --conversation-mode stateless \
+  --connector-profile connector-v3 \
+  --conversation-mode fresh-conversation \
   --ticks 20 --agents 5
 ```
 
@@ -109,8 +119,8 @@ The same connector with bounded conversation memory:
 ```bash
 python3 -m agent_world.cli run \
   --brain codex --model gpt-5.6-luna \
-  --connector-profile stateless-v3 \
-  --conversation-mode bounded-session-v1 \
+  --connector-profile connector-v3 \
+  --conversation-mode persistent-conversation-v1 \
   --session-max-turns 10 \
   --ticks 20 --agents 5
 ```

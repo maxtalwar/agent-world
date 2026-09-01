@@ -115,7 +115,15 @@ GIFT_VERDICTS = frozenset(
 # fabricating wait actions. This entry permits the recovered tick-32 checkpoint
 # to resume without changing any successful decision or world transition.
 #
-# Both entries are v6 fingerprints and neither promotes anything into v7. A
+# The seven fingerprints beginning 2a84dcfb through a79bd51c are the unscoped
+# and provider-scoped v7 fingerprints at commit 427010a, immediately before the
+# terminology-only boundary migration. That migration renamed connector
+# profiles and conversation modes, canonicalizes their historical aliases, and
+# does not change prompts, observations, provider arguments, world transitions,
+# or scoring. Retaining them keeps existing v7 reports and checkpoints valid.
+#
+# The first two entries are v6 fingerprints and do not promote anything into
+# v7. A
 # resume is refused outright when the checkpoint's protocol is not the current
 # one (see _check_resume_fingerprint), so a v6 checkpoint cannot be finished
 # under the v7 world, and _trial_flags only consults this set for trials that
@@ -126,6 +134,13 @@ BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
     {
         "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
         "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
+        "2a84dcfba2c57b46a4732bcdaa7c378ab6a5b71b1e0104597d618e5a294e55a0",
+        "5084bd7dd939e279b0cffe1100a9f21e316f5e8652c71fa99c2d8408a4b2380c",
+        "bf0bc346f5a4b1cc61ba84935b5b6998581e8c0055e45fb2cf37cd65d73f21b4",
+        "0dc4ca55a5cc8a0473d226c73da8c886e08814869f7a145b668cbde64e9ba42b",
+        "9e43a228691bebe86c8863e7b5d64c6307d84afff690e0950b2c9dcbd699872d",
+        "3d59a78e55fa86466815dbaa03d4f7abe00c3c1f9a12bf4dc1395bbc7241b22d",
+        "a79bd51cd3e2e0acc34ad4ac9006b74fae4987e40ed2dfc9a3f97cf7714d4788",
     }
 )
 
@@ -585,8 +600,8 @@ def benchmark_protocol() -> dict[str, Any]:
             "claude_thinking_budget_tokens": BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
             "decision_mode": "raw",
             "action_feedback_mode": "baseline",
-            "connector_profile": "stateless-v3",
-            "conversation_mode": "stateless",
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
             "population": "one uniform model cohort",
             "turn_resolution": "simultaneous",
             "global_max_workers": BENCHMARK_DEFAULT_MAX_WORKERS,
