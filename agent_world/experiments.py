@@ -3,7 +3,7 @@
 The experiment runner deliberately defaults to the local ``SurvivalBrain``. An
 LLM is only contacted when the caller explicitly selects ``brain="openrouter"``,
 ``brain="codex"``, ``brain="claude"``, ``brain="cursor"``, or
-``brain="devin"``.
+``brain="devin"``, ``brain="grok"``, or ``brain="zcode"``.
 Every cell gets its own directory, usage log, provenance manifest, report, and
 raw outputs so interrupted or mixed-provider batches remain auditable.
 """
@@ -38,6 +38,7 @@ from agent_world.session import SimulationSession
 from agent_world.usage import summarize_codex_simulation_credits
 from agent_world.devin_brain import DevinBrain, build_devin_prompt
 from agent_world.grok_brain import GrokBrain, build_grok_prompts
+from agent_world.zcode_brain import ZCodeBrain, build_zcode_prompt
 from agent_world.world import WorldEngine
 
 
@@ -409,7 +410,7 @@ def _run_single(
         first_brain = next(iter(brains.values()), None)
         if isinstance(
             first_brain,
-            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, DevinBrain, GrokBrain),
+            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, DevinBrain, GrokBrain, ZCodeBrain),
         ):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
@@ -466,7 +467,7 @@ def _run_single(
         session.start()
         if isinstance(
             first_brain,
-            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, DevinBrain, GrokBrain),
+            (OpenRouterBrain, CodexBrain, ClaudeBrain, CursorBrain, DevinBrain, GrokBrain, ZCodeBrain),
         ):
             run_manifest["brain"] = _brain_runtime_settings(
                 first_brain, brain_spec.max_workers or 1
@@ -681,6 +682,10 @@ def _initial_prompt_hashes(engine: WorldEngine, brain: str) -> dict[str, str]:
         grok_system, grok_user = build_grok_prompts(static_context, dynamic_json)
         hashes["initial_grok_system_prompt_sha256"] = _sha256_text(grok_system)
         hashes["initial_grok_user_prompt_sha256"] = _sha256_text(grok_user)
+    if brain == "zcode":
+        hashes["initial_zcode_prompt_sha256"] = _sha256_text(
+            build_zcode_prompt(static_context, dynamic_json)
+        )
     if brain == "devin":
         hashes["initial_devin_prompt_sha256"] = _sha256_text(
             build_devin_prompt(static_context, dynamic_json)
@@ -704,6 +709,7 @@ def _source_hashes() -> dict[str, str]:
         "claude_brain_source_sha256": _sha256_file(module_dir / "claude_brain.py"),
         "cursor_brain_source_sha256": _sha256_file(module_dir / "cursor_brain.py"),
         "grok_brain_source_sha256": _sha256_file(module_dir / "grok_brain.py"),
+        "zcode_brain_source_sha256": _sha256_file(module_dir / "zcode_brain.py"),
         "devin_brain_source_sha256": _sha256_file(
             module_dir / "devin_brain.py"
         ),
@@ -789,6 +795,16 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
             "billing_mode": "grok_subscription",
             "timeout_seconds": int(os.environ.get("GROK_TIMEOUT_SECONDS", "300")),
         }
+    if brain == "zcode":
+        return {
+            "provider": "zcode_cli",
+            "model": model or os.environ.get("ZCODE_MODEL_ID", "glm-5.3"),
+            "reasoning_effort": reasoning_effort or os.environ.get("ZCODE_REASONING_EFFORT", "max"),
+            "api_style": "zcode_headless_json",
+            "base_url": None,
+            "billing_mode": "zai_coding_plan",
+            "timeout_seconds": int(os.environ.get("ZCODE_TIMEOUT_SECONDS", "300")),
+        }
     if brain == "devin":
         return {
             "provider": "devin_cli",
@@ -828,7 +844,7 @@ def _declared_brain_settings(brain: str, model: str | None, reasoning_effort: st
 
 
 def _brain_runtime_settings(
-    brain: OpenRouterBrain | CodexBrain | ClaudeBrain | CursorBrain | DevinBrain | GrokBrain,
+    brain: OpenRouterBrain | CodexBrain | ClaudeBrain | CursorBrain | DevinBrain | GrokBrain | ZCodeBrain,
     max_workers: int,
 ) -> dict[str, Any]:
     if isinstance(brain, CodexBrain):
@@ -890,6 +906,22 @@ def _brain_runtime_settings(
             "api_style": "grok_single_json_schema",
             "base_url": None,
             "billing_mode": "grok_subscription",
+            "executable": brain.executable,
+            "timeout_seconds": brain.timeout_seconds,
+            "max_workers": max_workers,
+            "connector_profile": brain.connector_profile,
+            "conversation_mode": brain.conversation_mode,
+        }
+    if isinstance(brain, ZCodeBrain):
+        return {
+            "type": "zcode",
+            "provider": "zcode_cli",
+            "model": brain.model,
+            "resolved_model": brain.resolved_model,
+            "reasoning_effort": brain.reasoning_effort,
+            "api_style": "zcode_headless_json",
+            "base_url": None,
+            "billing_mode": "zai_coding_plan",
             "executable": brain.executable,
             "timeout_seconds": brain.timeout_seconds,
             "max_workers": max_workers,

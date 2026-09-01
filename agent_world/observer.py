@@ -264,9 +264,10 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         "cursor",
         "devin",
         "grok",
+        "zcode",
     }:
         raise ValueError(
-            "brain must be survival, openrouter, codex, claude, cursor, devin, or grok."
+            "brain must be survival, openrouter, codex, claude, cursor, devin, grok, or zcode."
         )
     if brain == "codex":
         model = str(payload.get("model") or os.environ.get("CODEX_MODEL") or "gpt-5.6-luna").strip()
@@ -280,6 +281,9 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
     elif brain == "grok":
         model = str(payload.get("model") or os.environ.get("GROK_MODEL") or "grok-4.6").strip()
         default_effort = os.environ.get("GROK_REASONING_EFFORT", "medium")
+    elif brain == "zcode":
+        model = str(payload.get("model") or os.environ.get("ZCODE_MODEL_ID") or "glm-5.3").strip()
+        default_effort = os.environ.get("ZCODE_REASONING_EFFORT", "max")
     elif brain == "devin":
         model = str(
             payload.get("model")
@@ -354,12 +358,12 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         brain=brain,
         model=(
             model
-            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok"}
+            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"}
             else None
         ),
         reasoning_effort=(
             reasoning_effort
-            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok"}
+            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"}
             else None
         ),
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),

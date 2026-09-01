@@ -8,6 +8,7 @@ from agent_world.codex_brain import CodexBrain
 from agent_world.cursor_brain import CursorBrain
 from agent_world.devin_brain import DevinBrain
 from agent_world.grok_brain import GrokBrain
+from agent_world.zcode_brain import ZCodeBrain
 from agent_world.interface import build_agent_prompt, build_observation, parse_agent_response
 from agent_world.metrics import compute_metrics
 from agent_world.models import Agent, AgentDecision, Position, WorldConfig
@@ -29,6 +30,7 @@ __all__ = [
     "CursorBrain",
     "DevinBrain",
     "GrokBrain",
+    "ZCodeBrain",
     "NullBrain",
     "OpenRouterBrain",
     "Position",

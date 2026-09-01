@@ -27,6 +27,7 @@ class BrainRuntimeTests(unittest.TestCase):
             "cursor": "CURSOR_MAX_PARALLEL_AGENTS",
             "devin": "DEVIN_MAX_PARALLEL_AGENTS",
             "grok": "GROK_MAX_PARALLEL_AGENTS",
+            "zcode": "ZCODE_MAX_PARALLEL_AGENTS",
         }
         with patch.dict(os.environ, {}, clear=True):
             for brain_type in worker_env:
@@ -74,6 +75,15 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(spec.type, "openrouter")
         self.assertEqual(spec.model, "z-ai/glm-5.2")
         self.assertEqual(spec.provider, "openrouter")
+
+    def test_unqualified_glm_53_uses_zcode_native_harness(self) -> None:
+        population = PopulationSpec.parse_many(["2@glm-5.3"])
+
+        spec = population.groups[0].brain
+        self.assertEqual(spec.type, "zcode")
+        self.assertEqual(spec.provider, "zcode_cli")
+        self.assertEqual(spec.model, "glm-5.3")
+        self.assertEqual(spec.reasoning_effort, "max")
 
     def test_usage_and_quota_are_isolated_between_runs(self) -> None:
         first = BrainRuntime()

@@ -38,11 +38,15 @@ to reproduce the original experiment.
 
 This is the corrected lean stateless connector:
 
-- Codex and Cursor use deterministic provider-specific workspaces that remain the
+- Codex, Cursor, and ZCode use deterministic provider-specific workspaces that remain the
   same across Agent World processes and checkpoint resumes.
 - Codex disables multi-agent, shell, app, plugin, remote-plugin, plugin-sharing,
   skill-search, and skill-dependency-installation features that are irrelevant
   to a simulation decision.
+- ZCode runs in plan mode with its coding, browsing, delegation, and skill tools
+  explicitly disallowed. It receives one combined, JSON-only prompt because the
+  current headless CLI exposes neither a system-prompt override nor a structured
+  output schema flag.
 - Bundled Codex skills remain explicitly disabled.
 - The rulebook, observation, output schema, action feedback, and agent memory are
   unchanged. The static rulebook is still supplied on every stateless request so

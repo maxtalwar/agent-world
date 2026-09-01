@@ -42,6 +42,7 @@ BENCHMARK_PROVIDER_MAX_WORKERS = {
     "cursor_cli": 4,
     "devin_cli": 4,
     "grok_cli": 20,
+    "zcode_cli": 20,
 }
 # Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
 # Anthropic ships no per-effort token number to borrow: stock Claude Code
@@ -345,6 +346,7 @@ BENCHMARK_PROVIDER_FINGERPRINT_FILES: dict[str, tuple[str, ...]] = {
     "cursor_cli": ("cursor_brain.py",),
     "devin_cli": ("devin_brain.py",),
     "grok_cli": ("grok_brain.py",),
+    "zcode_cli": ("zcode_brain.py",),
     "openrouter": ("openrouter_brain.py",),
     "openai_compatible": ("openrouter_brain.py",),
 }

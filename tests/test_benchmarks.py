@@ -305,12 +305,28 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.max_workers, 20)
         self.assertEqual(args.grok_max_workers, 20)
 
+    def test_zcode_protocol_uses_twenty_workers_and_native_max_effort(self) -> None:
+        args = Namespace(
+            benchmark_protocol=BENCHMARK_PROTOCOL_ID,
+            population=None,
+            brain="zcode",
+            sequential_decisions=False,
+            seed=None,
+        )
+
+        _apply_benchmark_protocol(args)
+
+        self.assertEqual(args.max_workers, 20)
+        self.assertEqual(args.zcode_max_workers, 20)
+        self.assertEqual(args.reasoning_effort, "max")
+
     def test_provider_defaults_are_clamped_to_run_workers(self) -> None:
         limits = _resolve_provider_max_workers(Namespace(), 12)
 
         self.assertEqual(limits["codex_cli"], 12)
         self.assertEqual(limits["claude_cli"], 12)
         self.assertEqual(limits["grok_cli"], 12)
+        self.assertEqual(limits["zcode_cli"], 12)
         self.assertEqual(limits["openrouter"], 4)
 
     def test_explicit_provider_workers_are_also_clamped_to_global_pool(self) -> None:

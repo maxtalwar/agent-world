@@ -146,7 +146,7 @@ action shape.
 Codex-plan results should be labeled separately from raw API results because the
 Codex harness adds its own runtime instructions. Ordinary runs default to a
 four-worker global pool. Provider ceilings inside a larger pool default to 40
-for Codex, 20 for Claude Code and Grok Build, and 4 for the remaining
+for Codex, 20 for Claude Code, Grok Build, and ZCode, and 4 for the remaining
 harnesses. Every provider ceiling is clamped to the run's global worker count.
 Participant benchmarks use those provider-aware defaults, although the current
 ten-agent population can issue at most ten simultaneous decisions. Explicit
@@ -191,6 +191,43 @@ tokens and ~a minute per decision); set `CLAUDE_MAX_THINKING_TOKENS` to a
 positive budget to re-enable it. Other environment knobs: `CLAUDE_MODEL`,
 `CLAUDE_REASONING_EFFORT`, `CLAUDE_TIMEOUT_SECONDS`, `CLAUDE_EXECUTABLE`,
 `CLAUDE_MAX_PARALLEL_AGENTS`.
+
+### ZCode / Z.ai Coding Plan agents
+
+`ZCodeBrain` runs GLM-5.3 through Z.ai's first-party ZCode Agent harness and
+the account's saved Z.ai Coding Plan, rather than OpenRouter or a metered API
+key. Install the official ZCode application and expose its bundled headless
+CLI as `zcode-cli`, then authenticate the CLI:
+
+```bash
+zcode-cli doctor --json
+zcode-cli login --no-browser
+```
+
+The second command prints an OAuth URL that can be opened on any signed-in
+browser. Once login succeeds, verify without spending a model turn and launch
+an ordinary run:
+
+```bash
+python3 -m agent_world.cli run \
+  --brain zcode --model glm-5.3 --reasoning-effort max \
+  --ticks 10 --agents 3 --progress \
+  --out runs/glm-5.3-zcode.jsonl \
+  --snapshot runs/glm-5.3-zcode-snapshot.json
+```
+
+The connector forces the exact built-in `zai/glm-5.3` model, strips API-key
+overrides from the child environment, and records calls as
+`provider=zcode_cli`, `billing_mode=zai_coding_plan`, with zero marginal API
+cost. It runs one stateless headless invocation per decision in plan mode with
+the coding, browsing, delegation, and skill tools disallowed.
+
+ZCode CLI 0.16.5 advertises an effort option in top-level help but its actual
+headless parser does not accept it. Z.ai documents Max as GLM-5.3's native
+default, so this connector accepts only `reasoning_effort=max` rather than
+silently ignoring another requested treatment. Participant benchmark setup
+selects Max for ZCode and gives it a 20-worker provider ceiling, clamped to the
+ten-agent benchmark population.
 
 ### Cursor subscription agents
 

@@ -179,11 +179,11 @@ Every benchmark run uses:
 | World | `frontier-generalists` (organic economy + frontier variant) |
 | Seasons | 12-tick cycle, seeded storms |
 | Objective | neutral |
-| Reasoning effort | medium |
+| Reasoning effort | medium; ZCode uses GLM-5.3's documented native Max default because CLI 0.16.5 has no working headless effort selector |
 | Decisions | raw |
 | Action feedback | baseline |
 | Resolution | simultaneous |
-| Global/provider workers | Provider-aware: Codex CLI 40; Claude CLI and Grok CLI 20; others 4 (all effectively at most 10 with this population) |
+| Global/provider workers | Provider-aware: Codex CLI 40; Claude CLI, Grok CLI, and ZCode CLI 20; others 4 (all effectively at most 10 with this population) |
 | Connector | `stateless-v3` |
 | Provider conversation | stateless |
 | Private agent I/O | enabled |
