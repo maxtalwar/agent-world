@@ -21,12 +21,13 @@ from agent_world.cursor_brain import CursorBrain
 from agent_world.openrouter_brain import OpenRouterBrain
 from agent_world.devin_brain import DevinBrain
 from agent_world.grok_brain import GrokBrain
+from agent_world.zcode_brain import ZCodeBrain
 from agent_world.world import WorldEngine
 
 
 ALLOWED_EFFORTS = frozenset({"minimal", "low", "medium", "high", "xhigh", "max"})
 SUPPORTED_BRAIN_TYPES = frozenset(
-    {"survival", "openrouter", "codex", "claude", "cursor", "devin", "grok"}
+    {"survival", "openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"}
 )
 BRAIN_TYPE_PROVIDERS: dict[str, str] = {
     "openrouter": "openrouter",
@@ -35,6 +36,7 @@ BRAIN_TYPE_PROVIDERS: dict[str, str] = {
     "cursor": "cursor_cli",
     "devin": "devin_cli",
     "grok": "grok_cli",
+    "zcode": "zcode_cli",
 }
 
 
@@ -64,7 +66,7 @@ class BrainSpec:
         brain_type = "openrouter" if brain_type == "llm" else brain_type
         if brain_type not in SUPPORTED_BRAIN_TYPES:
             raise ValueError(
-                "brain type must be survival, openrouter, codex, claude, cursor, devin, or grok"
+                "brain type must be survival, openrouter, codex, claude, cursor, devin, grok, or zcode"
             )
         if max_workers is not None and max_workers < 1:
             raise ValueError("max_workers must be at least 1")
@@ -98,6 +100,7 @@ class BrainSpec:
             "claude": ("CLAUDE_MODEL", "claude-sonnet-5", "CLAUDE_REASONING_EFFORT", "low"),
             "cursor": ("CURSOR_MODEL", "cursor-grok-4.5", "CURSOR_REASONING_EFFORT", "low"),
             "grok": ("GROK_MODEL", "grok-4.6", "GROK_REASONING_EFFORT", "medium"),
+            "zcode": ("ZCODE_MODEL_ID", "glm-5.3", "ZCODE_REASONING_EFFORT", "max"),
             "devin": (
                 "DEVIN_MODEL",
                 "swe-1-6-fast",
@@ -121,6 +124,7 @@ class BrainSpec:
             "cursor": "CURSOR_MAX_PARALLEL_AGENTS",
             "devin": "DEVIN_MAX_PARALLEL_AGENTS",
             "grok": "GROK_MAX_PARALLEL_AGENTS",
+            "zcode": "ZCODE_MAX_PARALLEL_AGENTS",
         }[brain_type]
         workers = max_workers if max_workers is not None else int(os.environ.get(worker_env, "1"))
         resolved_effort = reasoning_effort or os.environ.get(effort_env, effort_default)
@@ -138,7 +142,7 @@ class BrainSpec:
 
     @property
     def model_backed(self) -> bool:
-        return self.type in {"openrouter", "codex", "claude", "cursor", "devin", "grok"}
+        return self.type in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"}
 
     @property
     def provider(self) -> str | None:
@@ -153,6 +157,7 @@ class BrainSpec:
             "cursor": "cursor_subscription",
             "devin": "devin_subscription",
             "grok": "grok_subscription",
+            "zcode": "zai_coding_plan",
         }.get(self.type)
 
     def to_dict(self) -> dict[str, Any]:
@@ -443,6 +448,8 @@ def _parse_population_group(
 
 def _infer_brain_type(model: str) -> str:
     normalized = model.lower()
+    if normalized in {"glm-5.3", "zai/glm-5.3"}:
+        return "zcode"
     if normalized.startswith("grok-"):
         return "grok"
     if normalized.startswith("swe-") or normalized.startswith("devin-"):
@@ -484,6 +491,7 @@ def create_population_brains(
         "cursor": CursorBrain,
         "devin": DevinBrain,
         "grok": GrokBrain,
+        "zcode": ZCodeBrain,
     }
     brains: dict[str, AgentBrain] = {}
     scoped_runtimes: dict[str, Any] = {}
@@ -500,7 +508,7 @@ def create_population_brains(
             "reasoning_effort": spec.reasoning_effort,
             "runtime": scoped_runtime,
         }
-        if spec.type in {"codex", "claude", "cursor", "devin", "grok"}:
+        if spec.type in {"codex", "claude", "cursor", "devin", "grok", "zcode"}:
             boundary_kwargs = {
                 "agent_id": agent_id,
                 "connector_profile": spec.connector_profile,
