@@ -24,6 +24,29 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-09-01 — An omitted provider prefix turned a ZCode rate limit into a fake model collapse
+
+**A ZCode `[1302][Rate limit reached for requests]` response was cached as a
+quota failure inside the connector but omitted from v6's shared failure
+taxonomy, so 184 provider refusals were laundered into agent `wait` actions and
+the world advanced to tick 50 as if GLM 5.3 had chosen them.** Seed 11 made only
+19 real provider calls for 203 recorded decisions: 18 valid decisions, one
+confirmed model-contract failure, and 184 cached quota messages. Because the
+quota prefix was unrecognized, the five-tick health gate reported success,
+all agents died by tick 23, and the run emitted a normal completion report.
+This was a harness artifact, not model behavior and not a valid score. The
+parallel seed 41 was manually stopped at completed tick 9; its preserved
+ledger contains 85 valid decisions and five model-contract failures, plus ten
+usage rows from the interrupted incomplete tick. The repair adds every ZCode
+failure class to the common taxonomy and a regression proving the exact 1302
+message discards the incomplete tick and pauses at the completed-tick
+checkpoint. Both original cells are retained but explicitly invalidated; a
+clean study must launch from the repaired commit rather than resume evidence
+whose source fingerprint lacked the guard.
+Evidence:
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953`,
+`agent_world/metrics.py`, `tests/test_session.py`.
+
 ## 2026-07-31 — Opus 5 converted a small reasoning budget into the strongest society yet
 
 **Claude Opus 5 averaged only 287 estimated reasoning tokens per decision—about

@@ -81,6 +81,40 @@ class DecisionFailureClassificationTests(unittest.TestCase):
             )
         )
 
+    def test_zcode_failures_participate_in_integrity_classification(self) -> None:
+        boundary = "ZCode boundary failed: unknown model id"
+        self.assertTrue(is_decision_failure_message("agent_response", boundary))
+        self.assertTrue(
+            is_ambiguous_boundary_failure_message("agent_response", boundary)
+        )
+        self.assertTrue(
+            is_quota_failure_message(
+                "agent_response",
+                "ZCode quota unavailable: ProviderBusinessError: "
+                "[1302][Rate limit reached for requests]",
+            )
+        )
+        self.assertTrue(
+            is_provider_failure_message(
+                "agent_response", "ZCode provider unavailable: network error"
+            )
+        )
+        self.assertTrue(
+            is_model_output_failure_message(
+                "agent_response", "ZCode model output contract failed: bad payload"
+            )
+        )
+        self.assertTrue(
+            is_confirmed_model_contract_failure_message(
+                "agent_response", "ZCode model output contract failed: bad payload"
+            )
+        )
+        self.assertTrue(
+            is_harness_failure_message(
+                "agent_response", "ZCode decision failed: local adapter error"
+            )
+        )
+
 
 class EconomicMetricsTests(unittest.TestCase):
     def test_transfer_market_specialization_and_asset_sections_are_reported(self) -> None:

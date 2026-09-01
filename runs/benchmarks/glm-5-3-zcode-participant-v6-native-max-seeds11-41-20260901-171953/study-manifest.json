@@ -1,9 +1,10 @@
 {
   "schema_version": 1,
   "study_id": "glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953",
-  "status": "launched_running",
+  "status": "invalid_superseded_connector_failure",
   "created_at_utc": "2026-09-01T17:19:53Z",
   "launched_at_utc": "2026-09-01T17:23:14Z",
+  "invalidated_at_utc": "2026-09-01T17:54:44Z",
   "study_type": "benchmark_trial_controlled_variant",
   "suite_id": "agent-world-participant-v6",
   "benchmark_protocol": "participant-v6",
@@ -73,17 +74,30 @@
     "cells": {
       "glm-5-3-zcode-v6-native-max-seed-11": {
         "seed": 11,
-        "status": "running",
+        "status": "invalid_completed_connector_failure",
         "cohort": "glm53-zcode-v6-max-s11-20260901",
         "target_tick": 50,
+        "completed_tick": 50,
+        "recorded_decisions": 203,
+        "provider_calls": 19,
+        "valid_decisions": 18,
+        "model_contract_failures": 1,
+        "misclassified_quota_decisions": 184,
+        "invalidation_reason": "ZCode quota responses were omitted from the shared failure taxonomy, converted to wait actions, and allowed the world to advance.",
         "out": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953/glm-5-3-zcode-v6-seed11/run.jsonl",
         "snapshot": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953/glm-5-3-zcode-v6-seed11/run-snapshot.json"
       },
       "glm-5-3-zcode-v6-native-max-seed-41": {
         "seed": 41,
-        "status": "running",
+        "status": "invalid_stopped_for_connector_repair",
         "cohort": "glm53-zcode-v6-max-s41-20260901",
         "target_tick": 50,
+        "completed_tick": 9,
+        "recorded_decisions": 90,
+        "valid_decisions": 85,
+        "model_contract_failures": 5,
+        "usage_records": 100,
+        "invalidation_reason": "Manually stopped for the ZCode quota-classification repair; the interrupted partial tick left ten usage rows outside the completed world ledger.",
         "out": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953/glm-5-3-zcode-v6-seed41/run.jsonl",
         "snapshot": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953/glm-5-3-zcode-v6-seed41/run-snapshot.json"
       }
@@ -118,12 +132,14 @@
   "launcher": "scripts/run-isolated-cohort",
   "analysis_readiness": {
     "schema_version": 1,
-    "status": "diagnostic_only",
+    "status": "invalid",
     "completed_seeds": [],
     "waiting_seeds": [],
     "blockers": [
-      "The cells have not completed.",
+      "Seed 11 advanced through 184 misclassified ZCode quota responses and is invalid.",
+      "Seed 41 was stopped at completed tick 9 for the connector repair and is invalid rather than resumable under a changed source fingerprint.",
       "Native Max effort differs from Participant v6's standardized medium-effort policy."
-    ]
+    ],
+    "disposition": "Retained as diagnostic evidence only. Do not score, aggregate, resume, or publish either cell. Launch a new study from the repaired commit with unique cohort IDs."
   }
 }

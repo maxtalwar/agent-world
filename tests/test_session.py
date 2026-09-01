@@ -386,6 +386,11 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
         "limit · resets 2pm (America/Los_Angeles)"
     )
 
+    ZCODE_RATE_LIMIT = (
+        "ZCode quota unavailable: ProviderBusinessError: "
+        "[1302][Rate limit reached for requests]"
+    )
+
     def _session(self, brains, *, target_ticks, quota_wait_max_seconds, slept):
         engine = WorldEngine.create(
             WorldConfig(seed=7), agent_names=list(brains)
@@ -475,6 +480,28 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
         self.assertEqual(result.status, "paused_checkpoint")
         self.assertEqual(result.stop_reason, "insufficient_quota")
         self.assertEqual(slept, [])
+
+    def test_zcode_rate_limit_discards_the_partial_tick(self) -> None:
+        class ZCodeLimitedBrain:
+            def decide(self, _observation):
+                return AgentDecision(
+                    intent=QuotaWaitAndResumeTests.ZCODE_RATE_LIMIT, actions=[]
+                )
+
+        slept: list[float] = []
+        brains = {"A1": ZCodeLimitedBrain(), "A2": ZCodeLimitedBrain()}
+        engine, session = self._session(
+            brains, target_ticks=5, quota_wait_max_seconds=0, slept=slept
+        )
+
+        result = session.run()
+
+        self.assertEqual(result.status, "paused_checkpoint")
+        self.assertEqual(result.stop_reason, "insufficient_quota")
+        self.assertEqual(result.final_tick, 0)
+        self.assertNotIn(
+            "agent_response", [event.type for event in engine.state.events]
+        )
 
     def test_unrecognized_systemic_boundary_failure_pauses_instead_of_waiting(self) -> None:
         # The catch-all: a provider phrasing no classifier knows must still
