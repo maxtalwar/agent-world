@@ -24,6 +24,24 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-09-01 — A live terminal session is not a detached run supervisor
+
+**Two healthy checkpointed ZCode cells vanished within seconds of the
+15-minute boundary because they were launched as long-lived command sessions,
+not under the repository's detached process pattern.** Both processes started
+at 10:59 local time; their last partial-tick usage writes landed at 11:14:42
+and 11:14:57. Neither ledger contains `run_completed`, `run_paused`,
+`run_stopped`, or `run_failed`, both run manifests remained `running`, and the
+kernel journal contains no OOM or killed-process evidence. Seed 41 had passed
+its tick-5 health gate and seed 11 had correctly frozen at tick 2 for a ZCode
+rate-limit wait before the external interruption. This was an operational
+supervision failure, not model or provider behavior. Recovery reused the exact
+checkpoints, cohort worktrees, and launch commit under a detached `tmux`
+supervisor; the cells were sequenced to keep account-wide ZCode concurrency at
+four rather than eight.
+Evidence:
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704`.
+
 ## 2026-09-01 — An omitted provider prefix turned a ZCode rate limit into a fake model collapse
 
 **A ZCode `[1302][Rate limit reached for requests]` response was cached as a

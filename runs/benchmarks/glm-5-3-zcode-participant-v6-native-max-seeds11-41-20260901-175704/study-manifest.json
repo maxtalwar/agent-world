@@ -1,15 +1,29 @@
 {
   "schema_version": 1,
   "study_id": "glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704",
-  "status": "launched_running",
+  "status": "resumed_running",
   "created_at_utc": "2026-09-01T17:57:04Z",
   "launched_at_utc": "2026-09-01T17:59:53Z",
+  "recovered_at_utc": "2026-09-01T21:43:26Z",
   "study_type": "benchmark_trial_controlled_variant",
   "suite_id": "agent-world-participant-v6",
   "benchmark_protocol": "participant-v6",
   "benchmark_scoring_revision": 2,
   "supersedes_invalid_study": "glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953",
   "supersession_reason": "The predecessor omitted ZCode from the shared failure taxonomy, allowing quota refusals to advance the world as fabricated wait actions. This replacement launches from the repaired source commit with unique cells.",
+  "operational_incident": {
+    "classification": "external_supervisor_timeout",
+    "diagnosis": "Both parent processes disappeared without any terminal ledger event or run-manifest update. Their last partial-tick usage writes occurred 14m49s and 15m20s after launch, there was no kernel OOM evidence, and both temporary execution sessions were subsequently unavailable. The evidence strongly identifies temporary command-session reclamation rather than a model, provider, or benchmark stop.",
+    "evidence": {
+      "seed_11_last_completed_tick": 2,
+      "seed_41_last_completed_tick": 5,
+      "seed_11_terminal_event": null,
+      "seed_41_terminal_event": null,
+      "kernel_oom_evidence": false
+    },
+    "fix": "Resume the same checkpoints through the same cohort IDs and launch commit under detached tmux supervision. Run seed 41 first and seed 11 second so account-wide ZCode concurrency stays at four rather than eight.",
+    "supervisor_session": "glm53-zcode-v6-resume-20260901"
+  },
   "targets": {
     "glm-5.3": {
       "brain": "zcode",
@@ -64,17 +78,26 @@
     "cells": {
       "glm-5-3-zcode-v6-native-max-seed-11": {
         "seed": 11,
-        "status": "startup_gate_pending",
+        "status": "queued_resume_after_seed_41",
         "cohort": "glm53-zcode-v6-fixed-s11-20260901",
         "target_tick": 50,
+        "completed_tick": 2,
+        "completed_decisions": 20,
+        "completed_decision_failures": 0,
+        "orphaned_partial_tick_usage_records_to_quarantine": 8,
         "out": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed11/run.jsonl",
         "snapshot": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed11/run-snapshot.json"
       },
       "glm-5-3-zcode-v6-native-max-seed-41": {
         "seed": 41,
-        "status": "startup_gate_pending",
+        "status": "resumed_running",
         "cohort": "glm53-zcode-v6-fixed-s41-20260901",
         "target_tick": 50,
+        "completed_tick": 5,
+        "completed_decisions": 50,
+        "model_contract_failures": 5,
+        "startup_health_gate": "passed",
+        "orphaned_partial_tick_usage_records_to_quarantine": 8,
         "out": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed41/run.jsonl",
         "snapshot": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed41/run-snapshot.json"
       }
@@ -107,13 +130,20 @@
     "quota_wait_hours": 12
   },
   "launcher": "scripts/run-isolated-cohort",
+  "supervisor": {
+    "type": "tmux_detached_sequential",
+    "session": "glm53-zcode-v6-resume-20260901",
+    "script": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/resume-sequence.sh",
+    "log": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/resume-supervisor.log",
+    "sequence": [41, 11]
+  },
   "analysis_readiness": {
     "schema_version": 1,
     "status": "diagnostic_only",
     "completed_seeds": [],
     "waiting_seeds": [],
     "blockers": [
-      "The replacement cells are running and have not completed finalization.",
+      "Seed 41 is running from its tick-5 checkpoint; seed 11 is queued behind it at tick 2.",
       "Native Max effort differs from Participant v6's standardized medium-effort policy."
     ]
   }
