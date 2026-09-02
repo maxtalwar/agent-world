@@ -3,8 +3,9 @@
 Use the managed interface for every normal long-running model-backed run. It
 validates one declarative JSON config, pins the clean source commit, creates one
 isolated cohort per seed, starts each cell under a detached `tmux` supervisor,
-and records enough state to inspect or resume it later. You do not enter a
-worktree or keep the launch terminal open.
+and launches a durable job controller that owns the run through recovery and
+finalization. You do not enter a worktree, keep the launch terminal open, or
+babysit ticks.
 
 ## Fire off a run
 
@@ -18,15 +19,32 @@ agent-world run --config /tmp/my-run.json --dry-run
 agent-world run --config /tmp/my-run.json
 ```
 
-The real launch returns only after every immediately eligible cell and any
-startup-gate supervisor are alive. It is then safe to close the terminal. The manager writes
-`runs/jobs/RUN_ID/job.json`, one log per cell, and simulation artifacts beneath
-`runs/managed/RUN_ID/` unless `output_dir` overrides that location.
+The real launch returns only after every immediately eligible cell and the job
+controller are alive. It is then safe to close the terminal. The manager writes
+`runs/jobs/RUN_ID/job.json`, one log per cell, controller heartbeat and event
+files, and simulation artifacts beneath `runs/managed/RUN_ID/` unless
+`output_dir` overrides that location.
 
-For a replicated benchmark, seed 11 starts first. A separate detached gate
-supervisor reads the harness's recorded startup-health event and releases the
+For a replicated benchmark, seed 11 starts first. The controller reads the
+harness's recorded startup-health event and releases the
 remaining seed cells only after seed 11 passes. If it fails, later seeds remain
 `blocked_startup_gate`; no operator has to watch tick 5.
+
+The controller polls local state every 30 seconds and records a durable
+`progress_check` at each ten-tick milestone. Polling does not call the model.
+It automatically resumes an interrupted process or transient
+`provider_unavailable` checkpoint with bounded backoff, without blocking the
+other seed. It never restarts a provider during an active quota sleep; if that
+sleeping process dies, recovery preserves the recorded wait deadline. It does
+not auto-retry an exhausted quota allowance, required login, failed
+startup gate, or integrity-type failure. Those become explicit
+`needs_attention` states.
+
+If a supervisor remains alive without advancing for one hour and the latest
+lifecycle event is not `run_quota_wait`, the controller terminates that stale
+process and resumes its completed-tick checkpoint. Partial-tick usage is
+quarantined by normal checkpoint recovery. A completed run manifest is
+authoritative even if a stale wrapper session remains.
 
 Check meaningful state without following every tick:
 
@@ -34,24 +52,29 @@ Check meaningful state without following every tick:
 agent-world status RUN_ID
 ```
 
-If a supervisor was interrupted or a quota wait expired after a completed
-tick, resume the existing cells rather than restarting them:
+`status` includes controller liveness and its most recent heartbeat. Healthy
+runs need no follow-up command. If the controller stops in `needs_attention`,
+resolve the reported login, quota, or integrity condition and explicitly resume
+the existing checkpoint rather than restarting the study:
 
 ```bash
 agent-world resume RUN_ID
 ```
 
 Resume reuses the original checkpoint, cohort, and pinned launch commit.
-Already completed or currently active cells are skipped.
+Already completed or currently active cells are skipped, and a missing
+controller is reinstalled.
 
-Finalize completed benchmark evidence before calling it done:
+The controller automatically finalizes each newly completed benchmark seed and
+reruns the study audit when another seed completes. Manual finalization remains
+available for an attention-state recovery or a deliberate dry-run audit:
 
 ```bash
 agent-world finalize RUN_ID --dry-run
 agent-world finalize RUN_ID
 ```
 
-Non-dry finalization runs under its own detached supervisor, so the launch
+Manual non-dry finalization runs under its own detached supervisor, so the
 command returns immediately and `agent-world status RUN_ID` reports its state.
 Finalization regenerates and audits each completed report, verifies completion,
 integrity, usage coverage, model provenance, cost status, and protocol-specific

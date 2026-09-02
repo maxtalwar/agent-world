@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 from datetime import datetime, timezone
+import fcntl
 import json
 from pathlib import Path
 import re
@@ -25,6 +27,9 @@ CONFIG_SCHEMA_VERSION = 1
 JOB_SCHEMA_VERSION = 1
 DEFAULT_JOB_ROOT = Path("runs/jobs")
 DEFAULT_OUTPUT_ROOT = Path("runs/managed")
+CONTROLLER_POLL_SECONDS = 30.0
+CONTROLLER_PROGRESS_INTERVAL_TICKS = 10
+CONTROLLER_STALL_SECONDS = 3600.0
 
 _TOP_LEVEL_KEYS = {
     "schema_version", "run_id", "kind", "question", "protocol", "model",
@@ -313,6 +318,20 @@ def _tmux_active(session: str | None) -> bool:
     ).returncode == 0
 
 
+@contextmanager
+def _job_lock(job_dir: str | Path):
+    """Serialize controller, manual-resume, and finalization job mutations."""
+
+    path = Path(job_dir) / ".job.lock"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+
+
 def _write_launcher(job: dict[str, Any], cell: dict[str, Any], *, resume: bool) -> Path:
     job_dir = Path(job["job_dir"])
     suffix = f"-resume-{cell['resume_count']}" if resume else ""
@@ -359,6 +378,16 @@ def _launch_cell(job: dict[str, Any], cell: dict[str, Any], *, resume: bool = Fa
         raise RuntimeError(f"Supervisor session already exists: {session}")
     _prepare_cell(job, cell)
     launcher = _write_launcher(job, cell, resume=resume)
+    if resume:
+        manifest = Path(cell["run_manifest"])
+        if manifest.exists():
+            archived = manifest.with_name(
+                f"run-manifest.before-resume-{cell['resume_count']}.json"
+            )
+            if archived.exists():
+                raise FileExistsError(f"Resume manifest archive already exists: {archived}")
+            manifest.replace(archived)
+            cell.setdefault("previous_run_manifests", []).append(str(archived))
     subprocess.run(
         ["tmux", "new-session", "-d", "-s", session, "-c", job["source_root"], str(launcher)],
         check=True,
@@ -406,6 +435,77 @@ def _launch_gate_supervisor(job: dict[str, Any]) -> None:
     if not _tmux_active(session):
         raise RuntimeError(f"Startup-gate supervisor failed to remain active: {session}")
     job["startup_gate"]["supervisor_session"] = session
+
+
+def _launch_job_controller(job: dict[str, Any]) -> None:
+    """Launch the durable lifecycle controller for every managed job."""
+
+    if shutil.which("tmux") is None:
+        raise RuntimeError("tmux is required for the managed job controller")
+    job_dir = Path(job["job_dir"])
+    session = _session_name(job["run_id"], "controller", 0)
+    existing = job.get("controller") or {}
+    if _tmux_active(existing.get("session")) or _tmux_active(session):
+        raise RuntimeError(f"Job controller session already exists: {session}")
+    script = job_dir / "supervise-job.sh"
+    script.write_text(
+        "#!/usr/bin/env bash\n"
+        "set -uo pipefail\n"
+        f"cd {shlex.quote(job['source_root'])}\n"
+        "attempt=0\n"
+        "while true; do\n"
+        f"  python3 -m agent_world.run_controller {shlex.quote(str(job_dir / 'job.json'))} "
+        f">> {shlex.quote(str(job_dir / 'controller.log'))} 2>&1 && exit 0\n"
+        "  attempt=$((attempt + 1))\n"
+        "  delay=$((attempt * 30))\n"
+        "  (( delay > 300 )) && delay=300\n"
+        f"  echo \"Job controller crashed; restart $attempt follows in ${{delay}}s.\" >> "
+        f"{shlex.quote(str(job_dir / 'controller.log'))}\n"
+        "  sleep \"$delay\"\n"
+        "done\n",
+        encoding="utf-8",
+    )
+    script.chmod(0o700)
+    job["controller"] = {
+        "schema_version": 1,
+        "status": "running",
+        "session": session,
+        "started_at_utc": utc_now(),
+        "poll_seconds": CONTROLLER_POLL_SECONDS,
+        "progress_interval_ticks": CONTROLLER_PROGRESS_INTERVAL_TICKS,
+        "stall_seconds": CONTROLLER_STALL_SECONDS,
+        "heartbeat": str(job_dir / "controller-heartbeat.json"),
+        "events": str(job_dir / "controller-events.jsonl"),
+        "log": str(job_dir / "controller.log"),
+    }
+    if isinstance(job.get("startup_gate"), dict):
+        job["startup_gate"]["supervisor_session"] = session
+    atomic_write_json(job_dir / "job.json", job)
+    try:
+        subprocess.run(
+            [
+                "tmux", "new-session", "-d", "-s", session,
+                "-c", job["source_root"], str(script),
+            ],
+            check=True,
+        )
+    except Exception as exc:
+        job["controller"].update(
+            {"status": "failed", "ended_at_utc": utc_now(), "error": str(exc)}
+        )
+        atomic_write_json(job_dir / "job.json", job)
+        raise
+    if not _tmux_active(session):
+        fresh = _read_json(str(job_dir / "job.json")) or {}
+        state = (fresh.get("controller") or {}).get("status")
+        if state in {"completed", "completed_with_blockers", "needs_attention"}:
+            job.clear()
+            job.update(fresh)
+            return
+        raise RuntimeError(
+            f"Job controller failed to remain active: {session}; "
+            f"inspect {job_dir / 'controller.log'}"
+        )
 
 
 def supervise_startup_gate(job_path: Path, *, poll_seconds: float = 5.0) -> None:
@@ -464,9 +564,7 @@ def launch_config(path: Path, *, run_id: str | None = None, dry_run: bool = Fals
             Path(cell["output_dir"]).mkdir(parents=True, exist_ok=False)
             _launch_cell(job, cell)
             atomic_write_json(job_dir / "job.json", job)
-        if gated:
-            _launch_gate_supervisor(job)
-            atomic_write_json(job_dir / "job.json", job)
+        _launch_job_controller(job)
     except Exception:
         atomic_write_json(job_dir / "job.json", job)
         raise
@@ -498,10 +596,13 @@ def cell_status(cell: dict[str, Any]) -> dict[str, Any]:
     snapshot = _read_json(cell["snapshot"])
     active = _tmux_active(cell.get("session"))
     manifest_status = run_manifest.get("status") if run_manifest else None
-    if active:
-        state = "running"
-    elif manifest_status and manifest_status != "running":
+    # Durable terminal evidence wins over a stale supervisor. The old order
+    # could report a completed run as running forever when a wrapper retained
+    # the tmux session after the child process exited.
+    if manifest_status and manifest_status != "running":
         state = manifest_status
+    elif active:
+        state = "running"
     elif Path(cell["checkpoint"]).exists():
         state = "interrupted"
     else:
@@ -514,8 +615,14 @@ def cell_status(cell: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": cell["id"], "seed": cell["seed"], "state": state,
         "tick": tick, "target_ticks": cell.get("target_ticks"),
-        "session": cell.get("session"), "supervisor_active": active,
+        "session": cell.get("session"),
+        "supervisor_active": active and state == "running",
+        "stale_supervisor": active and state != "running",
         "stop_reason": run_manifest.get("stop_reason") if run_manifest else None,
+        "controller_state": cell.get("controller_state"),
+        "controller_attention": cell.get("controller_attention"),
+        "next_auto_resume_at_utc": cell.get("next_auto_resume_at_utc"),
+        "auto_resume_count": int(cell.get("auto_resume_count") or 0),
         "log": cell["log"], "checkpoint": cell["checkpoint"],
     }
 
@@ -529,6 +636,12 @@ def job_status(run_id: str, root: Path | None = None) -> dict[str, Any]:
     finalization = dict(job.get("finalization_supervisor") or {})
     if finalization.get("session"):
         finalization["supervisor_active"] = _tmux_active(finalization["session"])
+    controller = dict(job.get("controller") or {})
+    if controller.get("session"):
+        controller["supervisor_active"] = _tmux_active(controller["session"])
+    heartbeat = _read_json(controller.get("heartbeat", "")) if controller else None
+    if heartbeat:
+        controller["heartbeat_state"] = heartbeat
     if gate.get("status") in {"pending", "failed", "blocked"}:
         deferred_state = (
             "waiting_startup_gate" if gate["status"] == "pending" else "blocked_startup_gate"
@@ -540,6 +653,7 @@ def job_status(run_id: str, root: Path | None = None) -> dict[str, Any]:
         "run_id": job["run_id"], "kind": job["kind"], "protocol": job.get("protocol"),
         "launch_commit": job["launch_commit"],
         "startup_gate": gate or None,
+        "controller": controller or None,
         "finalization": finalization or None,
         "analysis_readiness": job.get("analysis_readiness"),
         "cells": cells,
@@ -547,24 +661,29 @@ def job_status(run_id: str, root: Path | None = None) -> dict[str, Any]:
 
 
 def resume_job(run_id: str) -> dict[str, Any]:
-    job = load_job(run_id)
+    initial = load_job(run_id)
     resumed = []
-    for cell in job["cells"]:
-        status = cell_status(cell)
-        if status["state"] == "completed":
-            continue
-        if status["supervisor_active"]:
-            continue
-        if status["state"] == "stopped" and status.get("stop_reason") == "startup_health_check_failed":
-            continue
-        if not Path(cell["checkpoint"]).exists() and cell.get("session") is None:
-            continue
-        if not Path(cell["checkpoint"]).exists():
-            raise FileNotFoundError(f"No checkpoint available for {cell['id']}: {cell['checkpoint']}")
-        cell["resume_count"] = int(cell.get("resume_count") or 0) + 1
-        _launch_cell(job, cell, resume=True)
-        resumed.append(cell["id"])
-        atomic_write_json(Path(job["job_dir"]) / "job.json", job)
+    with _job_lock(initial["job_dir"]):
+        job = load_job(run_id)
+        for cell in job["cells"]:
+            status = cell_status(cell)
+            if status["state"] == "completed":
+                continue
+            if status["supervisor_active"]:
+                continue
+            if status["state"] == "stopped" and status.get("stop_reason") == "startup_health_check_failed":
+                continue
+            if not Path(cell["checkpoint"]).exists() and cell.get("session") is None:
+                continue
+            if not Path(cell["checkpoint"]).exists():
+                raise FileNotFoundError(f"No checkpoint available for {cell['id']}: {cell['checkpoint']}")
+            cell["resume_count"] = int(cell.get("resume_count") or 0) + 1
+            _launch_cell(job, cell, resume=True)
+            resumed.append(cell["id"])
+            atomic_write_json(Path(job["job_dir"]) / "job.json", job)
+        controller = job.get("controller") or {}
+        if not _tmux_active(controller.get("session")):
+            _launch_job_controller(job)
     return {"run_id": run_id, "resumed": resumed, "status": job_status(run_id)}
 
 
@@ -581,6 +700,16 @@ def format_status(status: dict[str, Any]) -> str:
             if "supervisor_active" in gate else ""
         )
         lines.append(f"startup gate: {gate['status']}{supervisor}")
+    if status.get("controller"):
+        controller = status["controller"]
+        heartbeat = controller.get("heartbeat_state") or {}
+        checked = heartbeat.get("checked_at_utc")
+        detail = f"; last_check={checked}" if checked else ""
+        lines.append(
+            f"controller: {controller.get('status', 'unknown')}; "
+            f"supervisor_active={str(controller.get('supervisor_active', False)).lower()}"
+            f"{detail}"
+        )
     if status.get("finalization"):
         finalization = status["finalization"]
         lines.append(
@@ -596,6 +725,14 @@ def format_status(status: dict[str, Any]) -> str:
         line = f"- {cell['id']}: {cell['state']} at tick {progress}"
         if cell.get("stop_reason"):
             line += f" ({cell['stop_reason']})"
+        if cell.get("stale_supervisor"):
+            line += "; stale_supervisor=true"
+        if cell.get("controller_attention"):
+            line += f"; attention={cell['controller_attention']}"
+        if cell.get("next_auto_resume_at_utc"):
+            line += f"; auto_resume_at={cell['next_auto_resume_at_utc']}"
+        if cell.get("auto_resume_count"):
+            line += f"; auto_resumes={cell['auto_resume_count']}"
         line += f"; log={cell['log']}"
         lines.append(line)
     return "\n".join(lines)

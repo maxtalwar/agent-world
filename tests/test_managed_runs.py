@@ -9,6 +9,8 @@ from unittest.mock import patch
 from agent_world.managed_runs import (
     build_cell_command,
     build_launch_plan,
+    _launch_cell,
+    _launch_job_controller,
     cell_status,
     load_run_config,
     _health_gate_status,
@@ -137,7 +139,111 @@ class ManagedRunConfigTests(unittest.TestCase):
         self.assertEqual(plan["launch_commit"], "a" * 40)
         self.assertEqual([cell["seed"] for cell in plan["cells"]], [11, 41])
         self.assertTrue(all(cell["target_ticks"] == 50 for cell in plan["cells"]))
-        self.assertNotEqual(plan["cells"][0]["cohort_id"], plan["cells"][1]["cohort_id"])
+        self.assertNotEqual(
+            plan["cells"][0]["cohort_id"], plan["cells"][1]["cohort_id"]
+        )
+
+
+class ManagedRunControllerLaunchTests(unittest.TestCase):
+    def _job(self, root: Path) -> dict:
+        job_dir = root / "runs" / "jobs" / "test"
+        job_dir.mkdir(parents=True)
+        return {
+            "schema_version": 1,
+            "run_id": "test",
+            "source_root": str(root),
+            "job_dir": str(job_dir),
+            "cells": [],
+        }
+
+    @patch("agent_world.managed_runs.subprocess.run")
+    @patch("agent_world.managed_runs.shutil.which", return_value="/usr/bin/tmux")
+    @patch(
+        "agent_world.managed_runs._tmux_active",
+        side_effect=[False, False, True],
+    )
+    def test_controller_uses_durable_capped_crash_backoff(
+        self, _active, _which, run
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            job = self._job(Path(temp_dir))
+
+            _launch_job_controller(job)
+
+            script = Path(job["job_dir"], "supervise-job.sh").read_text(
+                encoding="utf-8"
+            )
+            self.assertIn("while true", script)
+            self.assertIn("delay > 300", script)
+            self.assertEqual(job["controller"]["status"], "running")
+            run.assert_called_once()
+
+    @patch("agent_world.managed_runs.subprocess.run")
+    @patch("agent_world.managed_runs.shutil.which", return_value="/usr/bin/tmux")
+    @patch(
+        "agent_world.managed_runs._tmux_active",
+        side_effect=[False, False, False],
+    )
+    def test_fast_terminal_controller_does_not_look_like_launch_failure(
+        self, _active, _which, run
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            job = self._job(Path(temp_dir))
+
+            def finish_immediately(*_args, **_kwargs):
+                job_path = Path(job["job_dir"], "job.json")
+                saved = json.loads(job_path.read_text(encoding="utf-8"))
+                saved["controller"]["status"] = "needs_attention"
+                job_path.write_text(json.dumps(saved), encoding="utf-8")
+
+            run.side_effect = finish_immediately
+
+            _launch_job_controller(job)
+
+            self.assertEqual(job["controller"]["status"], "needs_attention")
+
+    @patch("agent_world.managed_runs.subprocess.run")
+    @patch("agent_world.managed_runs._write_launcher")
+    @patch("agent_world.managed_runs._prepare_cell")
+    @patch("agent_world.managed_runs.shutil.which", return_value="/usr/bin/tmux")
+    @patch("agent_world.managed_runs._tmux_active", side_effect=[False, True])
+    def test_resume_archives_terminal_manifest_before_starting_supervisor(
+        self, _active, _which, _prepare, write_launcher, run
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            job_dir = root / "runs" / "jobs" / "test"
+            output_dir = root / "output"
+            job_dir.mkdir(parents=True)
+            output_dir.mkdir()
+            launcher = job_dir / "resume.sh"
+            launcher.write_text("#!/bin/sh\n", encoding="utf-8")
+            write_launcher.return_value = launcher
+            manifest = output_dir / "run-manifest.json"
+            manifest.write_text(
+                json.dumps({"status": "paused_checkpoint"}),
+                encoding="utf-8",
+            )
+            job = {
+                "run_id": "test",
+                "source_root": str(root),
+                "job_dir": str(job_dir),
+            }
+            cell = {
+                "id": "seed-11",
+                "resume_count": 2,
+                "run_manifest": str(manifest),
+                "log": str(job_dir / "seed-11.log"),
+            }
+
+            _launch_cell(job, cell, resume=True)
+
+            archived = output_dir / "run-manifest.before-resume-2.json"
+            self.assertFalse(manifest.exists())
+            self.assertTrue(archived.exists())
+            self.assertEqual(cell["previous_run_manifests"], [str(archived)])
+            self.assertEqual(cell["session"], "aw-test-seed-11-r2")
+            run.assert_called_once()
 
 
 class ManagedRunStatusTests(unittest.TestCase):
@@ -207,6 +313,27 @@ class ManagedRunStatusTests(unittest.TestCase):
             })
             self.assertEqual(status["state"], "completed")
             self.assertEqual(status["tick"], 50)
+
+    @patch("agent_world.managed_runs._tmux_active", return_value=True)
+    def test_completed_manifest_overrides_stale_supervisor(self, _active) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            manifest = root / "run-manifest.json"
+            manifest.write_text(
+                json.dumps({"status": "completed", "final_tick": 50}),
+                encoding="utf-8",
+            )
+            status = cell_status({
+                "id": "seed-41", "seed": 41, "session": "aw-stale",
+                "run_manifest": str(manifest),
+                "snapshot": str(root / "missing.json"),
+                "checkpoint": str(root / "missing.pkl"),
+                "log": str(root / "run.log"),
+            })
+
+            self.assertEqual(status["state"], "completed")
+            self.assertFalse(status["supervisor_active"])
+            self.assertTrue(status["stale_supervisor"])
 
 
 if __name__ == "__main__":

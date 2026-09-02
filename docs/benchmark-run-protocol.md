@@ -91,8 +91,10 @@ Before any model call:
 Launch the predeclared config with `agent-world run --config CONFIG.json`.
 The manager gives every independently executing seed its own cohort, detached
 worktree pinned to the shared clean launch commit, durable supervisor, and log.
-These mechanics are recorded in `runs/jobs/RUN_ID/job.json`; they are not
-manual operator steps.
+A separate durable job controller owns startup-gate release, checkpoint
+recovery, progress milestones, stale-process cleanup, and finalization. These
+mechanics are recorded in `runs/jobs/RUN_ID/job.json` and its controller
+heartbeat/event artifacts; they are not manual operator steps.
 
 Never place the actual model-backed run in an `exec_command`, PTY, or temporary
 foreground shell. See [run-quickstart.md](run-quickstart.md).
@@ -104,13 +106,15 @@ and fails an unhealthy cell when no model call was attempted, or when at least
 two calls failed and the failure rate exceeds 20 percent. The exact recorded
 gate configuration is authoritative if a protocol intentionally changes it.
 
-The run agent checks the gate result once after tick 5. It does not babysit the
-process after every tick, replicate the health calculation from incomplete log
-tails, or interfere with a healthy process.
+The job controller consumes the recorded gate event and releases later cells.
+The run agent does not babysit the process, replicate the health calculation
+from incomplete log tails, or interfere with a healthy process.
 
 ### 4. Event-driven monitoring
 
-After a healthy startup gate, inspect a cell only when one of these occurs:
+After a healthy startup gate, the controller polls cheap local state every 30
+seconds and records ten-tick progress milestones. An operator or run agent
+inspects a cell only when one of these occurs:
 
 - the process exits;
 - the harness records startup failure, checkpoint pause, or quota wait;
@@ -119,7 +123,7 @@ After a healthy startup gate, inspect a cell only when one of these occurs:
 
 Status reports should state the last completed tick, process state, stop
 reason, quota deadline when applicable, and the next automatic transition.
-Silence between events is normal.
+Silence between events is normal; controller polling makes no provider calls.
 
 ### 5. Quotas and resumption
 
@@ -127,17 +131,24 @@ A rate or usage limit means the run is early, not broken. The harness must stop
 calling the refusing provider, freeze the world at a completed tick, and wait
 up to `BENCHMARK_QUOTA_WAIT_HOURS` (or the explicit `--quota-wait-hours` value).
 
-Resume only with `agent-world resume RUN_ID`, which uses the existing
-checkpoint, cohort, and pinned launch commit. Never restart the study to bypass a limit. Never accept a
-provider failure as a fabricated agent action. If the wait allowance expires,
-preserve the checkpoint and mark the cell `waiting_quota` or `diagnostic_only`
-with the exact reason.
+Never restart the study to bypass a limit or accept a provider failure as a
+fabricated agent action. If the wait allowance expires, preserve the checkpoint
+and mark the cell `waiting_quota` or `diagnostic_only` with the exact reason.
+
+Interrupted supervisors and transient provider-unavailable checkpoints resume
+automatically with bounded backoff. An interrupted quota sleep retains its
+recorded wait deadline. Active quota sleeps, exhausted wait allowances,
+authentication failures, failed health gates, and integrity-type
+failures never auto-restart. Use `agent-world resume RUN_ID` only after resolving
+the controller's explicit `needs_attention` condition.
 
 ### 6. Cell completion gate
 
-Use `agent-world finalize RUN_ID` for managed studies. It performs the
-protocol-aware report, transfer-accounting, and readiness audit described
-below. `--dry-run` reports blockers without model calls or artifact writes.
+The job controller automatically performs the protocol-aware report,
+transfer-accounting, and readiness audit for each newly completed seed, then
+again when another seed completes. `agent-world finalize RUN_ID` remains the
+manual recovery command; `--dry-run` reports blockers without model calls or
+artifact writes.
 
 Before calling a cell complete, verify all of the following against artifacts:
 

@@ -86,6 +86,32 @@ class ManagedFinalizationTests(unittest.TestCase):
             self.assertIn("run_finalization worker test", (job_dir / "finalize.sh").read_text())
             run.assert_called_once()
 
+    @patch("agent_world.run_finalization.subprocess.run")
+    @patch("agent_world.run_finalization.shutil.which", return_value="/usr/bin/tmux")
+    @patch("agent_world.run_finalization.load_job")
+    def test_manual_finalization_refuses_controller_owned_attempt(
+        self, load_job, _which, run
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            job_dir = root / "runs" / "jobs" / "test"
+            job_dir.mkdir(parents=True)
+            load_job.return_value = {
+                "run_id": "test",
+                "source_root": str(root),
+                "job_dir": str(job_dir),
+                "controller": {
+                    "finalization_in_progress_signature": [11, 41],
+                },
+            }
+
+            with self.assertRaisesRegex(
+                RuntimeError, "Automatic finalization is already running"
+            ):
+                start_finalization("test")
+
+            run.assert_not_called()
+
     def test_existing_failed_v6_attempt_prevents_rejudge(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

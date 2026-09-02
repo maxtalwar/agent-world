@@ -19,8 +19,16 @@
 - Launch normal model-backed runs through the declarative managed interface:
   `agent-world run --config CONFIG.json`. See `docs/run-quickstart.md` for the
   complete config reference and examples. Use `agent-world status RUN_ID` for
-  event-derived status, `agent-world resume RUN_ID` for checkpoint recovery,
-  and `agent-world finalize RUN_ID` for protocol-aware accounting and readiness.
+  event-derived status. Every launch includes a detached job controller that
+  releases the startup gate, records ten-tick progress milestones, safely
+  resumes interrupted/provider-paused checkpoints, reaps non-quota stalls, and
+  finalizes benchmark evidence. `agent-world resume RUN_ID` and `agent-world
+  finalize RUN_ID` remain explicit recovery tools after an attention state;
+  they are not normal babysitting steps.
+- Do not poll healthy runs tick by tick. The job controller checks locally every
+  30 seconds and writes `controller-heartbeat.json` plus an append-only
+  `controller-events.jsonl`. Report status only on user request or a
+  terminal/attention event.
 - Never launch a long-running run directly inside an `exec_command`, PTY, or
   other temporary foreground command session. The managed interface must place
   every independently executing cell under a durable detached supervisor and

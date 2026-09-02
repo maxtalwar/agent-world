@@ -22,6 +22,27 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-02 — A durable model process is not the same as a durable benchmark job
+
+**Per-seed detachment prevented terminal loss but did not prevent nearly seven
+hours of zero-work delay when recovery depended on a wrapper session rather
+than terminal evidence; durability has to cover the entire job state machine.**
+In the GLM-5.3/ZCode Participant v6 study, seed 11 wrote its completed tick-50
+manifest at 01:44:54 PDT, while seed 41 did not resume from its tick-38
+checkpoint until 08:32:15 PDT: a 6h47m handoff gap with no model work. The
+ad-hoc follow-up script polled `tmux has-session` for the previous wrapper,
+even though the completed manifest was already authoritative. Earlier stop/fix
+handling also left seed 41 inactive for 3h32m.
+
+This delay was distinct from 5h05m of recorded ZCode quota sleep and from the
+model's genuine latency: 903 successful calls had 67–79 second seed medians,
+142–169 second p95s, and roughly 4.6 million completion tokens. The managed
+workflow now launches `agent_world/run_controller.py` for the entire lifecycle,
+prioritizes terminal manifests over stale sessions, independently recovers
+safe checkpoints, records ten-tick milestones and 30-second heartbeats, and
+automatically finalizes completed benchmark evidence. Evidence:
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/`.
+
 ## 2026-09-01 — ZCode quota reset timestamps use provider-local wall time
 
 **ZCode's Z.ai Coding Plan errors report five-hour usage-cap reset timestamps

@@ -14,7 +14,9 @@ import tempfile
 from typing import Any
 
 from agent_world.io import atomic_write_json
-from agent_world.managed_runs import _session_name, _tmux_active, cell_status, load_job, utc_now
+from agent_world.managed_runs import (
+    _job_lock, _session_name, _tmux_active, cell_status, load_job, utc_now,
+)
 from agent_world.run_report import load_run_files, write_report
 
 
@@ -456,17 +458,27 @@ def finalize_job(
         "analysis_readiness": readiness,
     }
     if not dry_run:
-        job["finalization"] = {
-            "schema_version": 1,
-            "finalized_at_utc": utc_now(),
-            "cells": cell_results,
-        }
-        job["analysis_readiness"] = readiness
-        if isinstance(job.get("finalization_supervisor"), dict):
-            job["finalization_supervisor"].update(
-                {"status": "completed", "ended_at_utc": utc_now()}
-            )
-        atomic_write_json(Path(job["job_dir"]) / "job.json", job)
+        # Finalization may run while the lifecycle controller records progress
+        # or recovers another seed. Merge only finalization-owned fields into
+        # the freshest manifest so neither process erases the other's state.
+        job_path = Path(job["job_dir"]) / "job.json"
+        with _job_lock(job["job_dir"]):
+            try:
+                fresh = json.loads(job_path.read_text(encoding="utf-8"))
+            except FileNotFoundError:
+                # Preserve the injectable load_job contract used by callers and tests.
+                fresh = job
+            fresh["finalization"] = {
+                "schema_version": 1,
+                "finalized_at_utc": utc_now(),
+                "cells": cell_results,
+            }
+            fresh["analysis_readiness"] = readiness
+            if isinstance(fresh.get("finalization_supervisor"), dict):
+                fresh["finalization_supervisor"].update(
+                    {"status": "completed", "ended_at_utc": utc_now()}
+                )
+            atomic_write_json(job_path, fresh)
     return result
 
 
@@ -474,9 +486,6 @@ def start_finalization(run_id: str, *, classify_v6: bool = True) -> dict[str, An
     job = load_job(run_id)
     job_dir = Path(job["job_dir"])
     session = _session_name(run_id, "finalize", 0)
-    existing = job.get("finalization_supervisor") or {}
-    if _tmux_active(existing.get("session")):
-        raise RuntimeError(f"Finalization is already running: {existing['session']}")
     if shutil.which("tmux") is None:
         raise RuntimeError("tmux is required for durable managed finalization")
     script = job_dir / "finalize.sh"
@@ -496,23 +505,33 @@ def start_finalization(run_id: str, *, classify_v6: bool = True) -> dict[str, An
         encoding="utf-8",
     )
     script.chmod(0o700)
-    job["finalization_supervisor"] = {
-        "status": "running",
-        "session": session,
-        "started_at_utc": utc_now(),
-        "log": str(job_dir / "finalize.log"),
-    }
-    atomic_write_json(job_dir / "job.json", job)
+    with _job_lock(job_dir):
+        job = load_job(run_id)
+        automatic = (job.get("controller") or {}).get("finalization_in_progress_signature")
+        if automatic:
+            raise RuntimeError(
+                f"Automatic finalization is already running for seeds {automatic}"
+            )
+        existing = job.get("finalization_supervisor") or {}
+        if _tmux_active(existing.get("session")):
+            raise RuntimeError(f"Finalization is already running: {existing['session']}")
+        job["finalization_supervisor"] = {
+            "status": "running", "session": session, "started_at_utc": utc_now(),
+            "log": str(job_dir / "finalize.log"),
+        }
+        atomic_write_json(job_dir / "job.json", job)
     try:
         subprocess.run(
             ["tmux", "new-session", "-d", "-s", session, "-c", job["source_root"], str(script)],
             check=True,
         )
     except Exception as exc:
-        job["finalization_supervisor"].update(
-            {"status": "failed", "ended_at_utc": utc_now(), "error": str(exc)}
-        )
-        atomic_write_json(job_dir / "job.json", job)
+        with _job_lock(job_dir):
+            fresh = load_job(run_id)
+            fresh["finalization_supervisor"].update(
+                {"status": "failed", "ended_at_utc": utc_now(), "error": str(exc)}
+            )
+            atomic_write_json(job_dir / "job.json", fresh)
         raise
     if not _tmux_active(session):
         fresh = load_job(run_id)
@@ -534,11 +553,13 @@ def _worker(run_id: str, *, classify_v6: bool) -> None:
         finalize_job(run_id, classify_v6=classify_v6)
     except Exception as exc:
         job = load_job(run_id)
-        supervisor = job.setdefault("finalization_supervisor", {})
-        supervisor.update(
-            {"status": "failed", "ended_at_utc": utc_now(), "error": str(exc)}
-        )
-        atomic_write_json(Path(job["job_dir"]) / "job.json", job)
+        with _job_lock(job["job_dir"]):
+            fresh = load_job(run_id)
+            supervisor = fresh.setdefault("finalization_supervisor", {})
+            supervisor.update(
+                {"status": "failed", "ended_at_utc": utc_now(), "error": str(exc)}
+            )
+            atomic_write_json(Path(fresh["job_dir"]) / "job.json", fresh)
         raise
 
 
