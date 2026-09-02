@@ -88,6 +88,19 @@ class QuotaResetParsingTests(unittest.TestCase):
             datetime(2026, 8, 4, 13, 4, tzinfo=timezone.utc),
         )
 
+    def test_zcode_reset_at_timestamp_uses_provider_wall_clock(self) -> None:
+        now = datetime(2026, 9, 2, 0, 24, 33, tzinfo=timezone.utc)
+        detail = (
+            "ZCode quota unavailable: ProviderBusinessError: "
+            "[1308][Usage limit reached for 5 hour. "
+            "Your limit will reset at 2026-09-02 10:44:55]"
+        )
+
+        self.assertEqual(
+            quota_reset_at(detail, now=now),
+            datetime(2026, 9, 2, 2, 44, 55, tzinfo=timezone.utc),
+        )
+
     def test_no_hint_returns_none_so_the_caller_backs_off(self) -> None:
         self.assertIsNone(quota_reset_at("You've hit your weekly limit", now=None))
         self.assertIsNone(quota_reset_at(None))

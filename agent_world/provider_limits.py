@@ -73,7 +73,8 @@ _RELATIVE_PATTERN = re.compile(
 )
 _RETRY_AFTER_PATTERN = re.compile(r"retry[-_ ]after[:=\s]+(\d+)", re.IGNORECASE)
 _ISO_PATTERN = re.compile(
-    r"reset(?:s|s at|_at)?[:=\s]+(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2})?)",
+    r"reset(?:s(?: at)?| at|_at)?[:=\s]+"
+    r"(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2})?)",
     re.IGNORECASE,
 )
 # "resets 2pm (America/Los_Angeles)", "resets at 10:30am (UTC)"
@@ -118,7 +119,17 @@ def quota_reset_at(detail: str | None, *, now: datetime | None = None) -> dateti
             parsed = None
         if parsed is not None:
             if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=timezone.utc)
+                # ZCode's Z.ai Coding Plan errors render an unqualified wall
+                # clock in the provider's China timezone. Treating it as UTC
+                # makes the harness miss the real reset and fall back to
+                # repeated quota probes. Other providers' historical naive
+                # ISO timestamps retain the existing UTC interpretation.
+                zone = (
+                    ZoneInfo("Asia/Shanghai")
+                    if "zcode quota unavailable" in detail.lower()
+                    else timezone.utc
+                )
+                parsed = parsed.replace(tzinfo=zone)
             return parsed.astimezone(timezone.utc)
 
     match = _CLOCK_PATTERN.search(detail)

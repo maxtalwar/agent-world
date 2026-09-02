@@ -22,6 +22,24 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-01 — ZCode quota reset timestamps use provider-local wall time
+
+**ZCode's Z.ai Coding Plan errors report five-hour usage-cap reset timestamps
+without a timezone, but the clock is Asia/Shanghai; treating it as UTC made a
+healthy frozen run look stuck and forced blind quota probes.** GLM-5.3 seed 11
+received the cap at 00:24:33Z with a request ID beginning `20260902082433` and
+`reset at 2026-09-02 10:44:55`; those two clocks identify the true reset as
+02:44:55Z. The parser also did not accept singular `reset at`, so it used
+5/10/20/30-minute exponential polling, accumulated 9,300 seconds of frozen
+wait, and resumed around 03:04:49Z—about 20 minutes after the cap had lifted.
+
+This was distinct from the one five-minute `[1302]` request-rate limit at tick
+2: tick 9 was an explicit `[1308] Usage limit reached for 5 hour` account cap.
+Reducing workers would not reduce the token allowance consumed and would slow
+ordinary ticks; the harness now parses ZCode's unqualified absolute reset time
+in `Asia/Shanghai`. Evidence:
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed11/run.jsonl`.
+
 ## 2026-09-01 — ZCode's environment model override bypassed its saved Coding Plan credential
 
 **A ZCode 0.16.5 process could pass login preflight yet fail every GLM-5.3
