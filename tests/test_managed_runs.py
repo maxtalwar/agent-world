@@ -80,6 +80,23 @@ class ManagedRunConfigTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "protocol owns"):
             self._load(value)
 
+    def test_benchmark_accepts_operational_worker_overrides(self) -> None:
+        value = _config("benchmark")
+        value["runtime"] = {
+            "max_workers": 2,
+            "provider_max_workers": {"zcode": 2},
+        }
+
+        loaded = self._load(value)
+        command = build_cell_command(loaded, 11, Path("/tmp/out"))
+
+        self.assertEqual(loaded["runtime"]["max_workers"], 2)
+        self.assertEqual(
+            command[command.index("--max-workers") + 1],
+            "2",
+        )
+        self.assertEqual(command[command.index("--zcode-max-workers") + 1], "2")
+
     def test_benchmark_rejects_wrong_reasoning_effort(self) -> None:
         value = _config("benchmark")
         value["model"]["reasoning_effort"] = "medium"

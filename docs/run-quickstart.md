@@ -135,14 +135,21 @@ entirely because its protocol rejects incompatible overrides.
 - `ticks` is the total target tick, including after resume.
 - `agents` is population size.
 - `max_workers` is the global same-tick decision pool. It is not the number of
-  run cells.
+  run cells. It is an operational throughput knob, not a benchmark treatment.
 - `provider_max_workers` optionally sets connector ceilings by `openrouter`,
   `codex`, `claude`, `cursor`, `devin`, `grok`, or `zcode`. Every ceiling is
-  still clamped by `max_workers`.
+  still clamped by `max_workers`. Benchmark configs may set either worker
+  field without becoming experimental or losing protocol compliance.
+- Worker count does not change what an agent sees: the engine freezes the tick,
+  collects independent decisions, and resolves them together. Tune it for
+  provider capacity, rate limits, and wall-clock throughput. The run records
+  the actual counts for diagnosis, but comparisons and finalization do not
+  require equal counts.
 - `quota_wait_hours` controls how long the harness freezes and retries the same
   tick after a provider limit. A benchmark supplies its protocol default.
 - `sequential_decisions: true` disables concurrent decisions and therefore
-  changes the treatment; standardized benchmarks reject it.
+  bypasses the normal worker pool; standardized benchmark configs still reject
+  this separate debug mode.
 - `progress` controls per-tick log lines. Managed launches enable it by default
   so the detached log remains useful.
 

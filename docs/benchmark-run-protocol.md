@@ -43,6 +43,14 @@ behavior-defining setting. The current Participant v7 suite uses
 in `docs/model-benchmarks.md`. A requested override changes the run into an
 experiment or controlled diagnostic and cannot remain standard evidence.
 
+Worker concurrency is not behavior-defining. The engine collects every
+agent's decision from the same frozen tick state and resolves the tick only
+after collection finishes, so `max_workers` and provider worker ceilings
+control throughput only. Benchmark configs may tune them to provider capacity;
+runs record the actual values as operational telemetry, and finalization never
+requires them to match across models or replications. Provider, quota, timeout,
+or harness failures remain integrity conditions regardless of worker count.
+
 Do not copy a command from an older run until its protocol and flags have been
 checked against the current CLI and suite documentation.
 

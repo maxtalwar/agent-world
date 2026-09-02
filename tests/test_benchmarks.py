@@ -45,6 +45,7 @@ def _protocol_report(
     model_output_failure: bool = False,
     harness_failure: bool = False,
     unverified_failure: bool = False,
+    workers: int = 40,
 ) -> dict:
     agents = [f"agent-{index}" for index in range(1, 11)]
     cohort = {
@@ -97,8 +98,8 @@ def _protocol_report(
             "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"]),
             "decision_mode": "raw",
             "turn_resolution": "simultaneous",
-            "global_max_workers": 40,
-            "provider_max_workers": {"codex_cli": 40},
+            "global_max_workers": workers,
+            "provider_max_workers": {"codex_cli": workers},
             "agent_io_log": True,
             "action_feedback_mode": "baseline",
             "connector_profile": "connector-v3",
@@ -319,6 +320,42 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.max_workers, 20)
         self.assertEqual(args.zcode_max_workers, 20)
         self.assertEqual(args.reasoning_effort, "max")
+
+    def test_protocol_preserves_explicit_worker_overrides(self) -> None:
+        args = Namespace(
+            benchmark_protocol=BENCHMARK_PROTOCOL_ID,
+            population=None,
+            brain="zcode",
+            sequential_decisions=False,
+            seed=None,
+            max_workers=2,
+            zcode_max_workers=2,
+        )
+
+        _apply_benchmark_protocol(args)
+
+        self.assertEqual(args.max_workers, 2)
+        self.assertEqual(args.zcode_max_workers, 2)
+
+    def test_worker_count_is_operational_not_protocol_compliance(self) -> None:
+        report = _protocol_report(11, "two-worker-run", workers=2)
+        cohort = report["benchmarks"]["cohorts"]["cohort-1"]
+        protocol = benchmark_protocol()
+
+        self.assertTrue(cohort["protocol_compliant"])
+        self.assertNotIn(
+            "protocol_mismatch:global_max_workers",
+            cohort["quality_flags"],
+        )
+        self.assertNotIn(
+            "protocol_mismatch:provider_max_workers",
+            cohort["quality_flags"],
+        )
+        self.assertFalse(
+            protocol["execution_defaults"]["worker_count_is_protocol_setting"]
+        )
+        self.assertNotIn("global_max_workers", protocol["trial"])
+        self.assertNotIn("provider_max_workers", protocol["trial"])
 
     def test_provider_defaults_are_clamped_to_run_workers(self) -> None:
         limits = _resolve_provider_max_workers(Namespace(), 12)

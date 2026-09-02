@@ -150,7 +150,13 @@ def load_run_config(path: Path) -> dict[str, Any]:
             raise ValueError(f"Benchmark seeds are not declared by {protocol}: {undeclared}")
         incompatible_blocks = {
             "world": sorted(world),
-            "runtime": sorted(set(runtime) - {"quota_wait_hours", "progress"}),
+            "runtime": sorted(
+                set(runtime)
+                - {
+                    "max_workers", "provider_max_workers",
+                    "quota_wait_hours", "progress",
+                }
+            ),
             "harness": sorted(harness),
         }
         configured = [

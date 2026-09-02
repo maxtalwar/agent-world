@@ -34,6 +34,9 @@ from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 # ceiling cannot be differentiated by any later rescoring.
 BENCHMARK_SUITE_ID = "agent-world-participant-v7"
 BENCHMARK_PROTOCOL_ID = "participant-v7"
+# Operational throughput defaults. They are recorded for observability but are
+# not part of the behavioral treatment: every agent decides from the same
+# frozen tick state regardless of how many decisions are collected in parallel.
 BENCHMARK_DEFAULT_MAX_WORKERS = 4
 BENCHMARK_PROVIDER_MAX_WORKERS = {
     "openrouter": 4,
@@ -131,6 +134,13 @@ GIFT_VERDICTS = frozenset(
 # already declare the current protocol. Resume those checkpoints from a
 # worktree pinned to their own v6 launch commit, which is where these entries
 # do their work.
+#
+# The eight fingerprints beginning 4614df04 through 6481fec9 are the unscoped
+# and provider-scoped v7 fingerprints at commit a2bc95b, immediately before
+# worker concurrency was correctly reclassified as operational metadata. The
+# change preserves simultaneous world resolution and every prompt, action, and
+# score; it only stops launch validation and report admission from treating the
+# number of parallel decision subprocesses as a behavioral setting.
 BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
     {
         "b524845fcd574c17abc82bcaaefaca36cc326e31fb399641f9e05014389a7ec4",
@@ -142,6 +152,14 @@ BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS: frozenset[str] = frozenset(
         "9e43a228691bebe86c8863e7b5d64c6307d84afff690e0950b2c9dcbd699872d",
         "3d59a78e55fa86466815dbaa03d4f7abe00c3c1f9a12bf4dc1395bbc7241b22d",
         "a79bd51cd3e2e0acc34ad4ac9006b74fae4987e40ed2dfc9a3f97cf7714d4788",
+        "4614df041e86a0ba105f4d7b9fe2260f022de8b7dd853d3ece4d66c8ce5f852d",
+        "addb8123c677b9735496fafe7855c1237344f5bc919f287167399ac2af56ec7b",
+        "9f2da58f4f6efd3a0dcd1afc98d92f948569ca1ad2f96fd9d64dc2461751a95f",
+        "136aad06576fd430964ba62157ef9dd55ac67f23e45793887d42c012a5ffd2aa",
+        "655fc30e9e0c01379ff48ebcc144392c3d76d8e870459498bad609e3c22cd673",
+        "eedbb068ccf091b58a683f9bb03bdbdb13aa020fba1ab78995b8ebc110dc5379",
+        "c21751e71eda1b73dc19a20608fb1f514960958b11ee593660026058f0effd28",
+        "6481fec990a8a063ccc8d898370e91101a7c0d38d66e8045f9a65e5907a8556c",
     }
 )
 
@@ -579,6 +597,18 @@ def benchmark_protocol() -> dict[str, Any]:
                 "and never block certification."
             ),
         },
+        "execution_defaults": {
+            "global_max_workers": BENCHMARK_DEFAULT_MAX_WORKERS,
+            "provider_max_workers": dict(
+                sorted(BENCHMARK_PROVIDER_MAX_WORKERS.items())
+            ),
+            "worker_count_is_protocol_setting": False,
+            "policy": (
+                "Worker counts only control how quickly independent decisions "
+                "from one frozen tick are collected. Runs record the actual "
+                "counts, but differing counts do not affect protocol compliance."
+            ),
+        },
         "trial": {
             "agents": 10,
             "ticks": 50,
@@ -606,13 +636,6 @@ def benchmark_protocol() -> dict[str, Any]:
             "conversation_mode": "fresh-conversation",
             "population": "one uniform model cohort",
             "turn_resolution": "simultaneous",
-            "global_max_workers": BENCHMARK_DEFAULT_MAX_WORKERS,
-            "provider_max_workers": BENCHMARK_DEFAULT_MAX_WORKERS,
-            "provider_worker_overrides": {
-                provider: workers
-                for provider, workers in BENCHMARK_PROVIDER_MAX_WORKERS.items()
-                if workers != BENCHMARK_DEFAULT_MAX_WORKERS
-            },
             "agent_io_log": True,
             "model_output_failure_policy": (
                 "Independently validate each extracted decision against the "
@@ -1599,9 +1622,6 @@ def _trial_flags(
         ),
         None,
     )
-    expected_max_workers = expected.get("provider_worker_overrides", {}).get(
-        used_provider, expected["global_max_workers"]
-    )
     checks = {
         "agents": ((report.get("population") or {}).get("total_agents"), expected["agents"]),
         "ticks": (run.get("target_ticks"), expected["ticks"]),
@@ -1633,10 +1653,6 @@ def _trial_flags(
         "turn_resolution": (
             start_data.get("turn_resolution"),
             expected["turn_resolution"],
-        ),
-        "global_max_workers": (
-            start_data.get("global_max_workers"),
-            expected_max_workers,
         ),
     }
     for name, (actual, wanted) in checks.items():
@@ -1689,12 +1705,6 @@ def _trial_flags(
         flags.append("run_quality_not_clean")
     if reliability.get("usage_record_coverage_pct") != 100.0:
         flags.append("usage_coverage_not_complete")
-    provider_limits = start_data.get("provider_max_workers") or {}
-    if (
-        used_provider is None
-        or provider_limits.get(used_provider) != expected_max_workers
-    ):
-        flags.append("protocol_mismatch:provider_max_workers")
     if start_data.get("agent_io_log") is not True:
         flags.append("protocol_mismatch:agent_io_log")
     return flags

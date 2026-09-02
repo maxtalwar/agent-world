@@ -1259,14 +1259,6 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         "assignment_seed": 0,
         "width": 16,
         "height": 16,
-        "max_workers": benchmark_max_workers,
-        "codex_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["codex_cli"],
-        "claude_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["claude_cli"],
-        "cursor_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["cursor_cli"],
-        "devin_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["devin_cli"],
-        "grok_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["grok_cli"],
-        "openrouter_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["openrouter"],
-        "zcode_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["zcode_cli"],
         "startup_health_check_tick": 5,
         "startup_health_max_failure_rate": 0.2,
     }
@@ -1279,6 +1271,24 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
                 f"received {current!r}."
             )
         setattr(args, name, required)
+
+    # Concurrency only changes the throughput of independent decisions made
+    # from the same frozen tick. Supply provider-aware defaults without locking
+    # them as part of the behavioral protocol.
+    operational_defaults = {
+        "max_workers": benchmark_max_workers,
+        "codex_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["codex_cli"],
+        "claude_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["claude_cli"],
+        "cursor_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["cursor_cli"],
+        "devin_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["devin_cli"],
+        "grok_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["grok_cli"],
+        "openrouter_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["openrouter"],
+        "zcode_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["zcode_cli"],
+    }
+    for name, default in operational_defaults.items():
+        if getattr(args, name, None) is None:
+            setattr(args, name, default)
+
     if args.seed is None:
         args.seed = 11
     if args.seed not in BENCHMARK_ALLOWED_SEEDS:

@@ -23,6 +23,12 @@ Follow `AGENTS.md` for repository-wide isolation, quota, validation, commit, pus
 - “Run the benchmark on MODEL” means the current standardized suite and its required seeds. At present that is Participant v7 on seeds 11 and 41. If the user asks for one seed, mark the study provisional.
 - If the user names Participant v6, v7, or another suite, use that suite's documented rules and required seed set. Protocol versions share this workflow; do not invent a separate procedure or silently substitute the current suite.
 - Do not ask the user to choose a world preset for a standardized benchmark. The named `--benchmark-protocol` owns and locks the preset and every behavior-defining setting. If the user requests a different preset or setting, classify the run as an experiment or controlled diagnostic rather than standard benchmark evidence.
+- Never treat worker count as a benchmark treatment or require it to match
+  across models, seeds, or resumes. `max_workers` and provider worker ceilings
+  only control how quickly independent decisions from one frozen tick are
+  collected; tune them to provider capacity without downgrading benchmark
+  status. Record the actual values for operations and failure diagnosis.
+  `sequential_decisions` remains a separate nonstandard debug mode.
 - Resolve and record the exact brain, provider, callable model ID, returned model identity, reasoning effort, billing mode, and connector before launch. Do not substitute a similarly named model.
 - Treat protocol changes, nonstandard seeds, mixed populations, alternate reasoning settings, or connector experiments as controlled or diagnostic variants, never as standard leaderboard evidence.
 

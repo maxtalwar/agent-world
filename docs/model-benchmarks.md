@@ -183,10 +183,18 @@ Every benchmark run uses:
 | Decisions | raw |
 | Action feedback | baseline |
 | Resolution | simultaneous |
-| Global/provider workers | Provider-aware: Codex CLI 40; Claude CLI, Grok CLI, and ZCode CLI 20; others 4 (all effectively at most 10 with this population) |
 | Connector | `connector-v3` |
 | Provider conversation | `fresh-conversation` |
 | Private agent I/O | enabled |
+
+Worker count is deliberately absent from the frozen trial. Every decision in a
+tick is made from the same frozen world state and the tick resolves only after
+all decisions return, so concurrency changes wall-clock throughput rather than
+the treatment. The launcher supplies provider-aware operational defaults
+(currently Codex CLI 40; Claude CLI, Grok CLI, and ZCode CLI 20; others 4,
+effectively capped by the 10-agent population), but operators may raise or
+lower global or provider worker limits without changing benchmark status.
+Actual concurrency remains recorded for debugging rate limits and timeouts.
 
 Launch the provisional seed:
 
