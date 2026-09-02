@@ -180,9 +180,9 @@ class ZCodeBrainTests(unittest.TestCase):
         self.assertEqual(record["decision_failure_origin"], "model_output")
         self.assertEqual(record["failed_raw_response"], '{"intent":"move"')
 
-    def test_non_max_effort_is_rejected_instead_of_silently_ignored(self) -> None:
+    def test_v7_low_effort_is_rejected_instead_of_silently_ignored(self) -> None:
         with self.assertRaisesRegex(ValueError, "requires native max effort"):
-            ZCodeBrain(executable="zcode-cli", reasoning_effort="medium")
+            ZCodeBrain(executable="zcode-cli", reasoning_effort="low")
 
     def test_extract_result_and_stable_workspace(self) -> None:
         response, usage = extract_zcode_result(json.loads(_successful_stdout("observe")))

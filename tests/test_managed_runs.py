@@ -17,11 +17,12 @@ from agent_world.managed_runs import (
 
 
 def _config(kind: str = "experiment") -> dict:
+    effort = "low" if kind == "benchmark" else "max"
     value = {
         "schema_version": 1,
         "run_id": "glm-probe",
         "kind": kind,
-        "model": {"brain": "zcode", "id": "glm-5.3", "reasoning_effort": "max"},
+        "model": {"brain": "zcode", "id": "glm-5.3", "reasoning_effort": effort},
         "seeds": [11],
         "runtime": {"ticks": 8, "agents": 3, "max_workers": 4},
         "harness": {"connector_profile": "connector-v3"},

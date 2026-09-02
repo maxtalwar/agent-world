@@ -13,7 +13,11 @@ import sys
 import time
 from typing import Any
 
-from agent_world.benchmarks import BENCHMARK_ALLOWED_SEEDS, BENCHMARK_PROTOCOL_ID
+from agent_world.benchmarks import (
+    BENCHMARK_ALLOWED_SEEDS,
+    BENCHMARK_PROTOCOL_ID,
+    BENCHMARK_REASONING_EFFORT,
+)
 from agent_world.io import atomic_write_json
 
 
@@ -170,10 +174,13 @@ def load_run_config(path: Path) -> dict[str, Any]:
                 + ", ".join(configured)
             )
         if protocol == BENCHMARK_PROTOCOL_ID:
-            required_effort = "max" if model["brain"] == "zcode" else "medium"
-            if model.get("reasoning_effort") not in {None, required_effort}:
+            if model.get("reasoning_effort") not in {
+                None,
+                BENCHMARK_REASONING_EFFORT,
+            }:
                 raise ValueError(
-                    f"{protocol} requires model.reasoning_effort={required_effort!r} "
+                    f"{protocol} requires "
+                    f"model.reasoning_effort={BENCHMARK_REASONING_EFFORT!r} "
                     f"for brain={model['brain']!r}"
                 )
     elif value.get("protocol") is not None:

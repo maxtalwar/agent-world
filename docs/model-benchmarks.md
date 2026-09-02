@@ -7,10 +7,10 @@ resuming, or finalizing a standardized benchmark must also follow the canonical
 
 ## Participant v7: self-classified transfers
 
-V7 keeps the v6 frontier world, trial settings, and every scoring formula,
-and changes one harness affordance: the gift action takes an explicit
-`kind` parameter - `gift`, `payment`, or `barter` (default `gift`) - and
-scoring trusts the declaration.
+V7 keeps the v6 frontier world and every scoring formula, changes the
+deliberation policy described below, and adds one harness affordance: the gift
+action takes an explicit `kind` parameter - `gift`, `payment`, or `barter`
+(default `gift`) - and scoring trusts the declaration.
 
 - `payment` settles a debt for services or information the recipient
   rendered; it scores as net service income credited to the recipient.
@@ -39,6 +39,26 @@ trial saw the v7 world: the compatible-fingerprint sets are empty by
 construction, v6 results stay on the closed v6 leaderboard
 (`leaderboard-v6-20260731`), and every model needs fresh v7 runs to enter the
 v7 pool.
+
+## Participant v7: low-reasoning standard
+
+Every v7 connector must request the named `low` reasoning setting. This is a
+shared semantic control, not a claim that different providers spend an equal
+number of reasoning tokens: provider-native allocation within `low` remains
+part of model behavior and is measured and reported.
+
+The policy chooses the most portable inexpensive setting. `medium` is absent
+from some provider controls and does not guarantee equivalent compute where it
+does exist; requiring each provider's maximum would be substantially slower
+and more expensive. A connector must not silently promote an unsupported
+`low` request to a higher setting. The current ZCode CLI 0.16.5 connector can
+only verify native Max, so it is not v7-eligible until that harness exposes an
+auditable low control.
+
+Reasoning effort is behavior-defining. Medium-effort v7 attempts made before
+this policy was frozen remain historical diagnostic evidence; they must not be
+resumed into, or admitted as, low-effort v7 results. Participant v6 remains
+frozen at its historical medium-effort policy.
 
 ## Participant v6: the frontier world (superseded by v7)
 
@@ -179,7 +199,7 @@ Every benchmark run uses:
 | World | `frontier-generalists` (organic economy + frontier variant) |
 | Seasons | 12-tick cycle, seeded storms |
 | Objective | neutral |
-| Reasoning effort | medium; ZCode uses GLM-5.3's documented native Max default because CLI 0.16.5 has no working headless effort selector |
+| Reasoning effort | `low`, requested identically from every eligible connector; no silent promotion to a higher effort |
 | Decisions | raw |
 | Action feedback | baseline |
 | Resolution | simultaneous |

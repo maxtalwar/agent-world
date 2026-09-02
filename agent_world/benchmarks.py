@@ -22,18 +22,15 @@ from agent_world.metrics import (
 from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 
 
-# Participant v6 = v5's deliberation-parity policy on the FRONTIER world.
-# V5 (never campaigned) added deliberation parity: every provider runs its
-# native adaptive deliberation inside an equal declared envelope, with spend
-# measured and reported, never equalized. V6 keeps that policy and every
-# scoring formula, and changes the world: the frontier variant adds seasons,
-# storms, winter exposure, roads, and irrigation on top of the organic
-# economy. The upgrade exists to raise the behavioral ceiling before the
-# frontier-model campaign - the classic world's survival and material ceilings
-# were reachable by strong foragers, and top-model ledgers that pin every
-# ceiling cannot be differentiated by any later rescoring.
+# Participant v7 keeps v6's frontier world and standardizes every provider on
+# the named low reasoning setting. Medium was not portable across harnesses
+# (some models do not expose it, and equal labels do not imply equal compute),
+# while maximum reasoning would make the field needlessly slow and expensive.
+# Provider-native allocation within low remains model behavior and is measured,
+# not equalized. V6 stays frozen as the historical medium-effort suite.
 BENCHMARK_SUITE_ID = "agent-world-participant-v7"
 BENCHMARK_PROTOCOL_ID = "participant-v7"
+BENCHMARK_REASONING_EFFORT = "low"
 # Operational throughput defaults. They are recorded for observability but are
 # not part of the behavioral treatment: every agent decides from the same
 # frozen tick state regardless of how many decisions are collected in parallel.
@@ -47,18 +44,10 @@ BENCHMARK_PROVIDER_MAX_WORKERS = {
     "grok_cli": 20,
     "zcode_cli": 20,
 }
-# Ceiling for Claude extended thinking per decision (MAX_THINKING_TOKENS).
-# Anthropic ships no per-effort token number to borrow: stock Claude Code
-# drives adaptive thinking from the effort dial with NO token cap (measured
-# 5k+ output tokens on one hard prompt), and the env cap is deprecated though
-# still honored by CLI 2.1.201. An uncapped envelope would let Claude outspend
-# every current-generation model by an order of magnitude, so the ceiling is
-# set at 2048: above Claude's own median on-task allocation (~400 estimated
-# thinking tokens per sim decision under a permissive cap) and in the same
-# band as codex-side spend at medium (GPT-5.4 ~785 provider-reported tokens
-# per decision), while cutting the pathological tail. Codex-side settings are
-# byte-identical to v4, which is what lets audited v4 codex reports carry over
-# without re-running.
+# Safety ceiling for Claude adaptive thinking per decision
+# (MAX_THINKING_TOKENS). The shared protocol control is effort=low; this cap is
+# only a guard against a pathological allocation and is never treated as a
+# target spend. Provider-native spend within low is recorded for analysis.
 BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS = 2048
 # A rate-limited trial is early, not broken: the run waits for the cap to lift
 # and retries the same tick, with the world frozen at a completed-tick
@@ -621,13 +610,12 @@ def benchmark_protocol() -> dict[str, Any]:
             "geography_mode": "dispersed",
             "specialization_mode": "generalists",
             "objective_mode": "neutral",
-            "reasoning_effort": "medium",
+            "reasoning_effort": BENCHMARK_REASONING_EFFORT,
             "deliberation_policy": (
-                "Provider-native adaptive deliberation inside an equal declared "
-                "envelope; spend is measured and reported, never equalized. No "
-                "provider exposes 'spend exactly N' - budgets are ceilings and "
-                "the Codex CLI has no token knob - so allocation within the "
-                "envelope is model policy and is scored as such."
+                "Request the named low reasoning setting from every connector; "
+                "provider-native spend within low is measured and reported, "
+                "never equalized. Connectors must not silently promote an "
+                "unsupported low request to a higher effort."
             ),
             "claude_thinking_budget_tokens": BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
             "decision_mode": "raw",

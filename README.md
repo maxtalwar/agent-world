@@ -240,9 +240,11 @@ documented coding and browsing tools disallowed.
 ZCode CLI 0.16.5 advertises an effort option in top-level help but its actual
 headless parser does not accept it. Z.ai documents Max as GLM-5.3's native
 default, so this connector accepts only `reasoning_effort=max` rather than
-silently ignoring another requested treatment. Participant benchmark setup
-selects Max for ZCode and gives it a 20-worker provider ceiling, clamped to the
-ten-agent benchmark population.
+silently ignoring another requested treatment. Participant v7 requires `low`
+for every connector, so ZCode 0.16.5 is not v7-eligible until the harness
+exposes an auditable low control. Historical v6 launches remain pinned to their
+original Max-capable source. ZCode retains a 20-worker provider ceiling,
+clamped to the run population.
 
 ### Cursor subscription agents
 

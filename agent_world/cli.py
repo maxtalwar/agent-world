@@ -23,6 +23,7 @@ from agent_world.benchmarks import (
     BENCHMARK_PROVIDER_MAX_WORKERS,
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_QUOTA_WAIT_HOURS,
+    BENCHMARK_REASONING_EFFORT,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
     format_benchmark_leaderboard,
@@ -1238,8 +1239,6 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
     benchmark_max_workers = BENCHMARK_PROVIDER_MAX_WORKERS.get(
         benchmark_provider, BENCHMARK_DEFAULT_MAX_WORKERS
     )
-    benchmark_reasoning_effort = "max" if args.brain == "zcode" else "medium"
-
     locked = {
         "ticks": 50,
         "agents": 10,
@@ -1249,7 +1248,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         "economy_mode": "organic",
         "geography_mode": "dispersed",
         "specialization_mode": "generalists",
-        "reasoning_effort": benchmark_reasoning_effort,
+        "reasoning_effort": BENCHMARK_REASONING_EFFORT,
         "connector_profile": "connector-v3",
         "conversation_mode": "fresh-conversation",
         "session_max_turns": 10,
@@ -1303,10 +1302,9 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         raise ValueError(
             f"{BENCHMARK_PROTOCOL_ID} requires private agent I/O logging."
         )
-    # Participant v5 deliberation envelope: Claude runs get extended thinking
-    # up to the declared ceiling instead of the harness default of 0, matching
-    # the opportunity Codex models have always had. Codex settings are
-    # untouched, which is what keeps audited v4 codex reports comparable.
+    # Claude's low-effort adaptive thinking remains bounded by the declared
+    # safety ceiling. The effort dial is the shared protocol control; the token
+    # budget is only a ceiling and never a target spend.
     os.environ["CLAUDE_MAX_THINKING_TOKENS"] = str(
         BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
     )

@@ -46,12 +46,13 @@ def _protocol_report(
     harness_failure: bool = False,
     unverified_failure: bool = False,
     workers: int = 40,
+    reasoning_effort: str = "low",
 ) -> dict:
     agents = [f"agent-{index}" for index in range(1, 11)]
     cohort = {
         "brain": "codex",
         "model": "gpt-test",
-        "reasoning_effort": "medium",
+        "reasoning_effort": reasoning_effort,
         "provider": "codex_cli",
         "agents": agents,
         "initial_agents": 10,
@@ -264,7 +265,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.agents, 10)
         self.assertEqual(args.preset, "frontier-generalists")
         self.assertEqual(args.world_variant, "frontier")
-        self.assertEqual(args.reasoning_effort, "medium")
+        self.assertEqual(args.reasoning_effort, "low")
         self.assertEqual(args.connector_profile, "connector-v3")
         self.assertEqual(args.max_workers, 40)
         self.assertEqual(args.codex_max_workers, 40)
@@ -306,7 +307,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(args.max_workers, 20)
         self.assertEqual(args.grok_max_workers, 20)
 
-    def test_zcode_protocol_uses_twenty_workers_and_native_max_effort(self) -> None:
+    def test_zcode_protocol_uses_twenty_workers_and_low_effort(self) -> None:
         args = Namespace(
             benchmark_protocol=BENCHMARK_PROTOCOL_ID,
             population=None,
@@ -319,7 +320,7 @@ class BenchmarkTests(unittest.TestCase):
 
         self.assertEqual(args.max_workers, 20)
         self.assertEqual(args.zcode_max_workers, 20)
-        self.assertEqual(args.reasoning_effort, "max")
+        self.assertEqual(args.reasoning_effort, "low")
 
     def test_protocol_preserves_explicit_worker_overrides(self) -> None:
         args = Namespace(
@@ -356,6 +357,22 @@ class BenchmarkTests(unittest.TestCase):
         )
         self.assertNotIn("global_max_workers", protocol["trial"])
         self.assertNotIn("provider_max_workers", protocol["trial"])
+
+    def test_medium_effort_v7_attempt_is_not_protocol_compliant(self) -> None:
+        report = _protocol_report(
+            11,
+            "pre-low-v7-medium-attempt",
+            reasoning_effort="medium",
+        )
+        cohort = report["benchmarks"]["cohorts"]["cohort-1"]
+
+        self.assertFalse(cohort["protocol_compliant"])
+        self.assertIn(
+            "protocol_mismatch:reasoning_effort",
+            cohort["quality_flags"],
+        )
+        aggregate = aggregate_benchmark_reports([report])
+        self.assertEqual(aggregate["results"], [])
 
     def test_provider_defaults_are_clamped_to_run_workers(self) -> None:
         limits = _resolve_provider_max_workers(Namespace(), 12)
