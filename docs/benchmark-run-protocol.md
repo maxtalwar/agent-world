@@ -127,6 +127,10 @@ with the exact reason.
 
 ### 6. Cell completion gate
 
+Use `agent-world finalize RUN_ID` for managed studies. It performs the
+protocol-aware report, transfer-accounting, and readiness audit described
+below. `--dry-run` reports blockers without model calls or artifact writes.
+
 Before calling a cell complete, verify all of the following against artifacts:
 
 - the official target tick and terminal event were reached;
@@ -185,6 +189,11 @@ completes:
 Never overwrite a valid frozen classification. A re-judgment is a new scoring
 revision, not routine cleanup. Missing or invalid classification leaves a v6
 cell incomplete for standardized entrepreneurship analysis.
+
+The managed finalizer records a one-shot attempt before invoking the frozen
+judge. If that attempt is interrupted or produces invalid evidence, it
+preserves the attempt and raw output and refuses to call the judge again.
+Resolve that evidence explicitly; do not silently retry.
 
 ### 9. Analysis-readiness handoff
 

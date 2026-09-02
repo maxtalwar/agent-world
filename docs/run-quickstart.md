@@ -44,6 +44,33 @@ agent-world resume RUN_ID
 Resume reuses the original checkpoint, cohort, and pinned launch commit.
 Already completed or currently active cells are skipped.
 
+Finalize completed benchmark evidence before calling it done:
+
+```bash
+agent-world finalize RUN_ID --dry-run
+agent-world finalize RUN_ID
+```
+
+Non-dry finalization runs under its own detached supervisor, so the launch
+command returns immediately and `agent-world status RUN_ID` reports its state.
+Finalization regenerates and audits each completed report, verifies completion,
+integrity, usage coverage, model provenance, cost status, and protocol-specific
+transfer accounting, then writes `analysis_readiness` into the managed job
+manifest. A completed simulation can still finalize as `diagnostic_only`,
+`needs_provenance_review`, or another blocked state.
+
+Participant v7 transfer accounting is deterministic from each agent's declared
+`gift`, `payment`, or `barter` kind. Participant v6 is different: if a completed
+ledger contains gifts and no frozen classification exists, `finalize` invokes
+the one-shot `gpt-5.6-sol` judge using the repository's frozen prompt and output
+schema, validates every identity and evidence quote, freezes
+`gift-classifications.json`, and regenerates the report. It records an attempt
+before the model call and refuses to re-judge after an interrupted or invalid
+attempt; `--no-classify-v6-gifts` performs only the audit and reports the
+missing artifact as a blocker. Existing frozen artifacts are validated and
+never overwritten. A v6 ledger with no gifts records `none_no_gifts` without a
+judge call.
+
 ## Config reference
 
 Every config has these top-level fields:
@@ -54,7 +81,7 @@ Every config has these top-level fields:
 | `run_id` | Unique filesystem-safe identifier. It names the job, supervisors, cohorts, and default output directory. |
 | `kind` | `benchmark` or `experiment`. This is an evidence boundary, not just a label. |
 | `question` | Required for experiments; the concrete claim or harness behavior being tested. |
-| `protocol` | Benchmark only. Omit to use the current supported participant protocol. A named protocol locks benchmark-defining settings. |
+| `protocol` | Benchmark only. Omit to use the current supported participant protocol. A named protocol locks benchmark-defining settings. Historical protocols require `source.commit` pointing to a revision that implements them. |
 | `model` | Provider boundary, callable model ID, reasoning effort, or an experimental mixed population. |
 | `seeds` | Cells to launch. Defaults to `[11, 41]` for a benchmark and `[11]` for an experiment. |
 | `world` | Preset and optional world treatments. Omit locked benchmark settings; the protocol owns them. |

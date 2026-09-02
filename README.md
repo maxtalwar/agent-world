@@ -28,6 +28,7 @@ Long-running model-backed work uses a declarative config and detached manager:
 agent-world run --config configs/run-configs/benchmark.example.json
 agent-world status example-benchmark
 agent-world resume example-benchmark
+agent-world finalize example-benchmark
 ```
 
 See [the managed-run quickstart](docs/run-quickstart.md) for config fields and lifecycle details.

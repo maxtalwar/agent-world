@@ -314,6 +314,22 @@ def main(argv: list[str] | None = None) -> None:
     )
     resume_parser.add_argument("run_id")
 
+    finalize_parser = subparsers.add_parser(
+        "finalize",
+        help="Run protocol-aware accounting and readiness finalization for a managed benchmark.",
+    )
+    finalize_parser.add_argument("run_id")
+    finalize_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Audit readiness without writing reports, classifications, or the job manifest.",
+    )
+    finalize_parser.add_argument(
+        "--no-classify-v6-gifts",
+        action="store_true",
+        help="Do not invoke the frozen v6 judge; report missing classification as a blocker.",
+    )
+
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
     replay_parser.add_argument("path", type=Path)
     replay_parser.add_argument("--last", type=int, default=50)
@@ -447,6 +463,8 @@ def main(argv: list[str] | None = None) -> None:
         _managed_status(args)
     elif args.command == "resume":
         _managed_resume(args)
+    elif args.command == "finalize":
+        _managed_finalize(args)
     elif args.command == "replay":
         _replay(args)
     elif args.command == "prompt":
@@ -495,6 +513,32 @@ def _managed_resume(args: argparse.Namespace) -> None:
     else:
         print("No cells needed resumption.")
     print(format_status(result["status"]))
+
+
+def _managed_finalize(args: argparse.Namespace) -> None:
+    from agent_world.run_finalization import finalize_job, start_finalization
+
+    if not args.dry_run:
+        launched = start_finalization(
+            args.run_id, classify_v6=not args.no_classify_v6_gifts
+        )
+        print(
+            f"Launched durable finalization for {args.run_id}; "
+            f"session={launched['session']}; log={launched['log']}"
+        )
+        print(f"Check it with: agent-world status {args.run_id}")
+        return
+    result = finalize_job(args.run_id, dry_run=True, classify_v6=False)
+    readiness = result["analysis_readiness"]
+    print(
+        f"Managed run {args.run_id} finalization: {readiness['status']} | "
+        f"completed seeds={readiness['completed_seeds']}"
+    )
+    if readiness["blockers"]:
+        print("Blockers:")
+        for blocker in readiness["blockers"]:
+            print(f"- {blocker}")
+    print(json.dumps(result, indent=2, sort_keys=True))
 
 
 def _check_resume_fingerprint(

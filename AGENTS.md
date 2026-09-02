@@ -19,7 +19,8 @@
 - Launch normal model-backed runs through the declarative managed interface:
   `agent-world run --config CONFIG.json`. See `docs/run-quickstart.md` for the
   complete config reference and examples. Use `agent-world status RUN_ID` for
-  event-derived status and `agent-world resume RUN_ID` for checkpoint recovery.
+  event-derived status, `agent-world resume RUN_ID` for checkpoint recovery,
+  and `agent-world finalize RUN_ID` for protocol-aware accounting and readiness.
 - Never launch a long-running run directly inside an `exec_command`, PTY, or
   other temporary foreground command session. The managed interface must place
   every independently executing cell under a durable detached supervisor and

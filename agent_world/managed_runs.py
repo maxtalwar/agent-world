@@ -135,10 +135,14 @@ def load_run_config(path: Path) -> dict[str, Any]:
 
     if kind == "benchmark":
         protocol = value.get("protocol") or BENCHMARK_PROTOCOL_ID
-        if protocol != BENCHMARK_PROTOCOL_ID:
+        if not isinstance(protocol, str) or not re.fullmatch(r"participant-v[0-9]+", protocol):
             raise ValueError(
-                f"This checkout supports managed benchmark protocol {BENCHMARK_PROTOCOL_ID!r}; "
-                f"received {protocol!r}"
+                f"protocol must name a participant suite such as {BENCHMARK_PROTOCOL_ID!r}"
+            )
+        if protocol != BENCHMARK_PROTOCOL_ID and not source.get("commit"):
+            raise ValueError(
+                f"Protocol {protocol!r} is not current in this checkout; set source.commit "
+                "to a clean revision whose low-level CLI implements that suite"
             )
         value["protocol"] = protocol
         undeclared = sorted(set(seeds) - set(BENCHMARK_ALLOWED_SEEDS))
@@ -159,12 +163,13 @@ def load_run_config(path: Path) -> dict[str, Any]:
                 "Benchmark protocol owns these settings; omit them from the config: "
                 + ", ".join(configured)
             )
-        required_effort = "max" if model["brain"] == "zcode" else "medium"
-        if model.get("reasoning_effort") not in {None, required_effort}:
-            raise ValueError(
-                f"{protocol} requires model.reasoning_effort={required_effort!r} "
-                f"for brain={model['brain']!r}"
-            )
+        if protocol == BENCHMARK_PROTOCOL_ID:
+            required_effort = "max" if model["brain"] == "zcode" else "medium"
+            if model.get("reasoning_effort") not in {None, required_effort}:
+                raise ValueError(
+                    f"{protocol} requires model.reasoning_effort={required_effort!r} "
+                    f"for brain={model['brain']!r}"
+                )
     elif value.get("protocol") is not None:
         raise ValueError("Experiment configs must omit protocol")
     if kind == "experiment" and not str(value.get("question") or "").strip():
@@ -374,7 +379,7 @@ def _launch_gate_supervisor(job: dict[str, Any]) -> None:
     script = Path(job["job_dir"]) / "supervise-startup-gate.sh"
     script.write_text(
         "#!/usr/bin/env bash\nset -uo pipefail\n"
-        f"cd {shlex.quote(first['worktree'])}\n"
+        f"cd {shlex.quote(job['source_root'])}\n"
         f"exec python3 -m agent_world.managed_runs supervise "
         f"{shlex.quote(str(Path(job['job_dir']) / 'job.json'))} "
         f">> {shlex.quote(str(Path(job['job_dir']) / 'supervisor.log'))} 2>&1\n",
@@ -382,7 +387,7 @@ def _launch_gate_supervisor(job: dict[str, Any]) -> None:
     )
     script.chmod(0o700)
     subprocess.run(
-        ["tmux", "new-session", "-d", "-s", session, "-c", first["worktree"], str(script)],
+        ["tmux", "new-session", "-d", "-s", session, "-c", job["source_root"], str(script)],
         check=True,
     )
     if not _tmux_active(session):
@@ -508,6 +513,9 @@ def job_status(run_id: str, root: Path | None = None) -> dict[str, Any]:
     gate = dict(job.get("startup_gate") or {})
     if gate.get("supervisor_session"):
         gate["supervisor_active"] = _tmux_active(gate["supervisor_session"])
+    finalization = dict(job.get("finalization_supervisor") or {})
+    if finalization.get("session"):
+        finalization["supervisor_active"] = _tmux_active(finalization["session"])
     if gate.get("status") in {"pending", "failed", "blocked"}:
         deferred_state = (
             "waiting_startup_gate" if gate["status"] == "pending" else "blocked_startup_gate"
@@ -518,7 +526,10 @@ def job_status(run_id: str, root: Path | None = None) -> dict[str, Any]:
     return {
         "run_id": job["run_id"], "kind": job["kind"], "protocol": job.get("protocol"),
         "launch_commit": job["launch_commit"],
-        "startup_gate": gate or None, "cells": cells,
+        "startup_gate": gate or None,
+        "finalization": finalization or None,
+        "analysis_readiness": job.get("analysis_readiness"),
+        "cells": cells,
     }
 
 
@@ -557,6 +568,14 @@ def format_status(status: dict[str, Any]) -> str:
             if "supervisor_active" in gate else ""
         )
         lines.append(f"startup gate: {gate['status']}{supervisor}")
+    if status.get("finalization"):
+        finalization = status["finalization"]
+        lines.append(
+            f"finalization: {finalization.get('status', 'unknown')}; "
+            f"supervisor_active={str(finalization.get('supervisor_active', False)).lower()}"
+        )
+    if status.get("analysis_readiness"):
+        lines.append(f"analysis readiness: {status['analysis_readiness'].get('status')}")
     for cell in status["cells"]:
         tick = "?" if cell["tick"] is None else cell["tick"]
         target = cell.get("target_ticks")
