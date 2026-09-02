@@ -22,6 +22,7 @@ import time
 from typing import Any
 
 from agent_world.provider_limits import is_quota_detail
+from agent_world.provider_telemetry import record_provider_attempt
 from agent_world.brain_boundary import (
     DEFAULT_SESSION_MAX_TURNS,
     ConversationBoundary,
@@ -192,9 +193,9 @@ class CodexBrain:
             return {"captured_at_utc": captured_at, "error": f"{type(exc).__name__}: {exc}"}
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
-        quota_message = self._quota_message()
-        if quota_message is not None:
-            return _failure_decision(quota_message)
+        blocking_failure = self.runtime.blocking_failure()
+        if blocking_failure is not None:
+            return _failure_decision(blocking_failure[1])
 
         static_context = build_static_context(observation.get("world", {}))
         dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
@@ -206,14 +207,40 @@ class CodexBrain:
             else build_codex_continuation_prompt(dynamic_json)
         )
 
+        def request_attempt_meta() -> dict[str, Any]:
+            return {
+                "agent_id": observation.get("self", {}).get("id"),
+                "tick": observation.get("tick"),
+                "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+            }
+
+        timeout_recorded = False
         started_at = time.monotonic()
         try:
             completed = None
             for attempt in range(self.timeout_retries + 1):
+                attempt_started_at = time.monotonic()
                 try:
                     completed = self._execute(prompt, invocation)
                     break
-                except subprocess.TimeoutExpired:
+                except subprocess.TimeoutExpired as exc:
+                    timeout_recorded = True
+                    record_provider_attempt(
+                        self.runtime,
+                        event_type="request_timeout",
+                        failure_kind="timeout",
+                        provider="codex_cli",
+                        model=self.model,
+                        response_model=None,
+                        billing_mode="chatgpt_plan",
+                        reasoning_effort=self.reasoning_effort,
+                        request_meta=request_attempt_meta(),
+                        attempt=attempt + 1,
+                        max_attempts=self.timeout_retries + 1,
+                        duration_seconds=time.monotonic() - attempt_started_at,
+                        detail=f"Exceeded {self.timeout_seconds}s timeout",
+                        exception=exc,
+                    )
                     if attempt >= self.timeout_retries:
                         raise
                     if self.conversation_mode != "fresh-conversation":
@@ -227,7 +254,9 @@ class CodexBrain:
             if completed.returncode != 0:
                 detail = _failure_detail(completed.stdout, completed.stderr)
                 if invocation.resumed and not (
-                    _is_quota_error(detail) or _is_provider_error(detail)
+                    _is_quota_error(detail)
+                    or _is_auth_error(detail)
+                    or _is_provider_error(detail)
                 ):
                     self.boundary.reset("resume_failure")
                     invocation = self.boundary.prepare()
@@ -238,11 +267,59 @@ class CodexBrain:
                 if completed.returncode != 0:
                     if _is_quota_error(detail):
                         message = f"Codex quota unavailable: {detail}"
+                        record_provider_attempt(
+                            self.runtime,
+                            event_type="quota_exhausted",
+                            failure_kind="quota",
+                            provider="codex_cli",
+                            model=self.model,
+                            response_model=None,
+                            billing_mode="chatgpt_plan",
+                            reasoning_effort=self.reasoning_effort,
+                            request_meta=request_attempt_meta(),
+                            attempt=attempt + 1,
+                            max_attempts=self.timeout_retries + 1,
+                            duration_seconds=elapsed,
+                            detail=detail,
+                        )
                         self._mark_quota_unavailable(message)
+                        return _failure_decision(message)
+                    if _is_auth_error(detail):
+                        message = f"Codex authentication required: {detail}"
+                        record_provider_attempt(
+                            self.runtime,
+                            event_type="authentication_required",
+                            failure_kind="authentication",
+                            provider="codex_cli",
+                            model=self.model,
+                            response_model=None,
+                            billing_mode="chatgpt_plan",
+                            reasoning_effort=self.reasoning_effort,
+                            request_meta=request_attempt_meta(),
+                            attempt=attempt + 1,
+                            max_attempts=self.timeout_retries + 1,
+                            duration_seconds=elapsed,
+                            detail=detail,
+                        )
+                        self.runtime.mark_authentication_required(message)
                         return _failure_decision(message)
                     if _is_provider_error(detail):
                         message = f"Codex provider unavailable: {detail}"
-                        self._mark_quota_unavailable(message)
+                        record_provider_attempt(
+                            self.runtime,
+                            event_type="provider_error",
+                            failure_kind="provider",
+                            provider="codex_cli",
+                            model=self.model,
+                            response_model=None,
+                            billing_mode="chatgpt_plan",
+                            reasoning_effort=self.reasoning_effort,
+                            request_meta=request_attempt_meta(),
+                            attempt=attempt + 1,
+                            max_attempts=self.timeout_retries + 1,
+                            duration_seconds=elapsed,
+                            detail=detail,
+                        )
                         return _failure_decision(message)
                     boundary_detail = (
                         f"codex exec exited {completed.returncode}: {detail}"
@@ -347,11 +424,45 @@ class CodexBrain:
             self._record_usage(usage, request_meta)
             self.boundary.commit(invocation, session_id)
             return decision
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
             message = f"Codex provider unavailable: exceeded {self.timeout_seconds}s timeout"
-            self._mark_quota_unavailable(message)
+            if not timeout_recorded:
+                record_provider_attempt(
+                    self.runtime,
+                    event_type="request_timeout",
+                    failure_kind="timeout",
+                    provider="codex_cli",
+                    model=self.model,
+                    response_model=None,
+                    billing_mode="chatgpt_plan",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_attempt_meta(),
+                    attempt=1,
+                    max_attempts=1,
+                    duration_seconds=time.monotonic() - started_at,
+                    detail=message,
+                    exception=exc,
+                )
             return _failure_decision(message)
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
+        except OSError as exc:
+            detail = f"{type(exc).__name__}: {exc}"
+            record_provider_attempt(
+                self.runtime,
+                event_type="provider_error",
+                failure_kind="provider",
+                provider="codex_cli",
+                model=self.model,
+                response_model=None,
+                billing_mode="chatgpt_plan",
+                reasoning_effort=self.reasoning_effort,
+                request_meta=request_attempt_meta(),
+                attempt=1,
+                max_attempts=1,
+                duration_seconds=time.monotonic() - started_at,
+                detail=detail,
+            )
+            return _failure_decision(f"Codex provider unavailable: {detail}")
+        except (ValueError, json.JSONDecodeError) as exc:
             if self.conversation_mode != "fresh-conversation":
                 self.boundary.reset("decision_failure")
             return _failure_decision(f"Codex decision failed: {exc}")
@@ -816,6 +927,14 @@ def _is_quota_error(detail: str) -> bool:
     # apart and Claude's silently omitted "weekly limit", which turned a hard
     # rate limit into fabricated wait actions for eighteen ticks.
     return is_quota_detail(detail)
+
+
+def _is_auth_error(detail: str) -> bool:
+    lowered = detail.lower()
+    return any(
+        marker in lowered
+        for marker in ("not logged in", "authentication required", "unauthorized")
+    )
 
 
 def _is_provider_error(detail: str) -> bool:

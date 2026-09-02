@@ -8,15 +8,14 @@ from __future__ import annotations
 
 import json
 import hashlib
+from http import client as http_client
 import os
 from pathlib import Path
-import queue
 import re
 import ssl
-import threading
 import time
 from typing import Any
-from urllib import error, request
+from urllib.parse import urlsplit
 
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.decision_failure import (
@@ -27,6 +26,7 @@ from agent_world.decision_failure import (
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
+from agent_world.provider_telemetry import record_provider_attempt
 
 
 AGENT_DECISION_SCHEMA: dict[str, Any] = {
@@ -137,6 +137,7 @@ class OpenRouterBrain:
             else float(os.environ.get("OPENROUTER_HARD_DEADLINE_GRACE_SECONDS", "30"))
         )
         self.ssl_context = _ssl_context()
+        self._active_request_meta: dict[str, Any] = {}
         if not self.api_key:
             raise ValueError(
                 "OPENROUTER_API_KEY is required for OpenRouterBrain. "
@@ -167,9 +168,9 @@ class OpenRouterBrain:
         self.runtime.record_usage(record)
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
-        quota_message = self._quota_message()
-        if quota_message is not None:
-            return _quota_decision(quota_message)
+        blocking_failure = self.runtime.blocking_failure()
+        if blocking_failure is not None:
+            return _quota_decision(blocking_failure[1])
 
         # Static rulebook is byte-identical across all agents and ticks of a run, so it
         # rides in the system/instructions slot as a stable prefix (provider prompt caches
@@ -201,6 +202,7 @@ class OpenRouterBrain:
             }
 
         try:
+            self._active_request_meta = request_meta
             response = self._post_json_with_retries(endpoint, payload)
             try:
                 decision = extractor(response)
@@ -280,7 +282,6 @@ class OpenRouterBrain:
             return _quota_decision(str(exc))
         except OpenRouterRateLimitError as exc:
             message = f"OpenRouter provider unavailable: {exc}"
-            self._mark_quota_unavailable(message)
             return AgentDecision(
                 intent=message,
                 actions=[{"type": "wait"}],
@@ -289,7 +290,6 @@ class OpenRouterBrain:
             )
         except OSError as exc:
             message = f"OpenRouter provider unavailable: {exc}"
-            self._mark_quota_unavailable(message)
             return AgentDecision(
                 intent=message,
                 actions=[{"type": "wait"}],
@@ -349,19 +349,90 @@ class OpenRouterBrain:
             payload["reasoning"] = {"effort": self.reasoning_effort}
         return payload
 
-    def _post_json_with_retries(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    def _post_json_with_retries(
+        self,
+        path: str,
+        payload: dict[str, Any],
+        *,
+        request_meta: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        request_meta = request_meta or self._active_request_meta
         last_error: Exception | None = None
-        for attempt in range(self.max_retries + 1):
+        max_attempts = self.max_retries + 1
+        for attempt in range(max_attempts):
             self._throttle()
+            attempt_started_at = time.monotonic()
             try:
                 return self._post_json(path, payload)
-            except OpenRouterQuotaError:
+            except OpenRouterQuotaError as exc:
+                record_provider_attempt(
+                    self.runtime,
+                    event_type="quota_exhausted",
+                    failure_kind="quota",
+                    provider="openrouter",
+                    model=self.model,
+                    response_model=None,
+                    billing_mode="api",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_meta or {},
+                    attempt=attempt + 1,
+                    max_attempts=max_attempts,
+                    duration_seconds=time.monotonic() - attempt_started_at,
+                    detail=str(exc),
+                    provider_trace_id=exc.provider_trace_id,
+                    http_status=exc.http_status,
+                )
                 raise
             except OpenRouterRateLimitError as exc:
                 last_error = exc
+                record_provider_attempt(
+                    self.runtime,
+                    event_type="rate_limit",
+                    failure_kind="rate_limit",
+                    provider="openrouter",
+                    model=self.model,
+                    response_model=None,
+                    billing_mode="api",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_meta or {},
+                    attempt=attempt + 1,
+                    max_attempts=max_attempts,
+                    duration_seconds=time.monotonic() - attempt_started_at,
+                    detail=str(exc),
+                    provider_trace_id=exc.provider_trace_id,
+                    http_status=exc.http_status,
+                    retry_after_seconds=exc.retry_after_seconds,
+                )
                 if attempt >= self.max_retries:
                     break
                 time.sleep(exc.retry_after_seconds or min(30.0, 2.0 + attempt * 2.0))
+            except OSError as exc:
+                record_provider_attempt(
+                    self.runtime,
+                    event_type=(
+                        "request_timeout"
+                        if isinstance(exc, OpenRouterRequestTimeoutError)
+                        else "provider_error"
+                    ),
+                    failure_kind=(
+                        "timeout"
+                        if isinstance(exc, OpenRouterRequestTimeoutError)
+                        else "provider"
+                    ),
+                    provider="openrouter",
+                    model=self.model,
+                    response_model=None,
+                    billing_mode="api",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_meta or {},
+                    attempt=attempt + 1,
+                    max_attempts=max_attempts,
+                    duration_seconds=time.monotonic() - attempt_started_at,
+                    detail=str(exc),
+                    provider_trace_id=getattr(exc, "provider_trace_id", None),
+                    http_status=getattr(exc, "http_status", None),
+                )
+                raise
             except ValueError as exc:
                 last_error = exc
                 break
@@ -373,37 +444,33 @@ class OpenRouterBrain:
         self.runtime.throttle(self.min_request_interval_seconds)
 
     def _post_json(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
-        # urllib's timeout bounds individual socket reads, not total wall time.
-        # A daemon worker lets the simulation enforce a real caller deadline;
-        # unlike ThreadPoolExecutor's context manager, this path never waits for
-        # a timed-out worker during shutdown.
-        result_queue: queue.Queue[tuple[str, Any]] = queue.Queue(maxsize=1)
-
-        def request_worker() -> None:
-            try:
-                result_queue.put(("result", self._post_json_blocking(path, payload)))
-            except Exception as exc:  # Forward the original provider exception.
-                result_queue.put(("error", exc))
-
-        worker = threading.Thread(target=request_worker, name="openrouter-brain-request", daemon=True)
-        worker.start()
-        hard_deadline = self.timeout_seconds + self.hard_deadline_grace_seconds
-        worker.join(timeout=hard_deadline)
-        if worker.is_alive():
-            raise OSError(
-                f"Request exceeded hard deadline of {hard_deadline:g}s "
-                "(provider kept the connection alive without finishing)."
-            )
+        hard_deadline_seconds = (
+            self.timeout_seconds + self.hard_deadline_grace_seconds
+        )
+        deadline = time.monotonic() + hard_deadline_seconds
         try:
-            outcome, value = result_queue.get_nowait()
-        except queue.Empty as exc:
-            raise OSError("OpenRouter request worker ended without a result.") from exc
-        if outcome == "error":
-            raise value
-        return value
+            return self._post_json_blocking(path, payload, deadline=deadline)
+        except TimeoutError as exc:
+            if time.monotonic() >= deadline:
+                raise OpenRouterHardDeadlineError(
+                    f"Request exceeded hard deadline of {hard_deadline_seconds:g}s."
+                ) from exc
+            raise OpenRouterRequestTimeoutError(f"Request timed out: {exc}") from exc
 
-    def _post_json_blocking(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
-        body = json.dumps(payload).encode("utf-8")
+    def _post_json_blocking(
+        self,
+        path: str,
+        payload: dict[str, Any],
+        *,
+        deadline: float,
+    ) -> dict[str, Any]:
+        parsed = urlsplit(self.base_url)
+        if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+            raise ValueError(f"Invalid OpenRouter base URL: {self.base_url}")
+        target = f"{parsed.path.rstrip('/')}{path}" or "/"
+        if parsed.query:
+            target = f"{target}?{parsed.query}"
+        connection = self._open_connection(parsed, self._remaining_timeout(deadline))
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
@@ -411,24 +478,91 @@ class OpenRouterBrain:
         if "openrouter.ai" in self.base_url:
             headers["X-Title"] = "Agent World"
             headers["HTTP-Referer"] = "https://github.com/agent-world"
-        req = request.Request(f"{self.base_url}{path}", data=body, method="POST", headers=headers)
         try:
-            with request.urlopen(req, timeout=self.timeout_seconds, context=self.ssl_context) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except error.HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")
-            if exc.code == 402:
-                # OpenRouter returns 402 when the account is out of credits.
-                raise OpenRouterQuotaError("OpenRouter quota unavailable: insufficient_credits") from exc
-            if exc.code == 429:
+            connection.request(
+                "POST",
+                target,
+                body=json.dumps(payload).encode("utf-8"),
+                headers=headers,
+            )
+            self._set_connection_timeout(connection, deadline)
+            response = connection.getresponse()
+            response_headers = {
+                key.lower(): value for key, value in response.getheaders()
+            }
+            trace_id = _provider_trace_id(response_headers)
+            body = self._read_response_body(response, connection, deadline)
+            detail = body.decode("utf-8", errors="replace")
+            if 200 <= response.status < 300:
+                return json.loads(detail)
+            if response.status == 402:
+                raise OpenRouterQuotaError(
+                    "OpenRouter quota unavailable: insufficient_credits",
+                    http_status=response.status,
+                    provider_trace_id=trace_id,
+                )
+            if response.status == 429:
                 if _is_insufficient_quota(detail):
-                    raise OpenRouterQuotaError("OpenRouter quota unavailable: insufficient_quota") from exc
-                retry_after = _retry_after_seconds(exc, detail)
+                    raise OpenRouterQuotaError(
+                        "OpenRouter quota unavailable: insufficient_quota",
+                        http_status=response.status,
+                        provider_trace_id=trace_id,
+                    )
                 raise OpenRouterRateLimitError(
                     f"OpenRouter API error 429: {detail}",
-                    retry_after,
-                ) from exc
-            raise ValueError(f"OpenRouter API error {exc.code}: {detail}") from exc
+                    _retry_after_seconds(response_headers, detail),
+                    provider_trace_id=trace_id,
+                )
+            if response.status >= 500:
+                raise OpenRouterProviderError(
+                    f"OpenRouter API error {response.status}: {detail}",
+                    http_status=response.status,
+                    provider_trace_id=trace_id,
+                )
+            raise ValueError(f"OpenRouter API error {response.status}: {detail}")
+        finally:
+            connection.close()
+
+    def _open_connection(
+        self, parsed: Any, timeout: float
+    ) -> http_client.HTTPConnection:
+        port = parsed.port
+        if parsed.scheme == "https":
+            return http_client.HTTPSConnection(
+                parsed.hostname,
+                port=port,
+                timeout=timeout,
+                context=self.ssl_context,
+            )
+        return http_client.HTTPConnection(parsed.hostname, port=port, timeout=timeout)
+
+    def _remaining_timeout(self, deadline: float) -> float:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise OpenRouterHardDeadlineError(
+                "Request exceeded its total wall-clock deadline."
+            )
+        return max(0.001, min(float(self.timeout_seconds), remaining))
+
+    def _set_connection_timeout(
+        self, connection: http_client.HTTPConnection, deadline: float
+    ) -> None:
+        if connection.sock is not None:
+            connection.sock.settimeout(self._remaining_timeout(deadline))
+
+    def _read_response_body(
+        self,
+        response: http_client.HTTPResponse,
+        connection: http_client.HTTPConnection,
+        deadline: float,
+    ) -> bytes:
+        chunks: list[bytes] = []
+        while True:
+            self._set_connection_timeout(connection, deadline)
+            chunk = response.read(64 * 1024)
+            if not chunk:
+                return b"".join(chunks)
+            chunks.append(chunk)
 
     def _quota_message(self) -> str | None:
         return self.runtime.quota_message()
@@ -437,14 +571,52 @@ class OpenRouterBrain:
         self.runtime.mark_quota_unavailable(message)
 
 
+class OpenRouterProviderError(OSError):
+    def __init__(
+        self,
+        message: str,
+        *,
+        http_status: int | None = None,
+        provider_trace_id: str | None = None,
+    ):
+        super().__init__(message)
+        self.http_status = http_status
+        self.provider_trace_id = provider_trace_id
+
+
+class OpenRouterRequestTimeoutError(OpenRouterProviderError):
+    pass
+
+
+class OpenRouterHardDeadlineError(OpenRouterRequestTimeoutError):
+    pass
+
+
 class OpenRouterRateLimitError(ValueError):
-    def __init__(self, message: str, retry_after_seconds: float | None = None):
+    def __init__(
+        self,
+        message: str,
+        retry_after_seconds: float | None = None,
+        *,
+        provider_trace_id: str | None = None,
+    ):
         super().__init__(message)
         self.retry_after_seconds = retry_after_seconds
+        self.http_status = 429
+        self.provider_trace_id = provider_trace_id
 
 
 class OpenRouterQuotaError(ValueError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        http_status: int | None = None,
+        provider_trace_id: str | None = None,
+    ):
+        super().__init__(message)
+        self.http_status = http_status
+        self.provider_trace_id = provider_trace_id
 
 
 def _quota_decision(message: str) -> AgentDecision:
@@ -486,8 +658,8 @@ def _ssl_context() -> ssl.SSLContext:
     return ssl.create_default_context()
 
 
-def _retry_after_seconds(exc: error.HTTPError, detail: str) -> float | None:
-    header = exc.headers.get("retry-after")
+def _retry_after_seconds(headers: dict[str, str], detail: str) -> float | None:
+    header = headers.get("retry-after")
     if header:
         try:
             return max(0.0, float(header))
@@ -496,6 +668,14 @@ def _retry_after_seconds(exc: error.HTTPError, detail: str) -> float | None:
     match = re.search(r"try again in ([0-9.]+)s", detail)
     if match:
         return max(0.0, float(match.group(1)) + 0.25)
+    return None
+
+
+def _provider_trace_id(headers: dict[str, str]) -> str | None:
+    for name in ("x-request-id", "x-openrouter-request-id", "cf-ray"):
+        value = headers.get(name)
+        if value:
+            return value
     return None
 
 

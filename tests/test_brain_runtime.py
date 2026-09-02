@@ -108,6 +108,21 @@ class BrainRuntimeTests(unittest.TestCase):
         self.assertEqual(first.quota_message(), "first exhausted")
         self.assertIsNone(second.quota_message())
 
+    def test_quota_and_authentication_are_typed_persistent_blockers(self) -> None:
+        runtime = BrainRuntime()
+        runtime.mark_authentication_required("login required")
+
+        self.assertEqual(
+            runtime.blocking_failure(), ("authentication", "login required")
+        )
+        self.assertIsNone(runtime.quota_message())
+        self.assertEqual(runtime.authentication_message(), "login required")
+
+        runtime.mark_quota_unavailable("quota exhausted")
+        self.assertEqual(runtime.blocking_failure(), ("quota", "quota exhausted"))
+        runtime.clear_quota_unavailable()
+        self.assertIsNone(runtime.blocking_failure())
+
     def test_usage_is_written_only_to_the_owning_runtime_path(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             first_path = Path(temp_dir) / "first.jsonl"

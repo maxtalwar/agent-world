@@ -21,6 +21,7 @@ import time
 from typing import Any
 
 from agent_world.provider_limits import is_quota_detail
+from agent_world.provider_telemetry import record_provider_attempt
 from agent_world.brain_boundary import (
     DEFAULT_SESSION_MAX_TURNS,
     ConversationBoundary,
@@ -143,9 +144,9 @@ class CursorBrain:
         self.resolved_model = other.resolved_model
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
-        quota_message = self.runtime.quota_message()
-        if quota_message is not None:
-            return _failure_decision(quota_message)
+        blocking_failure = self.runtime.blocking_failure()
+        if blocking_failure is not None:
+            return _failure_decision(blocking_failure[1])
 
         static_context = build_static_context(observation.get("world", {}))
         dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
@@ -157,14 +158,40 @@ class CursorBrain:
             else build_cursor_continuation_prompt(dynamic_json)
         )
 
+        def request_attempt_meta() -> dict[str, Any]:
+            return {
+                "agent_id": observation.get("self", {}).get("id"),
+                "tick": observation.get("tick"),
+                "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+            }
+
+        timeout_recorded = False
         started_at = time.monotonic()
         try:
             completed = None
             for attempt in range(self.timeout_retries + 1):
+                attempt_started_at = time.monotonic()
                 try:
                     completed = self._execute(prompt, invocation)
                     break
-                except subprocess.TimeoutExpired:
+                except subprocess.TimeoutExpired as exc:
+                    timeout_recorded = True
+                    record_provider_attempt(
+                        self.runtime,
+                        event_type="request_timeout",
+                        failure_kind="timeout",
+                        provider="cursor_cli",
+                        model=self.model,
+                        response_model=self.resolved_model,
+                        billing_mode="cursor_subscription",
+                        reasoning_effort=self.reasoning_effort,
+                        request_meta=request_attempt_meta(),
+                        attempt=attempt + 1,
+                        max_attempts=self.timeout_retries + 1,
+                        duration_seconds=time.monotonic() - attempt_started_at,
+                        detail=f"Exceeded {self.timeout_seconds}s timeout",
+                        exception=exc,
+                    )
                     if attempt >= self.timeout_retries:
                         raise
                     if self.conversation_mode != "fresh-conversation":
@@ -196,11 +223,59 @@ class CursorBrain:
                 if still_error:
                     if _is_quota_error(detail):
                         message = f"Cursor quota unavailable: {detail}"
+                        record_provider_attempt(
+                            self.runtime,
+                            event_type="quota_exhausted",
+                            failure_kind="quota",
+                            provider="cursor_cli",
+                            model=self.model,
+                            response_model=self.resolved_model,
+                            billing_mode="cursor_subscription",
+                            reasoning_effort=self.reasoning_effort,
+                            request_meta=request_attempt_meta(),
+                            attempt=attempt + 1,
+                            max_attempts=self.timeout_retries + 1,
+                            duration_seconds=elapsed,
+                            detail=detail,
+                        )
                         self.runtime.mark_quota_unavailable(message)
                         return _failure_decision(message)
-                    if _is_auth_error(detail) or _is_provider_error(detail):
+                    if _is_auth_error(detail):
+                        message = f"Cursor authentication required: {detail}"
+                        record_provider_attempt(
+                            self.runtime,
+                            event_type="authentication_required",
+                            failure_kind="authentication",
+                            provider="cursor_cli",
+                            model=self.model,
+                            response_model=self.resolved_model,
+                            billing_mode="cursor_subscription",
+                            reasoning_effort=self.reasoning_effort,
+                            request_meta=request_attempt_meta(),
+                            attempt=attempt + 1,
+                            max_attempts=self.timeout_retries + 1,
+                            duration_seconds=elapsed,
+                            detail=detail,
+                        )
+                        self.runtime.mark_authentication_required(message)
+                        return _failure_decision(message)
+                    if _is_provider_error(detail):
                         message = f"Cursor provider unavailable: {detail}"
-                        self.runtime.mark_quota_unavailable(message)
+                        record_provider_attempt(
+                            self.runtime,
+                            event_type="provider_error",
+                            failure_kind="provider",
+                            provider="cursor_cli",
+                            model=self.model,
+                            response_model=self.resolved_model,
+                            billing_mode="cursor_subscription",
+                            reasoning_effort=self.reasoning_effort,
+                            request_meta=request_attempt_meta(),
+                            attempt=attempt + 1,
+                            max_attempts=self.timeout_retries + 1,
+                            duration_seconds=elapsed,
+                            detail=detail,
+                        )
                         return _failure_decision(message)
                     boundary_detail = (
                         f"cursor-agent -p exited {completed.returncode}: {detail}"
@@ -338,11 +413,45 @@ class CursorBrain:
             )
             self.boundary.commit(invocation, session_id)
             return parsed_decision
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
             message = f"Cursor provider unavailable: exceeded {self.timeout_seconds}s timeout"
-            self.runtime.mark_quota_unavailable(message)
+            if not timeout_recorded:
+                record_provider_attempt(
+                    self.runtime,
+                    event_type="request_timeout",
+                    failure_kind="timeout",
+                    provider="cursor_cli",
+                    model=self.model,
+                    response_model=self.resolved_model,
+                    billing_mode="cursor_subscription",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_attempt_meta(),
+                    attempt=1,
+                    max_attempts=1,
+                    duration_seconds=time.monotonic() - started_at,
+                    detail=message,
+                    exception=exc,
+                )
             return _failure_decision(message)
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
+        except OSError as exc:
+            detail = f"{type(exc).__name__}: {exc}"
+            record_provider_attempt(
+                self.runtime,
+                event_type="provider_error",
+                failure_kind="provider",
+                provider="cursor_cli",
+                model=self.model,
+                response_model=self.resolved_model,
+                billing_mode="cursor_subscription",
+                reasoning_effort=self.reasoning_effort,
+                request_meta=request_attempt_meta(),
+                attempt=1,
+                max_attempts=1,
+                duration_seconds=time.monotonic() - started_at,
+                detail=detail,
+            )
+            return _failure_decision(f"Cursor provider unavailable: {detail}")
+        except (ValueError, json.JSONDecodeError) as exc:
             if self.conversation_mode != "fresh-conversation":
                 self.boundary.reset("decision_failure")
             return _failure_decision(f"Cursor decision failed: {exc}")

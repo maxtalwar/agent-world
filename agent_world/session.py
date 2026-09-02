@@ -16,6 +16,7 @@ from agent_world.brain_runtime import BrainRuntime
 from agent_world.codex_brain import summarize_plan_usage
 from agent_world.io import atomic_write_json
 from agent_world.metrics import (
+    is_authentication_detail,
     is_decision_failure_message,
     is_provider_failure_message,
     is_quota_failure_message,
@@ -24,6 +25,7 @@ from agent_world.persistence import IncrementalRunWriter
 from agent_world.run_report import build_report, write_report
 from agent_world.provider_limits import quota_reset_at
 from agent_world.runner import (
+    ModelAuthenticationRequiredError,
     ModelDecisionsUnusableError,
     ModelProviderUnavailableError,
     ModelQuotaUnavailableError,
@@ -174,7 +176,11 @@ class SimulationSession:
         error: str | None = None
         if self.preflight_error:
             status = "stopped"
-            stop_reason = "provider_unavailable"
+            stop_reason = (
+                "authentication_required"
+                if is_authentication_detail(self.preflight_error)
+                else "provider_unavailable"
+            )
         try:
             while status == "running" and self.engine.state.tick < self.target_ticks:
                 if self.before_tick is not None and self.before_tick():
@@ -184,6 +190,37 @@ class SimulationSession:
                 usage_checkpoint = self.runtime.usage_checkpoint()
                 try:
                     events = self.runner.step()
+                except ModelAuthenticationRequiredError as exc:
+                    partial_usage_path = self._rollback_uncached_usage(usage_checkpoint)
+                    status = "paused_checkpoint"
+                    stop_reason = "authentication_required"
+                    self.engine.log_event(
+                        "run_paused",
+                        message=(
+                            "A model connector requires authentication; the world remains "
+                            "frozen and this completed-tick checkpoint can resume using every "
+                            "accepted cached decision after login."
+                        ),
+                        data={
+                            "reason": stop_reason,
+                            "target_ticks": self.target_ticks,
+                            "completed_tick": self.engine.state.tick,
+                            "provider_messages": exc.messages,
+                            "affected_agent_ids": sorted(exc.failures),
+                            "affected_agent_count": len(exc.failures),
+                            "cached_agent_ids": exc.cached_agents,
+                            "cached_decision_count": len(exc.cached_agents),
+                            "provider_event_counts": self.runtime.provider_event_summary(),
+                            "partial_usage_path": (
+                                str(partial_usage_path.resolve())
+                                if partial_usage_path
+                                else None
+                            ),
+                        },
+                        scope="public",
+                    )
+                    self.flush()
+                    break
                 except ModelQuotaUnavailableError as exc:
                     partial_usage_path = self._rollback_uncached_usage(usage_checkpoint)
                     # The world is back at a completed-tick boundary, so waiting
@@ -508,10 +545,15 @@ class SimulationSession:
         self._log_start()
         self.preflight_error = self._provider_preflight_error()
         if self.preflight_error:
+            reason = (
+                "authentication_required"
+                if is_authentication_detail(self.preflight_error)
+                else "provider_unavailable"
+            )
             self.engine.log_event(
                 "run_stopped",
                 message=self.preflight_error,
-                data={"reason": "provider_unavailable", "target_ticks": self.target_ticks},
+                data={"reason": reason, "target_ticks": self.target_ticks},
                 scope="public",
             )
         self._capture_plan_usage(self.engine.state.tick)

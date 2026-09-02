@@ -20,6 +20,7 @@ from agent_world.interface import (
 )
 from agent_world.io import atomic_write_json
 from agent_world.metrics import (
+    is_auth_failure_message,
     is_ambiguous_boundary_failure_message,
     is_provider_failure_message,
     is_quota_failure_message,
@@ -285,12 +286,16 @@ class SimulationRunner:
         unresolved = [agent_id for agent_id in agent_ids if agent_id not in decisions]
         retry_round = 0
         while unresolved:
+            authentication_failures: dict[str, str] = {}
             quota_failures: dict[str, str] = {}
             provider_failures: dict[str, str] = {}
 
             def record_completed(agent_id: str, decision: AgentDecision) -> None:
                 decisions[agent_id] = decision
-                if is_quota_failure_message("agent_response", decision.intent):
+                if is_auth_failure_message("agent_response", decision.intent):
+                    authentication_failures[agent_id] = decision.intent
+                    journal.record_failure(agent_id, decision, retry_round=retry_round)
+                elif is_quota_failure_message("agent_response", decision.intent):
                     quota_failures[agent_id] = decision.intent
                     journal.record_failure(agent_id, decision, retry_round=retry_round)
                 elif is_provider_failure_message("agent_response", decision.intent):
@@ -306,6 +311,10 @@ class SimulationRunner:
             self._collect_decisions(
                 unresolved, observations, on_decision=record_completed
             )
+            if authentication_failures:
+                raise ModelAuthenticationRequiredError(
+                    authentication_failures, cached_agents=sorted(journal.decisions)
+                )
             if quota_failures:
                 raise ModelQuotaUnavailableError(
                     quota_failures, cached_agents=sorted(journal.decisions)
@@ -519,6 +528,24 @@ class ModelQuotaUnavailableError(RuntimeError):
             sorted(set(self.failures.values())) if self.failures else list(failures)
         )
         super().__init__(messages[0] if messages else "Model quota unavailable")
+        self.messages = messages
+        self.cached_agents = list(cached_agents or [])
+
+
+class ModelAuthenticationRequiredError(RuntimeError):
+    """Raised before world resolution when a connector needs authentication."""
+
+    def __init__(
+        self,
+        failures: dict[str, str] | list[str],
+        *,
+        cached_agents: list[str] | None = None,
+    ):
+        self.failures = dict(failures) if isinstance(failures, dict) else {}
+        messages = (
+            sorted(set(self.failures.values())) if self.failures else list(failures)
+        )
+        super().__init__(messages[0] if messages else "Model authentication required")
         self.messages = messages
         self.cached_agents = list(cached_agents or [])
 

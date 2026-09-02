@@ -43,7 +43,7 @@ class BrainRuntime:
                 self._provider_event_records = _read_jsonl_records(
                     self.provider_events_path
                 )
-        self._quota_unavailable_messages: dict[str, str] = {}
+        self._blocking_failures: dict[str, tuple[str, str]] = {}
         self._next_allowed_at: dict[str, float] = {}
 
     def record_usage(self, record: dict[str, Any]) -> None:
@@ -105,25 +105,67 @@ class BrainRuntime:
 
     def quota_message(self, scope: str = "default") -> str | None:
         with self._lock:
-            return self._quota_unavailable_messages.get(scope)
+            failure = self._blocking_failures.get(scope)
+            return failure[1] if failure is not None and failure[0] == "quota" else None
 
     def mark_quota_unavailable(self, message: str, scope: str = "default") -> None:
         with self._lock:
-            self._quota_unavailable_messages[scope] = message
+            self._blocking_failures[scope] = ("quota", message)
 
-    def clear_quota_unavailable(self, scope: str | None = None) -> None:
-        """Forget cached quota exhaustion so the next call reaches the provider.
+    def authentication_message(self, scope: str = "default") -> str | None:
+        with self._lock:
+            failure = self._blocking_failures.get(scope)
+            return (
+                failure[1]
+                if failure is not None and failure[0] == "authentication"
+                else None
+            )
 
-        Called after waiting out a rate limit. Without this the cached message
-        short-circuits every subsequent decision and the run can never recover
-        on its own.
+    def mark_authentication_required(
+        self, message: str, scope: str = "default"
+    ) -> None:
+        with self._lock:
+            self._blocking_failures[scope] = ("authentication", message)
+
+    def blocking_failure(self, scope: str = "default") -> tuple[str, str] | None:
+        """Return a persistent provider blocker for this run and scope.
+
+        Only quota and authentication are persistent. Transient rate limits,
+        timeouts, and transport/provider faults must never enter this circuit:
+        the runner retries only their unresolved agents while the world stays
+        frozen.
         """
 
         with self._lock:
+            return self._blocking_failures.get(scope)
+
+    def clear_quota_unavailable(self, scope: str | None = None) -> None:
+        """Forget cached quota exhaustion so the next call reaches the provider."""
+
+        with self._lock:
             if scope is None:
-                self._quota_unavailable_messages.clear()
+                self._blocking_failures = {
+                    key: failure
+                    for key, failure in self._blocking_failures.items()
+                    if failure[0] != "quota"
+                }
             else:
-                self._quota_unavailable_messages.pop(scope, None)
+                failure = self._blocking_failures.get(scope)
+                if failure is not None and failure[0] == "quota":
+                    self._blocking_failures.pop(scope, None)
+
+    def clear_authentication_required(self, scope: str | None = None) -> None:
+        with self._lock:
+            if scope is None:
+                self._blocking_failures = {
+                    key: failure
+                    for key, failure in self._blocking_failures.items()
+                    if failure[0] != "authentication"
+                }
+            else:
+                failure = self._blocking_failures.get(scope)
+                if failure is not None and failure[0] == "authentication":
+                    self._blocking_failures.pop(scope, None)
 
     def throttle(self, minimum_interval_seconds: float, scope: str = "default") -> None:
         if minimum_interval_seconds <= 0:
@@ -177,8 +219,20 @@ class ScopedBrainRuntime:
     def mark_quota_unavailable(self, message: str) -> None:
         self.parent.mark_quota_unavailable(message, self.scope)
 
+    def authentication_message(self) -> str | None:
+        return self.parent.authentication_message(self.scope)
+
+    def mark_authentication_required(self, message: str) -> None:
+        self.parent.mark_authentication_required(message, self.scope)
+
+    def blocking_failure(self) -> tuple[str, str] | None:
+        return self.parent.blocking_failure(self.scope)
+
     def clear_quota_unavailable(self) -> None:
         self.parent.clear_quota_unavailable(self.scope)
+
+    def clear_authentication_required(self) -> None:
+        self.parent.clear_authentication_required(self.scope)
 
     def throttle(self, minimum_interval_seconds: float) -> None:
         self.parent.throttle(minimum_interval_seconds, self.scope)

@@ -22,6 +22,37 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-02 — Historical OpenRouter reports omitted paid partial-tick work
+
+**Before durable per-agent tick caching, OpenRouter's final run reports
+understated provider-reported spend because successfully billed completions
+discarded during an interrupted tick were moved out of the main usage ledger.**
+The verified catalog contains $15.385143 of provider-reported cost in the main
+usage ledgers for its OpenRouter cells plus $0.366992 in preserved partial-tick
+ledgers, making captured attempted spend 2.39% higher than the final-ledger
+total. Of that omitted amount, $0.349820 came from 24 structurally valid
+completions; the remainder was returned-but-invalid output that could still be
+billed.
+
+The effect varied by model. Qwen3-8-Max's two admitted cells report $11.619590
+in their final ledgers but have another $0.331152 across 20 valid discarded
+decisions, so captured attempted cost was 2.85% above the reported two-run
+total. GLM-5.2 seed 41 has $2.032603 in its final ledger and $0.035840 in its
+partial ledger, including $0.018668 from four valid completions. These are lower
+bounds on actual billing because a server-side request that completed after the
+client's hard deadline can be charged without returning usage telemetry.
+
+This is a harness accounting effect, not a model-efficiency result. The
+canonical database recomputes API-list-price-equivalent cost from each admitted
+main usage ledger, and the JSON report's provider-reported total uses that same
+ledger, so neither figure was inflated by the wasted calls; both omitted them.
+The pending-tick journal now preserves valid decisions and their usage through
+retry/resume, preventing this specific undercount in future runs. Evidence:
+`data/model-benchmarks.sqlite`,
+`runs/benchmarks/qwen3-8-max-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/`,
+and
+`runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919/glm-5-2-v6-seed41-fence/run-usage-partial-tick-33.jsonl`.
+
 ## 2026-09-02 — Harness lifecycle events were visible model input across resumes
 
 **Public run-control bookkeeping was entering agents' recent-event context, so

@@ -315,6 +315,22 @@ class CursorBrainTests(unittest.TestCase):
         self.assertIn("RULEBOOK", first)
         self.assertTrue(second.endswith('{"tick":2}'))
 
+    def test_timeout_attempts_are_recorded_without_opening_quota_circuit(self) -> None:
+        with patch(
+            "agent_world.cursor_brain.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(["cursor-agent"], 3),
+        ) as run:
+            brain = CursorBrain(executable="cursor-agent", timeout_seconds=3)
+            decision = brain.decide({"tick": 7, "self": {"id": "agent-2"}})
+
+        self.assertEqual(run.call_count, 2)
+        self.assertTrue(decision.intent.startswith("Cursor provider unavailable:"))
+        records = brain.runtime.provider_event_records()
+        self.assertEqual([record["attempt"] for record in records], [1, 2])
+        self.assertEqual({record["agent_id"] for record in records}, {"agent-2"})
+        self.assertEqual({record["tick"] for record in records}, {7})
+        self.assertIsNone(brain.runtime.blocking_failure())
+
 
 if __name__ == "__main__":
     unittest.main()

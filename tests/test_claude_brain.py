@@ -341,7 +341,7 @@ class ClaudeBrainTests(unittest.TestCase):
         self.assertTrue(first.intent.startswith("Claude quota unavailable:"))
         self.assertEqual(second.intent, first.intent)
 
-    def test_connection_failure_opens_provider_circuit(self) -> None:
+    def test_connection_failure_is_retryable_and_does_not_open_circuit(self) -> None:
         completed = subprocess.CompletedProcess(
             ["claude"], 1, stdout="", stderr="API Error: Unable to connect to API (ConnectionRefused)"
         )
@@ -350,9 +350,12 @@ class ClaudeBrainTests(unittest.TestCase):
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
 
-        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_count, 2)
         self.assertTrue(first.intent.startswith("Claude provider unavailable:"))
         self.assertEqual(second.intent, first.intent)
+        self.assertEqual(
+            brain.runtime.provider_event_summary(), {"provider_error": 2}
+        )
 
     def test_auth_failure_opens_circuit(self) -> None:
         completed = subprocess.CompletedProcess(
@@ -364,8 +367,11 @@ class ClaudeBrainTests(unittest.TestCase):
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
 
         self.assertEqual(run.call_count, 1)
-        self.assertTrue(first.intent.startswith("Claude provider unavailable:"))
+        self.assertTrue(first.intent.startswith("Claude authentication required:"))
         self.assertEqual(second.intent, first.intent)
+        self.assertEqual(
+            brain.runtime.provider_event_summary(), {"authentication_required": 1}
+        )
 
     def test_error_result_json_is_reported(self) -> None:
         stdout = json.dumps(

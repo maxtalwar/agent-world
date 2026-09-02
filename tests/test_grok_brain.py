@@ -202,6 +202,22 @@ class GrokBrainTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "only fresh-conversation"):
             GrokBrain(executable="grok", conversation_mode="persistent-conversation-v1")
 
+    def test_timeout_attempts_are_recorded_without_opening_quota_circuit(self) -> None:
+        with patch(
+            "agent_world.grok_brain.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(["grok"], 3),
+        ) as run:
+            brain = GrokBrain(executable="grok", timeout_seconds=3)
+            decision = brain.decide({"tick": 8, "self": {"id": "agent-3"}})
+
+        self.assertEqual(run.call_count, 2)
+        self.assertTrue(decision.intent.startswith("Grok provider unavailable:"))
+        records = brain.runtime.provider_event_records()
+        self.assertEqual([record["attempt"] for record in records], [1, 2])
+        self.assertEqual({record["agent_id"] for record in records}, {"agent-3"})
+        self.assertEqual({record["tick"] for record in records}, {8})
+        self.assertIsNone(brain.runtime.blocking_failure())
+
 
 if __name__ == "__main__":
     unittest.main()

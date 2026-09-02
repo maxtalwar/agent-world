@@ -255,7 +255,28 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
             "Invalid JSON response:",
             "Agent brain failed:",
         )
+    ) or is_auth_failure_message(event_type, message)
+
+
+def is_authentication_detail(message: str | None) -> bool:
+    if not message:
+        return False
+    lowered = message.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            " authentication required:",
+            "authentication preflight failed",
+            "not logged in",
+            "please run /login",
+            "unauthorized",
+        )
     )
+
+
+def is_auth_failure_message(event_type: str | None, message: str | None) -> bool:
+    return event_type == "agent_response" and is_authentication_detail(message)
+
 
 
 def is_quota_failure_message(event_type: str | None, message: str | None) -> bool:

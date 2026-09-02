@@ -41,6 +41,7 @@ from agent_world.interface import (
 )
 from agent_world.models import AgentDecision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
+from agent_world.provider_telemetry import record_provider_attempt
 
 
 DEVIN_HARNESS_INSTRUCTIONS = (
@@ -247,9 +248,9 @@ class DevinBrain:
         self.resolved_model = other.resolved_model
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
-        quota_message = self.runtime.quota_message()
-        if quota_message is not None:
-            return _failure_decision(quota_message)
+        blocking_failure = self.runtime.blocking_failure()
+        if blocking_failure is not None:
+            return _failure_decision(blocking_failure[1])
 
         static_context = build_static_context(observation.get("world", {}))
         dynamic_json = json.dumps(
@@ -278,13 +279,32 @@ class DevinBrain:
             **self.boundary.usage_metadata(invocation),
         }
 
+        timeout_recorded = False
         try:
             turn: AcpTurnResult | None = None
             for attempt in range(self.timeout_retries + 1):
+                attempt_started_at = time.monotonic()
                 try:
                     turn = self._execute(prompt, invocation)
                     break
-                except subprocess.TimeoutExpired:
+                except subprocess.TimeoutExpired as exc:
+                    timeout_recorded = True
+                    record_provider_attempt(
+                        self.runtime,
+                        event_type="request_timeout",
+                        failure_kind="timeout",
+                        provider="devin_cli",
+                        model=self.model,
+                        response_model=self.resolved_model,
+                        billing_mode="devin_subscription",
+                        reasoning_effort=self.reasoning_effort,
+                        request_meta=request_meta,
+                        attempt=attempt + 1,
+                        max_attempts=self.timeout_retries + 1,
+                        duration_seconds=time.monotonic() - attempt_started_at,
+                        detail=f"Exceeded {self.timeout_seconds}s timeout",
+                        exception=exc,
+                    )
                     if attempt >= self.timeout_retries:
                         raise
                     if self.conversation_mode != "fresh-conversation":
@@ -401,17 +421,33 @@ class DevinBrain:
             self._record_usage(turn, request_meta)
             self.boundary.commit(invocation, turn.session_id)
             return parsed_decision
-        except subprocess.TimeoutExpired:
+        except subprocess.TimeoutExpired as exc:
             message = (
                 f"Devin provider unavailable: exceeded {self.timeout_seconds}s timeout"
             )
+            if not timeout_recorded:
+                record_provider_attempt(
+                    self.runtime,
+                    event_type="request_timeout",
+                    failure_kind="timeout",
+                    provider="devin_cli",
+                    model=self.model,
+                    response_model=self.resolved_model,
+                    billing_mode="devin_subscription",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_meta,
+                    attempt=1,
+                    max_attempts=1,
+                    duration_seconds=time.monotonic() - started_at,
+                    detail=message,
+                    exception=exc,
+                )
             self._record_failed_boundary(
                 message,
                 invocation=invocation,
                 request_meta=request_meta,
                 duration_seconds=time.monotonic() - started_at,
             )
-            self.runtime.mark_quota_unavailable(message)
             return _failure_decision(message)
         except AcpProtocolError as exc:
             detail = _clean_detail(str(exc))
@@ -424,16 +460,90 @@ class DevinBrain:
             )
             if _is_quota_error(detail):
                 message = f"Devin quota unavailable: {detail}"
+                record_provider_attempt(
+                    self.runtime,
+                    event_type="quota_exhausted",
+                    failure_kind="quota",
+                    provider="devin_cli",
+                    model=self.model,
+                    response_model=self.resolved_model,
+                    billing_mode="devin_subscription",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_meta,
+                    attempt=1,
+                    max_attempts=1,
+                    duration_seconds=time.monotonic() - started_at,
+                    detail=detail,
+                )
                 self.runtime.mark_quota_unavailable(message)
                 return _failure_decision(message)
-            if _is_auth_error(detail) or _is_provider_error(detail):
+            if _is_auth_error(detail):
+                message = f"Devin authentication required: {detail}"
+                record_provider_attempt(
+                    self.runtime,
+                    event_type="authentication_required",
+                    failure_kind="authentication",
+                    provider="devin_cli",
+                    model=self.model,
+                    response_model=self.resolved_model,
+                    billing_mode="devin_subscription",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_meta,
+                    attempt=1,
+                    max_attempts=1,
+                    duration_seconds=time.monotonic() - started_at,
+                    detail=detail,
+                )
+                self.runtime.mark_authentication_required(message)
+                return _failure_decision(message)
+            if _is_provider_error(detail):
                 message = f"Devin provider unavailable: {detail}"
-                self.runtime.mark_quota_unavailable(message)
+                record_provider_attempt(
+                    self.runtime,
+                    event_type="provider_error",
+                    failure_kind="provider",
+                    provider="devin_cli",
+                    model=self.model,
+                    response_model=self.resolved_model,
+                    billing_mode="devin_subscription",
+                    reasoning_effort=self.reasoning_effort,
+                    request_meta=request_meta,
+                    attempt=1,
+                    max_attempts=1,
+                    duration_seconds=time.monotonic() - started_at,
+                    detail=detail,
+                )
                 return _failure_decision(message)
             if self.conversation_mode != "fresh-conversation":
                 self.boundary.reset("ambiguous_boundary_failure")
             return _failure_decision(f"Devin boundary failed: {detail}")
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
+        except OSError as exc:
+            detail = f"{type(exc).__name__}: {exc}"
+            record_provider_attempt(
+                self.runtime,
+                event_type="provider_error",
+                failure_kind="provider",
+                provider="devin_cli",
+                model=self.model,
+                response_model=self.resolved_model,
+                billing_mode="devin_subscription",
+                reasoning_effort=self.reasoning_effort,
+                request_meta=request_meta,
+                attempt=1,
+                max_attempts=1,
+                duration_seconds=time.monotonic() - started_at,
+                detail=detail,
+            )
+            self._record_failed_boundary(
+                detail,
+                invocation=invocation,
+                request_meta=request_meta,
+                duration_seconds=time.monotonic() - started_at,
+            )
+            if self.conversation_mode != "fresh-conversation":
+                self.boundary.reset("decision_failure")
+            return _failure_decision(f"Devin provider unavailable: {detail}")
+        except (ValueError, json.JSONDecodeError) as exc:
             self._record_failed_boundary(
                 f"{type(exc).__name__}: {exc}",
                 invocation=invocation,

@@ -10,7 +10,10 @@ from agent_world.env import load_dotenv
 from agent_world.interface import build_static_context
 from agent_world.openrouter_brain import (
     OpenRouterBrain,
+    OpenRouterHardDeadlineError,
+    OpenRouterProviderError,
     OpenRouterQuotaError,
+    OpenRouterRateLimitError,
     extract_chat_text,
 )
 
@@ -91,21 +94,93 @@ class MissingOutputOpenRouterBrain(OpenRouterBrain):
 
 
 class OpenRouterBrainTests(unittest.TestCase):
-    def test_hard_deadline_does_not_wait_for_stuck_worker_shutdown(self) -> None:
+    def test_hard_deadline_closes_the_live_connection(self) -> None:
+        class FakeSocket:
+            def settimeout(self, _timeout):
+                return None
+
+        class SlowResponse:
+            status = 200
+
+            def getheaders(self):
+                return []
+
+            def read(self, _size):
+                time.sleep(0.03)
+                return b"{"
+
+        class FakeConnection:
+            def __init__(self):
+                self.sock = FakeSocket()
+                self.closed = False
+
+            def request(self, *_args, **_kwargs):
+                return None
+
+            def getresponse(self):
+                return SlowResponse()
+
+            def close(self):
+                self.closed = True
+
         brain = OpenRouterBrain(
             api_key="test",
             timeout_seconds=0.01,
             hard_deadline_grace_seconds=0.01,
             min_request_interval_seconds=0,
         )
+        connection = FakeConnection()
 
-        with patch.object(brain, "_post_json_blocking", side_effect=lambda *_: time.sleep(0.25)):
+        with patch.object(brain, "_open_connection", return_value=connection):
             started = time.monotonic()
-            with self.assertRaisesRegex(OSError, "hard deadline"):
+            with self.assertRaises(OpenRouterHardDeadlineError):
                 brain._post_json("/chat/completions", {})
             elapsed = time.monotonic() - started
 
         self.assertLess(elapsed, 0.15)
+        self.assertTrue(connection.closed)
+
+    def test_rate_limit_records_every_attempt_without_opening_quota_circuit(self) -> None:
+        brain = OpenRouterBrain(
+            api_key="test",
+            max_retries=1,
+            min_request_interval_seconds=0,
+        )
+        with patch.object(
+            brain,
+            "_post_json",
+            side_effect=OpenRouterRateLimitError("429 busy", 0.01),
+        ) as post, patch("agent_world.openrouter_brain.time.sleep"):
+            decision = brain.decide({"tick": 9, "self": {"id": "agent-4"}})
+
+        self.assertEqual(post.call_count, 2)
+        self.assertTrue(decision.intent.startswith("OpenRouter provider unavailable:"))
+        records = brain.runtime.provider_event_records()
+        self.assertEqual([record["attempt"] for record in records], [1, 2])
+        self.assertEqual({record["event_type"] for record in records}, {"rate_limit"})
+        self.assertEqual({record["agent_id"] for record in records}, {"agent-4"})
+        self.assertIsNone(brain.runtime.blocking_failure())
+
+    def test_provider_error_is_retryable_by_the_shared_runner(self) -> None:
+        brain = OpenRouterBrain(
+            api_key="test",
+            max_retries=0,
+            min_request_interval_seconds=0,
+        )
+        with patch.object(
+            brain,
+            "_post_json",
+            side_effect=OpenRouterProviderError("connection reset"),
+        ) as post:
+            first = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+            second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
+
+        self.assertEqual(post.call_count, 2)
+        self.assertEqual(first.intent, second.intent)
+        self.assertEqual(
+            brain.runtime.provider_event_summary(), {"provider_error": 2}
+        )
+        self.assertIsNone(brain.runtime.blocking_failure())
 
     def test_dotenv_loader_sets_missing_values(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

@@ -42,12 +42,20 @@ remain in the active ledger rather than being quarantined as discarded work.
 
 Exceptional provider attempts are the only additional durable telemetry. They
 are appended to `run-provider-events.jsonl`; successful calls remain solely in
-`run-usage.jsonl`. For example, every ZCode timeout attempt records its exact
-agent ID, simulation tick, request hash, attempt number, timeout, duration, and
-the byte counts and hashes (not contents) of any partial output. The run's
-terminal or pause event records aggregate counts. This makes timeout totals
-exact while keeping the retained file proportional to failures rather than to
-all model calls.
+`run-usage.jsonl`. Every connector records each timeout, rate limit, provider
+error, authentication failure, and exhausted-quota attempt with its exact agent
+ID, simulation tick, request hash, attempt number, duration, failure class, and
+available request/trace ID. Timeout records include byte counts and hashes—not
+contents—for partial output. Terminal and pause events record aggregate counts.
+The retained file is therefore proportional to failures rather than all model
+calls.
+
+Quota and authentication are the only persistent provider circuits. Quota
+freezes the run until its allowance can reset; authentication pauses for user
+attention. A rate limit honors its retry delay, while a timeout or transport
+fault remains transient and is retried only for unresolved agents. OpenRouter's
+total wall-clock deadline closes the live HTTP connection before returning, so
+a retry cannot overlap a still-running abandoned request.
 
 For a replicated benchmark, seed 11 starts first. The controller reads the
 harness's recorded startup-health event and releases the

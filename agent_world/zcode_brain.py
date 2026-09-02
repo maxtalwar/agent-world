@@ -28,6 +28,7 @@ from agent_world.interface import (
 from agent_world.models import AgentDecision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 from agent_world.provider_limits import is_quota_detail
+from agent_world.provider_telemetry import record_provider_attempt
 
 ZCODE_HARNESS_INSTRUCTIONS = (
     "This is a simulation decision, not a software-engineering task. "
@@ -124,9 +125,9 @@ class ZCodeBrain:
         self.resolved_model = other.resolved_model
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
-        quota_message = self.runtime.quota_message()
-        if quota_message is not None:
-            return _failure_decision(quota_message)
+        blocking_failure = self.runtime.blocking_failure()
+        if blocking_failure is not None:
+            return _failure_decision(blocking_failure[1])
         static_context = build_static_context(observation.get("world", {}))
         dynamic_json = json.dumps(
             build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True
@@ -170,10 +171,59 @@ class ZCodeBrain:
                 detail = _failure_detail(result, completed.stdout, completed.stderr)
                 if _is_quota_error(detail):
                     message = f"ZCode quota unavailable: {detail}"
+                    record_provider_attempt(
+                        self.runtime,
+                        event_type="quota_exhausted",
+                        failure_kind="quota",
+                        provider="zcode_cli",
+                        model=self.model,
+                        response_model=self.resolved_model,
+                        billing_mode="zai_coding_plan",
+                        reasoning_effort=self.reasoning_effort,
+                        request_meta=request_meta,
+                        attempt=attempt + 1,
+                        max_attempts=self.timeout_retries + 1,
+                        duration_seconds=time.monotonic() - started_at,
+                        detail=detail,
+                    )
                     self.runtime.mark_quota_unavailable(message)
                     return _failure_decision(message)
-                if _is_auth_error(detail) or _is_provider_error(detail):
+                if _is_auth_error(detail):
+                    message = f"ZCode authentication required: {detail}"
+                    record_provider_attempt(
+                        self.runtime,
+                        event_type="authentication_required",
+                        failure_kind="authentication",
+                        provider="zcode_cli",
+                        model=self.model,
+                        response_model=self.resolved_model,
+                        billing_mode="zai_coding_plan",
+                        reasoning_effort=self.reasoning_effort,
+                        request_meta=request_meta,
+                        attempt=attempt + 1,
+                        max_attempts=self.timeout_retries + 1,
+                        duration_seconds=time.monotonic() - started_at,
+                        detail=detail,
+                    )
+                    self.runtime.mark_authentication_required(message)
+                    return _failure_decision(message)
+                if _is_provider_error(detail):
                     message = f"ZCode provider unavailable: {detail}"
+                    record_provider_attempt(
+                        self.runtime,
+                        event_type="provider_error",
+                        failure_kind="provider",
+                        provider="zcode_cli",
+                        model=self.model,
+                        response_model=self.resolved_model,
+                        billing_mode="zai_coding_plan",
+                        reasoning_effort=self.reasoning_effort,
+                        request_meta=request_meta,
+                        attempt=attempt + 1,
+                        max_attempts=self.timeout_retries + 1,
+                        duration_seconds=time.monotonic() - started_at,
+                        detail=detail,
+                    )
                     return _failure_decision(message)
                 self._record_usage(
                     {},

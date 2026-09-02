@@ -191,7 +191,7 @@ class SimulationSessionTests(unittest.TestCase):
         result = session.run()
 
         self.assertEqual(result.status, "stopped")
-        self.assertEqual(result.stop_reason, "provider_unavailable")
+        self.assertEqual(result.stop_reason, "authentication_required")
         self.assertEqual(result.final_tick, 0)
         self.assertEqual(brain.decisions, 0)
         self.assertEqual([event.type for event in engine.state.events].count("run_stopped"), 1)
@@ -333,6 +333,41 @@ class SimulationSessionTests(unittest.TestCase):
         self.assertEqual(result.final_tick, 0)
         self.assertEqual([event.type for event in engine.state.events].count("run_paused"), 1)
         self.assertNotIn("agent_response", [event.type for event in engine.state.events])
+
+    def test_authentication_pauses_without_provider_retries(self) -> None:
+        class AuthenticationBrain:
+            def decide(self, _observation):
+                return AgentDecision(
+                    intent="Claude authentication required: not logged in",
+                    actions=[{"type": "wait"}],
+                )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            engine = WorldEngine.create(WorldConfig(seed=90), agent_names=["A1"])
+            result = SimulationSession(
+                engine=engine,
+                brain_spec=BrainSpec.resolve("survival"),
+                runtime=BrainRuntime(),
+                writer=IncrementalRunWriter(
+                    Path(temp_dir) / "run.jsonl",
+                    Path(temp_dir) / "run-snapshot.json",
+                    checkpoint_path=Path(temp_dir) / "run-checkpoint.pkl",
+                    fsync=False,
+                ),
+                target_ticks=1,
+                brains={"agent-1": AuthenticationBrain()},
+                log_agent_io=False,
+                startup_health_check_tick=None,
+                provider_retry_rounds=2,
+            ).run()
+
+        self.assertEqual(result.status, "paused_checkpoint")
+        self.assertEqual(result.stop_reason, "authentication_required")
+        self.assertEqual(result.final_tick, 0)
+        paused = next(
+            event for event in engine.state.events if event.type == "run_paused"
+        )
+        self.assertEqual(paused.data["affected_agent_ids"], ["agent-1"])
 
     def test_resume_reuses_accepted_decisions_and_calls_only_unresolved_agent(self) -> None:
         class CountingHealthyBrain:

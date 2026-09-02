@@ -203,7 +203,7 @@ class DevinBrainTests(unittest.TestCase):
         self.assertEqual(record["failed_raw_response"], raw_response)
         self.assertEqual(len(record["failed_raw_response_sha256"]), 64)
 
-    def test_timeout_records_failure_and_opens_provider_scope_circuit(self) -> None:
+    def test_timeout_records_each_attempt_without_opening_quota_circuit(self) -> None:
         with patch(
             "agent_world.devin_brain.run_devin_acp_turn",
             side_effect=subprocess.TimeoutExpired(["devin", "acp"], 3),
@@ -217,9 +217,12 @@ class DevinBrainTests(unittest.TestCase):
                 {"tick": 1, "self": {"id": "agent-1"}, "world": {}}
             )
 
-        self.assertEqual(run.call_count, 1)
+        self.assertEqual(run.call_count, 2)
         self.assertTrue(first.intent.startswith("Devin provider unavailable:"))
         self.assertEqual(first.intent, second.intent)
+        self.assertEqual(
+            brain.runtime.provider_event_summary(), {"request_timeout": 2}
+        )
         record = brain.runtime.usage_records()[0]
         self.assertEqual(record["decision_failure_origin"], "ambiguous_boundary")
         self.assertEqual(record["devin_stop_reason"], "error")
@@ -260,7 +263,7 @@ class DevinBrainTests(unittest.TestCase):
     def test_quota_and_auth_errors_fail_safely(self) -> None:
         for detail, prefix in (
             ("Usage limit reached", "Devin quota unavailable:"),
-            ("Not logged in", "Devin provider unavailable:"),
+            ("Not logged in", "Devin authentication required:"),
         ):
             with self.subTest(detail=detail), patch(
                 "agent_world.devin_brain.run_devin_acp_turn",
