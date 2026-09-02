@@ -166,6 +166,35 @@ class ZCodeBrainTests(unittest.TestCase):
         self.assertEqual(second.intent, first.intent)
         self.assertEqual(run.call_count, 1)
 
+    def test_every_timeout_attempt_has_exact_agent_and_request_telemetry(self) -> None:
+        failures = [
+            subprocess.TimeoutExpired(
+                ["zcode-cli"], 300, output=b"partial-one", stderr=b""
+            ),
+            subprocess.TimeoutExpired(
+                ["zcode-cli"], 300, output=b"partial-two", stderr=b"late"
+            ),
+        ]
+        with patch.dict(os.environ, {"ZCODE_TIMEOUT_RETRIES": "1"}), patch(
+            "agent_world.zcode_brain.subprocess.run", side_effect=failures
+        ) as run:
+            brain = ZCodeBrain(executable="zcode-cli", timeout_seconds=300)
+            decision = brain.decide({"tick": 44, "self": {"id": "agent-7"}})
+
+        self.assertTrue(decision.intent.startswith("ZCode provider unavailable:"))
+        self.assertEqual(run.call_count, 2)
+        records = brain.runtime.provider_event_records()
+        self.assertEqual(len(records), 2)
+        self.assertEqual([record["attempt"] for record in records], [1, 2])
+        self.assertTrue(all(record["max_attempts"] == 2 for record in records))
+        self.assertTrue(all(record["agent_id"] == "agent-7" for record in records))
+        self.assertTrue(all(record["tick"] == 44 for record in records))
+        self.assertTrue(all(record["request_sha256"] for record in records))
+        self.assertEqual(records[0]["partial_stdout_bytes"], len(b"partial-one"))
+        self.assertEqual(records[1]["partial_stderr_bytes"], len(b"late"))
+        self.assertEqual(brain.runtime.provider_event_summary(), {"request_timeout": 2})
+        self.assertIsNone(brain.runtime.quota_message())
+
     def test_malformed_output_has_model_attribution(self) -> None:
         result = json.loads(_successful_stdout())
         result["response"] = '{"intent":"move"'

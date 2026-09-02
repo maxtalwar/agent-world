@@ -38,7 +38,7 @@ from agent_world.brain_factory import (
     PopulationSpec,
     create_population_brains,
 )
-from agent_world.brain_runtime import BrainRuntime
+from agent_world.brain_runtime import BrainRuntime, provider_events_path_for_usage
 from agent_world.claude_brain import ClaudeBrain
 from agent_world.codex_brain import CodexBrain
 from agent_world.cursor_brain import CursorBrain
@@ -54,6 +54,10 @@ from agent_world.observer import serve_observer
 from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
 from agent_world.replay import format_event, read_events
 from agent_world.run_report import format_comparison, load_run_files, write_report
+from agent_world.runner import (
+    pending_tick_cached_agent_ids,
+    pending_tick_path_for_artifacts,
+)
 from agent_world.session import SimulationSession
 from agent_world.devin_brain import DevinBrain
 from agent_world.grok_brain import GrokBrain
@@ -848,6 +852,15 @@ def _run(args: argparse.Namespace) -> None:
     startup_health_max_failure_rate = getattr(
         args, "startup_health_max_failure_rate", 0.2
     )
+    checkpoint_path = getattr(args, "checkpoint", None)
+    if checkpoint_path is None:
+        checkpoint_path = resume_checkpoint
+    if checkpoint_path is None and args.out is not None:
+        checkpoint_path = args.out.with_name(args.out.stem + "-checkpoint.pkl")
+    pending_tick_path = pending_tick_path_for_artifacts(args.out, checkpoint_path)
+    cached_pending_agents = (
+        pending_tick_cached_agent_ids(pending_tick_path, engine) if resumed else set()
+    )
     usage_path: Path | None = None
     initial_usage: list[dict[str, Any]] = []
     if population_spec.model_backed and args.out:
@@ -855,18 +868,25 @@ def _run(args: argparse.Namespace) -> None:
         usage_path.parent.mkdir(parents=True, exist_ok=True)
         if resumed:
             loaded_usage = _read_jsonl_records(usage_path)
-            # A hard-killed run leaves usage rows for the tick it died in,
-            # while the checkpoint rolls the world back to the last completed
-            # tick. Those rows describe discarded work: folding them into the
-            # ledger would push usage coverage past 100% and corrupt per-call
-            # means. Quarantine them in the same partial-tick audit file a
-            # graceful pause would have written, exactly as rollback_usage
-            # does.
+            # A hard-killed run can leave usage rows beyond its completed world
+            # checkpoint. Keep current-tick rows only when the matching agent's
+            # accepted decision is in the durable pending journal; everything
+            # else is discarded work that would corrupt usage coverage. Move
+            # those orphaned rows into the same partial-tick audit ledger a
+            # graceful rollback writes.
             initial_usage = []
             orphaned_usage = []
             for record in loaded_usage:
                 tick = record.get("tick")
-                if isinstance(tick, int) and tick >= engine.state.tick:
+                agent_id = record.get("agent_id")
+                cached_current_tick = (
+                    tick == engine.state.tick and agent_id in cached_pending_agents
+                )
+                if (
+                    isinstance(tick, int)
+                    and tick >= engine.state.tick
+                    and not cached_current_tick
+                ):
                     orphaned_usage.append(record)
                 else:
                     initial_usage.append(record)
@@ -885,13 +905,11 @@ def _run(args: argparse.Namespace) -> None:
             )
         else:
             usage_path.write_text("", encoding="utf-8")
-    runtime = BrainRuntime(usage_path, initial_records=initial_usage)
-
-    checkpoint_path = getattr(args, "checkpoint", None)
-    if checkpoint_path is None:
-        checkpoint_path = resume_checkpoint
-    if checkpoint_path is None and args.out is not None:
-        checkpoint_path = args.out.with_name(args.out.stem + "-checkpoint.pkl")
+    runtime = BrainRuntime(
+        usage_path,
+        initial_records=initial_usage,
+        truncate_provider_events=not resumed,
+    )
     run_writer = IncrementalRunWriter(
         args.out,
         args.snapshot,
@@ -1051,6 +1069,7 @@ def _run(args: argparse.Namespace) -> None:
         startup_health_check_tick=startup_health_check_tick,
         startup_health_max_failure_rate=startup_health_max_failure_rate,
         quota_wait_max_seconds=quota_wait_hours * 3600.0,
+        pending_tick_path=pending_tick_path,
     )
     result = session.run()
 
@@ -1125,6 +1144,14 @@ def _ordinary_run_manifest(
         )
     except (OSError, subprocess.CalledProcessError):
         git_sha, dirty = None, None
+    usage_path = (
+        events_path.with_name(f"{events_path.stem}-usage.jsonl")
+        if events_path and population.model_backed
+        else None
+    )
+    pending_tick_path = pending_tick_path_for_artifacts(
+        events_path, checkpoint_path
+    )
     return {
         "schema_version": 1,
         "status": "running",
@@ -1154,6 +1181,11 @@ def _ordinary_run_manifest(
             "events": str(events_path) if events_path else None,
             "snapshot": str(snapshot_path) if snapshot_path else None,
             "checkpoint": str(checkpoint_path) if checkpoint_path else None,
+            "usage": str(usage_path) if usage_path else None,
+            "provider_events": (
+                str(provider_events_path_for_usage(usage_path)) if usage_path else None
+            ),
+            "pending_tick": str(pending_tick_path) if pending_tick_path else None,
             "report_json": f"{report_stem}-report.json" if report_stem else None,
             "report_markdown": f"{report_stem}-report.md" if report_stem else None,
         },

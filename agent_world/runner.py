@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import asdict
 import hashlib
 import json
+from pathlib import Path
 import threading
-from typing import Any
+import time
+from typing import Any, Callable
 
 from agent_world.agents import AgentBrain
 from agent_world.interface import (
@@ -15,6 +18,7 @@ from agent_world.interface import (
     build_static_context,
     parse_agent_response,
 )
+from agent_world.io import atomic_write_json
 from agent_world.metrics import (
     is_ambiguous_boundary_failure_message,
     is_provider_failure_message,
@@ -22,6 +26,203 @@ from agent_world.metrics import (
 )
 from agent_world.models import AgentDecision
 from agent_world.world import WorldEngine
+
+
+PENDING_TICK_SCHEMA_VERSION = 1
+MAX_PENDING_TICK_BYTES = 1_000_000
+
+
+def pending_tick_path_for_artifacts(
+    events_path: Path | None, checkpoint_path: Path | None
+) -> Path | None:
+    """Return the single bounded journal beside a run's durable artifacts."""
+
+    if events_path is not None:
+        return events_path.with_name(f"{events_path.stem}-pending-tick.json")
+    if checkpoint_path is None:
+        return None
+    stem = checkpoint_path.stem
+    if stem.endswith("-checkpoint"):
+        stem = stem[: -len("-checkpoint")]
+    return checkpoint_path.with_name(f"{stem}-pending-tick.json")
+
+
+def pending_tick_cached_agent_ids(path: Path | None, engine: WorldEngine) -> set[str]:
+    """Identify cache-valid agents before resume reconciles their usage rows."""
+
+    if path is None:
+        return set()
+    agent_ids = [
+        agent_id
+        for agent_id in sorted(engine.state.agents)
+        if engine.state.agents[agent_id].alive
+    ]
+    observations = {
+        agent_id: build_observation(engine.state, agent_id) for agent_id in agent_ids
+    }
+    payload = _read_pending_payload(path)
+    if payload is None or payload.get("tick") != engine.state.tick:
+        return set()
+    records = payload.get("decisions")
+    if not isinstance(records, dict):
+        return set()
+    return {
+        agent_id
+        for agent_id, observation in observations.items()
+        if isinstance(records.get(agent_id), dict)
+        and records[agent_id].get("observation_sha256")
+        == _observation_sha256(observation)
+        and not _is_retryable_failure(
+            AgentDecision.from_json_like(records[agent_id].get("decision"))
+        )
+    }
+
+
+class PendingTickJournal:
+    """Bounded write-through cache for accepted decisions in one frozen tick."""
+
+    def __init__(
+        self,
+        path: Path | None,
+        *,
+        tick: int,
+        observations: dict[str, dict[str, Any]],
+        brains: dict[str, AgentBrain],
+    ):
+        self.path = path
+        self.tick = tick
+        self.observation_hashes = {
+            agent_id: _observation_sha256(observation)
+            for agent_id, observation in observations.items()
+        }
+        self.brains = brains
+        self.decisions: dict[str, AgentDecision] = {}
+        self.records: dict[str, dict[str, Any]] = {}
+        self.failures: list[dict[str, Any]] = []
+        self._load()
+
+    def _load(self) -> None:
+        payload = _read_pending_payload(self.path)
+        if payload is None:
+            return
+        if (
+            payload.get("schema_version") != PENDING_TICK_SCHEMA_VERSION
+            or payload.get("tick") != self.tick
+        ):
+            self.clear()
+            return
+        raw_records = payload.get("decisions")
+        raw_failures = payload.get("failures")
+        if isinstance(raw_failures, list):
+            self.failures = [
+                dict(row) for row in raw_failures if isinstance(row, dict)
+            ][-100:]
+        if not isinstance(raw_records, dict):
+            self.clear()
+            return
+        changed = False
+        for agent_id, record in raw_records.items():
+            if (
+                agent_id not in self.observation_hashes
+                or not isinstance(record, dict)
+                or record.get("observation_sha256") != self.observation_hashes[agent_id]
+            ):
+                changed = True
+                continue
+            decision = AgentDecision.from_json_like(record.get("decision"))
+            if _is_retryable_failure(decision):
+                changed = True
+                continue
+            brain_state = record.get("brain_state")
+            restore = getattr(self.brains.get(agent_id), "restore_checkpoint_state", None)
+            if isinstance(brain_state, dict) and callable(restore):
+                try:
+                    restore(brain_state)
+                except (TypeError, ValueError):
+                    changed = True
+                    continue
+            self.decisions[agent_id] = decision
+            self.records[agent_id] = dict(record)
+        if changed:
+            self._write()
+
+    def record_decision(self, agent_id: str, decision: AgentDecision) -> None:
+        brain_state = None
+        export = getattr(self.brains.get(agent_id), "export_checkpoint_state", None)
+        if callable(export):
+            candidate = export()
+            if isinstance(candidate, dict):
+                brain_state = candidate
+        record = {
+            "observation_sha256": self.observation_hashes[agent_id],
+            "decision": asdict(decision),
+            "brain_state": brain_state,
+        }
+        self.decisions[agent_id] = decision
+        self.records[agent_id] = record
+        self._write()
+
+    def record_failure(
+        self, agent_id: str, decision: AgentDecision, *, retry_round: int
+    ) -> None:
+        self.failures.append(
+            {
+                "agent_id": agent_id,
+                "intent": decision.intent,
+                "retry_round": retry_round,
+                "time": time.time(),
+            }
+        )
+        self.failures = self.failures[-100:]
+        self._write()
+
+    def _write(self) -> None:
+        if self.path is None:
+            return
+        payload = {
+            "schema_version": PENDING_TICK_SCHEMA_VERSION,
+            "tick": self.tick,
+            "decisions": self.records,
+            "failures": self.failures,
+        }
+        encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+        if len(encoded) > MAX_PENDING_TICK_BYTES:
+            raise ValueError(
+                f"Pending-tick journal exceeded {MAX_PENDING_TICK_BYTES} bytes"
+            )
+        atomic_write_json(self.path, payload, fsync=True)
+
+    def clear(self) -> None:
+        self.decisions.clear()
+        self.records.clear()
+        self.failures.clear()
+        if self.path is not None:
+            self.path.unlink(missing_ok=True)
+
+
+def _read_pending_payload(path: Path | None) -> dict[str, Any] | None:
+    if path is None or not path.exists():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return value if isinstance(value, dict) else None
+
+
+def _observation_sha256(observation: dict[str, Any]) -> str:
+    encoded = json.dumps(observation, separators=(",", ":"), sort_keys=True).encode(
+        "utf-8"
+    )
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _is_retryable_failure(decision: AgentDecision) -> bool:
+    return (
+        is_quota_failure_message("agent_response", decision.intent)
+        or is_provider_failure_message("agent_response", decision.intent)
+        or is_ambiguous_boundary_failure_message("agent_response", decision.intent)
+    )
 
 
 class SimulationRunner:
@@ -40,6 +241,10 @@ class SimulationRunner:
         max_workers: int | None = None,
         provider_max_workers: dict[str, int] | None = None,
         decision_mode: str = "raw",
+        pending_tick_path: Path | None = None,
+        provider_retry_rounds: int = 0,
+        provider_retry_backoff_seconds: float = 15.0,
+        sleep: Callable[[float], None] = time.sleep,
     ):
         self.engine = engine
         self.brains = brains
@@ -48,6 +253,13 @@ class SimulationRunner:
         self.max_workers = max_workers
         self.provider_max_workers = dict(provider_max_workers or {})
         self.decision_mode = decision_mode
+        self.pending_tick_path = pending_tick_path
+        self.provider_retry_rounds = max(0, int(provider_retry_rounds))
+        self.provider_retry_backoff_seconds = max(
+            0.0, float(provider_retry_backoff_seconds)
+        )
+        self._sleep = sleep
+        self._active_journal: PendingTickJournal | None = None
         if decision_mode not in {"raw", "validated"}:
             raise ValueError("decision mode must be raw or validated")
         self._provider_semaphores = {
@@ -68,29 +280,93 @@ class SimulationRunner:
             if self.engine.state.agents[agent_id].alive and agent_id in self.brains
         ]
         observations = {agent_id: build_observation(self.engine.state, agent_id) for agent_id in agent_ids}
-        decisions = self._collect_decisions(agent_ids, observations)
-        quota_messages = sorted(
-            {
-                decision.intent
-                for decision in decisions.values()
-                if is_quota_failure_message("agent_response", decision.intent)
-            }
-        )
-        if quota_messages:
-            raise ModelQuotaUnavailableError(quota_messages)
-        provider_messages = sorted(
-            {
-                decision.intent
-                for decision in decisions.values()
-                if is_provider_failure_message("agent_response", decision.intent)
-            }
-        )
-        if provider_messages:
-            raise ModelProviderUnavailableError(provider_messages)
+        journal = self._journal_for(agent_ids, observations)
+        decisions = dict(journal.decisions)
+        unresolved = [agent_id for agent_id in agent_ids if agent_id not in decisions]
+        retry_round = 0
+        while unresolved:
+            quota_failures: dict[str, str] = {}
+            provider_failures: dict[str, str] = {}
+
+            def record_completed(agent_id: str, decision: AgentDecision) -> None:
+                decisions[agent_id] = decision
+                if is_quota_failure_message("agent_response", decision.intent):
+                    quota_failures[agent_id] = decision.intent
+                    journal.record_failure(agent_id, decision, retry_round=retry_round)
+                elif is_provider_failure_message("agent_response", decision.intent):
+                    provider_failures[agent_id] = decision.intent
+                    journal.record_failure(agent_id, decision, retry_round=retry_round)
+                elif is_ambiguous_boundary_failure_message(
+                    "agent_response", decision.intent
+                ):
+                    journal.record_failure(agent_id, decision, retry_round=retry_round)
+                else:
+                    journal.record_decision(agent_id, decision)
+
+            self._collect_decisions(
+                unresolved, observations, on_decision=record_completed
+            )
+            if quota_failures:
+                raise ModelQuotaUnavailableError(
+                    quota_failures, cached_agents=sorted(journal.decisions)
+                )
+            if not provider_failures:
+                break
+            if retry_round >= self.provider_retry_rounds:
+                raise ModelProviderUnavailableError(
+                    provider_failures,
+                    cached_agents=sorted(journal.decisions),
+                    retry_rounds=retry_round,
+                )
+            unresolved = sorted(provider_failures)
+            retry_round += 1
+            if self.provider_retry_backoff_seconds:
+                self._sleep(
+                    self.provider_retry_backoff_seconds * (2 ** (retry_round - 1))
+                )
         self._guard_systemic_boundary_failure(decisions)
         for agent_id, observation in observations.items():
             self._log_agent_input(agent_id, observation)
         return self.engine.tick(decisions)
+
+    @property
+    def cached_decision_count(self) -> int:
+        return len(self._active_journal.decisions) if self._active_journal else 0
+
+    def commit_pending_tick(self) -> None:
+        """Delete cache only after the session durably flushes the advanced tick."""
+
+        if (
+            self._active_journal is not None
+            and self.engine.state.tick > self._active_journal.tick
+        ):
+            self._active_journal.clear()
+            self._active_journal = None
+
+    def discard_pending_tick(self) -> None:
+        if self._active_journal is not None:
+            self._active_journal.clear()
+            self._active_journal = None
+
+    def _journal_for(
+        self,
+        agent_ids: list[str],
+        observations: dict[str, dict[str, Any]],
+    ) -> PendingTickJournal:
+        if (
+            self._active_journal is not None
+            and self._active_journal.tick == self.engine.state.tick
+        ):
+            return self._active_journal
+        if self._active_journal is not None:
+            self._active_journal.clear()
+        self._active_journal = PendingTickJournal(
+            self.pending_tick_path,
+            tick=self.engine.state.tick,
+            observations={agent_id: observations[agent_id] for agent_id in agent_ids},
+            brains=self.brains,
+        )
+        return self._active_journal
 
     def _guard_systemic_boundary_failure(
         self, decisions: dict[str, AgentDecision]
@@ -134,12 +410,17 @@ class SimulationRunner:
         self,
         agent_ids: list[str],
         observations: dict[str, dict[str, Any]],
+        *,
+        on_decision: Callable[[str, AgentDecision], None] | None = None,
     ) -> dict[str, AgentDecision]:
         if not self.concurrent_decisions or len(agent_ids) <= 1:
-            return {
-                agent_id: self._decide(agent_id, observations[agent_id])
-                for agent_id in agent_ids
-            }
+            decisions: dict[str, AgentDecision] = {}
+            for agent_id in agent_ids:
+                decision = self._decide(agent_id, observations[agent_id])
+                decisions[agent_id] = decision
+                if on_decision is not None:
+                    on_decision(agent_id, decision)
+            return decisions
         decisions: dict[str, AgentDecision] = {}
         worker_count = self.max_workers or len(agent_ids)
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
@@ -158,6 +439,8 @@ class SimulationRunner:
                         messages=[],
                         memory_updates=[],
                     )
+                if on_decision is not None:
+                    on_decision(agent_id, decisions[agent_id])
         return decisions
 
     def _decide(self, agent_id: str, observation: dict[str, Any]) -> AgentDecision:
@@ -225,17 +508,39 @@ class SimulationRunner:
 class ModelQuotaUnavailableError(RuntimeError):
     """Raised before world resolution when a provider exhausts its quota."""
 
-    def __init__(self, messages: list[str]):
+    def __init__(
+        self,
+        failures: dict[str, str] | list[str],
+        *,
+        cached_agents: list[str] | None = None,
+    ):
+        self.failures = dict(failures) if isinstance(failures, dict) else {}
+        messages = (
+            sorted(set(self.failures.values())) if self.failures else list(failures)
+        )
         super().__init__(messages[0] if messages else "Model quota unavailable")
-        self.messages = list(messages)
+        self.messages = messages
+        self.cached_agents = list(cached_agents or [])
 
 
 class ModelProviderUnavailableError(RuntimeError):
     """Raised before world resolution when a model provider is unavailable."""
 
-    def __init__(self, messages: list[str]):
+    def __init__(
+        self,
+        failures: dict[str, str] | list[str],
+        *,
+        cached_agents: list[str] | None = None,
+        retry_rounds: int = 0,
+    ):
+        self.failures = dict(failures) if isinstance(failures, dict) else {}
+        messages = (
+            sorted(set(self.failures.values())) if self.failures else list(failures)
+        )
         super().__init__(messages[0] if messages else "Model provider unavailable")
-        self.messages = list(messages)
+        self.messages = messages
+        self.cached_agents = list(cached_agents or [])
+        self.retry_rounds = retry_rounds
 
 
 class ModelDecisionsUnusableError(RuntimeError):

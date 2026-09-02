@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -12,7 +13,7 @@ from agent_world.benchmarks import (
 from agent_world.brain_factory import BrainSpec, PopulationGroup, PopulationSpec
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.models import AgentDecision, WorldConfig
-from agent_world.persistence import IncrementalRunWriter
+from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
 from agent_world.session import SimulationSession
 from agent_world.world import WorldEngine
 
@@ -332,6 +333,107 @@ class SimulationSessionTests(unittest.TestCase):
         self.assertEqual(result.final_tick, 0)
         self.assertEqual([event.type for event in engine.state.events].count("run_paused"), 1)
         self.assertNotIn("agent_response", [event.type for event in engine.state.events])
+
+    def test_resume_reuses_accepted_decisions_and_calls_only_unresolved_agent(self) -> None:
+        class CountingHealthyBrain:
+            def __init__(self):
+                self.calls = 0
+
+            def decide(self, _observation):
+                self.calls += 1
+                return AgentDecision(intent="healthy", actions=[{"type": "wait"}])
+
+        class ProviderFailureBrain:
+            def __init__(self):
+                self.calls = 0
+
+            def decide(self, _observation):
+                self.calls += 1
+                return AgentDecision(
+                    intent="ZCode provider unavailable: exceeded 300s timeout",
+                    actions=[{"type": "wait"}],
+                )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            events_path = root / "run.jsonl"
+            snapshot_path = root / "run-snapshot.json"
+            checkpoint_path = root / "run-checkpoint.pkl"
+            first_engine = WorldEngine.create(
+                WorldConfig(seed=91), agent_names=["A1", "A2"]
+            )
+            healthy = CountingHealthyBrain()
+            failed = ProviderFailureBrain()
+            first = SimulationSession(
+                engine=first_engine,
+                brain_spec=BrainSpec.resolve("survival"),
+                runtime=BrainRuntime(),
+                writer=IncrementalRunWriter(
+                    events_path,
+                    snapshot_path,
+                    checkpoint_path=checkpoint_path,
+                    fsync=False,
+                ),
+                target_ticks=1,
+                brains={"agent-1": healthy, "agent-2": failed},
+                max_workers=2,
+                concurrent_decisions=True,
+                log_agent_io=False,
+                startup_health_check_tick=None,
+                provider_retry_rounds=0,
+            )
+
+            first_result = first.run()
+
+            pending_path = root / "run-pending-tick.json"
+            self.assertEqual(first_result.status, "paused_checkpoint")
+            self.assertEqual(first_result.final_tick, 0)
+            self.assertEqual(healthy.calls, 1)
+            self.assertEqual(failed.calls, 1)
+            self.assertTrue(pending_path.exists())
+            self.assertLess(pending_path.stat().st_size, 1_000_000)
+            pending = json.loads(pending_path.read_text(encoding="utf-8"))
+            self.assertEqual(set(pending["decisions"]), {"agent-1"})
+            paused = next(
+                event for event in first_engine.state.events if event.type == "run_paused"
+            )
+            self.assertEqual(paused.data["affected_agent_ids"], ["agent-2"])
+            self.assertEqual(paused.data["affected_agent_count"], 1)
+            self.assertEqual(paused.data["cached_agent_ids"], ["agent-1"])
+
+            resumed_engine, _extra = load_run_checkpoint(checkpoint_path)
+            recovered = CountingHealthyBrain()
+            should_not_be_called = CountingHealthyBrain()
+            resumed_writer = IncrementalRunWriter(
+                events_path,
+                snapshot_path,
+                checkpoint_path=checkpoint_path,
+                fsync=False,
+                truncate_events=False,
+            )
+            resumed_writer.rebase(resumed_engine)
+            second = SimulationSession(
+                engine=resumed_engine,
+                brain_spec=BrainSpec.resolve("survival"),
+                runtime=BrainRuntime(),
+                writer=resumed_writer,
+                target_ticks=1,
+                brains={"agent-1": should_not_be_called, "agent-2": recovered},
+                max_workers=2,
+                concurrent_decisions=True,
+                log_agent_io=False,
+                startup_health_check_tick=None,
+                provider_retry_rounds=0,
+                resumed=True,
+            )
+
+            second_result = second.run()
+
+            self.assertEqual(second_result.status, "completed")
+            self.assertEqual(second_result.final_tick, 1)
+            self.assertEqual(should_not_be_called.calls, 0)
+            self.assertEqual(recovered.calls, 1)
+            self.assertFalse(pending_path.exists())
 
     def test_session_records_mixed_population_and_report_cohorts(self) -> None:
         class WaitBrain:

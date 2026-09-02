@@ -22,6 +22,41 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-02 — Harness lifecycle events were visible model input across resumes
+
+**Public run-control bookkeeping was entering agents' recent-event context, so
+resuming an otherwise frozen tick silently changed the prompt and prevented a
+valid pre-pause decision from being reused.** A focused pause/resume regression
+created the same tick-zero world twice and found the cached observation hash
+changed after `run_paused` and `run_resumed` were appended. Inspection showed
+that `_recent_visible_events` excluded private agent I/O but not public
+`run_started`, `run_paused`, `run_resumed`, quota-wait, health, or benchmark
+checkpoint events. Those are operator facts, not events inside the simulated
+world.
+
+The observation boundary now excludes only enumerated harness-control event
+types while retaining real public simulation events such as broadcasts. The
+resume regression proves that one accepted decision is reused and only the
+unresolved agent is called; a separate observation regression proves a real
+broadcast remains visible while five representative control events do not.
+Evidence: `tests/test_session.py::SimulationSessionTests::test_resume_reuses_accepted_decisions_and_calls_only_unresolved_agent`
+and `tests/test_world.py::WorldEngineTests::test_observation_does_not_expose_harness_control_events`.
+
+## 2026-09-02 — Adding a provider connector without its integrity prefixes can fabricate behavior
+
+**Main contained a callable ZCode brain but omitted every ZCode prefix from the
+shared failure classifier, which could turn a timeout sentinel into an ordinary
+agent `wait` and advance the world against a failed provider.** The missing
+integration covered quota, provider, ambiguous-boundary, model-output, confirmed
+contract, and harness classifications. The historical GLM-5.3 launch commit did
+contain these prefixes, so this was not the cause of its tick-44 pause; it was a
+forward regression on main uncovered while testing the new retry journal.
+
+ZCode now participates in the same integrity categories as the other seven
+connectors, and the regression asserts all seven classifications directly.
+Evidence: `agent_world/metrics.py` and
+`tests/test_metrics.py::DecisionFailureClassificationTests::test_zcode_failures_participate_in_integrity_classification`.
+
 ## 2026-09-02 — A durable model process is not the same as a durable benchmark job
 
 **Per-seed detachment prevented terminal loss but did not prevent nearly seven

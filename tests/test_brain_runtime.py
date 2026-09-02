@@ -139,6 +139,29 @@ class BrainRuntimeTests(unittest.TestCase):
             self.assertIsNotNone(partial_path)
             self.assertIn('"call": 2', partial_path.read_text())
 
+    def test_exceptional_provider_events_are_small_separate_and_resume_exactly(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            usage_path = Path(temp_dir) / "run-usage.jsonl"
+            runtime = BrainRuntime(usage_path)
+            runtime.record_provider_event(
+                {"event_type": "request_timeout", "agent_id": "agent-1"}
+            )
+            runtime.record_provider_event(
+                {"event_type": "request_timeout", "agent_id": "agent-2"}
+            )
+
+            provider_path = Path(temp_dir) / "run-provider-events.jsonl"
+            self.assertTrue(provider_path.exists())
+            self.assertFalse(usage_path.exists())
+            resumed = BrainRuntime(
+                usage_path,
+                truncate_provider_events=False,
+            )
+            self.assertEqual(
+                resumed.provider_event_summary(), {"request_timeout": 2}
+            )
+            self.assertEqual(len(resumed.provider_event_records()), 2)
+
     def test_factory_shares_one_provider_scoped_runtime_across_all_run_agents(self) -> None:
         class FakeCodexBrain:
             def __init__(self, model=None, reasoning_effort=None, runtime=None):

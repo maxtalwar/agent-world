@@ -245,6 +245,13 @@ def is_decision_failure_message(event_type: str | None, message: str | None) -> 
             "Grok model output contract failed:",
             "Grok quota unavailable:",
             "Grok provider unavailable:",
+            "ZCode decision failed:",
+            "ZCode harness failed:",
+            "ZCode boundary failed:",
+            "ZCode model output failed:",
+            "ZCode model output contract failed:",
+            "ZCode quota unavailable:",
+            "ZCode provider unavailable:",
             "Invalid JSON response:",
             "Agent brain failed:",
         )
@@ -264,6 +271,7 @@ def is_quota_failure_message(event_type: str | None, message: str | None) -> boo
                 "Cursor quota unavailable:",
                 "Devin quota unavailable:",
                 "Grok quota unavailable:",
+                "ZCode quota unavailable:",
             )
         )
         or "insufficient_quota" in message
@@ -282,6 +290,7 @@ def is_provider_failure_message(event_type: str | None, message: str | None) -> 
             "Devin provider unavailable:",
             "OpenAI provider unavailable:",
             "Grok provider unavailable:",
+            "ZCode provider unavailable:",
         )
     )
 
@@ -310,6 +319,8 @@ def is_model_output_failure_message(
             "Devin model output contract failed:",
             "Grok model output failed:",
             "Grok model output contract failed:",
+            "ZCode model output failed:",
+            "ZCode model output contract failed:",
             "Codex decision failed: Codex action arguments_json is invalid:",
             "Codex decision failed: Codex action arguments_json must decode to an object",
             "Codex decision failed: Codex decision was not a JSON object",
@@ -352,6 +363,7 @@ def is_confirmed_model_contract_failure_message(
             "Cursor model output contract failed:",
             "Devin model output contract failed:",
             "Grok model output contract failed:",
+            "ZCode model output contract failed:",
         )
     )
 
@@ -374,6 +386,7 @@ def is_ambiguous_boundary_failure_message(
             "Cursor boundary failed:",
             "Devin boundary failed:",
             "Grok boundary failed:",
+            "ZCode boundary failed:",
         )
     )
 
@@ -394,12 +407,14 @@ def is_harness_failure_message(
             "Cursor harness failed:",
             "Devin harness failed:",
             "Grok harness failed:",
+            "ZCode harness failed:",
             "OpenAI decision failed:",
             "Codex decision failed:",
             "Claude decision failed:",
             "Cursor decision failed:",
             "Devin decision failed:",
             "Grok decision failed:",
+            "ZCode decision failed:",
             "Agent brain failed:",
         )
     ) and not is_model_output_failure_message(event_type, message)

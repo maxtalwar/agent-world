@@ -28,6 +28,7 @@ from agent_world.runner import (
     ModelProviderUnavailableError,
     ModelQuotaUnavailableError,
     SimulationRunner,
+    pending_tick_path_for_artifacts,
 )
 from agent_world.world import WorldEngine
 
@@ -76,6 +77,9 @@ class SimulationSession:
         startup_health_max_failure_rate: float = 0.2,
         quota_wait_max_seconds: float = 0.0,
         quota_wait_poll_max_seconds: float = 1800.0,
+        pending_tick_path: Path | None = None,
+        provider_retry_rounds: int | None = None,
+        provider_retry_backoff_seconds: float = 15.0,
         sleep: Callable[[float], None] = time.sleep,
     ):
         if target_ticks < engine.state.tick:
@@ -129,6 +133,16 @@ class SimulationSession:
         self._sleep = sleep
         self._quota_wait_used = 0.0
         self._quota_backoff_seconds = 300.0
+        self.pending_tick_path = pending_tick_path or pending_tick_path_for_artifacts(
+            writer.events_path, writer.checkpoint_path
+        )
+        if provider_retry_rounds is None:
+            provider_retry_rounds = int(
+                os.environ.get(
+                    "AGENT_WORLD_PROVIDER_RETRY_ROUNDS",
+                    "2" if self.pending_tick_path is not None else "0",
+                )
+            )
         self.runner = SimulationRunner(
             engine,
             self.brains,
@@ -137,6 +151,10 @@ class SimulationSession:
             max_workers=self.max_workers,
             provider_max_workers=self.provider_max_workers,
             decision_mode=self.decision_mode,
+            pending_tick_path=self.pending_tick_path,
+            provider_retry_rounds=provider_retry_rounds,
+            provider_retry_backoff_seconds=provider_retry_backoff_seconds,
+            sleep=self._sleep,
         )
         self.capture_plan_usage = next(
             (
@@ -167,10 +185,7 @@ class SimulationSession:
                 try:
                     events = self.runner.step()
                 except ModelQuotaUnavailableError as exc:
-                    partial_usage_path = self.runtime.rollback_usage(
-                        usage_checkpoint, attempted_tick=self.engine.state.tick
-                    )
-                    self.reset_brain_conversations("discarded_partial_tick")
+                    partial_usage_path = self._rollback_uncached_usage(usage_checkpoint)
                     # The world is back at a completed-tick boundary, so waiting
                     # for the cap to lift and retrying the same tick is exactly
                     # a checkpoint resume without the process restart.
@@ -182,13 +197,19 @@ class SimulationSession:
                         "run_paused",
                         message=(
                             "Model quota became unavailable during decision collection; "
-                            "the incomplete tick was discarded and this completed-tick checkpoint can be resumed."
+                            "the world remains frozen and this completed-tick checkpoint can "
+                            "resume using every accepted cached decision."
                         ),
                         data={
                             "reason": stop_reason,
                             "target_ticks": self.target_ticks,
                             "completed_tick": self.engine.state.tick,
                             "provider_messages": exc.messages,
+                            "affected_agent_ids": sorted(exc.failures),
+                            "affected_agent_count": len(exc.failures),
+                            "cached_agent_ids": exc.cached_agents,
+                            "cached_decision_count": len(exc.cached_agents),
+                            "provider_event_counts": self.runtime.provider_event_summary(),
                             "quota_wait_seconds_used": round(self._quota_wait_used, 1),
                             "partial_usage_path": (
                                 str(partial_usage_path.resolve()) if partial_usage_path else None
@@ -203,6 +224,7 @@ class SimulationSession:
                         usage_checkpoint, attempted_tick=self.engine.state.tick
                     )
                     self.reset_brain_conversations("discarded_partial_tick")
+                    self.runner.discard_pending_tick()
                     status = "paused_checkpoint"
                     stop_reason = "decisions_unusable"
                     self.engine.log_event(
@@ -228,23 +250,27 @@ class SimulationSession:
                     self.flush()
                     break
                 except ModelProviderUnavailableError as exc:
-                    partial_usage_path = self.runtime.rollback_usage(
-                        usage_checkpoint, attempted_tick=self.engine.state.tick
-                    )
-                    self.reset_brain_conversations("discarded_partial_tick")
+                    partial_usage_path = self._rollback_uncached_usage(usage_checkpoint)
                     status = "paused_checkpoint"
                     stop_reason = "provider_unavailable"
                     self.engine.log_event(
                         "run_paused",
                         message=(
                             "A model provider became unavailable during decision collection; "
-                            "the incomplete tick was discarded and this completed-tick checkpoint can be resumed."
+                            "the world remains frozen and this completed-tick checkpoint can "
+                            "resume using every accepted cached decision."
                         ),
                         data={
                             "reason": stop_reason,
                             "target_ticks": self.target_ticks,
                             "completed_tick": self.engine.state.tick,
                             "provider_messages": exc.messages,
+                            "affected_agent_ids": sorted(exc.failures),
+                            "affected_agent_count": len(exc.failures),
+                            "cached_agent_ids": exc.cached_agents,
+                            "cached_decision_count": len(exc.cached_agents),
+                            "provider_retry_rounds": exc.retry_rounds,
+                            "provider_event_counts": self.runtime.provider_event_summary(),
                             "partial_usage_path": (
                                 str(partial_usage_path.resolve()) if partial_usage_path else None
                             ),
@@ -312,6 +338,7 @@ class SimulationSession:
                 if self.on_tick is not None:
                     self.on_tick(self, events)
                 self.flush()
+                self.runner.commit_pending_tick()
                 if stop_reason:
                     break
 
@@ -321,7 +348,10 @@ class SimulationSession:
                 self.engine.log_event(
                     "run_completed",
                     message=f"Completed {self.target_ticks} target ticks.",
-                    data={"target_ticks": self.target_ticks},
+                    data={
+                        "target_ticks": self.target_ticks,
+                        "provider_event_counts": self.runtime.provider_event_summary(),
+                    },
                     scope="public",
                 )
             elif stop_reason == "stop_requested":
@@ -381,6 +411,18 @@ class SimulationSession:
         if self.on_terminal is not None:
             self.on_terminal(self, result)
         return result
+
+    def _rollback_uncached_usage(self, usage_checkpoint: int) -> Path | None:
+        """Keep usage for cached decisions; quarantine only discarded work."""
+
+        if self.pending_tick_path is not None and self.runner.cached_decision_count:
+            return None
+        partial_usage_path = self.runtime.rollback_usage(
+            usage_checkpoint, attempted_tick=self.engine.state.tick
+        )
+        self.reset_brain_conversations("discarded_partial_tick")
+        self.runner.discard_pending_tick()
+        return partial_usage_path
 
     def _wait_for_quota_reset(self, messages: list[str]) -> bool:
         """Sleep until the provider cap lifts. Return whether to retry the tick.

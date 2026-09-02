@@ -1290,6 +1290,34 @@ class WorldEngineTests(unittest.TestCase):
         self.assertNotIn("agent_prompt", event_types)
         self.assertNotIn("agent_response", event_types)
 
+    def test_observation_does_not_expose_harness_control_events(self) -> None:
+        engine = self.make_engine(1)
+        for event_type in (
+            "run_started",
+            "run_paused",
+            "run_resumed",
+            "run_quota_wait",
+            "benchmark_checkpoint",
+        ):
+            engine.log_event(event_type, message="operator metadata", scope="public")
+        engine.log_event("broadcast", message="simulation event", scope="public")
+
+        obs = build_observation(engine.state, "agent-1")
+        event_types = {event["type"] for event in obs["recent_events"]}
+
+        self.assertIn("broadcast", event_types)
+        self.assertTrue(
+            event_types.isdisjoint(
+                {
+                    "run_started",
+                    "run_paused",
+                    "run_resumed",
+                    "run_quota_wait",
+                    "benchmark_checkpoint",
+                }
+            )
+        )
+
     def test_observation_does_not_include_build_readiness_hint(self) -> None:
         engine = self.make_engine(1)
         agent = engine.state.agents["agent-1"]

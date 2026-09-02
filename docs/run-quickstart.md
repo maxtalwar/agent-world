@@ -25,6 +25,30 @@ controller are alive. It is then safe to close the terminal. The manager writes
 files, and simulation artifacts beneath `runs/managed/RUN_ID/` unless
 `output_dir` overrides that location.
 
+Each active cell may also have one `run-pending-tick.json`. This is a bounded
+write-through journal for the current frozen tick, not a run-history database:
+it stores at most the accepted decisions for the living population, their
+observation hashes, compact brain checkpoint state, and up to 100 current-tick
+failure rows. The file has a hard 1 MB ceiling and is deleted immediately after
+the advanced world checkpoint is durably flushed. Completed runs retain none of
+this decision cache.
+
+If one request fails while the other agents finish, the runner keeps those
+accepted decisions, retries only unresolved agent IDs (two bounded retry rounds
+with exponential backoff by default), and advances the world only after the
+whole decision set is present. A later controller resume uses the same journal,
+so it does not repay for or resample the successful agents. Their usage rows
+remain in the active ledger rather than being quarantined as discarded work.
+
+Exceptional provider attempts are the only additional durable telemetry. They
+are appended to `run-provider-events.jsonl`; successful calls remain solely in
+`run-usage.jsonl`. For example, every ZCode timeout attempt records its exact
+agent ID, simulation tick, request hash, attempt number, timeout, duration, and
+the byte counts and hashes (not contents) of any partial output. The run's
+terminal or pause event records aggregate counts. This makes timeout totals
+exact while keeping the retained file proportional to failures rather than to
+all model calls.
+
 For a replicated benchmark, seed 11 starts first. The controller reads the
 harness's recorded startup-health event and releases the
 remaining seed cells only after seed 11 passes. If it fails, later seeds remain

@@ -22,6 +22,18 @@ from agent_world.rules import (
 
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
+HARNESS_CONTROL_EVENT_TYPES = {
+    "benchmark_checkpoint",
+    "run_completed",
+    "run_failed",
+    "run_health_check",
+    "run_paused",
+    "run_quota_retry",
+    "run_quota_wait",
+    "run_resumed",
+    "run_started",
+    "run_stopped",
+}
 ACTION_FAILURE_EVENT_TYPES = {"invalid_action", "contention_failure"}
 ORGANIC_ONLY_ACTION_TYPES = {
     "propose_contract",
@@ -849,7 +861,7 @@ def _recent_visible_events(state: WorldState, agent: Agent, radius: int) -> list
     visible: list[dict[str, Any]] = []
     limit = state.config.recent_event_limit
     for event in reversed(state.events):
-        if event.type in AGENT_IO_EVENT_TYPES:
+        if event.type in AGENT_IO_EVENT_TYPES or event.type in HARNESS_CONTROL_EVENT_TYPES:
             continue
         if not _event_visible_to(
             event,

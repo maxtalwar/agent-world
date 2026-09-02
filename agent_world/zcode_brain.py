@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import time
 from typing import Any
+import uuid
 
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.decision_failure import (
@@ -148,10 +149,18 @@ class ZCodeBrain:
         try:
             completed = None
             for attempt in range(self.timeout_retries + 1):
+                attempt_started_at = time.monotonic()
                 try:
                     completed = self._execute(prompt)
                     break
-                except subprocess.TimeoutExpired:
+                except subprocess.TimeoutExpired as exc:
+                    self._record_timeout_event(
+                        exc,
+                        request_meta,
+                        attempt=attempt + 1,
+                        max_attempts=self.timeout_retries + 1,
+                        duration_seconds=time.monotonic() - attempt_started_at,
+                    )
                     if attempt >= self.timeout_retries:
                         raise
             assert completed is not None
@@ -165,7 +174,6 @@ class ZCodeBrain:
                     return _failure_decision(message)
                 if _is_auth_error(detail) or _is_provider_error(detail):
                     message = f"ZCode provider unavailable: {detail}"
-                    self.runtime.mark_quota_unavailable(message)
                     return _failure_decision(message)
                 self._record_usage(
                     {},
@@ -226,7 +234,6 @@ class ZCodeBrain:
             return decision
         except subprocess.TimeoutExpired:
             message = f"ZCode provider unavailable: exceeded {self.timeout_seconds}s timeout"
-            self.runtime.mark_quota_unavailable(message)
             return _failure_decision(message)
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             return _failure_decision(f"ZCode decision failed: {exc}")
@@ -331,6 +338,45 @@ class ZCodeBrain:
             }
         )
 
+    def _record_timeout_event(
+        self,
+        exc: subprocess.TimeoutExpired,
+        request_meta: dict[str, Any],
+        *,
+        attempt: int,
+        max_attempts: int,
+        duration_seconds: float,
+    ) -> None:
+        stdout = _timeout_stream(exc.stdout)
+        stderr = _timeout_stream(exc.stderr)
+        self.runtime.record_provider_event(
+            {
+                "schema_version": 1,
+                "event_id": str(uuid.uuid4()),
+                "event_type": "request_timeout",
+                "provider": "zcode_cli",
+                "model": self.model,
+                "response_model": self.resolved_model,
+                "billing_mode": "zai_coding_plan",
+                "reasoning_effort": self.reasoning_effort,
+                "time": time.time(),
+                "attempt": attempt,
+                "max_attempts": max_attempts,
+                "timeout_seconds": self.timeout_seconds,
+                "duration_seconds": round(duration_seconds, 3),
+                "provider_trace_id": None,
+                "partial_stdout_bytes": len(stdout),
+                "partial_stdout_sha256": (
+                    hashlib.sha256(stdout).hexdigest() if stdout else None
+                ),
+                "partial_stderr_bytes": len(stderr),
+                "partial_stderr_sha256": (
+                    hashlib.sha256(stderr).hexdigest() if stderr else None
+                ),
+                **request_meta,
+            }
+        )
+
 
 def build_zcode_prompt(static_context: str, dynamic_json: str) -> str:
     schema = json.dumps(AGENT_DECISION_SCHEMA, separators=(",", ":"), sort_keys=True)
@@ -379,6 +425,14 @@ def _failure_decision(message: str) -> AgentDecision:
     return AgentDecision(
         intent=message, actions=[{"type": "wait"}], messages=[], memory_updates=[]
     )
+
+
+def _timeout_stream(value: str | bytes | None) -> bytes:
+    if isinstance(value, bytes):
+        return value
+    if isinstance(value, str):
+        return value.encode("utf-8", errors="replace")
+    return b""
 
 
 def _failure_detail(
