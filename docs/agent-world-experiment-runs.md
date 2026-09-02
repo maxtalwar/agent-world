@@ -78,10 +78,12 @@ classification artifact, or checkpoint.
 
 ## Isolation and monitoring
 
-Every independently executing model-backed cell still runs through
-`scripts/run-isolated-cohort` in a detached worktree pinned to its clean launch
-commit. Preserve the worktree through completion and any requested analysis.
-See [isolated-run-worktrees.md](isolated-run-worktrees.md) for mechanics and
+Launch model-backed cells with `agent-world run --config CONFIG.json`. The
+manager places each cell under a durable detached supervisor and invokes the
+source-isolation primitive in a worktree pinned to the clean launch commit.
+The operator does not create or enter that worktree. Never place the actual run
+inside a temporary command/PTTY session. See
+[run-quickstart.md](run-quickstart.md) for syntax and
 [observability.md](observability.md) for logs and checkpoints.
 
 For a run reaching tick 5, let the harness perform its automatic startup gate
@@ -93,7 +95,8 @@ After startup, monitor only meaningful events: process exit, startup failure,
 quota wait, checkpoint pause, completion, or a user status request.
 
 A provider quota is a waiting state. Freeze at a completed tick and resume the
-same checkpoint through the same cohort and launch commit. Never restart to
+same checkpoint through `agent-world resume RUN_ID`, which preserves the
+cohort and launch commit. Never restart to
 evade a limit, continue calling a refusing provider, or convert failed calls
 into fabricated agent actions.
 

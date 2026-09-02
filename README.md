@@ -22,6 +22,16 @@ python3 -m agent_world.cli run --brain devin --model swe-1-6-fast --reasoning-ef
 
 The default CLI run uses deterministic mock brains so the infrastructure can be tested without an LLM key.
 
+Long-running model-backed work uses a declarative config and detached manager:
+
+```bash
+agent-world run --config configs/run-configs/benchmark.example.json
+agent-world status example-benchmark
+agent-world resume example-benchmark
+```
+
+See [the managed-run quickstart](docs/run-quickstart.md) for config fields and lifecycle details.
+
 The `experiment` command runs the environment × objective factorial design. It
 defaults to the free scripted survival brain and all four cells. Select one cell
 explicitly for a paid LLM run, for example:

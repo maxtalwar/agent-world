@@ -16,13 +16,20 @@
   the bar and the format. Routine scores do not qualify; surprises do.
 - Keep commits scoped and use clear, human-readable commit messages.
 - Never commit secrets, local credentials, or populated environment files.
-- Never launch a long-running model-backed simulation directly from the shared
-  checkout. Launch every independently executing run cell with
-  `scripts/run-isolated-cohort` so it runs from its own detached worktree,
-  pinned to the clean launch commit. Use a distinct cohort ID for every seed or
-  simultaneous cell. Keep that worktree until the run is complete and analyzed,
-  and resume checkpoints through the same cohort ID and commit. A mixed-model
-  simulation is one run cell and therefore uses one worktree.
+- Launch normal model-backed runs through the declarative managed interface:
+  `agent-world run --config CONFIG.json`. See `docs/run-quickstart.md` for the
+  complete config reference and examples. Use `agent-world status RUN_ID` for
+  event-derived status and `agent-world resume RUN_ID` for checkpoint recovery.
+- Never launch a long-running run directly inside an `exec_command`, PTY, or
+  other temporary foreground command session. The managed interface must place
+  every independently executing cell under a durable detached supervisor and
+  record its session and log before returning.
+- `scripts/run-isolated-cohort` provides source isolation only; it does not
+  supervise a process. Direct use is reserved for managed-run internals and
+  deliberate recovery. The manager creates one detached worktree per cell,
+  pins it to the clean launch commit, and preserves its cohort across resumes.
+  Worktrees are an implementation detail for operators, not a manual launch
+  step.
 - A rate limit means a run is early, not broken. Benchmark runs wait up to
   `BENCHMARK_QUOTA_WAIT_HOURS` for the cap to reset and retry the same tick with
   the world frozen at a completed tick; `--quota-wait-hours` sets this for

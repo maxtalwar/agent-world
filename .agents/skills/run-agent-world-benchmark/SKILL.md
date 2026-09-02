@@ -11,6 +11,9 @@ Run benchmark cells reproducibly and leave an analysis-ready evidence handoff. D
 
 Before taking run action, read `docs/benchmark-run-protocol.md` completely. It is the canonical operational procedure. Also read the current suite definition in `docs/model-benchmarks.md`; never infer the active protocol from an old command or directory name.
 
+For launch, status, and resume syntax plus the config field reference, read
+`docs/run-quickstart.md`.
+
 Follow `AGENTS.md` for repository-wide isolation, quota, validation, commit, push, and insight-journal rules.
 
 ## Interpret the request
@@ -26,10 +29,10 @@ Follow `AGENTS.md` for repository-wide isolation, quota, validation, commit, pus
 ## Execute the state machine
 
 1. **Preflight:** inspect the current protocol, provider/model availability, clean launch commit, study manifest, unique cohort IDs, output paths, and required environment without exposing secrets.
-2. **Launch:** run every independently executing seed through `scripts/run-isolated-cohort`, pinned to the same clean launch commit. Use one detached worktree and cohort ID per seed.
+2. **Launch:** encode the study in a benchmark config and run `agent-world run --config CONFIG.json`. The manager pins every seed to the same clean commit, assigns distinct cohorts, and starts durable detached supervisors. Never put the run itself in a temporary command/PTTY session. Do not manually create run worktrees during the standard path.
 3. **Health gate:** let the harness run unattended through tick 5. Check the recorded startup gate once; do not manually poll every tick or duplicate the harness check.
 4. **Monitor by event:** after the gate passes, inspect only meaningful transitions: startup failure, quota wait, checkpoint pause, process exit, completion, or a user status request. Remain responsible for every cell launched by the task until it reaches a terminal or explicit waiting state; arrange the task's next check around process completion rather than abandoning a background run after the tick-5 gate.
-5. **Resume safely:** a quota limit is a waiting state. Keep the world frozen at a completed tick, wait up to the configured allowance, and resume the same checkpoint through the same cohort and launch commit. Never restart to evade a limit and never turn failed provider calls into agent `wait` actions.
+5. **Resume safely:** a quota limit is a waiting state. Keep the world frozen at a completed tick, wait up to the configured allowance, and use `agent-world resume RUN_ID` when explicit resumption is needed. It reuses the same checkpoint, cohort, and launch commit. Never restart to evade a limit and never turn failed provider calls into agent `wait` actions.
 6. **Completion check-in:** when a run process exits or completion is first observed, proactively return to that cell before reporting it done. Verify the terminal tick and event, expected decision count, full usage coverage, clean integrity, exact model provenance, report protocol/fingerprint, and required artifacts. Finalize a completed seed immediately even if another seed is still waiting. Process exit or tick 50 alone is not a completed benchmark handoff.
 7. **Finalize accounting:** derive public API-list cost independently from recorded token usage and a dated provider rate card. Preserve provider- or CLI-reported subscription cost only as a separately labelled field.
 8. **Finalize transfers during that check-in:** for Participant v7, verify deterministic agent-declared `gift`, `payment`, and `barter` accounting and do not invoke an LLM classifier. For Participant v6 ledgers, apply the frozen post-run gift-classification procedure exactly once when gifts exist; validate complete coverage, hashes, and evidence quotes, then regenerate the report from the frozen artifact. Never overwrite a valid frozen artifact. Record `none_no_gifts` when no gifts exist. Do not leave classification for the analysis task to discover or perform.

@@ -78,16 +78,16 @@ Before any model call:
 6. Confirm paths do not collide with an existing cell. Never overwrite a prior
    run, frozen classification, report, or checkpoint.
 
-### 2. Isolated launch
+### 2. Managed launch
 
-Launch every independently executing seed with `scripts/run-isolated-cohort`.
-Each seed receives its own detached worktree and cohort ID. Keep both until the
-cell is complete and analyzed. A mixed-model simulation is one cell and uses
-one worktree.
+Launch the predeclared config with `agent-world run --config CONFIG.json`.
+The manager gives every independently executing seed its own cohort, detached
+worktree pinned to the shared clean launch commit, durable supervisor, and log.
+These mechanics are recorded in `runs/jobs/RUN_ID/job.json`; they are not
+manual operator steps.
 
-Record the actual command and relevant non-secret configuration in the study
-manifest or adjacent launch artifact. Do not launch a long-running simulation
-directly from the shared checkout.
+Never place the actual model-backed run in an `exec_command`, PTY, or temporary
+foreground shell. See [run-quickstart.md](run-quickstart.md).
 
 ### 3. Tick-5 health gate
 
@@ -119,8 +119,8 @@ A rate or usage limit means the run is early, not broken. The harness must stop
 calling the refusing provider, freeze the world at a completed tick, and wait
 up to `BENCHMARK_QUOTA_WAIT_HOURS` (or the explicit `--quota-wait-hours` value).
 
-Resume only from the existing checkpoint, through the same cohort and pinned
-launch commit. Never restart the study to bypass a limit. Never accept a
+Resume only with `agent-world resume RUN_ID`, which uses the existing
+checkpoint, cohort, and pinned launch commit. Never restart the study to bypass a limit. Never accept a
 provider failure as a fabricated agent action. If the wait allowance expires,
 preserve the checkpoint and mark the cell `waiting_quota` or `diagnostic_only`
 with the exact reason.

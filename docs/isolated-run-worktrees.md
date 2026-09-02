@@ -1,5 +1,10 @@
 # Isolated worktrees for long-running simulations
 
+This document describes the isolation mechanism used by the managed runner.
+For ordinary launch, status, and resume commands, use
+[the managed-run quickstart](run-quickstart.md). Operators should not create or
+enter these worktrees manually.
+
 Every independently executing model-backed simulation must run from its own
 detached Git worktree. The worktree is pinned to the launch commit and retained
 through completion and analysis.
@@ -9,7 +14,14 @@ in the shared repository from changing or temporarily removing files beneath a
 live simulation. It also makes checkpoint resume use the exact code that
 created the checkpoint.
 
-Use:
+The normal interface is:
+
+```bash
+agent-world run --config configs/run-configs/benchmark.example.json
+```
+
+Internally, the manager places a command equivalent to the following under a
+durable detached supervisor:
 
 ```bash
 screen -dmS gpt54mini-s11 scripts/run-isolated-cohort \
@@ -37,8 +49,9 @@ experimental cell. Two simultaneous benchmark seeds therefore use two
 worktrees. A mixed-model simulation is still one cell because every model
 cohort participates in the same world process.
 
-For a checkpoint resume, reuse the cohort ID and explicitly provide the
-original launch commit:
+For a normal checkpoint resume use `agent-world resume RUN_ID`. Deliberate
+manual recovery must reuse the cohort ID and explicitly provide the original
+launch commit:
 
 ```bash
 screen -dmS gpt54mini-s11-resume scripts/run-isolated-cohort \

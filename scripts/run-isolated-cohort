@@ -10,6 +10,11 @@ Creates or reuses a detached worktree pinned to one commit, then runs COMMAND
 inside it. Relative runs/... arguments are rewritten to the canonical checkout
 so artifacts remain easy to find while source code stays immutable.
 
+This is a source-isolation primitive, not a process supervisor. For normal
+model-backed work use `agent-world run --config CONFIG.json`; it invokes this
+script inside a durable detached supervisor. Direct use is reserved for
+managed-run internals and deliberate recovery work.
+
 Examples:
   screen -dmS luna-s11 scripts/run-isolated-cohort \
     --cohort luna-v4-seed11 -- \

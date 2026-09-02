@@ -102,6 +102,22 @@ def main(argv: list[str] | None = None) -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     run_parser = subparsers.add_parser("run", help="Run a deterministic simulation.")
+    run_parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="Launch a declarative run config under a durable detached supervisor.",
+    )
+    run_parser.add_argument(
+        "--run-id",
+        default=None,
+        help="Override run_id from --config (managed launches only).",
+    )
+    run_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate --config and print its resolved launch plan without starting it.",
+    )
     run_parser.add_argument("--ticks", type=int, default=None, help="Total target tick. Defaults to 25, or the saved target when resuming.")
     run_parser.add_argument("--agents", type=int, default=None)
     run_parser.add_argument("--seed", type=int, default=None)
@@ -287,6 +303,17 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
 
+    status_parser = subparsers.add_parser(
+        "status", help="Show event-derived status for a managed run."
+    )
+    status_parser.add_argument("run_id")
+
+    resume_parser = subparsers.add_parser(
+        "resume",
+        help="Resume interrupted managed-run cells from their existing checkpoints.",
+    )
+    resume_parser.add_argument("run_id")
+
     replay_parser = subparsers.add_parser("replay", help="Print events from a JSONL log.")
     replay_parser.add_argument("path", type=Path)
     replay_parser.add_argument("--last", type=int, default=50)
@@ -410,7 +437,16 @@ def main(argv: list[str] | None = None) -> None:
 
     args = parser.parse_args(argv)
     if args.command == "run":
-        _run(args)
+        if args.config is not None:
+            _managed_launch(args)
+        else:
+            if args.run_id is not None or args.dry_run:
+                parser.error("--run-id and --dry-run require --config")
+            _run(args)
+    elif args.command == "status":
+        _managed_status(args)
+    elif args.command == "resume":
+        _managed_resume(args)
     elif args.command == "replay":
         _replay(args)
     elif args.command == "prompt":
@@ -427,6 +463,38 @@ def main(argv: list[str] | None = None) -> None:
         _benchmark(args)
     elif args.command == "experiment":
         _experiment(args)
+
+
+def _managed_launch(args: argparse.Namespace) -> None:
+    from agent_world.managed_runs import format_status, job_status, launch_config
+
+    job = launch_config(args.config, run_id=args.run_id, dry_run=args.dry_run)
+    if args.dry_run:
+        print(json.dumps(job, indent=2, sort_keys=True))
+        return
+    print(
+        f"Launched managed {job['kind']} run {job['run_id']} from "
+        f"{job['launch_commit']}."
+    )
+    print(f"Job manifest: {Path(job['job_dir']) / 'job.json'}")
+    print(format_status(job_status(job["run_id"])))
+
+
+def _managed_status(args: argparse.Namespace) -> None:
+    from agent_world.managed_runs import format_status, job_status
+
+    print(format_status(job_status(args.run_id)))
+
+
+def _managed_resume(args: argparse.Namespace) -> None:
+    from agent_world.managed_runs import format_status, resume_job
+
+    result = resume_job(args.run_id)
+    if result["resumed"]:
+        print(f"Resumed: {', '.join(result['resumed'])}")
+    else:
+        print("No cells needed resumption.")
+    print(format_status(result["status"]))
 
 
 def _check_resume_fingerprint(

@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "run_id": "example-experiment",
+  "kind": "experiment",
+  "question": "Does this model reliably complete the startup health gate through this connector?",
+  "model": {
+    "brain": "openrouter",
+    "id": "vendor/model-id",
+    "reasoning_effort": "medium"
+  },
+  "seeds": [11],
+  "world": {
+    "preset": "frontier-generalists"
+  },
+  "runtime": {
+    "ticks": 8,
+    "agents": 3,
+    "max_workers": 3,
+    "quota_wait_hours": 1
+  },
+  "harness": {
+    "connector_profile": "connector-v3",
+    "conversation_mode": "fresh-conversation",
+    "startup_health_check_tick": 5
+  }
+}

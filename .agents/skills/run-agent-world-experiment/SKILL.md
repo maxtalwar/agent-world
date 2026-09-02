@@ -11,6 +11,8 @@ Run non-benchmark Agent World work at the smallest scope that answers the user's
 
 Before taking run action, read `docs/agent-world-experiment-runs.md` completely. Follow `AGENTS.md` for isolation, quota handling, validation, commits, pushes, and the insight journal.
 
+Read `docs/run-quickstart.md` for managed launch, status, resume, and config syntax.
+
 ## Route and scope the request
 
 - Only launch or resume model-backed work when the user asks.
@@ -24,10 +26,10 @@ Before taking run action, read `docs/agent-world-experiment-runs.md` completely.
 ## Execute safely
 
 1. Preflight the exact model boundary, clean launch commit, noncolliding paths, study manifest, and required non-secret configuration.
-2. Launch each independently executing cell with `scripts/run-isolated-cohort` in its own detached worktree and cohort ID.
+2. Write an experiment config and launch it with `agent-world run --config CONFIG.json`. The manager creates the distinct pinned cohorts and durable detached supervisors. Never run the model-backed process directly inside a temporary command/PTTY session; worktrees are not a manual operator step.
 3. For runs reaching tick 5, inspect the automatic startup health gate once after tick 5. For shorter smoke tests, verify the intended provider/model interaction and terminal state once.
 4. Monitor by event rather than polling every tick: startup failure, quota wait, checkpoint pause, process exit, completion, or a user status request.
-5. Treat quota refusal as a frozen waiting state. Resume the same checkpoint through the same cohort and launch commit; never restart to evade the limit or fabricate agent behavior.
+5. Treat quota refusal as a frozen waiting state. Use `agent-world resume RUN_ID` when resumption is needed; it reuses the same checkpoint, cohort, and launch commit. Never restart to evade the limit or fabricate agent behavior.
 6. At completion, verify the intended endpoint, integrity, usage coverage, model identity, and expected artifacts. Preserve exact deviations because they are often the point of an experiment.
 
 ## Finalize proportionally
