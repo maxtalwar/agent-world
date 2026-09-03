@@ -24,6 +24,32 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-09-03 — One missing ZCode field name erased cache savings while its API exposed no reasoning subtotal
+
+**The GLM 5.3 ZCode benchmark recorded every cache read as zero because the
+connector omitted ZCode's exact `cacheReadTokens` spelling, while its missing
+reasoning count is upstream telemetry loss rather than the same parser bug.**
+The connector already recognizes and tests `reasoningTokens`, but ZCode 0.16.5
+persisted `reasoning_tokens = 0` and omitted that field from each raw provider
+usage object even when its stream diagnostics recorded `reasoning-delta`
+events. Therefore the completed run does not support a defensible
+reasoning-tokens-per-decision estimate. In contrast, all 930 run session IDs
+matched ZCode's local `model_usage` rows, which contained 8,747,072
+`cache_read_input_tokens`; the Agent World ledgers recorded zero because
+`zcode_brain.py` accepts `cacheReadInputTokens` but not the emitted
+`cacheReadTokens`. Repricing the recovered usage at Z.ai's published GLM 5.3
+rates per million tokens—$1.40 uncached input, $0.26 cached input, and $4.40
+output—gives $14.575577 for seed 11 and $12.141778 for seed 41, or $13.358678
+per run. The finalized reports' `unavailable_no_matching_api_rate_card` cost
+status is thus a benchmark maintenance gap, not an absence of public pricing.
+The reports and catalog should be corrected only after the parser, rate card,
+and deterministic recovery path are implemented and tested together.
+Evidence:
+`agent_world/zcode_brain.py`,
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704`,
+ZCode's local read-only `model_usage` rows for the 930 recorded session IDs,
+and `https://docs.z.ai/guides/overview/pricing`.
+
 ## 2026-09-03 — GLM 5.3 built a strong service economy despite failing one decision contract in five
 
 **Across its two clean-integrity Participant-v6 diagnostic cells, GLM 5.3
