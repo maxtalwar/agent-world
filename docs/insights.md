@@ -24,31 +24,37 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
-## 2026-09-03 — One missing ZCode field name erased cache savings while its API exposed no reasoning subtotal
+## 2026-09-03 — ZCode usage gaps erased cache savings but retained text made reasoning recoverable
 
 **The GLM 5.3 ZCode benchmark recorded every cache read as zero because the
 connector omitted ZCode's exact `cacheReadTokens` spelling, while its missing
-reasoning count is upstream telemetry loss rather than the same parser bug.**
+provider reasoning subtotal can be reconstructed closely from text ZCode
+retained locally.**
 The connector already recognizes and tests `reasoningTokens`, but ZCode 0.16.5
 persisted `reasoning_tokens = 0` and omitted that field from each raw provider
 usage object even when its stream diagnostics recorded `reasoning-delta`
-events. Therefore the completed run does not support a defensible
-reasoning-tokens-per-decision estimate. In contrast, all 930 run session IDs
-matched ZCode's local `model_usage` rows, which contained 8,747,072
-`cache_read_input_tokens`; the Agent World ledgers recorded zero because
-`zcode_brain.py` accepts `cacheReadInputTokens` but not the emitted
-`cacheReadTokens`. Repricing the recovered usage at Z.ai's published GLM 5.3
-rates per million tokens—$1.40 uncached input, $0.26 cached input, and $4.40
-output—gives $14.575577 for seed 11 and $12.141778 for seed 41, or $13.358678
-per run. The finalized reports' `unavailable_no_matching_api_rate_card` cost
-status is thus a benchmark maintenance gap, not an absence of public pricing.
-The reports and catalog should be corrected only after the parser, rate card,
-and deterministic recovery path are implemented and tested together.
+events. ZCode nevertheless retained complete reasoning text for 929 of 930
+calls: 15,250,150 characters. Retokenizing each preserved reasoning block with
+Z.ai's published GLM 5.3 tokenizer yields 4,466,301 reasoning tokens, or
+4,802.5 per call. As a cross-check, retokenized reasoning plus visible output
+fell only 1–4 tokens short of provider output on every call—1,877 tokens total,
+or 0.0398%—consistent with hidden block separators. The result should therefore
+be reported as an estimate (`~4,802 tok/decision`), not as provider-supplied
+telemetry. Separately, all 930 session IDs matched ZCode's local `model_usage`
+rows, which contained 8,747,072 `cache_read_input_tokens`; the Agent World
+ledgers recorded zero because `zcode_brain.py` accepts `cacheReadInputTokens`
+but not the emitted `cacheReadTokens`. Repricing the recovered usage at Z.ai's
+published GLM 5.3 rates per million tokens—$1.40 uncached input, $0.26 cached
+input, and $4.40 output—gives $14.575577 for seed 11 and $12.141778 for seed
+41, or $13.358678 per run. The reports and catalog should be corrected only
+after the parser, rate card, and deterministic recovery path are implemented
+and tested together.
 Evidence:
 `agent_world/zcode_brain.py`,
 `runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704`,
 ZCode's local read-only `model_usage` rows for the 930 recorded session IDs,
-and `https://docs.z.ai/guides/overview/pricing`.
+ZCode's local retained message parts, `https://docs.z.ai/guides/overview/pricing`,
+and `https://huggingface.co/zai-org/GLM-5.3`.
 
 ## 2026-09-03 — GLM 5.3 built a strong service economy despite failing one decision contract in five
 
