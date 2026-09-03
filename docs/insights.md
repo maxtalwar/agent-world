@@ -24,6 +24,34 @@ masqueraded as model behavior — append an entry.** Rules:
 
 ---
 
+## 2026-09-03 — GLM 5.3 built a strong service economy despite failing one decision contract in five
+
+**Across its two clean-integrity Participant-v6 diagnostic cells, GLM 5.3
+created unusually strong enterprise and service activity even though 208 of
+930 decisions failed the model-output contract, exposing a sharp split between
+economic planning ability and concise schema compliance.** The pooled result
+scored 62.55 competence, 80.60 entrepreneurship, and 135.88 economic
+productivity: 12 of 20 agents survived, 14 structures were completed, 14 trades
+settled, and 95.625 units of enterprise supply were recorded, including 34.625
+of classified service income. Seed 11 produced an active commodity market and
+two access-sharing shelter ventures; seed 41 produced a public-fee well with
+three payments and a contributor dividend, plus paid shelter access and
+survival aid distinguished by the frozen gift classifier. Reliability was much
+weaker: 187 of the 208 failed decisions were overlong `intent` fields. No
+provider, quota, harness, or ambiguous-envelope failures contaminated these
+cells, so this is attributable model behavior rather than fabricated world
+activity. The run remains diagnostic rather than leaderboard-certified because
+it used the new ZCode connector and native Max effort instead of the closed v6
+provider set and standardized medium effort. For context, the GLM 5.2 v6 pair
+had pooled competence 13.27, one survivor, two structures, and zero enterprise,
+but those OpenRouter/medium cells had invalid integrity; the provider, effort,
+and integrity differences prevent treating the gap as a controlled
+model-version effect.
+Evidence:
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704`,
+compared diagnostically with
+`runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919`.
+
 ## 2026-09-01 — A live terminal session is not a detached run supervisor
 
 **Two healthy checkpointed ZCode cells vanished within seconds of the
