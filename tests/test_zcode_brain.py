@@ -9,6 +9,7 @@ import unittest
 from unittest.mock import patch
 
 from agent_world.zcode_brain import (
+    ZCODE_VISIBLE_CHARS_PER_OUTPUT_TOKEN,
     ZCodeBrain,
     _zcode_decision_working_directory,
     extract_zcode_result,
@@ -146,8 +147,38 @@ class ZCodeBrainTests(unittest.TestCase):
         self.assertEqual(record["cached_tokens"], 70)
         self.assertEqual(record["completion_tokens"], 90)
         self.assertEqual(record["reasoning_tokens"], 40)
+        self.assertIsNone(record["reasoning_tokens_source"])
         self.assertEqual(record["cost"], 0)
         self.assertEqual(record["zcode_trace_id"], "zcode-trace")
+
+    def test_estimates_reasoning_and_accepts_zcode_cache_field_names(self) -> None:
+        result = json.loads(_successful_stdout("hold position"))
+        response = result["response"]
+        result["usage"] = {
+            "inputTokens": 1_000,
+            "outputTokens": 500,
+            "cacheReadTokens": 700,
+            "cacheWriteTokens": 0,
+            "reasoningTokens": 0,
+        }
+        completed = subprocess.CompletedProcess(
+            ["zcode-cli"], 0, stdout=json.dumps(result), stderr=""
+        )
+        with patch("agent_world.zcode_brain.subprocess.run", return_value=completed):
+            brain = ZCodeBrain(executable="zcode-cli")
+            brain.decide({"tick": 2, "self": {"id": "agent-1"}})
+
+        record = brain.runtime.usage_records()[0]
+        visible_tokens = max(
+            1, round(len(response) / ZCODE_VISIBLE_CHARS_PER_OUTPUT_TOKEN)
+        )
+        self.assertEqual(record["cached_tokens"], 700)
+        self.assertEqual(record["cache_write_tokens"], 0)
+        self.assertEqual(record["reasoning_tokens"], 500 - visible_tokens)
+        self.assertEqual(
+            record["reasoning_tokens_source"], "estimated_output_minus_visible"
+        )
+        self.assertEqual(record["visible_output_chars"], len(response))
 
     def test_quota_error_opens_provider_circuit(self) -> None:
         completed = subprocess.CompletedProcess(

@@ -48,7 +48,10 @@ published GLM 5.3 rates per million tokens—$1.40 uncached input, $0.26 cached
 input, and $4.40 output—gives $14.575577 for seed 11 and $12.141778 for seed
 41, or $13.358678 per run. The reports and catalog should be corrected only
 after the parser, rate card, and deterministic recovery path are implemented
-and tested together.
+and tested together. Future ZCode calls now recognize its cache-read and
+cache-write field names and record an explicitly labelled
+`estimated_output_minus_visible` reasoning count; a nonzero provider-reported
+reasoning count automatically takes precedence.
 Evidence:
 `agent_world/zcode_brain.py`,
 `runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704`,
