@@ -44,7 +44,7 @@ This ledger follows all 30 findings in [the audit](infrastructure-audit-2026-09-
 | 26 | Added lifecycle/identity/failure regressions; deterministic frontier terrain replaces skips. | Fast existing tests retained. No mass deletion or assertion-mirroring suite added. |
 | 27 | Real local socket/stdio/process tests alongside provider envelope fixtures. | Offline CI does not certify every installed vendor CLI release or remote behavior. Paid canaries remain separate. |
 | 28 | Extracted focused modules for contracts, validation, transport, deadlines, request context, projections, observer jobs and artifact export. | Large world/session/report modules remain where splitting would add unrelated churn; no line-count target. |
-| 29 | CI rebuilds/compares database projections and tests a built wheel outside checkout; stale architecture/API docs corrected. | Local database integrity/projection checks and installed-wheel smoke pass. Runtime still has no required third-party dependencies. |
+| 29 | CI checks committed catalog/database consistency, deterministic fixture ingestion and a built wheel outside checkout; stale architecture/API docs corrected. | Local database integrity/projection checks and installed-wheel smoke pass. Runtime still has no required third-party dependencies. |
 | 30 | Artifact inventory and checksum export include reference/liveness information, relative export paths and sensitive-file exclusions. | Export test passes. No automatic deletion policy or portable non-pickle checkpoint format introduced; exported pickles require trusted compatible code. |
 
 ## Evidence
@@ -53,4 +53,6 @@ Final validation: **528 tests passed, zero skips**, plus compile checks, databas
 
 The [timing evidence](../reports/infrastructure-upgrade-2026-09-04/timing.json) repeats the audit probe on the same host. At 100,000 synthetic events, repeated observation construction was 0.096 ms (baseline 5.872), repeated control reads 0.029 ms (240.357), and repeated observer state reads 0.098 ms (542.096). These measure warm derived state and unchanged files, not cold load, provider latency or monetary savings. The 100 ms drip deadline interrupted at 100 ms; the 50 ms partial-frame deadline interrupted at 50 ms.
 
-The installed-wheel smoke checks packaged assets, CLI execution, a two-tick free simulation, reports and checkpoint loading outside the checkout. Temporary database regeneration is compared to the committed database's generated projection; curated leaderboard prose is not mistaken for raw generated output.
+The installed-wheel smoke checks packaged assets, CLI execution, a two-tick free simulation, reports and checkpoint loading outside the checkout. Local full-source database regeneration is compared to the committed database's generated projection; curated leaderboard prose is not mistaken for raw generated output.
+
+Clean-checkout correction: the historical catalog intentionally references ignored operator run artifacts. CI now checks the committed catalog hash and leaderboard digest against the committed database, and byte-deterministic builds use self-contained ingestion fixtures. Full historical regeneration remains an operator check with those artifacts present; it passed locally for this change.

@@ -10,26 +10,23 @@ from agent_world.benchmarks import score_benchmark_counts
 
 
 class BenchmarkDatabaseTests(unittest.TestCase):
-    def test_repository_build_is_byte_deterministic_and_preserves_leaderboard(self) -> None:
+    def test_committed_database_matches_catalog_and_preserves_leaderboard(self) -> None:
         repo_root = Path(__file__).resolve().parents[1]
+        database = repo_root / "data/model-benchmarks.sqlite"
+        catalog = repo_root / "data/run-sources.json"
         expected_leaderboard_sha256 = "c2c29ca514382e5e18732447a6f1e0e2dbaecf22bd9164b42497bfc56fbbd343"
-
-        with tempfile.TemporaryDirectory() as temporary:
-            first = Path(temporary) / "first.sqlite"
-            second = Path(temporary) / "second.sqlite"
-            catalog = repo_root / "data" / "run-sources.json"
-            build_database(catalog, first, repo_root=repo_root)
-            build_database(catalog, second, repo_root=repo_root)
-
-            self.assertEqual(first.read_bytes(), second.read_bytes())
-            connection = sqlite3.connect(first)
+        verification = verify_database(database)
+        self.assertEqual(verification["integrity"], "ok")
+        self.assertEqual(verification["foreign_key_errors"], 0)
+        with sqlite3.connect(database) as connection:
+            catalog_digest = connection.execute(
+                "SELECT value FROM database_metadata WHERE key = 'catalog_sha256'"
+            ).fetchone()[0]
             rows = connection.execute("SELECT * FROM leaderboard ORDER BY rank").fetchall()
-            connection.close()
-            digest = hashlib.sha256(
-                json.dumps(rows, separators=(",", ":")).encode("utf-8")
-            ).hexdigest()
-            self.assertEqual(len(rows), 19)
-            self.assertEqual(digest, expected_leaderboard_sha256)
+        self.assertEqual(catalog_digest, hashlib.sha256(catalog.read_bytes()).hexdigest())
+        digest = hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()
+        self.assertEqual(len(rows), 19)
+        self.assertEqual(digest, expected_leaderboard_sha256)
 
     def test_latency_summary_uses_interpolated_percentiles(self) -> None:
         summary = _latency_summary([1, 3])
@@ -174,6 +171,11 @@ class BenchmarkDatabaseTests(unittest.TestCase):
             database = root / "benchmarks.sqlite"
 
             build_database(root / "catalog.json", database, repo_root=root)
+            # Determinism must be tested from self-contained evidence. The full
+            # historical catalog deliberately references ignored operator artifacts.
+            second = root / "second.sqlite"
+            build_database(root / "catalog.json", second, repo_root=root)
+            self.assertEqual(database.read_bytes(), second.read_bytes())
 
             verification = verify_database(database)
             self.assertEqual(verification["integrity"], "ok")
