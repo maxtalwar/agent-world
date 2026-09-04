@@ -97,6 +97,10 @@ if [[ -e "$worktree_path" ]]; then
     echo "Existing cohort worktree does not match requested commit: $worktree_path" >&2
     exit 1
   fi
+  if [[ -n "$(git -C "$worktree_path" status --porcelain --untracked-files=normal)" ]]; then
+    echo "Refusing to reuse a modified cohort worktree: $worktree_path" >&2
+    exit 1
+  fi
 else
   git -C "$canonical_root" worktree add --detach "$worktree_path" "$launch_commit"
 fi

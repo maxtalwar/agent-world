@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from agent_world.request_context import RunBudgetExceeded
+
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -64,6 +66,8 @@ class SimulationSession:
         max_workers: int | None = None,
         provider_max_workers: dict[str, int] | None = None,
         decision_mode: str = "raw",
+        observation_history_policy: str | None = None,
+        resource_limits: dict[str, Any] | None = None,
         log_agent_io: bool = True,
         concurrent_decisions: bool | None = None,
         lifecycle_metadata: dict[str, Any] | None = None,
@@ -95,6 +99,9 @@ class SimulationSession:
             len(engine.state.agents), brain_spec
         )
         self.runtime = runtime
+        limits = resource_limits if resource_limits is not None else getattr(engine, "_resource_limits", {})
+        runtime.configure_limits(limits)
+        engine._resource_limits = dict(limits)
         self.writer = writer
         self.target_ticks = target_ticks
         self.brains = brains or create_population_brains(
@@ -105,6 +112,11 @@ class SimulationSession:
         )
         self.provider_max_workers = dict(provider_max_workers or {})
         self.decision_mode = decision_mode
+        from agent_world.observation_policy import HISTORY_POLICIES
+        history_policy = observation_history_policy or getattr(engine, "_observation_history_policy", "full-v1")
+        if history_policy not in HISTORY_POLICIES:
+            raise ValueError("Invalid observation history policy")
+        engine._observation_history_policy = history_policy
         self.log_agent_io = log_agent_io
         self.concurrent_decisions = (
             self.max_workers > 1
@@ -112,6 +124,7 @@ class SimulationSession:
             else concurrent_decisions
         )
         self.lifecycle_metadata = dict(lifecycle_metadata or {})
+        self.lifecycle_metadata["observation_history_policy"] = history_policy
         self.resumed = resumed
         self.checkpoint_extra_factory = checkpoint_extra
         self.before_tick = before_tick
@@ -156,6 +169,7 @@ class SimulationSession:
             max_workers=self.max_workers,
             provider_max_workers=self.provider_max_workers,
             decision_mode=self.decision_mode,
+            observation_history_policy=history_policy,
             pending_tick_path=self.pending_tick_path,
             provider_retry_rounds=provider_retry_rounds,
             provider_retry_backoff_seconds=provider_retry_backoff_seconds,
@@ -196,6 +210,16 @@ class SimulationSession:
                 usage_checkpoint = self.runtime.usage_checkpoint()
                 try:
                     events = self.runner.step()
+                except RunBudgetExceeded as exc:
+                    self._rollback_uncached_usage(usage_checkpoint)
+                    status, stop_reason = "paused_checkpoint", "resource_budget_exhausted"
+                    self.engine.log_event(
+                        "run_paused", message=str(exc),
+                        data={"reason": stop_reason, "limits": self.engine._resource_limits},
+                        scope="public",
+                    )
+                    self.flush()
+                    break
                 except ModelAuthenticationRequiredError as exc:
                     partial_usage_path = self._rollback_uncached_usage(usage_checkpoint)
                     status = "paused_checkpoint"
@@ -432,7 +456,7 @@ class SimulationSession:
             report = write_report(
                 [event.to_dict() for event in self.engine.state.events],
                 self.engine.snapshot(),
-                usage_records,
+                self.runtime.attempted_usage_records(),
                 self.report_stem,
                 target_ticks=self.target_ticks,
                 plan_usage=plan_usage,
@@ -668,7 +692,13 @@ class SimulationSession:
         }
 
     def flush(self) -> None:
-        extra = self.checkpoint_extra_factory(self) if self.checkpoint_extra_factory else None
+        extra = dict(self.checkpoint_extra_factory(self) or {}) if self.checkpoint_extra_factory else {}
+        rows = self.runtime.usage_records()
+        extra["usage_commit"] = {
+            "records": len(rows),
+            "last_record_id": rows[-1].get("record_id") if rows else None,
+            "run_identity": self.runtime.run_identity,
+        }
         self.writer.flush(self.engine, checkpoint_extra=extra)
 
     def export_brain_states(self) -> dict[str, Any]:

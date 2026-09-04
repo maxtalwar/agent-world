@@ -292,7 +292,7 @@ class RunControllerTests(unittest.TestCase):
             self.assertEqual(job["cells"][0]["controller_state"], "stalled_process_reaped")
             self.assertEqual(job["cells"][0]["next_auto_resume_at_utc"], _iso(NOW))
 
-    @patch("agent_world.run_finalization.finalize_job")
+    @patch("agent_world.run_finalization.start_finalization")
     @patch("agent_world.managed_runs._tmux_active", return_value=False)
     def test_completed_benchmark_is_finalized_once_and_controller_exits(
         self, _active, finalize
@@ -309,9 +309,10 @@ class RunControllerTests(unittest.TestCase):
             )
 
             self.assertFalse(reconcile_once(path, now=NOW))
-            finalize.assert_called_once_with("test")
+            finalize.assert_called_once_with("test", automatic_signature=(11, 41))
             job = json.loads(path.read_text(encoding="utf-8"))
             job["analysis_readiness"] = {"status": "ready"}
+            job["finalization_supervisor"] = {"status": "completed"}
             path.write_text(json.dumps(job), encoding="utf-8")
 
             self.assertTrue(reconcile_once(path, now=NOW + timedelta(seconds=30)))
@@ -319,7 +320,7 @@ class RunControllerTests(unittest.TestCase):
             job = json.loads(path.read_text(encoding="utf-8"))
             self.assertEqual(job["controller"]["status"], "completed")
 
-    @patch("agent_world.run_finalization.finalize_job")
+    @patch("agent_world.run_finalization.start_finalization")
     @patch("agent_world.managed_runs._tmux_active", return_value=False)
     def test_stale_automatic_finalization_marker_is_recovered(
         self, _active, finalize
@@ -337,7 +338,9 @@ class RunControllerTests(unittest.TestCase):
 
             self.assertFalse(reconcile_once(path, now=NOW))
 
-            finalize.assert_called_once_with("test")
+            finalize.assert_not_called()
+            self.assertFalse(reconcile_once(path, now=NOW + timedelta(seconds=61)))
+            finalize.assert_called_once_with("test", automatic_signature=(11,))
             saved = json.loads(path.read_text(encoding="utf-8"))
             events = [
                 json.loads(line)
@@ -348,7 +351,7 @@ class RunControllerTests(unittest.TestCase):
                 [event["type"] for event in events],
             )
 
-    @patch("agent_world.run_finalization.finalize_job")
+    @patch("agent_world.run_finalization.start_finalization")
     @patch("agent_world.managed_runs._tmux_active", return_value=False)
     def test_recent_manual_finalization_blocks_automatic_finalization(
         self, _active, finalize

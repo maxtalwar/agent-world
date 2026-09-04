@@ -3,6 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+from pathlib import Path
+import shutil
+import sys
+from functools import lru_cache
 import inspect
 import os
 import random
@@ -18,7 +23,7 @@ from agent_world.brain_boundary import (
 )
 from agent_world.brain_runtime import BrainRuntime
 from agent_world.claude_brain import ClaudeBrain
-from agent_world.codex_brain import CodexBrain
+from agent_world.codex_brain import CodexBrain, _codex_agent_decision_schema
 from agent_world.cursor_brain import CursorBrain
 from agent_world.openrouter_brain import OpenRouterBrain
 from agent_world.devin_brain import DevinBrain
@@ -73,7 +78,7 @@ class BrainSpec:
             raise ValueError(
                 "brain type must be survival, openrouter, codex, claude, cursor, devin, grok, or zcode"
             )
-        if max_workers is not None and max_workers < 1:
+        if max_workers is not None and (type(max_workers) is not int or max_workers < 1):
             raise ValueError("max_workers must be at least 1")
         if reasoning_effort is not None and reasoning_effort not in ALLOWED_EFFORTS:
             raise ValueError("unsupported reasoning effort")
@@ -85,7 +90,7 @@ class BrainSpec:
             raise ValueError(
                 "conversation mode must be fresh-conversation or persistent-conversation-v1"
             )
-        if session_max_turns < 1:
+        if type(session_max_turns) is not int or session_max_turns < 1:
             raise ValueError("session_max_turns must be at least 1")
         if conversation_mode != "fresh-conversation" and brain_type not in {
             "codex",
@@ -139,6 +144,8 @@ class BrainSpec:
         resolved_effort = reasoning_effort or os.environ.get(effort_env, effort_default)
         if resolved_effort not in ALLOWED_EFFORTS:
             raise ValueError(f"unsupported reasoning effort: {resolved_effort}")
+        if brain_type == "zcode" and resolved_effort != "max":
+            raise ValueError("ZCode requires native max reasoning effort")
         return cls(
             type=brain_type,
             model=model or os.environ.get(model_env, model_default),
@@ -503,6 +510,8 @@ def create_population_brains(
         "zcode": ZCodeBrain,
     }
     brains: dict[str, AgentBrain] = {}
+    saved_environment = getattr(engine, "_execution_environment", {})
+    execution_environment = {}
     scoped_runtimes: dict[str, Any] = {}
     for agent_id, group in population.assignments(engine.state.agents).items():
         spec = group.brain
@@ -532,10 +541,36 @@ def create_population_brains(
                     if key in accepted
                 }
             )
+        if spec.type == "codex" and "decision_schema" in inspect.signature(brain_class).parameters:
+            kwargs["decision_schema"] = _codex_agent_decision_schema(
+                action_limit=getattr(engine, "_codex_action_max_items", 4),
+                ledger_mode=engine.state.config.town_ledger_output_mode == "message",
+            )
         brain = brain_class(**kwargs)
+        executable = getattr(brain, "executable", None)
+        path = Path(shutil.which(executable) or executable) if executable else None
+        evidence = {
+            "python": sys.version.split()[0],
+            "executable": str(path.resolve()) if path and path.is_file() else executable,
+            "executable_sha256": _executable_digest(str(path.resolve()), path.stat().st_mtime_ns, path.stat().st_size) if path and path.is_file() else None,
+        }
+        prior = saved_environment.get(agent_id)
+        if prior and prior != evidence:
+            raise ValueError(f"Execution environment changed for {agent_id}; an explicit migration is required")
+        execution_environment[agent_id] = evidence
         saved_state = (checkpoint_brain_states or {}).get(agent_id)
         restore = getattr(brain, "restore_checkpoint_state", None)
         if isinstance(saved_state, dict) and callable(restore):
             restore(saved_state)
         brains[agent_id] = brain
+    engine._execution_environment = execution_environment
     return brains
+
+
+@lru_cache(maxsize=32)
+def _executable_digest(path: str, modified_ns: int, size: int) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()

@@ -1,10 +1,12 @@
 """OpenRouter-backed agent brain.
 
-This module uses the Responses API directly through the standard library so
+This module uses Chat Completions directly through the standard library so
 the simulation has no required runtime dependencies beyond Python.
 """
 
 from __future__ import annotations
+
+from agent_world.request_context import admit_attempt
 
 import json
 import hashlib
@@ -27,65 +29,14 @@ from agent_world.decision_failure import (
     serialize_raw,
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
+from agent_world.decision_deadline import remaining_timeout, deadline_sleep
+from agent_world.interface import dynamic_observation_json
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision
 from agent_world.provider_telemetry import record_provider_attempt
 
 
-AGENT_DECISION_SCHEMA: dict[str, Any] = {
-    "type": "object",
-    "additionalProperties": False,
-    "required": ["intent", "actions", "messages", "memory_updates"],
-    "properties": {
-        "intent": {
-            "type": "string",
-            "description": "A short reason for the choices this tick.",
-            "maxLength": 180,
-        },
-        "actions": {
-            "type": "array",
-            "description": "Ordered action objects using valid action schemas from the observation.",
-            "maxItems": 4,
-            "items": {
-                "type": "object",
-                "additionalProperties": True,
-                "properties": {
-                    "type": {"type": "string"},
-                },
-                "required": ["type"],
-            },
-        },
-        "messages": {
-            "type": "array",
-            "description": "Optional speech objects. Use mode say, whisper, or broadcast.",
-            "items": {
-                "type": "object",
-                "additionalProperties": True,
-                "properties": {
-                    "mode": {"type": "string"},
-                    "text": {"type": "string", "maxLength": 240},
-                    "to": {"type": "string"},
-                },
-                "required": ["mode", "text"],
-            },
-        },
-        "memory_updates": {
-            "type": "array",
-            "description": "Facts the agent chooses to remember.",
-            "maxItems": 3,
-            "items": {"type": "string", "maxLength": 180},
-        },
-    },
-}
-
-
-SYSTEM_INSTRUCTIONS = (
-    "You are choosing one tick of behavior for a simulated world agent. "
-    "Pursue the objective stated in the world rulebook while respecting the simulated constraints. "
-    "Use only valid actions from the observation. Return JSON only. "
-    "Keep the JSON concise. Use short strings. "
-    "Do not describe plans outside the JSON. Do not assume hidden abilities."
-)
+from agent_world.decision_contract import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 
 
 class OpenRouterBrain:
@@ -179,7 +130,7 @@ class OpenRouterBrain:
         # rides in the system/instructions slot as a stable prefix (provider prompt caches
         # can reuse it); only the slim dynamic state varies per call.
         static_context = build_static_context(observation.get("world", {}))
-        dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
+        dynamic_json = dynamic_observation_json(observation)
         endpoint = "/chat/completions"
         payload = self._chat_payload(static_context, dynamic_json)
         extractor = extract_chat_text
@@ -253,7 +204,7 @@ class OpenRouterBrain:
                 parsed_decision = None
             if (
                 parsed_decision is not None
-                and parsed_decision.intent.startswith("Invalid JSON response:")
+                and parsed_decision.failure_kind == "model_output"
             ):
                 adapter_detail = parsed_decision.intent
             if adapter_detail is not None:
@@ -390,7 +341,7 @@ class OpenRouterBrain:
                 )
                 if attempt >= self.max_retries:
                     break
-                time.sleep(exc.retry_after_seconds or min(30.0, 2.0 + attempt * 2.0))
+                deadline_sleep(exc.retry_after_seconds or min(30.0, 2.0 + attempt * 2.0))
             except OSError as exc:
                 record_provider_attempt(
                     self.runtime,
@@ -432,7 +383,7 @@ class OpenRouterBrain:
         hard_deadline_seconds = (
             self.timeout_seconds + self.hard_deadline_grace_seconds
         )
-        deadline = time.monotonic() + hard_deadline_seconds
+        deadline = time.monotonic() + remaining_timeout(hard_deadline_seconds)
         try:
             return self._post_json_blocking(path, payload, deadline=deadline)
         except TimeoutError as exc:
@@ -455,6 +406,7 @@ class OpenRouterBrain:
         target = f"{parsed.path.rstrip('/')}{path}" or "/"
         if parsed.query:
             target = f"{target}?{parsed.query}"
+        admit_attempt()
         connection = self._open_connection(parsed, self._remaining_timeout(deadline))
         headers = {
             "Authorization": f"Bearer {self.api_key}",

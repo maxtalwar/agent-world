@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
+from agent_world.event_index import event_index
 from agent_world.models import WorldState
 from agent_world.models import CreditContract, DeliveryContract
 from agent_world.rules import ACCOUNTING_VALUES, STRUCTURE_TYPES, recipes_for_mode
@@ -58,20 +59,21 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
             resource_totals.update(contract.receive)
             resource_totals.update(contract.collateral)
 
-    event_counts = Counter(event.type for event in state.events)
+    indexed = event_index(state)
+    event_counts = indexed.counts
     complete_structures = [structure for structure in state.structures.values() if structure.is_complete]
     in_progress_structures = [structure for structure in state.structures.values() if not structure.is_complete]
     structure_counts = Counter(structure.type for structure in complete_structures)
-    invalid_reasons = Counter(event.message for event in state.events if event.type == "invalid_action")
-    contention_reasons = Counter(event.message for event in state.events if event.type == "contention_failure")
-    llm_failures = [event for event in state.events if event_matches_failure(event, is_decision_failure_message)]
+    invalid_reasons = Counter(event.message for event in indexed.by_type["invalid_action"])
+    contention_reasons = Counter(event.message for event in indexed.by_type["contention_failure"])
+    llm_failures = [event for event in indexed.by_type["agent_response"] if event_matches_failure(event, is_decision_failure_message)]
     build_readiness = _build_readiness(state)
-    death_ticks = {event.actor_id: event.tick for event in state.events if event.type == "death"}
+    death_ticks = {event.actor_id: event.tick for event in indexed.by_type["death"]}
     lifespans = sorted(death_ticks.get(agent.id, state.tick) for agent in state.agents.values())
     spare_ap_samples = [int(sample.get("spare_ap", 0)) for sample in state.capacity_samples]
     energy_samples = [int(sample.get("energy", 0)) for sample in state.capacity_samples]
     trade_volume = 0
-    for event in state.events:
+    for event in indexed.by_type["accept_trade"] + indexed.by_type["contract_settled"]:
         if event.type in {"accept_trade", "contract_settled"}:
             trade = event.data.get("trade") or event.data.get("contract") or {}
             trade_volume += _item_value(trade.get("give", {}))
@@ -468,7 +470,8 @@ def _item_value(items: dict[str, int] | Counter[str]) -> int:
 
 
 def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:
-    gift_events = [event for event in state.events if event.type == "gift"]
+    indexed = event_index(state)
+    gift_events = indexed.by_type["gift"]
     gift_by_item: Counter[str] = Counter()
     gift_edges: Counter[str] = Counter()
     within_group_actions = 0
@@ -483,9 +486,7 @@ def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:
         if giver is not None and receiver is not None and giver.groups.intersection(receiver.groups):
             within_group_actions += 1
 
-    accept_events = [
-        event for event in state.events if event.type in {"accept_trade", "contract_settled"}
-    ]
+    accept_events = indexed.by_type["accept_trade"] + indexed.by_type["contract_settled"]
     acceptance_latencies = []
     trade_value = 0
     for event in accept_events:
@@ -506,12 +507,12 @@ def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:
         for edge in gift_edges
         if "->" in edge and f"{edge.split('->', 1)[1]}->{edge.split('->', 1)[0]}" in gift_edges
     ) // 2
-    offers = sum(event.type == "offer_trade" for event in state.events)
+    offers = indexed.counts["offer_trade"]
     invalid_accepts = sum(
         event.type in {"invalid_action", "contention_failure"}
         and isinstance(event.data.get("action"), dict)
         and event.data["action"].get("type") == "accept_trade"
-        for event in state.events
+        for event in indexed.by_type["invalid_action"] + indexed.by_type["contention_failure"]
     )
     contract_types = (
         "create_contract",
@@ -550,7 +551,7 @@ def _economic_flow_metrics(state: WorldState) -> dict[str, Any]:
             "completed_price_history": len(getattr(state, "market_history", [])),
         },
         "contracts": {
-            event_type: sum(event.type == event_type for event in state.events)
+            event_type: indexed.counts[event_type]
             for event_type in contract_types
         },
     }
@@ -560,11 +561,12 @@ def _specialization_metrics(state: WorldState) -> dict[str, Any]:
     productive_types = {"gather", "chop", "mine", "harvest", "fish", "farm", "craft"}
     by_agent: dict[str, Counter[str]] = {agent_id: Counter() for agent_id in state.agents}
     by_action: dict[str, Counter[str]] = {action: Counter() for action in productive_types}
-    for event in state.events:
-        if event.type not in productive_types or event.actor_id not in by_agent:
-            continue
-        by_agent[event.actor_id][event.type] += 1
-        by_action[event.type][event.actor_id] += 1
+    indexed = event_index(state)
+    for agent_id in by_agent:
+        for action, count in indexed.counts_by_actor[agent_id].items():
+            if action in productive_types:
+                by_agent[agent_id][action] = count
+                by_action[action][agent_id] = count
 
     agent_rows: dict[str, Any] = {}
     agent_hhi: list[float] = []
@@ -683,5 +685,7 @@ def event_matches_failure(event: Any, classifier: Any) -> bool:
             "is_harness_failure_message": {"harness"},
             "is_ambiguous_boundary_failure_message": {"harness"},
         }
+        if classifier.__name__ == "is_confirmed_model_contract_failure_message":
+            return kind == "model_output" and classifier(event_type, message)
         return kind in expected.get(classifier.__name__, set())
     return classifier(event_type, message)

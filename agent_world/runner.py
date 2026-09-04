@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+from collections import Counter
 from dataclasses import asdict
 import inspect
 from functools import lru_cache
@@ -15,6 +16,8 @@ from typing import Any, Callable
 
 from agent_world.agents import AgentBrain
 from agent_world.interface import (
+    PreparedObservation,
+    dynamic_observation_json,
     build_dynamic_observation,
     build_observation,
     build_static_context,
@@ -29,6 +32,8 @@ from agent_world.metrics import (
 )
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import restore_decision
+from agent_world.decision_deadline import decision_deadline
+from agent_world.request_context import request_context
 from agent_world.world import WorldEngine
 
 
@@ -58,7 +63,7 @@ def pending_tick_cached_agent_ids(
     if path is None or brains is None:
         return set()
     observations = {
-        agent_id: build_observation(engine.state, agent_id)
+        agent_id: build_observation(engine.state, agent_id, history_policy=getattr(engine, "_observation_history_policy", "full-v1"))
         for agent_id in sorted(brains)
         if agent_id in engine.state.agents and engine.state.agents[agent_id].alive
     }
@@ -171,9 +176,20 @@ class PendingTickJournal:
             "decision": asdict(decision),
             "brain_state": brain_state,
         }
+        previous_decision = self.decisions.get(agent_id)
+        previous_record = self.records.get(agent_id)
         self.decisions[agent_id] = decision
         self.records[agent_id] = record
-        self._write()
+        try:
+            self._write()
+        except BaseException:
+            if previous_decision is None:
+                self.decisions.pop(agent_id, None)
+                self.records.pop(agent_id, None)
+            else:
+                self.decisions[agent_id] = previous_decision
+                self.records[agent_id] = previous_record
+            raise
 
     def record_failure(
         self, agent_id: str, decision: AgentDecision, *, retry_round: int
@@ -254,6 +270,7 @@ class SimulationRunner:
         max_workers: int | None = None,
         provider_max_workers: dict[str, int] | None = None,
         decision_mode: str = "raw",
+        observation_history_policy: str = "full-v1",
         pending_tick_path: Path | None = None,
         provider_retry_rounds: int = 0,
         provider_retry_backoff_seconds: float = 15.0,
@@ -265,7 +282,12 @@ class SimulationRunner:
         self.concurrent_decisions = concurrent_decisions
         self.max_workers = max_workers
         self.provider_max_workers = dict(provider_max_workers or {})
+        if max_workers is not None and (type(max_workers) is not int or max_workers < 1):
+            raise ValueError("max_workers must be a positive integer")
+        if any(type(limit) is not int or limit < 1 for limit in self.provider_max_workers.values()):
+            raise ValueError("Provider worker limits must be positive integers")
         self.decision_mode = decision_mode
+        self.observation_history_policy = observation_history_policy
         self.pending_tick_path = pending_tick_path
         self.provider_retry_rounds = max(0, int(provider_retry_rounds))
         self.provider_retry_backoff_seconds = max(
@@ -287,12 +309,14 @@ class SimulationRunner:
         }
 
     def step(self) -> list[Any]:
+        started = time.monotonic()
         agent_ids = [
             agent_id
             for agent_id in sorted(self.engine.state.agents)
             if self.engine.state.agents[agent_id].alive and agent_id in self.brains
         ]
-        observations = {agent_id: build_observation(self.engine.state, agent_id) for agent_id in agent_ids}
+        observations = {agent_id: PreparedObservation(build_observation(self.engine.state, agent_id, history_policy=self.observation_history_policy)) for agent_id in agent_ids}
+        prepared_at = time.monotonic()
         journal = self._journal_for(agent_ids, observations)
         decisions = dict(journal.decisions)
         unresolved = [agent_id for agent_id in agent_ids if agent_id not in decisions]
@@ -344,9 +368,19 @@ class SimulationRunner:
                     self.provider_retry_backoff_seconds * (2 ** (retry_round - 1))
                 )
         self._guard_systemic_boundary_failure(decisions)
+        decided_at = time.monotonic()
         for agent_id, observation in observations.items():
             self._log_agent_input(agent_id, observation)
-        return self.engine.tick(decisions)
+        resolution_started = time.monotonic()
+        events = self.engine.tick(decisions)
+        self.last_phase_timings = {
+            "observation_seconds": prepared_at - started,
+            "decision_seconds": decided_at - prepared_at,
+            "input_logging_seconds": resolution_started - decided_at,
+            "resolution_seconds": time.monotonic() - resolution_started,
+        }
+        self.engine.log_event("run_phase_timing", data=self.last_phase_timings, scope="private")
+        return events
 
     @property
     def cached_decision_count(self) -> int:
@@ -417,16 +451,38 @@ class SimulationRunner:
             return decisions
         decisions: dict[str, AgentDecision] = {}
         worker_count = self.max_workers or len(agent_ids)
+        pending = list(agent_ids)
+        errors = []
+        active = Counter()
+        def provider_for(agent_id):
+            return getattr(getattr(self.brains[agent_id], "runtime", None), "scope", None) or "default"
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
-            futures = {
-                executor.submit(self._decide, agent_id, observations[agent_id]): agent_id
-                for agent_id in agent_ids
-            }
-            for future in as_completed(futures):
-                agent_id = futures[future]
-                decisions[agent_id] = parse_agent_response(future.result())
-                if on_decision is not None:
-                    on_decision(agent_id, decisions[agent_id])
+            futures = {}
+            while pending or futures:
+                for agent_id in list(pending):
+                    provider = provider_for(agent_id)
+                    if len(futures) >= worker_count:
+                        break
+                    if active[provider] >= self.provider_max_workers.get(provider, worker_count):
+                        continue
+                    pending.remove(agent_id)
+                    active[provider] += 1
+                    future = executor.submit(self._decide, agent_id, observations[agent_id])
+                    futures[future] = (agent_id, provider)
+                completed, _ = wait(futures, return_when=FIRST_COMPLETED)
+                for future in completed:
+                    agent_id, provider = futures.pop(future)
+                    active[provider] -= 1
+                    try:
+                        decisions[agent_id] = parse_agent_response(future.result())
+                    except Exception as exc:
+                        errors.append(exc)
+                        pending.clear()
+                        continue
+                    if on_decision is not None:
+                        on_decision(agent_id, decisions[agent_id])
+        if errors:
+            raise errors[0]
         return decisions
 
     def _decide(self, agent_id: str, observation: dict[str, Any]) -> AgentDecision:
@@ -434,11 +490,13 @@ class SimulationRunner:
         runtime = getattr(brain, "runtime", None)
         provider = getattr(runtime, "scope", None) or "default"
         semaphore = self._provider_semaphores.get(provider)
-        if semaphore is None:
-            decision = parse_agent_response(brain.decide(observation))
-        else:
-            with semaphore:
+        timeout = getattr(brain, "timeout_seconds", None)
+        with decision_deadline(timeout), request_context(runtime, agent_id, observation.get("tick")):
+            if semaphore is None:
                 decision = parse_agent_response(brain.decide(observation))
+            else:
+                with semaphore:
+                    decision = parse_agent_response(brain.decide(observation))
         if self.decision_mode == "validated":
             decision = _truncate_to_declared_action_budget(decision, observation)
         return decision
@@ -463,7 +521,7 @@ class SimulationRunner:
             )
             self._logged_static_contexts.add(static_hash)
         dynamic = build_dynamic_observation(observation)
-        dynamic_json = json.dumps(dynamic, separators=(",", ":"), sort_keys=True)
+        dynamic_json = dynamic_observation_json(observation)
         component_chars = {
             key: len(json.dumps(value, separators=(",", ":"), sort_keys=True))
             for key, value in dynamic.items()

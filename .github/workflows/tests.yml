@@ -22,3 +22,15 @@ jobs:
       - run: python -m pip install --upgrade pip
       - run: python -m pip install .
       - run: python -m unittest discover -s tests -q
+      - name: Verify catalog and database projections
+        run: |
+          python -m agent_world.benchmark_db build --out "$RUNNER_TEMP/model-benchmarks.sqlite"
+          python -m agent_world.benchmark_db leaderboard > "$RUNNER_TEMP/committed.md"
+          python -m agent_world.benchmark_db leaderboard --db "$RUNNER_TEMP/model-benchmarks.sqlite" > "$RUNNER_TEMP/rebuilt.md"
+          cmp "$RUNNER_TEMP/committed.md" "$RUNNER_TEMP/rebuilt.md"
+      - name: Smoke test installed wheel outside checkout
+        run: |
+          python -m pip wheel --no-deps . --wheel-dir "$RUNNER_TEMP/wheels"
+          python -m pip install --force-reinstall --no-deps "$RUNNER_TEMP"/wheels/*.whl
+          cd "$RUNNER_TEMP"
+          python "$GITHUB_WORKSPACE/scripts/smoke-installed.py"

@@ -32,6 +32,7 @@ def _config(kind: str = "experiment") -> dict:
     if kind == "experiment":
         value["question"] = "Does the installed ZCode boundary return valid decisions?"
     else:
+        value["model"] = {"brain": "codex", "id": "fixture-model", "reasoning_effort": "low"}
         value["protocol"] = "participant-v7"
         value["seeds"] = [11, 41]
         value["runtime"] = {}

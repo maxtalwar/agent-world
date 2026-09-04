@@ -8,6 +8,8 @@ before/after rate-limit snapshot.
 
 from __future__ import annotations
 
+from agent_world.io import fsync_directory
+
 from decimal import Decimal
 import json
 import os
@@ -183,36 +185,63 @@ class UsagePersistenceError(RuntimeError):
     """Usage could not be made durable; never report the call as accounted for."""
 
 
+def _prepare_jsonl_append(handle) -> None:
+    """Recover only an unfinished last write; complete records are immutable."""
+    handle.seek(0, os.SEEK_END)
+    end = handle.tell()
+    if not end:
+        return
+    handle.seek(end - 1)
+    if handle.read(1) == b"\n":
+        return
+    position = end
+    start = 0
+    while position:
+        size = min(position, 65536)
+        position -= size
+        handle.seek(position)
+        block = handle.read(size)
+        newline = block.rfind(b"\n")
+        if newline >= 0:
+            start = position + newline + 1
+            break
+    handle.seek(start)
+    tail = handle.read(end - start)
+    try:
+        value = json.loads(tail)
+    except (ValueError, UnicodeDecodeError):
+        handle.truncate(start)
+    else:
+        if not isinstance(value, dict):
+            raise UsagePersistenceError("Non-object record at the usage ledger tail")
+        handle.seek(0, os.SEEK_END)
+        handle.write(b"\n")
+    handle.seek(0, os.SEEK_END)
+
+
 def append_usage_record(record: dict[str, Any], usage_path: Path | None) -> bool:
     """Append one complete JSONL usage record without concurrent interleaving."""
-
-    if usage_path is None:
-        return False
-    try:
-        with _USAGE_LOG_LOCK:
-            usage_path.parent.mkdir(parents=True, exist_ok=True)
-            with usage_path.open("a", encoding="utf-8") as handle:
-                handle.write(json.dumps(record, sort_keys=True) + "\n")
-                handle.flush()
-                os.fsync(handle.fileno())
-        return True
-    except OSError as exc:
-        raise UsagePersistenceError(f"Cannot persist usage ledger {usage_path}: {exc}") from exc
+    return append_usage_records([record], usage_path)
 
 
 def append_usage_records(records: list[dict[str, Any]], usage_path: Path | None) -> bool:
-    """Append complete records as one locked batch."""
-
+    """Append complete records as one locked, durable batch."""
     if usage_path is None or not records:
         return False
+    # Serialize before touching the ledger so invalid input cannot leave a partial batch.
+    encoded = [(json.dumps(record, sort_keys=True, allow_nan=False) + "\n").encode("utf-8")
+               for record in records]
     try:
         with _USAGE_LOG_LOCK:
             usage_path.parent.mkdir(parents=True, exist_ok=True)
-            with usage_path.open("a", encoding="utf-8") as handle:
-                for record in records:
-                    handle.write(json.dumps(record, sort_keys=True) + "\n")
+            with usage_path.open("a+b") as handle:
+                _prepare_jsonl_append(handle)
+                for record in encoded:
+                    if handle.write(record) != len(record):
+                        raise OSError("Short usage ledger write")
                 handle.flush()
                 os.fsync(handle.fileno())
+        fsync_directory(usage_path.parent)
         return True
     except OSError as exc:
         raise UsagePersistenceError(f"Cannot persist usage ledger {usage_path}: {exc}") from exc
@@ -233,10 +262,11 @@ def replace_usage_records(records: list[dict[str, Any]], usage_path: Path | None
             temp_path = Path(temp_name)
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 for record in records:
-                    handle.write(json.dumps(record, sort_keys=True) + "\n")
+                    handle.write(json.dumps(record, sort_keys=True, allow_nan=False) + "\n")
                 handle.flush()
                 os.fsync(handle.fileno())
             os.replace(temp_path, usage_path)
+        fsync_directory(usage_path.parent)
         return True
     except OSError as exc:
         raise UsagePersistenceError(f"Cannot persist usage ledger {usage_path}: {exc}") from exc

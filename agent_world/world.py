@@ -10,6 +10,7 @@ import math
 import random
 from typing import Any, Iterable
 
+from agent_world.action_contract import action_shape_error
 from agent_world.models import (
     Agent,
     AgentDecision,
@@ -363,8 +364,9 @@ class WorldEngine:
 
     def _dispatch_action(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         action_type = str(action.get("type", "")).strip()
-        if action_type == "record_agreement" and not isinstance(action.get("parties", []), list):
-            self._invalid(agent, action, "Agreement parties must be a list.")
+        shape_error = action_shape_error(action)
+        if shape_error:
+            self._invalid(agent, action, shape_error)
             return action_points
         handlers = {
             "wait": self._action_wait,

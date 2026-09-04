@@ -28,7 +28,7 @@ PopulationSpec -> BrainRuntime -> SimulationSession -> SimulationRunner -> World
 - `WorldEngine` owns all deterministic state transitions and validation.
 - `benchmarks.py` converts report evidence into versioned cohort scores.
   Ordinary runs receive diagnostic scores; only runs satisfying the declared
-  participant-v4 protocol can enter benchmark results. One clean, complete
+  participant-v7 protocol can enter benchmark results. One clean, complete
   seed-11 run is provisional; pooling clean seeds 11 and 41 promotes the model
   to replicated certification. Seeds 73, 101, and 137 are optional extended
   evidence and do not change or block the official score. The horizon is 50

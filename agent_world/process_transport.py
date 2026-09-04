@@ -1,12 +1,16 @@
 """Bounded subprocess transport shared by command-line model adapters."""
 from __future__ import annotations
 
+from agent_world.request_context import admit_attempt, record_transport_timing, request_identity
+from agent_world.tool_boundary import validate_tool_trace
+
 import os
 import selectors
 import signal
 import subprocess
 import time
 from typing import Any
+from agent_world.decision_deadline import remaining_timeout
 
 MAX_OUTPUT_BYTES = 16 * 1024 * 1024
 
@@ -34,10 +38,15 @@ def run_process(args: list[str], *, input: str | bytes | None = None,
     """Run a fresh process with one deadline and bounded, concurrently drained pipes."""
     if not capture_output:
         raise ValueError("Model transports require captured output")
+    timeout = remaining_timeout(timeout)
     deadline = time.monotonic() + timeout
     payload = input.encode("utf-8") if isinstance(input, str) else input or b""
+    admit_attempt()
+    started = time.monotonic()
+    first_byte = None
     process = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, start_new_session=True, **kwargs)
+    startup_seconds = time.monotonic() - started
     output = {"stdout": bytearray(), "stderr": bytearray()}
     selector = selectors.DefaultSelector()
     try:
@@ -69,6 +78,8 @@ def run_process(args: list[str], *, input: str | bytes | None = None,
                 if not chunk:
                     selector.unregister(key.fileobj)
                     continue
+                if first_byte is None:
+                    first_byte = time.monotonic() - started
                 output[key.data].extend(chunk)
                 if sum(map(len, output.values())) > max_output_bytes:
                     raise ProcessOutputLimitError(f"Process exceeded {max_output_bytes} output bytes")
@@ -79,6 +90,14 @@ def run_process(args: list[str], *, input: str | bytes | None = None,
         stdout, stderr = bytes(output["stdout"]), bytes(output["stderr"])
         if text:
             stdout, stderr = stdout.decode("utf-8", errors="replace"), stderr.decode("utf-8", errors="replace")
+        record_transport_timing({
+            "startup_seconds": startup_seconds,
+            "first_byte_seconds": first_byte,
+            "completion_seconds": time.monotonic() - started,
+            "output_bytes": len(output["stdout"]) + len(output["stderr"]),
+        })
+        if request_identity():
+            validate_tool_trace(stdout if isinstance(stdout, str) else stdout.decode("utf-8", errors="replace"))
         result = subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
         if check:
             result.check_returncode()

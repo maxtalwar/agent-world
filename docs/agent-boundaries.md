@@ -128,3 +128,24 @@ python3 -m agent_world.cli run \
   --session-max-turns 10 \
   --ticks 20 --agents 5
 ```
+
+## Runtime enforcement and evidence limits
+
+The shared process transport owns a POSIX process group, bounds combined output
+to 16 MiB and enforces a deadline while draining stdout/stderr. Exposed forbidden
+tool events fail the decision boundary. ACP also bounds frames and queues.
+These checks supplement each provider's invocation fences; silence in a trace
+does not prove that an unreported vendor tool was unavailable.
+
+Requested model/effort fields are distinct from observed fields. Missing
+response identity stays unknown, and an unexpected observed model blocks
+verification. Executable entrypoint hashes and Python identity are persisted;
+resumes reject a changed recorded environment. Script entrypoint hashes do not
+freeze every transitive package dependency or a remote provider deployment.
+
+Warm transport pooling has not been enabled. Fresh conversations remain the
+declared boundary. Transport startup/first-byte/completion telemetry is available
+to evaluate pooling before changing that behavior.
+
+See the [implementation ledger](infrastructure-upgrade-progress.md) for the
+complete audit disposition, regression evidence and remaining limits.

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from agent_world.io import read_jsonl_records
+
 import argparse
 import os
 from dataclasses import asdict
@@ -48,6 +50,7 @@ from agent_world.interface import build_agent_prompt, build_observation
 from agent_world.io import atomic_write_json, atomic_write_text as _atomic_write_text
 from agent_world.maps import render_tiles
 from agent_world.metrics import compute_metrics
+from agent_world.managed_observer import stop_requested
 from agent_world.models import WorldConfig
 from agent_world.openrouter_brain import OpenRouterBrain
 from agent_world.observer import serve_observer
@@ -102,9 +105,13 @@ RUN_PRESETS = {
 DEFAULT_RUN_PRESET = "frontier-generalists"
 
 
-def main(argv: list[str] | None = None) -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="agent-world")
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    artifact_parser = subparsers.add_parser("artifacts", help="Inventory or export managed run evidence.")
+    artifact_parser.add_argument("run_id")
+    artifact_parser.add_argument("--export", type=Path, default=None)
 
     run_parser = subparsers.add_parser("run", help="Run a deterministic simulation.")
     run_parser.add_argument(
@@ -126,6 +133,11 @@ def main(argv: list[str] | None = None) -> None:
     run_parser.add_argument("--ticks", type=int, default=None, help="Total target tick. Defaults to 25, or the saved target when resuming.")
     run_parser.add_argument("--agents", type=int, default=None)
     run_parser.add_argument("--seed", type=int, default=None)
+    run_parser.add_argument("--observation-history-policy", choices=["full-v1", "bounded-v1"], default=None)
+    run_parser.add_argument("--max-run-calls", type=int, default=None)
+    run_parser.add_argument("--max-run-tokens", type=int, default=None)
+    run_parser.add_argument("--max-run-cost-usd", type=float, default=None)
+    run_parser.add_argument("--world-config-json", default=None, help="Experiment-only WorldConfig overrides as JSON.")
     run_parser.add_argument("--width", type=int, default=16)
     run_parser.add_argument("--height", type=int, default=16)
     run_parser.add_argument("--preset", choices=sorted(RUN_PRESETS), default=None)
@@ -456,8 +468,16 @@ def main(argv: list[str] | None = None) -> None:
     experiment_parser.add_argument("--overwrite", action="store_true")
     experiment_parser.add_argument("--progress", action="store_true")
 
+    return parser
+
+def main(argv: list[str] | None = None) -> None:
+    parser = build_parser()
     args = parser.parse_args(argv)
-    if args.command == "run":
+    if args.command == "artifacts":
+        from agent_world.artifacts import inventory_job, export_job
+        result = export_job(args.run_id, args.export) if args.export else inventory_job(args.run_id)
+        print(json.dumps(result, indent=2, sort_keys=True))
+    elif args.command == "run":
         if args.config is not None:
             _managed_launch(args)
         else:
@@ -786,17 +806,28 @@ def _run(args: argparse.Namespace) -> None:
             town_ledger_output_mode=getattr(args, "town_ledger_output_mode", None) or "action",
             world_variant=getattr(args, "world_variant", None) or "classic",
         )
+        if getattr(args, "world_config_json", None):
+            if getattr(args, "benchmark_protocol", None):
+                raise ValueError("World config overrides are experiment-only")
+            overrides = json.loads(args.world_config_json)
+            if not isinstance(overrides, dict):
+                raise ValueError("World config overrides must be an object")
+            config = WorldConfig(**(asdict(config) | overrides))
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
 
-    if getattr(engine.state.config, "town_ledger_output_mode", "action") == "message":
-        os.environ["AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE"] = "1"
-    else:
-        os.environ.pop("AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE", None)
+    if getattr(args, "benchmark_protocol", None) and getattr(args, "observation_history_policy", None) not in {None, "full-v1"}:
+        raise ValueError("Benchmark protocols require the full-v1 observation policy")
+    saved_history_policy = getattr(engine, "_observation_history_policy", "full-v1")
+    requested_history_policy = getattr(args, "observation_history_policy", None)
+    if resumed and requested_history_policy not in {None, saved_history_policy}:
+        raise ValueError("A checkpoint must be resumed with its original observation history policy.")
+    args.observation_history_policy = requested_history_policy or saved_history_policy
+
     codex_action_max_items = getattr(args, "codex_action_max_items", None) or 4
     if codex_action_max_items < 1 or codex_action_max_items > 16:
         raise ValueError("--codex-action-max-items must be between 1 and 16")
-    os.environ["AGENT_WORLD_CODEX_ACTION_MAX_ITEMS"] = str(codex_action_max_items)
+    engine._codex_action_max_items = codex_action_max_items
 
     if args.ticks < engine.state.tick:
         raise ValueError(
@@ -1041,6 +1072,14 @@ def _run(args: argparse.Namespace) -> None:
         runtime=runtime,
         writer=run_writer,
         target_ticks=args.ticks,
+        resource_limits=(
+            {key: value for key, value in {
+                "calls": getattr(args, "max_run_calls", None),
+                "tokens": getattr(args, "max_run_tokens", None),
+                "cost_usd": getattr(args, "max_run_cost_usd", None),
+            }.items() if value is not None}
+            or getattr(engine, "_resource_limits", {})
+        ),
         brains=create_population_brains(
             engine,
             population_spec,
@@ -1055,11 +1094,13 @@ def _run(args: argparse.Namespace) -> None:
         max_workers=max_workers,
         provider_max_workers=provider_max_workers,
         decision_mode=decision_mode,
+        observation_history_policy=getattr(args, "observation_history_policy", None),
         log_agent_io=not args.no_agent_io_log,
         concurrent_decisions=not args.sequential_decisions and max_workers > 1,
         lifecycle_metadata=lifecycle_metadata,
         resumed=resumed,
         checkpoint_extra=session_checkpoint_extra,
+        before_tick=lambda: stop_requested(args.out),
         on_tick=on_tick,
         report_stem=report_stem,
         plan_usage_path=plan_usage_path,
@@ -1110,10 +1151,11 @@ def _run(args: argparse.Namespace) -> None:
                 "stop_reason": result.stop_reason,
                 "error": result.error,
                 "ended_at_utc": datetime.now(timezone.utc).isoformat(),
+                "execution_environment": getattr(engine, "_execution_environment", {}),
                 "resolved_models": dict(
                     sorted(
                         __import__("collections").Counter(
-                            str(record.get("response_model") or record.get("model") or "unknown")
+                            str(record.get("response_model") or "unknown")
                             for record in usage_records
                         ).items()
                     )
@@ -1475,17 +1517,7 @@ def _ablate(args: argparse.Namespace) -> None:
 
 
 def _read_jsonl_records(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-    records: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        try:
-            value = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if isinstance(value, dict):
-            records.append(value)
-    return records
+    return read_jsonl_records(path)
 
 
 def _merge_usage_records(*record_sets: list[dict[str, Any]]) -> list[dict[str, Any]]:

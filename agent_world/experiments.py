@@ -32,7 +32,8 @@ from agent_world.io import atomic_write_json as _atomic_write_json
 from agent_world.io import atomic_write_text as _atomic_write_text
 from agent_world.metrics import compute_metrics
 from agent_world.models import WorldConfig
-from agent_world.openrouter_brain import OpenRouterBrain, SYSTEM_INSTRUCTIONS
+from agent_world.openrouter_brain import OpenRouterBrain
+from agent_world.decision_contract import SYSTEM_INSTRUCTIONS
 from agent_world.persistence import IncrementalRunWriter
 from agent_world.session import SimulationSession
 from agent_world.usage import summarize_codex_simulation_credits

@@ -9,6 +9,7 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+from agent_world.process_transport import run_process
 import sys
 import tempfile
 from typing import Any
@@ -160,7 +161,7 @@ def _classify_v6_gifts(cell: dict[str, Any], root: Path) -> Path:
         with tempfile.TemporaryDirectory(prefix="agent-world-v6-judge-") as temp_dir:
             shutil.copy2(run_path, Path(temp_dir) / "run.jsonl")
             output_path = Path(temp_dir) / "output.json"
-            subprocess.run(
+            run_process(
                 [
                     executable,
                     "exec",
@@ -482,7 +483,7 @@ def finalize_job(
     return result
 
 
-def start_finalization(run_id: str, *, classify_v6: bool = True) -> dict[str, Any]:
+def start_finalization(run_id: str, *, classify_v6: bool = True, automatic_signature: tuple[int, ...] | None = None) -> dict[str, Any]:
     job = load_job(run_id)
     job_dir = Path(job["job_dir"])
     session = _session_name(run_id, "finalize", 0)
@@ -498,28 +499,29 @@ def start_finalization(run_id: str, *, classify_v6: bool = True) -> dict[str, An
     ]
     if not classify_v6:
         command.append("--no-classify-v6-gifts")
-    script.write_text(
-        "#!/usr/bin/env bash\nset -uo pipefail\n"
-        f"cd {shlex.quote(job['source_root'])}\n"
-        f"exec {shlex.join(command)} >> {shlex.quote(str(job_dir / 'finalize.log'))} 2>&1\n",
-        encoding="utf-8",
-    )
-    script.chmod(0o700)
     with _job_lock(job_dir):
         job = load_job(run_id)
         automatic = (job.get("controller") or {}).get("finalization_in_progress_signature")
-        if automatic:
+        if automatic and tuple(automatic) != automatic_signature:
             raise RuntimeError(
                 f"Automatic finalization is already running for seeds {automatic}"
             )
         existing = job.get("finalization_supervisor") or {}
         if _tmux_active(existing.get("session")):
             raise RuntimeError(f"Finalization is already running: {existing['session']}")
+        script.write_text(
+            "#!/usr/bin/env bash\nset -uo pipefail\n"
+            f"cd {shlex.quote(job.get('execution_root') or job['source_root'])}\n"
+            f"exec {shlex.join(command)} >> {shlex.quote(str(job_dir / 'finalize.log'))} 2>&1\n",
+            encoding="utf-8",
+        )
+        script.chmod(0o700)
         job["finalization_supervisor"] = {
             "status": "running", "session": session, "started_at_utc": utc_now(),
             "log": str(job_dir / "finalize.log"),
+            "completed_signature": list(automatic_signature or []),
         }
-        atomic_write_json(job_dir / "job.json", job)
+        atomic_write_json(job_dir / "job.json", job, fsync=True)
     try:
         subprocess.run(
             ["tmux", "new-session", "-d", "-s", session, "-c", job["source_root"], str(script)],

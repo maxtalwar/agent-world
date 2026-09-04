@@ -211,3 +211,266 @@ class InfrastructureRegressions(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join()
+
+    def test_provider_ready_scheduler_does_not_starve_another_provider(self):
+        import threading
+        from types import SimpleNamespace
+        started = threading.Event()
+        class Slow:
+            runtime = SimpleNamespace(scope="slow")
+            def decide(self, observation):
+                if not started.wait(1):
+                    raise RuntimeError("other provider was starved")
+                return AgentDecision()
+        class Fast:
+            runtime = SimpleNamespace(scope="fast")
+            def decide(self, observation):
+                started.set()
+                return AgentDecision()
+        engine = WorldEngine.create(WorldConfig(seed=11), agent_names=["A", "B", "C"])
+        SimulationRunner(engine, {"agent-1": Slow(), "agent-2": Slow(), "agent-3": Fast()},
+                         concurrent_decisions=True, max_workers=2,
+                         provider_max_workers={"slow": 1}).step()
+        self.assertEqual(engine.state.tick, 1)
+
+    def test_pending_journal_rejects_changed_execution_identity(self):
+        from agent_world.runner import PendingTickJournal
+        class Fixed:
+            def __init__(self, intent): self.intent = intent
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"pending.json"
+            first = PendingTickJournal(path, tick=0, observations={"a": {}}, brains={"a": Fixed("old")})
+            first.record_decision("a", AgentDecision(intent="old"))
+            second = PendingTickJournal(path, tick=0, observations={"a": {}}, brains={"a": Fixed("new")})
+            self.assertEqual(second.decisions, {})
+
+    def test_jsonl_tail_handles_append_partial_line_and_replacement(self):
+        from agent_world.jsonl_tail import JsonlTail
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"events"
+            path.write_text('{"type":"first"}\n{"type":')
+            reader = JsonlTail(path)
+            self.assertEqual(len(reader.read()), 1)
+            with path.open("a") as handle:
+                handle.write('"second"}\n')
+            self.assertEqual([row["type"] for row in reader.read()], ["first", "second"])
+            path.write_text('{"type":"third"}\n')
+            self.assertEqual(reader.read(), [{"type": "third"}])
+
+    def test_snapshot_ring_keeps_latest_ticks(self):
+        from agent_world.observer import SnapshotHistory
+        history = SnapshotHistory(Path("/unused"), max_ticks=2)
+        for tick in range(4): history.record({"tick": tick})
+        self.assertIsNone(history.get(0))
+        self.assertEqual(history.tick_range(), {"min_tick": 2, "max_tick": 3, "count": 2})
+
+    def test_history_policy_is_versioned_and_preserves_active_contracts(self):
+        from agent_world.observation_policy import apply_history_policy
+        import copy
+        observation = {"known_contracts": [{"id": str(i), "status": "fulfilled"} for i in range(1000)] +
+                       [{"id": "active", "status": "active"}],
+                       "known_groups": {"g": {"rules": list(range(20)), "agreements": []}}}
+        original = copy.deepcopy(observation)
+        self.assertEqual(apply_history_policy(copy.deepcopy(observation), "full-v1"), original)
+        bounded = apply_history_policy(observation, "bounded-v1")
+        self.assertEqual(len(bounded["known_contracts"]), 13)
+        self.assertEqual(bounded["known_contracts"][0]["id"], "active")
+        self.assertEqual(bounded["history_policy"]["omitted"]["contracts"], 988)
+
+    def test_world_config_rejects_boolean_integer_and_nonfinite_values(self):
+        for values in ({"width": True}, {"resource_base_multiplier": float("nan")},
+                       {"water_water_regen": float("inf")}, {"season_length_ticks": 0}):
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                WorldConfig(**values)
+
+    def test_physical_request_budget_survives_failed_attempt_and_blocks_next(self):
+        import sys
+        from agent_world.process_transport import run_process
+        from agent_world.request_context import request_context, RunBudgetExceeded
+        runtime = BrainRuntime()
+        runtime.configure_limits({"calls": 1})
+        with request_context(runtime, "agent-1", 0):
+            run_process([sys.executable, "-c", "print('ok')"], timeout=2)
+            with self.assertRaises(RunBudgetExceeded):
+                run_process([sys.executable, "-c", "print('must not start')"], timeout=2)
+        self.assertEqual(runtime.provider_event_summary()["request_started"], 1)
+
+    def test_exposed_tool_activity_is_rejected(self):
+        from agent_world.tool_boundary import validate_tool_trace, ToolBoundaryError
+        with self.assertRaises(ToolBoundaryError):
+            validate_tool_trace('{"type":"item.completed","item":{"type":"command_execution","command":"whoami"}}')
+        validate_tool_trace('{"type":"agent_message","text":"ordinary text mentioning tools"}')
+
+    def test_poisoned_writer_cannot_publish_a_later_generation(self):
+        from agent_world.persistence import IncrementalRunWriter
+        writer = IncrementalRunWriter(None, None)
+        with patch.object(writer, "_flush", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                writer.flush(self.engine())
+        with self.assertRaisesRegex(RuntimeError, "previously failed"):
+            writer.flush(self.engine())
+
+    def test_every_connector_constructs_through_the_real_factory(self):
+        import os
+        from agent_world.brain_factory import BrainSpec, PopulationSpec, create_population_brains
+        environment = {name + "_EXECUTABLE": "/bin/true" for name in
+                       ("CODEX", "CLAUDE", "CURSOR", "DEVIN", "GROK", "ZCODE")}
+        environment["OPENROUTER_API_KEY"] = "synthetic-no-network"
+        with patch.dict(os.environ, environment):
+            for provider in ("openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"):
+                for profile, mode in (("connector-v1", "fresh-conversation"), ("stateless-v1", "stateless")):
+                    with self.subTest(provider=provider, profile=profile):
+                        engine = self.engine()
+                        spec = BrainSpec.resolve(provider, connector_profile=profile, conversation_mode=mode)
+                        brains = create_population_brains(engine, PopulationSpec.uniform(2, spec), BrainRuntime())
+                        self.assertEqual(set(brains), set(engine.state.agents))
+
+    def test_concurrent_exception_preserves_other_completed_decisions(self):
+        from agent_world.runner import PendingTickJournal
+        class Broken:
+            def decide(self, observation): raise RuntimeError("injected")
+        class Good:
+            def decide(self, observation): return AgentDecision(intent="accepted")
+        with tempfile.TemporaryDirectory() as tmp:
+            engine = self.engine()
+            runner = SimulationRunner(engine, {"agent-1": Broken(), "agent-2": Good()},
+                                      concurrent_decisions=True, max_workers=2,
+                                      pending_tick_path=Path(tmp)/"pending.json")
+            with self.assertRaises(RuntimeError): runner.step()
+            self.assertEqual(runner.cached_decision_count, 1)
+            self.assertEqual(engine.state.tick, 0)
+
+    def test_durable_ledger_reader_keeps_prefix_and_rejects_middle_corruption(self):
+        from agent_world.io import read_jsonl_records
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"ledger"
+            path.write_text('{"id":1}\n{"id":')
+            self.assertEqual(read_jsonl_records(path), [{"id": 1}])
+            path.write_text('{"id":1}\nbroken\n{"id":2}\n')
+            with self.assertRaises(ValueError): read_jsonl_records(path)
+
+    def test_managed_observer_selection_survives_client_restart(self):
+        from agent_world.managed_observer import ManagedObserverClient
+        from agent_world.observer import _parse_run_config
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            cell = {"snapshot": str(root/"managed-snapshot.json"), "events": str(root/"managed.jsonl")}
+            config = _parse_run_config({"brain": "codex", "model": "fixture-model"})
+            fake_status = {"cells": [{"state": "running", "tick": 3}]}
+            with patch("agent_world.managed_runs.launch_config", return_value={"cells": [cell]}) as launch, patch(
+                    "agent_world.managed_runs.job_status", return_value=fake_status):
+                first = ManagedObserverClient(root/"snapshot.json", root/"events.jsonl")
+                status, response = first.start(config)
+                self.assertEqual(status, 202)
+                self.assertEqual(launch.call_count, 1)
+                second = ManagedObserverClient(root/"snapshot.json", root/"events.jsonl")
+                self.assertEqual(second.status()["current_tick"], 3)
+                second.control("pause")
+                self.assertTrue(second.status()["paused"])
+
+    def test_export_inventory_uses_relative_paths_and_verifies_checksums(self):
+        from agent_world.artifacts import export_job
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            job_dir, output = root/"job", root/"output"
+            job_dir.mkdir()
+            output.mkdir()
+            (output/"run.jsonl").write_text('{"type":"test"}\n')
+            (output/".env").write_text("SECRET=must-not-export")
+            job = {"source_root": str(root), "job_dir": str(job_dir),
+                   "cells": [{"output_dir": str(output)}]}
+            with patch("agent_world.artifacts.load_job", return_value=job), patch(
+                    "agent_world.artifacts._tmux_active", return_value=False):
+                manifest = export_job("fixture", root/"export")
+            self.assertEqual(len(manifest["files"]), 1)
+            self.assertEqual(manifest["files"][0]["export_path"], "output/run.jsonl")
+            self.assertFalse((root/"export/output/.env").exists())
+            self.assertTrue((root/"export/export-manifest.json").is_file())
+
+    def test_offline_report_preserves_plan_usage_summary(self):
+        from agent_world.run_report import write_report
+        with tempfile.TemporaryDirectory() as tmp:
+            stem = Path(tmp)/"run"
+            summary = {"available": True, "buckets": {}}
+            (Path(tmp)/"run-plan-usage.json").write_text(json.dumps({
+                "schema_version": 1, "checkpoints": [], "summary": summary,
+            }))
+            engine = self.engine()
+            report = write_report([e.to_dict() for e in engine.state.events], engine.snapshot(), [], stem)
+            self.assertEqual(report["usage"]["plan_limits"], summary)
+
+    def test_report_reads_only_committed_prefix_after_torn_append(self):
+        from agent_world.persistence import IncrementalRunWriter
+        from agent_world.run_report import load_run_files
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            engine = self.engine()
+            writer = IncrementalRunWriter(root/"run.jsonl", root/"run-snapshot.json",
+                                          checkpoint_path=root/"run-checkpoint.pkl")
+            writer.flush(engine)
+            with (root/"run.jsonl").open("ab") as handle:
+                handle.write(b'{"tick":')
+            events, snapshot, usage = load_run_files(root/"run")
+            self.assertEqual(events, [e.to_dict() for e in engine.state.events])
+            self.assertEqual(snapshot["tick"], 0)
+
+    def test_request_admission_identity_and_limit_survive_restart_without_usage(self):
+        from agent_world.request_context import request_context, admit_attempt, RunBudgetExceeded
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"provider-events.jsonl"
+            first = BrainRuntime(provider_events_path=path)
+            first.configure_limits({"calls": 1})
+            with request_context(first, "agent-1", 0): admit_attempt()
+            restarted = BrainRuntime(provider_events_path=path, truncate_provider_events=False)
+            restarted.configure_limits({"calls": 1})
+            self.assertEqual(restarted.run_identity, first.run_identity)
+            with request_context(restarted, "agent-1", 0), self.assertRaises(RunBudgetExceeded):
+                admit_attempt()
+
+    def test_failed_pending_write_does_not_acknowledge_cached_decision(self):
+        from agent_world.runner import PendingTickJournal
+        from agent_world.interface import build_observation
+        engine = self.engine()
+        observations = {key: build_observation(engine.state, key) for key in engine.state.agents}
+        with tempfile.TemporaryDirectory() as tmp:
+            journal = PendingTickJournal(Path(tmp)/"pending.json", tick=0, observations=observations,
+                                         brains={key: NullBrain() for key in observations})
+            with patch("agent_world.runner.atomic_write_json", side_effect=OSError("disk full")):
+                with self.assertRaises(OSError):
+                    journal.record_decision("agent-1", AgentDecision(intent="accepted only after fsync"))
+            self.assertEqual(journal.decisions, {})
+
+    def test_pinned_worktree_resolves_the_canonical_job_store(self):
+        import subprocess
+        from agent_world.managed_runs import _canonical_root
+        with tempfile.TemporaryDirectory() as tmp:
+            root, linked = Path(tmp)/"repo", Path(tmp)/"linked"
+            root.mkdir()
+            def git(*args):
+                return subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True, text=True)
+            git("init", "-q")
+            git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+                "commit", "--allow-empty", "-qm", "Fixture")
+            git("worktree", "add", "--detach", str(linked), "HEAD")
+            with patch("agent_world.managed_runs.Path.cwd", return_value=linked):
+                self.assertEqual(_canonical_root(), root)
+
+    def test_historical_cells_pin_current_orchestration_separately(self):
+        from agent_world.managed_runs import build_launch_plan
+        config = {"run_id": "fixture", "kind": "benchmark", "protocol": "participant-v6",
+                  "source": {"commit": "old"}, "seeds": [11], "model": {"brain": "codex", "id": "fixture"}}
+        with patch("agent_world.managed_runs._git", side_effect=["a"*40, "b"*40]):
+            plan = build_launch_plan(config, Path("/fixture"))
+        self.assertEqual(plan["launch_commit"], "a"*40)
+        self.assertEqual(plan["orchestrator_commit"], "b"*40)
+
+    def test_append_after_torn_usage_write_retains_complete_prefix(self):
+        from agent_world.usage import append_usage_record
+        from agent_world.io import read_jsonl_records
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/"usage.jsonl"
+            for tail in (b'{"id":', b'{"id":2}'):
+                path.write_bytes(b'{"id":1}\n' + tail)
+                append_usage_record({"id": 3}, path)
+                expected = [{"id": 1}, {"id": 3}] if tail.endswith(b":") else [{"id": 1}, {"id": 2}, {"id": 3}]
+                self.assertEqual(read_jsonl_records(path), expected)

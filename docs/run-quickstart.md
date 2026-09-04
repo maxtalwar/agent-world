@@ -243,3 +243,42 @@ cell, then runs that command in detached `tmux`. The isolation script alone is
 not a supervisor; invoking it directly from a temporary command session can
 still kill a healthy run when that session ends. Direct invocation is reserved
 for managed internals and deliberate recovery.
+
+## Resource limits and history policy
+
+Optional `runtime.max_run_calls`, `runtime.max_run_tokens`, and
+`runtime.max_run_cost_usd` apply independently to each seed/cell. They must be
+positive finite values; calls and tokens must be integers. These map to
+`--max-run-calls`, `--max-run-tokens`, and `--max-run-cost-usd` in the internal CLI.
+
+Call admission includes transport retries and survives resume. Token and dollar
+limits stop admitting requests when reported usage reaches the threshold;
+concurrent in-flight requests can overshoot it. Missing token/cost data blocks
+further admission once encountered. These are run controls, not a provider
+billing cap. A receipt without a usage record is reported as unknown charge
+exposure. Budget exhaustion produces a paused checkpoint with the world frozen.
+
+Experiments can set `harness.observation_history_policy` to `bounded-v1`: all
+active/offered/proposed obligations, the 12 most recent closed contracts, and
+eight recent rules/agreements per group, with visible omission counts.
+`full-v1` is the default and remains mandatory for benchmarks. Resume preserves
+the saved policy and rejects a different one. This is an information treatment,
+not a byte-equivalent prompt optimization.
+
+Model-backed observer launches now create managed jobs. The observer persists
+its selected job and reconnects after restart. Pause, resume and stop operate at
+completed-tick boundaries; free survival diagnostics remain local to the
+observer process.
+
+## Evidence inventory and export
+
+`agent-world artifacts RUN_ID` reports owned files, checksums, active sessions,
+catalog references and worktrees. `agent-world artifacts RUN_ID --export DEST`
+exports to a new destination only when owned processes are inactive, verifies
+copied checksums, and publishes a relative-path manifest last. Stop the managed
+job before exporting; merely pausing an active process is insufficient.
+
+Neither command deletes artifacts. Retain catalog-referenced evidence, and
+review unreferenced worktrees/caches only after a verified export. JSON/JSONL
+artifacts are portable; pickle checkpoints require trusted compatible Python
+source. Copy the event ledger beside its checkpoint when relocating it.

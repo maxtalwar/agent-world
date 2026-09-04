@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from agent_world.event_index import event_index
+from agent_world.observation_policy import apply_history_policy
+
+from functools import lru_cache
 import json
 from typing import Any
 
@@ -43,7 +47,11 @@ ORGANIC_ONLY_ACTION_TYPES = {
 }
 
 
-def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
+def build_observation(state: WorldState, agent_id: str, *, history_policy: str = "full-v1") -> dict[str, Any]:
+    return apply_history_policy(_full_observation(state, agent_id), history_policy)
+
+
+def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
     agent = state.agents[agent_id]
     radius = state.config.visible_radius
     visible_positions = _visible_positions(agent.position, radius, state.config.width, state.config.height)
@@ -149,8 +157,7 @@ def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "title": event.data.get("title", ""),
             "body": event.data.get("body", ""),
         }
-        for event in state.events
-        if event.type in {"ledger_note", "ledger_seed_note"}
+        for event in event_index(state).ledger
     ]
     return {
         "tick": state.tick,
@@ -377,7 +384,16 @@ def objective_instruction(world: dict[str, Any]) -> str:
     return OBJECTIVE_INSTRUCTIONS.get(mode, OBJECTIVE_INSTRUCTIONS["neutral"])
 
 
-def build_static_context(world: dict[str, Any]) -> str:
+def build_static_context(world: dict[str, Any] | None = None) -> str:
+    return _cached_static_context(json.dumps(world or {}, separators=(",", ":")))
+
+
+@lru_cache(maxsize=128)
+def _cached_static_context(encoded: str) -> str:
+    return _render_static_context(json.loads(encoded))
+
+
+def _render_static_context(world: dict[str, Any]) -> str:
     """Render the fixed rulebook as terse text.
 
     This block is byte-identical for every agent and tick of a run, so it can sit at the
@@ -784,7 +800,7 @@ def parse_agent_response(response: str | dict[str, Any] | AgentDecision) -> Agen
             salvaged = _extract_json_object(response)
             if salvaged is not None:
                 return AgentDecision.from_json_like(salvaged)
-            return AgentDecision(intent=f"Invalid JSON response: {exc}", actions=[{"type": "wait"}])
+            return AgentDecision(intent=f"Invalid JSON response: {exc}", actions=[{"type": "wait"}], failure_kind="model_output")
         return AgentDecision.from_json_like(value)
     return AgentDecision.from_json_like(response)
 
@@ -929,7 +945,7 @@ def _recent_action_feedback(
     state: WorldState, agent: Agent, *, causal: bool = False
 ) -> list[dict[str, Any]]:
     feedback = []
-    for event in reversed(state.events):
+    for event in reversed(event_index(state).feedback[agent.id]):
         if event.actor_id != agent.id or event.type not in ACTION_FAILURE_EVENT_TYPES:
             continue
         action = event.data.get("action", {})
@@ -998,3 +1014,16 @@ def _minimal_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, 
             {"tick": event.tick, "failed_action": str(action_type or "unknown")}
         )
     return feedback[-5:]
+
+
+class PreparedObservation(dict):
+    """A fresh per-decision observation with reusable transport bytes."""
+    def __init__(self, observation):
+        super().__init__(observation)
+        self.dynamic_json = json.dumps(build_dynamic_observation(self), separators=(",", ":"), sort_keys=True)
+
+
+def dynamic_observation_json(observation: dict[str, Any]) -> str:
+    if isinstance(observation, PreparedObservation):
+        return observation.dynamic_json
+    return json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)

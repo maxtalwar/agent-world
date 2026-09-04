@@ -35,9 +35,10 @@ from agent_world.decision_failure import (
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.process_transport import run_process, terminate_owned_process
+from agent_world.interface import dynamic_observation_json
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
-from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
+from agent_world.decision_contract import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 
 
 CURSOR_HARNESS_INSTRUCTIONS = (
@@ -151,7 +152,7 @@ class CursorBrain:
             return _failure_decision(blocking_failure[1])
 
         static_context = build_static_context(observation.get("world", {}))
-        dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
+        dynamic_json = dynamic_observation_json(observation)
         full_prompt = build_cursor_prompt(static_context, dynamic_json)
         invocation = self.boundary.prepare()
         prompt = (
@@ -384,7 +385,7 @@ class CursorBrain:
                 parsed_decision = None
             if (
                 parsed_decision is not None
-                and parsed_decision.intent.startswith("Invalid JSON response:")
+                and parsed_decision.failure_kind == "model_output"
             ):
                 adapter_detail = parsed_decision.intent
             if adapter_detail is not None:

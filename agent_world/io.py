@@ -44,3 +44,24 @@ def fsync_directory(path: Path) -> None:
         os.fsync(descriptor)
     finally:
         os.close(descriptor)
+
+
+def read_jsonl_records(path: Path) -> list[dict[str, Any]]:
+    """Read durable records, tolerating only an unfinished trailing write."""
+    if not path.exists():
+        return []
+    records = []
+    with path.open(encoding="utf-8") as handle:
+        for number, line in enumerate(handle, 1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                if not line.endswith("\n"):
+                    break
+                raise ValueError(f"Corrupt ledger {path.name}, line {number}") from exc
+            if not isinstance(row, dict):
+                raise ValueError(f"Non-object ledger record in {path.name}, line {number}")
+            records.append(row)
+    return records

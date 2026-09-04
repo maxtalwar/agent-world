@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import fields, dataclass, field
 from typing import Any
 
 from agent_world.rules import RESOURCE_WEIGHTS
@@ -98,6 +98,25 @@ class WorldConfig:
     skill_bonus_cap: int = 2
 
     def __post_init__(self) -> None:
+        import math
+        for descriptor in fields(self):
+            value = getattr(self, descriptor.name)
+            annotation = str(descriptor.type)
+            if value is None and "None" in annotation:
+                continue
+            if annotation == "int" or annotation == "int | None":
+                if not isinstance(value, int) or isinstance(value, bool):
+                    raise ValueError(f"{descriptor.name} must be an integer")
+                if value < 0 and descriptor.name != "seed":
+                    raise ValueError(f"{descriptor.name} cannot be negative")
+            elif annotation == "float":
+                if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                    raise ValueError(f"{descriptor.name} must be finite")
+                if value < 0:
+                    raise ValueError(f"{descriptor.name} cannot be negative")
+        for name in ("width", "height", "action_points_per_tick", "season_length_ticks"):
+            if getattr(self, name) < 1:
+                raise ValueError(f"{name} must be positive")
         if self.geography_mode not in {"shared_oasis", "dispersed"}:
             raise ValueError("geography_mode must be shared_oasis or dispersed")
         if self.specialization_mode not in {"generalists", "specialists"}:
@@ -550,7 +569,7 @@ class AgentDecision:
         if isinstance(value, AgentDecision):
             return value
         if not isinstance(value, dict):
-            return cls(intent="Invalid response shape", actions=[{"type": "wait"}])
+            return cls(intent="Invalid response shape", actions=[{"type": "wait"}], failure_kind="model_output")
         actions = value.get("actions", [])
         messages = value.get("messages", [])
         memory_updates = value.get("memory_updates", [])

@@ -194,12 +194,19 @@ def build_report(
         if event["type"] == "say"
     ]
 
+    phase_totals = Counter()
+    phase_samples = 0
+    for event in events:
+        if event.get("type") == "run_phase_timing":
+            phase_totals.update({key: value for key, value in (event.get("data") or {}).items() if isinstance(value, (int, float))})
+            phase_samples += 1
     total_cost = sum(record.get("cost") or 0 for record in usage_records)
     prompt_tokens = sum(record.get("prompt_tokens") or 0 for record in usage_records)
     cached_tokens = sum(record.get("cached_tokens") or 0 for record in usage_records)
     completion_tokens = sum(record.get("completion_tokens") or 0 for record in usage_records)
     usage = {
         "calls": len(usage_records),
+        "phase_timing": {"samples": phase_samples, "total_seconds": dict(phase_totals)},
         "attempted_calls": len(attempted_records),
         "discarded_calls": len(attempted_records) - len(usage_records),
         "attempted_provider_cost_usd": sum(row.get("cost") or 0 for row in attempted_records),
@@ -1686,7 +1693,8 @@ def write_report(
     if plan_usage is None:
         plan_path = out_stem.with_name(out_stem.name + "-plan-usage.json")
         if plan_path.is_file():
-            plan_usage = json.loads(plan_path.read_text(encoding="utf-8"))
+            saved_plan = json.loads(plan_path.read_text(encoding="utf-8"))
+            plan_usage = saved_plan.get("summary", saved_plan)
     gift_classifications = _load_gift_classifications(
         out_stem.parent / "gift-classifications.json",
         out_stem.with_name(out_stem.name + ".jsonl"),
@@ -1701,6 +1709,17 @@ def write_report(
         plan_usage=plan_usage,
         gift_classifications=gift_classifications,
     )
+    provider_events_path = out_stem.with_name(out_stem.name + "-provider-events.jsonl")
+    if provider_events_path.is_file():
+        admitted = set()
+        from agent_world.io import read_jsonl_records
+        for row in read_jsonl_records(provider_events_path):
+            if row.get("event_type") == "request_started":
+                admitted.add(row["attempt_id"])
+        accounted = {row.get("attempt_id") for row in (usage_records or [])}
+        report["usage"]["physical_attempts"] = len(admitted)
+        report["usage"]["attempts_without_usage"] = len(admitted - accounted)
+        report["usage"]["unknown_charge_exposure"] = bool(admitted - accounted)
     json_path = out_stem.with_name(out_stem.name + "-report.json")
     md_path = out_stem.with_name(out_stem.name + "-report.md")
     atomic_write_json(json_path, report, fsync=True)
@@ -1748,29 +1767,34 @@ def _load_gift_classifications(
 
 
 def load_run_files(stem: Path) -> tuple[list[dict[str, Any]], dict[str, Any], list[dict[str, Any]]]:
-    events = [
-        json.loads(line)
-        for line in stem.with_name(stem.name + ".jsonl").read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    from agent_world.io import read_jsonl_records
+    events_path = stem.with_name(stem.name + ".jsonl")
     snapshot = json.loads(stem.with_name(stem.name + "-snapshot.json").read_text(encoding="utf-8"))
+    commit_path = stem.with_name(stem.name + "-checkpoint.commit.json")
+    if commit_path.is_file():
+        commit = json.loads(commit_path.read_text(encoding="utf-8"))
+        from agent_world.persistence import _verify_ledger_prefix
+        _verify_ledger_prefix(stem.with_name(stem.name + ".jsonl"), commit["event_bytes"], commit["event_sha256"])
+        with events_path.open("rb") as handle:
+            prefix = handle.read(commit["event_bytes"])
+        events = [json.loads(line) for line in prefix.splitlines() if line.strip()]
+        if len(events) != commit["event_count"]:
+            raise ValueError("Committed event count does not match the ledger prefix")
+        if commit.get("artifact_generation") != snapshot.get("artifact_generation"):
+            raise ValueError("Run artifacts have an incomplete generation; resume from the checkpoint before reporting")
+        snapshot_path = stem.with_name(stem.name + "-snapshot.json")
+        if hashlib.sha256(snapshot_path.read_bytes()).hexdigest() != commit.get("snapshot_sha256"):
+            raise ValueError("Snapshot integrity does not match the committed generation")
+
+    else:
+        events = read_jsonl_records(events_path)
     usage_path = stem.with_name(stem.name + "-usage.jsonl")
-    usage_records = (
-        [
-            _normalize_loaded_usage_record(json.loads(line))
-            for line in usage_path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
-        if usage_path.exists()
-        else []
-    )
+    usage_records = [_normalize_loaded_usage_record(row) for row in read_jsonl_records(usage_path)]
     for partial in sorted(stem.parent.glob(stem.name + "-usage-partial-tick-*.jsonl")):
-        with partial.open(encoding="utf-8") as handle:
-            for line in handle:
-                if line.strip():
-                    row = _normalize_loaded_usage_record(json.loads(line))
-                    row["committed"] = False
-                    usage_records.append(row)
+        for record in read_jsonl_records(partial):
+            row = _normalize_loaded_usage_record(record)
+            row["committed"] = False
+            usage_records.append(row)
     return events, snapshot, usage_records
 
 

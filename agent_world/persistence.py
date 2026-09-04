@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import time
 import uuid
 import copy
 import json
@@ -33,6 +34,7 @@ class IncrementalRunWriter:
         self.snapshot_path = snapshot_path
         self.checkpoint_path = checkpoint_path
         self.fsync = fsync
+        self._failed = False
         self.event_offset = 0
         self._event_digest = hashlib.sha256()
         self._event_bytes = 0
@@ -63,8 +65,20 @@ class IncrementalRunWriter:
             self._event_digest = expected
             self._event_bytes = self.events_path.stat().st_size
         self.event_offset = len(engine.state.events)
+        self._failed = False
 
     def flush(self, engine: WorldEngine, *, checkpoint_extra: dict[str, Any] | None = None) -> None:
+        if self._failed:
+            raise RuntimeError("Run writer previously failed; recover from a verified checkpoint before writing")
+        started = time.monotonic()
+        try:
+            self._flush(engine, checkpoint_extra=checkpoint_extra)
+            self.last_flush_seconds = time.monotonic() - started
+        except BaseException:
+            self._failed = True
+            raise
+
+    def _flush(self, engine: WorldEngine, *, checkpoint_extra: dict[str, Any] | None = None) -> None:
         events = engine.state.events
         if self.event_offset > len(events):
             raise ValueError("Event ledger shrank after incremental writer initialization.")
@@ -108,6 +122,21 @@ class IncrementalRunWriter:
                     "event_count": len(events),
                     "extra": checkpoint_extra or {},
                 },
+            )
+        if self.checkpoint_path is not None:
+            atomic_write_json(
+                self.checkpoint_path.with_suffix(".commit.json"),
+                {
+                    "schema_version": 1,
+                    "artifact_generation": generation,
+                    "event_count": self.event_offset,
+                    "event_bytes": self._event_bytes,
+                    "event_sha256": self._event_digest.hexdigest(),
+                    "checkpoint_sha256": hashlib.sha256(self.checkpoint_path.read_bytes()).hexdigest(),
+                    "snapshot_name": self.snapshot_path.name if self.snapshot_path else None,
+                    "snapshot_sha256": hashlib.sha256(self.snapshot_path.read_bytes()).hexdigest() if self.snapshot_path else None,
+                },
+                fsync=True,
             )
 
 

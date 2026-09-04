@@ -149,8 +149,7 @@ class FrontierEngineTests(unittest.TestCase):
         engine = WorldEngine.create(_frontier_config(), agent_names=["A1"])
         agent = engine.state.agents["agent-1"]
         tile = engine.state.tile_at(agent.position)
-        if tile.terrain not in {"plains", "forest"}:
-            self.skipTest("spawn tile unsuitable for farming test")
+        tile.terrain = "plains"
         _place_structure(engine, "farm_plot", agent.position, agent.id)
         engine.state.tick = 3  # winter
         engine.tick({"agent-1": AgentDecision(actions=[{"type": "farm"}])})
@@ -190,7 +189,10 @@ class FrontierEngineTests(unittest.TestCase):
                 target = (direction, candidate)
                 break
         if target is None:
-            self.skipTest("no adjacent expensive terrain near spawn")
+            candidate = agent.position.shifted(1 if agent.position.x == 0 else -1, 0)
+            direction = "east" if agent.position.x == 0 else "west"
+            engine.state.tile_at(candidate).terrain = "forest"
+            target = (direction, candidate)
         direction, position = target
         _place_structure(engine, "road", position, agent.id)
         moved = engine.tick(

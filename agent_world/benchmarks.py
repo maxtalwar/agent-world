@@ -340,6 +340,23 @@ NON_MATERIAL_FREE_ACTION_EVENTS = frozenset(
 # and its rules, the agent-facing interface, the tick loop, the decision
 # plumbing, and the scoring itself.
 BENCHMARK_CORE_FINGERPRINT_FILES = (
+    "action_contract.py",
+    "decision_deadline.py",
+    "decision_contract.py",
+    "managed_observer.py",
+    "observation_policy.py",
+    "request_context.py",
+    "tool_boundary.py",
+    "brain_factory.py",
+    "decision_outcome.py",
+    "event_index.py",
+    "io.py",
+    "jsonl_tail.py",
+    "persistence.py",
+    "process_transport.py",
+    "provider_limits.py",
+    "provider_telemetry.py",
+    "usage.py",
     "benchmarks.py",
     "brain_boundary.py",
     "brain_runtime.py",
@@ -566,7 +583,7 @@ def benchmark_code_fingerprint(providers: Iterable[str] | None = None) -> str:
 
 
 def benchmark_protocol() -> dict[str, Any]:
-    """Return the frozen participant-v4 trial and scoring specification."""
+    """Return the current frozen participant trial and scoring specification."""
 
     return {
         "id": BENCHMARK_PROTOCOL_ID,

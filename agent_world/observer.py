@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from agent_world.jsonl_tail import tail_for
+from agent_world.managed_observer import ManagedObserverClient
+
 from collections import Counter
 from dataclasses import asdict, dataclass, field
 import json
@@ -87,26 +90,49 @@ class RunController:
     """Owns one background simulation launched from the observatory UI."""
 
     def __init__(self, snapshot_path: Path, events_path: Path):
-        self.snapshot_path = snapshot_path
-        self.events_path = events_path
+        self.snapshot_path = self._free_snapshot_path = snapshot_path
+        self.events_path = self._free_events_path = events_path
         self.checkpoint_path = events_path.with_name(events_path.stem + "-checkpoint.pkl")
         self._lock = threading.Lock()
+        self._launch_lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._stop_event: threading.Event | None = None
         self._pause_event = threading.Event()
         self._status = RunStatus()
+        self._managed = ManagedObserverClient(snapshot_path, events_path)
+        if self._managed.selection:
+            self.snapshot_path, self.events_path = self._managed.paths()
 
     def status(self) -> dict[str, Any]:
+        if self._managed.selection:
+            return self._managed.status()
         with self._lock:
             return self._status.to_dict()
 
     def start(self, payload: dict[str, Any]) -> tuple[int, dict[str, Any]]:
+        with self._launch_lock:
+            return self._start_locked(payload)
+
+    def _start_locked(self, payload: dict[str, Any]) -> tuple[int, dict[str, Any]]:
         load_dotenv()
         try:
             config = _parse_run_config(payload)
         except ValueError as exc:
             return 400, {"ok": False, "error": str(exc), "run": self.status()}
 
+        if self._managed.selection and self._managed.status()["state"] == "running":
+            return 409, {"ok": False, "error": "A simulation is already running.", "run": self.status()}
+        if config.brain != "survival":
+            if self._thread is not None and self._thread.is_alive():
+                return 409, {"ok": False, "error": "A simulation is already running.", "run": self.status()}
+            try:
+                result = self._managed.start(config)
+            except (ValueError, OSError, RuntimeError) as exc:
+                return 400, {"ok": False, "error": str(exc)}
+            self.snapshot_path, self.events_path = self._managed.paths()
+            return result
+        self._managed.clear()
+        self.snapshot_path, self.events_path = self._free_snapshot_path, self._free_events_path
         with self._lock:
             if self._thread is not None and self._thread.is_alive():
                 return 409, {"ok": False, "error": "A simulation is already running.", "run": self._status.to_dict()}
@@ -137,6 +163,8 @@ class RunController:
             return 202, {"ok": True, "run": self._status.to_dict()}
 
     def stop(self) -> tuple[int, dict[str, Any]]:
+        if self._managed.selection:
+            return self._managed.control("stop")
         with self._lock:
             if self._thread is None or not self._thread.is_alive() or self._stop_event is None:
                 return 200, {"ok": True, "run": self._status.to_dict()}
@@ -147,6 +175,8 @@ class RunController:
             return 202, {"ok": True, "run": self._status.to_dict()}
 
     def pause(self) -> tuple[int, dict[str, Any]]:
+        if self._managed.selection:
+            return self._managed.control("pause")
         with self._lock:
             if self._thread is None or not self._thread.is_alive():
                 return 409, {"ok": False, "error": "No simulation is running.", "run": self._status.to_dict()}
@@ -155,6 +185,8 @@ class RunController:
             return 200, {"ok": True, "run": self._status.to_dict()}
 
     def resume(self) -> tuple[int, dict[str, Any]]:
+        if self._managed.selection:
+            return self._managed.control("run")
         with self._lock:
             self._pause_event.clear()
             self._status.paused = False
@@ -273,41 +305,13 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         raise ValueError(
             "brain must be survival, openrouter, codex, claude, cursor, devin, grok, or zcode."
         )
-    if brain == "codex":
-        model = str(payload.get("model") or os.environ.get("CODEX_MODEL") or "gpt-5.6-luna").strip()
-        default_effort = os.environ.get("CODEX_REASONING_EFFORT", "low")
-    elif brain == "claude":
-        model = str(payload.get("model") or os.environ.get("CLAUDE_MODEL") or "claude-sonnet-5").strip()
-        default_effort = os.environ.get("CLAUDE_REASONING_EFFORT", "low")
-    elif brain == "cursor":
-        model = str(payload.get("model") or os.environ.get("CURSOR_MODEL") or "cursor-grok-4.5").strip()
-        default_effort = os.environ.get("CURSOR_REASONING_EFFORT", "low")
-    elif brain == "grok":
-        model = str(payload.get("model") or os.environ.get("GROK_MODEL") or "grok-4.6").strip()
-        default_effort = os.environ.get("GROK_REASONING_EFFORT", "medium")
-    elif brain == "zcode":
-        model = str(payload.get("model") or os.environ.get("ZCODE_MODEL_ID") or "glm-5.3").strip()
-        default_effort = os.environ.get("ZCODE_REASONING_EFFORT", "max")
-    elif brain == "devin":
-        model = str(
-            payload.get("model")
-            or os.environ.get("DEVIN_MODEL")
-            or "swe-1-6-fast"
-        ).strip()
-        default_effort = os.environ.get("DEVIN_REASONING_EFFORT", "low")
-    else:
-        model = str(
-            payload.get("model")
-            or os.environ.get("OPENROUTER_MODEL")
-            or TUNED_OBSERVATORY_DEFAULTS["model"]
-        ).strip()
-        default_effort = os.environ.get(
-            "OPENROUTER_REASONING_EFFORT",
-            TUNED_OBSERVATORY_DEFAULTS["reasoning_effort"],
-        )
-    reasoning_effort = _parse_reasoning_effort(
-        payload.get("reasoning_effort") or default_effort
+    spec = BrainSpec.resolve(
+        brain, model=payload.get("model"), reasoning_effort=payload.get("reasoning_effort"),
+        connector_profile=str(payload.get("connector_profile", "connector-v1")),
+        conversation_mode=str(payload.get("conversation_mode", "fresh-conversation")),
+        session_max_turns=_bounded_int(payload.get("session_max_turns", 10), "session_max_turns", 1, 100),
     )
+    model, reasoning_effort = spec.model, spec.reasoning_effort
     world_config = WorldConfig(
         width=16,
         height=16,
@@ -397,6 +401,8 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
 
 
 def _bounded_int(value: Any, name: str, minimum: int, maximum: int) -> int:
+    if isinstance(value, bool) or isinstance(value, float) and not value.is_integer():
+        raise ValueError(f"{name} must be an integer.")
     try:
         parsed = int(value)
     except (TypeError, ValueError) as exc:
@@ -407,11 +413,13 @@ def _bounded_int(value: Any, name: str, minimum: int, maximum: int) -> int:
 
 
 def _bounded_float(value: Any, name: str, minimum: float, maximum: float) -> float:
+    if isinstance(value, bool):
+        raise ValueError(f"{name} must be a number.")
     try:
         parsed = float(value)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{name} must be a number.") from exc
-    if parsed < minimum or parsed > maximum:
+    if not __import__("math").isfinite(parsed) or parsed < minimum or parsed > maximum:
         raise ValueError(f"{name} must be between {minimum} and {maximum}.")
     return parsed
 
@@ -474,8 +482,9 @@ class SnapshotHistory:
             latest = max(self._snapshots) if self._snapshots else -1
             if tick < latest:
                 self._snapshots.clear()
-            if tick not in self._snapshots and len(self._snapshots) < self.max_ticks:
-                self._snapshots[tick] = snapshot
+            self._snapshots.setdefault(tick, snapshot)
+            while len(self._snapshots) > max(1, self.max_ticks):
+                del self._snapshots[min(self._snapshots)]
 
     def get(self, tick: int) -> dict[str, Any] | None:
         with self._lock:
@@ -540,10 +549,16 @@ def _handler(
                 self._send_text(HTML, "text/html; charset=utf-8")
             elif path == "/api/state":
                 at_tick = _parse_tick_param(parse_qs(parsed.query))
+                if history and history.snapshot_path != controller.snapshot_path:
+                    with history._lock:
+                        history.snapshot_path = controller.snapshot_path
+                        history._snapshots.clear()
+                        history._last_mtime = 0
+                    history.poll_file()
                 self._send_json(
                     load_observer_state(
-                        snapshot_path,
-                        events_path,
+                        controller.snapshot_path,
+                        controller.events_path,
                         run_status=controller.status(),
                         at_tick=at_tick,
                         history=history,
@@ -620,7 +635,34 @@ def _parse_tick_param(query: dict[str, list[str]]) -> int | None:
         return None
 
 
-def load_observer_state(
+_PROJECTION_CACHE: dict[tuple, dict[str, Any]] = {}
+_PROJECTION_LOCK = threading.Lock()
+
+
+def load_observer_state(snapshot_path: Path, events_path: Path, recent_limit: int = 120,
+                        run_status=None, at_tick=None, history=None) -> dict[str, Any]:
+    def signature(path):
+        try:
+            info = path.stat()
+            return (str(path.resolve()), info.st_ino, info.st_size, info.st_mtime_ns)
+        except FileNotFoundError:
+            return (str(path.resolve()), None)
+    key = (signature(snapshot_path), signature(events_path), recent_limit, at_tick, id(history))
+    with _PROJECTION_LOCK:
+        if key not in _PROJECTION_CACHE:
+            value = _load_observer_state(snapshot_path, events_path, recent_limit,
+                                         None, at_tick, history)
+            if len(_PROJECTION_CACHE) >= 8:
+                del _PROJECTION_CACHE[next(iter(_PROJECTION_CACHE))]
+            _PROJECTION_CACHE[key] = value
+        result = dict(_PROJECTION_CACHE[key])
+    result["run"] = run_status or RunStatus().to_dict()
+    if history:
+        result["history"] = {**result["history"], **history.tick_range()}
+    return result
+
+
+def _load_observer_state(
     snapshot_path: Path,
     events_path: Path,
     recent_limit: int = 120,
@@ -636,7 +678,7 @@ def load_observer_state(
         historical = history.get(at_tick)
         if historical is not None:
             snapshot = historical
-            events = [event for event in events if event.get("tick", 0) <= at_tick]
+            events = [event for event in events if event.get("tick", 0) < at_tick]
             viewing_tick = at_tick
     visible_events = [event for event in events if event.get("type") not in AGENT_IO_EVENT_TYPES]
     return {
@@ -761,17 +803,7 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 
 def _read_events(path: Path) -> list[dict[str, Any]]:
-    if not path.exists() or path.stat().st_size == 0:
-        return []
-    events: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        try:
-            events.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
-    return events
+    return tail_for(str(path.resolve())).read()
 
 
 HTML = (Path(__file__).with_name("static") / "observer.html").read_text(encoding="utf-8")

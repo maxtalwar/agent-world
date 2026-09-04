@@ -601,7 +601,9 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
         self.assertEqual(result.status, "paused_checkpoint")
         self.assertEqual(result.stop_reason, "insufficient_quota")
         self.assertEqual(result.final_tick, 0)
-        self.assertLessEqual(sum(slept), 3600)
+        # Interruptible slices can accumulate sub-nanosecond floating-point error.
+        self.assertAlmostEqual(sum(slept), 3600, places=6)
+        self.assertLessEqual(engine._session_quota_state["reserved_seconds"], 3600)
 
     def test_waiting_disabled_keeps_the_original_pause_behavior(self) -> None:
         class AlwaysLimitedBrain:

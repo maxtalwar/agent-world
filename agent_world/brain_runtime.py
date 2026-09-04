@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from agent_world.io import read_jsonl_records
+
 from collections import Counter
 import hashlib
 import uuid
@@ -11,6 +13,8 @@ import threading
 import time
 from typing import Any
 
+from agent_world.decision_deadline import deadline_sleep
+from agent_world.request_context import RunBudgetExceeded, request_identity, validate_limits
 from agent_world.usage import append_usage_record, append_usage_records, replace_usage_records
 
 
@@ -48,31 +52,83 @@ class BrainRuntime:
                 )
         self._blocking_failures: dict[str, tuple[str, str]] = {}
         self._next_allowed_at: dict[str, float] = {}
+        self.resource_limits = {}
+        self._attempted_records = list(self._usage_records)
+        if not truncate_provider_events and usage_path is not None:
+            for partial in sorted(usage_path.parent.glob(usage_path.stem + "-partial-tick-*.jsonl")):
+                self._attempted_records.extend(_read_jsonl_records(partial))
+        records_by_identity = {}
+        for record in self._attempted_records:
+            key = record.get("record_id") or json.dumps(record, sort_keys=True)
+            records_by_identity[key] = record
+        self._attempted_records = list(records_by_identity.values())
+        if not self._usage_records:
+            self.run_identity = next((str(row["run_identity"]) for row in self._provider_event_records if row.get("run_identity")), self.run_identity)
+        self._admitted_attempts = sum(row.get("event_type") == "request_started" for row in self._provider_event_records)
+
 
     def record_usage(self, record: dict[str, Any]) -> None:
-        item = dict(record)
+        item = {**request_identity(), **record}
         item.setdefault("record_id", uuid.uuid4().hex)
         item.setdefault("run_identity", self.run_identity)
         if item.get("agent_id") is not None and item.get("tick") is not None:
             identity = json.dumps([self.run_identity, item["tick"], item["agent_id"]])
             item.setdefault("logical_decision_id", hashlib.sha256(identity.encode()).hexdigest())
         item.setdefault("model_provenance", "observed" if item.get("response_model") else "requested_only")
+        item.setdefault("requested_reasoning_effort", item.get("reasoning_effort"))
+        item.setdefault("observed_reasoning_effort", None)
+        item.setdefault("reasoning_effort_provenance", "requested_only")
         with self._lock:
             append_usage_record(item, self.usage_path)
             self._usage_records.append(item)
+            self._attempted_records.append(item)
+
+    def configure_limits(self, limits):
+        validate_limits(limits)
+        self.resource_limits = dict(limits)
+
+    def attempted_usage_records(self):
+        with self._lock:
+            def identity(row):
+                return row.get("record_id") or json.dumps(row, sort_keys=True)
+            committed = {identity(row) for row in self._usage_records}
+            return [{**row, "committed": identity(row) in committed} for row in self._attempted_records]
+
+    def admit_attempt(self, context):
+        from agent_world.usage import summarize_usd_cost
+        with self._lock:
+            limits = self.resource_limits
+            if limits.get("calls") is not None and self._admitted_attempts >= limits["calls"]:
+                raise RunBudgetExceeded("Run call budget exhausted")
+            if limits.get("tokens") is not None:
+                if any(row.get("prompt_tokens") is None or row.get("completion_tokens") is None for row in self._attempted_records):
+                    raise RunBudgetExceeded("Run token usage is unknown; cannot enforce the requested budget")
+                tokens = sum((row.get("prompt_tokens") or 0) + (row.get("completion_tokens") or 0) for row in self._attempted_records)
+                if tokens >= limits["tokens"]:
+                    raise RunBudgetExceeded("Run token budget exhausted")
+            if limits.get("cost_usd") is not None and self._attempted_records:
+                cost = summarize_usd_cost(self._attempted_records)
+                if not cost or not cost["available"]:
+                    raise RunBudgetExceeded("Run cost is unknown; cannot enforce the requested budget")
+                if cost["cost_usd"]["total"] >= limits["cost_usd"]:
+                    raise RunBudgetExceeded("Run cost budget exhausted")
+            attempt_id = uuid.uuid4().hex
+            self.record_provider_event({
+                "event_type": "request_started", "attempt_id": attempt_id,
+                "agent_id": context["agent_id"], "tick": context["tick"],
+                "run_identity": self.run_identity, "time": time.time(),
+            })
+            self._admitted_attempts += 1
+            return attempt_id
 
     def usage_records(self) -> list[dict[str, Any]]:
         with self._lock:
             return [dict(record) for record in self._usage_records]
 
     def record_provider_event(self, record: dict[str, Any]) -> None:
-        """Persist one exceptional provider attempt.
+        """Persist request admission receipts and exceptional provider diagnostics."""
 
-        Successful requests already have the usage ledger. This deliberately
-        records only exceptional attempts so diagnostic telemetry stays tiny.
-        """
-
-        item = dict(record)
+        item = {**request_identity(), **record}
         with self._lock:
             append_usage_record(item, self.provider_events_path)
             self._provider_event_records.append(item)
@@ -188,7 +244,7 @@ class BrainRuntime:
             self._next_allowed_at[scope] = reserved_at + minimum_interval_seconds
         # Reserving is serialized; waiting must not block other providers or telemetry.
         if reserved_at > now:
-            time.sleep(reserved_at - now)
+            deadline_sleep(reserved_at - now)
 
     def scoped(self, scope: str) -> "ScopedBrainRuntime":
         """Return a provider-isolated view backed by this run's usage ledger."""
@@ -261,17 +317,4 @@ def provider_events_path_for_usage(usage_path: Path | None) -> Path | None:
 
 
 def _read_jsonl_records(path: Path) -> list[dict[str, Any]]:
-    if not path.exists():
-        return []
-    records: list[dict[str, Any]] = []
-    try:
-        with path.open("r", encoding="utf-8") as handle:
-            for line in handle:
-                if not line.strip():
-                    continue
-                value = json.loads(line)
-                if isinstance(value, dict):
-                    records.append(value)
-    except (OSError, json.JSONDecodeError):
-        return []
-    return records
+    return read_jsonl_records(path)

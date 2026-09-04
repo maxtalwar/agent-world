@@ -11,6 +11,8 @@ import sys
 import time
 from typing import Any
 
+from agent_world.jsonl_tail import tail_for
+from agent_world.managed_observer import read_control
 from agent_world.io import atomic_write_json
 from agent_world.managed_runs import (
     CONTROLLER_POLL_SECONDS,
@@ -93,18 +95,8 @@ def _append_controller_event(job: dict[str, Any], event_type: str, **data: Any) 
 
 
 def _latest_control_event(path: str | Path) -> dict[str, Any] | None:
-    try:
-        lines = Path(path).read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return None
-    for line in reversed(lines):
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if event.get("type") in CONTROL_EVENT_TYPES:
-            return event
-    return None
+    rows = tail_for(str(Path(path).resolve()), frozenset(CONTROL_EVENT_TYPES), True).read()
+    return rows[-1] if rows else None
 
 
 def _event_text(event: dict[str, Any] | None) -> str:
@@ -395,6 +387,9 @@ def reconcile_once(
                 cell["controller_attention"] = "startup_health_check_failed"
                 continue
             if status["supervisor_active"]:
+                if read_control(Path(cell["events"]).parent / "operator-control.json") == "pause":
+                    cell["controller_state"] = "paused_by_operator"
+                    continue
                 quota_deadline = _quota_resume_at(cell)
                 if _quota_waiting(cell) and (
                     quota_deadline is not None and now < quota_deadline + timedelta(seconds=policy.stall_seconds)
@@ -438,23 +433,28 @@ def reconcile_once(
         finalizing_signature = tuple(controller.get("finalization_in_progress_signature") or ())
         manual_finalization_active = _manual_finalization_active(job, now)
         if finalizing_signature and not manual_finalization_active:
-            # A new reconciliation cycle means the synchronous controller-owned
-            # attempt did not finish its bookkeeping. Clear the marker so a
-            # restarted controller can recover it.
-            recovered_signature = finalizing_signature
+            supervisor = job.get("finalization_supervisor") or {}
+            if supervisor.get("status") == "completed":
+                controller["last_finalization_signature"] = list(finalizing_signature)
+                finalization_signature = finalizing_signature
+                controller["finalization_retry_count"] = 0
+            else:
+                retries = int(controller.get("finalization_retry_count") or 0) + 1
+                controller["finalization_retry_count"] = retries
+                controller["finalization_retry_at"] = _iso(now + timedelta(seconds=min(1800, 60 * 2 ** (retries - 1))))
+                if retries >= 3:
+                    controller["finalization_error"] = supervisor.get("error") or "Finalizer repeatedly exited without completion"
+                _append_controller_event(job, "automatic_finalization_recovered", seeds=list(finalizing_signature))
             controller.pop("finalization_in_progress_signature", None)
             finalizing_signature = ()
-            _append_controller_event(
-                job,
-                "automatic_finalization_recovered",
-                seeds=list(recovered_signature),
-            )
         if (
             job.get("kind") == "benchmark"
             and completed_signature
             and completed_signature != finalization_signature
             and completed_signature != finalizing_signature
             and not manual_finalization_active
+            and int(controller.get("finalization_retry_count") or 0) < 3
+            and now >= (_parse_time(controller.get("finalization_retry_at")) or now)
         ):
             controller["finalization_in_progress_signature"] = list(completed_signature)
             controller.pop("finalization_error", None)
@@ -467,34 +467,15 @@ def reconcile_once(
 
     if need_finalize is not None:
         try:
-            from agent_world.run_finalization import finalize_job
-
-            finalize_job(_load_job(job_path)["run_id"])
+            from agent_world.run_finalization import start_finalization
+            start_finalization(_load_job(job_path)["run_id"], automatic_signature=need_finalize)
         except Exception as exc:
             with _job_lock(job_path.parent):
                 job = _load_job(job_path)
-                controller = job.setdefault("controller", {})
-                controller.pop("finalization_in_progress_signature", None)
-                controller["last_finalization_signature"] = list(need_finalize)
-                controller["finalization_error"] = f"{type(exc).__name__}: {exc}"
-                _append_controller_event(
-                    job,
-                    "automatic_finalization_failed",
-                    seeds=list(need_finalize),
-                    error=controller["finalization_error"],
+                job.setdefault("finalization_supervisor", {}).update(
+                    {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
                 )
-                atomic_write_json(job_path, job)
-        else:
-            with _job_lock(job_path.parent):
-                job = _load_job(job_path)
-                controller = job.setdefault("controller", {})
-                controller.pop("finalization_in_progress_signature", None)
-                controller["last_finalization_signature"] = list(need_finalize)
-                _append_controller_event(
-                    job, "automatic_finalization_completed", seeds=list(need_finalize)
-                )
-                atomic_write_json(job_path, job)
-        return False
+                atomic_write_json(job_path, job, fsync=True)
 
     with _job_lock(job_path.parent):
         job = _load_job(job_path)
@@ -525,6 +506,10 @@ def reconcile_once(
             atomic_write_json(job_path, job)
             _write_heartbeat(job, statuses)
             return True
+        if controller.get("finalization_in_progress_signature") or (
+            controller.get("finalization_retry_at") and int(controller.get("finalization_retry_count") or 0) < 3
+        ):
+            return False
         active = any(status["supervisor_active"] for status in statuses)
         scheduled = any(cell.get("next_auto_resume_at_utc") for cell in job["cells"])
         blocked = all(

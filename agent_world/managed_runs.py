@@ -20,6 +20,7 @@ from agent_world.benchmarks import (
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_REASONING_EFFORT,
 )
+from agent_world.jsonl_tail import tail_for
 from agent_world.io import atomic_write_json
 
 
@@ -37,19 +38,20 @@ _TOP_LEVEL_KEYS = {
 }
 _MODEL_KEYS = {"brain", "id", "reasoning_effort", "population"}
 _WORLD_OPTIONS = {
-    "preset", "width", "height", "objective_mode", "economy_mode",
+    "overrides", "preset", "width", "height", "world_variant", "objective_mode", "economy_mode",
     "geography_mode", "specialization_mode", "action_feedback_mode",
     "communication_action_cost", "town_ledger_action_cost",
     "town_ledger_prompt_mode", "town_ledger_seed_mode",
     "town_ledger_output_mode", "codex_action_max_items",
 }
 _RUNTIME_OPTIONS = {
+    "max_run_calls", "max_run_tokens", "max_run_cost_usd",
     "ticks", "agents", "max_workers", "quota_wait_hours", "progress",
     "sequential_decisions", "provider_max_workers",
 }
 _HARNESS_OPTIONS = {
     "connector_profile", "conversation_mode", "session_max_turns",
-    "decision_mode", "assignment_strategy", "assignment_seed",
+    "observation_history_policy", "decision_mode", "assignment_strategy", "assignment_seed",
     "startup_health_check_tick", "startup_health_max_failure_rate",
     "no_agent_io_log",
 }
@@ -210,6 +212,48 @@ def load_run_config(path: Path) -> dict[str, Any]:
         _reject_unknown(workers, set(_PROVIDER_WORKER_FLAGS), "provider worker")
         if any(not isinstance(count, int) or isinstance(count, bool) or count < 1 for count in workers.values()):
             raise ValueError("Every provider worker limit must be a positive integer")
+    from agent_world.request_context import validate_limits
+    validate_limits({key: runtime[name] for name, key in (
+        ("max_run_calls", "calls"), ("max_run_tokens", "tokens"), ("max_run_cost_usd", "cost_usd")
+    ) if name in runtime})
+    from agent_world.brain_factory import BrainSpec, PopulationSpec
+    from agent_world.models import WorldConfig
+    from agent_world.cli import build_parser
+    shared = {
+        "reasoning_effort": model.get("reasoning_effort"),
+        "max_workers": runtime.get("max_workers"),
+        "connector_profile": harness.get("connector_profile", "connector-v1"),
+        "conversation_mode": harness.get("conversation_mode", "fresh-conversation"),
+        "session_max_turns": harness.get("session_max_turns", 10),
+    }
+    if population:
+        resolved = PopulationSpec.parse_many(population, **shared)
+        if runtime.get("agents") is not None and runtime["agents"] != resolved.total_agents:
+            raise ValueError("runtime.agents conflicts with model.population")
+    else:
+        spec = BrainSpec.resolve(model["brain"], model=model["id"], **shared)
+        model["reasoning_effort"] = spec.reasoning_effort
+    overrides = world.get("overrides") or {}
+    if not isinstance(overrides, dict):
+        raise ValueError("world.overrides must be an object")
+    if kind == "benchmark" and overrides:
+        raise ValueError("world.overrides is experiment-only")
+    try:
+        WorldConfig(**overrides)
+    except TypeError as exc:
+        raise ValueError(f"Invalid world overrides: {exc}") from exc
+    import contextlib
+    import io
+    with contextlib.redirect_stderr(io.StringIO()):
+        try:
+            arguments = build_cell_command(value, seeds[0], Path("/dry-run"))[3:]
+            if kind == "benchmark" and protocol != BENCHMARK_PROTOCOL_ID:
+                # Historical protocol semantics belong to the explicitly pinned source.
+                position = arguments.index("--benchmark-protocol")
+                del arguments[position:position + 2]
+            build_parser().parse_args(arguments)
+        except SystemExit as exc:
+            raise ValueError("Run configuration contains invalid CLI option values") from exc
     return value
 
 
@@ -235,7 +279,7 @@ def build_cell_command(config: dict[str, Any], seed: int, output: Path) -> list[
     _append_option(command, "reasoning_effort", model.get("reasoning_effort"))
     command.extend(["--seed", str(seed)])
     for block_name, allowed in (
-        ("world", _WORLD_OPTIONS), ("runtime", _RUNTIME_OPTIONS - {"provider_max_workers"}),
+        ("world", _WORLD_OPTIONS - {"overrides"}), ("runtime", _RUNTIME_OPTIONS - {"provider_max_workers"}),
         ("harness", _HARNESS_OPTIONS),
     ):
         block = config.get(block_name) or {}
@@ -244,6 +288,8 @@ def build_cell_command(config: dict[str, Any], seed: int, output: Path) -> list[
                 _append_option(command, name, block[name])
     for provider, count in (config.get("runtime", {}).get("provider_max_workers") or {}).items():
         command.extend([f"--{_PROVIDER_WORKER_FLAGS[provider]}", str(count)])
+    if (config.get("world") or {}).get("overrides"):
+        command.extend(["--world-config-json", json.dumps(config["world"]["overrides"], separators=(",", ":"))])
     command.extend(
         ["--out", str(output / "run.jsonl"), "--snapshot", str(output / "run-snapshot.json")]
     )
@@ -259,7 +305,10 @@ def _git(root: Path, *args: str) -> str:
 
 
 def _canonical_root() -> Path:
-    return Path(_git(Path.cwd(), "rev-parse", "--show-toplevel"))
+    # A controller/finalizer may execute inside a pinned linked worktree.
+    # The common Git directory identifies the shared canonical job store.
+    common = Path(_git(Path.cwd(), "rev-parse", "--path-format=absolute", "--git-common-dir"))
+    return common.parent
 
 
 def build_launch_plan(config: dict[str, Any], root: Path, *, run_id: str | None = None) -> dict[str, Any]:
@@ -301,6 +350,7 @@ def build_launch_plan(config: dict[str, Any], root: Path, *, run_id: str | None 
         "schema_version": JOB_SCHEMA_VERSION, "run_id": resolved_id,
         "kind": config["kind"], "question": config.get("question"),
         "protocol": config.get("protocol"), "launch_commit": commit,
+        "orchestrator_commit": commit if requested_commit == "HEAD" else _git(root, "rev-parse", "HEAD"),
         "source_root": str(root), "job_dir": str(job_dir),
         "config": config, "created_at_utc": utc_now(), "cells": cells,
     }
@@ -344,7 +394,7 @@ def _write_launcher(job: dict[str, Any], cell: dict[str, Any], *, resume: bool) 
         if resume else cell["command"]
     )
     isolated = [
-        str(Path(job["source_root"]) / "scripts/run-isolated-cohort"),
+        str(Path(cell.get("worktree") or job["source_root"]) / "scripts/run-isolated-cohort"),
         "--cohort", cell["cohort_id"], "--commit", job["launch_commit"], "--", *inner,
     ]
     content = (
@@ -365,6 +415,7 @@ def _prepare_cell(job: dict[str, Any], cell: dict[str, Any]) -> None:
             str(launcher), "--cohort", cell["cohort_id"], "--commit",
             job["launch_commit"], "--prepare-only", "--",
         ],
+        cwd=job["source_root"],
         capture_output=True,
         text=True,
         check=True,
@@ -390,6 +441,10 @@ def _launch_cell(job: dict[str, Any], cell: dict[str, Any], *, resume: bool = Fa
                 raise FileExistsError(f"Resume manifest archive already exists: {archived}")
             manifest.replace(archived)
             cell.setdefault("previous_run_manifests", []).append(str(archived))
+    cell["session"] = session
+    cell["launch_state"] = "launching"
+    cell["last_launched_at_utc"] = utc_now()
+    atomic_write_json(Path(job["job_dir"]) / "job.json", job, fsync=True)
     subprocess.run(
         ["tmux", "new-session", "-d", "-s", session, "-c", job["source_root"], str(launcher)],
         check=True,
@@ -397,23 +452,16 @@ def _launch_cell(job: dict[str, Any], cell: dict[str, Any], *, resume: bool = Fa
     if not _tmux_active(session):
         raise RuntimeError(f"Supervisor failed to remain active: {session}; inspect {cell['log']}")
     cell["session"] = session
+    cell["launch_state"] = "running"
     cell["last_launched_at_utc"] = utc_now()
 
 
 def _health_gate_status(cell: dict[str, Any]) -> str | None:
-    try:
-        lines = Path(cell["events"]).read_text(encoding="utf-8").splitlines()
-    except OSError:
+    rows = tail_for(str(Path(cell["events"]).resolve()), frozenset({"run_health_check"}), True).read()
+    if not rows:
         return None
-    for line in reversed(lines):
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if event.get("type") == "run_health_check":
-            status = (event.get("data") or {}).get("status")
-            return status if status in {"passed", "failed"} else None
-    return None
+    status = (rows[-1].get("data") or {}).get("status")
+    return status if status in {"passed", "failed"} else None
 
 
 def _launch_gate_supervisor(job: dict[str, Any]) -> None:
@@ -444,6 +492,18 @@ def _launch_job_controller(job: dict[str, Any]) -> None:
 
     if shutil.which("tmux") is None:
         raise RuntimeError("tmux is required for the managed job controller")
+    orchestrator_commit = job.get("orchestrator_commit", job.get("launch_commit"))
+    if job["cells"] and orchestrator_commit != job.get("launch_commit"):
+        orchestration = job.setdefault("orchestration_source", {
+            "cohort_id": job["run_id"] + "-orchestrator", "worktree": None,
+        })
+        _prepare_cell({**job, "launch_commit": orchestrator_commit}, orchestration)
+        execution_root = orchestration["worktree"]
+    else:
+        if job["cells"]:
+            _prepare_cell(job, job["cells"][0])
+        execution_root = (job["cells"][0].get("worktree") if job["cells"] else None) or job["source_root"]
+    job["execution_root"] = execution_root
     job_dir = Path(job["job_dir"])
     session = _session_name(job["run_id"], "controller", 0)
     existing = job.get("controller") or {}
@@ -453,7 +513,7 @@ def _launch_job_controller(job: dict[str, Any]) -> None:
     script.write_text(
         "#!/usr/bin/env bash\n"
         "set -uo pipefail\n"
-        f"cd {shlex.quote(job['source_root'])}\n"
+        f"cd {shlex.quote(execution_root)}\n"
         "attempt=0\n"
         "while true; do\n"
         f"  python3 -m agent_world.run_controller {shlex.quote(str(job_dir / 'job.json'))} "
@@ -568,7 +628,9 @@ def launch_config(path: Path, *, run_id: str | None = None, dry_run: bool = Fals
             atomic_write_json(job_dir / "job.json", job)
         _launch_job_controller(job)
     except Exception:
-        atomic_write_json(job_dir / "job.json", job)
+        atomic_write_json(job_dir / "job.json", job, fsync=True)
+        if any(cell.get("session") for cell in job["cells"]) and not job.get("controller"):
+            _launch_job_controller(job)
         raise
     return job
 

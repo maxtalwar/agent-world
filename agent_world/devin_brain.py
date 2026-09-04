@@ -8,6 +8,9 @@ API keys.
 
 from __future__ import annotations
 
+from agent_world.request_context import admit_attempt
+from agent_world.decision_deadline import remaining_timeout
+
 from dataclasses import dataclass, field
 import hashlib
 from functools import lru_cache
@@ -40,9 +43,10 @@ from agent_world.interface import (
     parse_agent_response,
 )
 from agent_world.process_transport import run_process, terminate_owned_process
+from agent_world.interface import dynamic_observation_json
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
-from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
+from agent_world.decision_contract import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 from agent_world.provider_telemetry import record_provider_attempt
 
 
@@ -255,11 +259,7 @@ class DevinBrain:
             return _failure_decision(blocking_failure[1])
 
         static_context = build_static_context(observation.get("world", {}))
-        dynamic_json = json.dumps(
-            build_dynamic_observation(observation),
-            separators=(",", ":"),
-            sort_keys=True,
-        )
+        dynamic_json = dynamic_observation_json(observation)
         full_prompt = build_devin_prompt(static_context, dynamic_json)
         invocation = self.boundary.prepare()
         prompt = (
@@ -402,7 +402,7 @@ class DevinBrain:
                 parsed_decision = None
             if (
                 parsed_decision is not None
-                and parsed_decision.intent.startswith("Invalid JSON response:")
+                and parsed_decision.failure_kind == "model_output"
             ):
                 adapter_detail = parsed_decision.intent
             if adapter_detail is not None:
@@ -877,11 +877,13 @@ class _AcpClient:
         timeout_seconds: int,
     ):
         self.timeout_seconds = timeout_seconds
-        self.deadline = time.monotonic() + timeout_seconds
+        self.deadline = time.monotonic() + remaining_timeout(timeout_seconds)
+        self._timed_out = False
         self._pump_stop = threading.Event()
         self._output_bytes = 0
         self._output_lock = threading.Lock()
         self._output_overflow = False
+        admit_attempt()
         self.process = subprocess.Popen(
             command,
             cwd=cwd,
@@ -896,6 +898,16 @@ class _AcpClient:
         if self.process.stdin is None or self.process.stdout is None or self.process.stderr is None:
             self.close()
             raise AcpProtocolError("failed to open ACP subprocess pipes")
+        def expire():
+            self._timed_out = True
+            if self.process.poll() is None:
+                try:
+                    os.killpg(self.process.pid, __import__("signal").SIGKILL)
+                except ProcessLookupError:
+                    pass
+        self._watchdog = threading.Timer(max(0, self.deadline - time.monotonic()), expire)
+        self._watchdog.daemon = True
+        self._watchdog.start()
         self._events: queue.Queue[tuple[str, str | None]] = queue.Queue(maxsize=256)
         self._next_id = 1
         self.transcript: list[dict[str, Any]] = []
@@ -976,6 +988,8 @@ class _AcpClient:
                 self._reject_server_request(message)
 
     def _next_message(self, deadline: float) -> dict[str, Any] | None:
+        if getattr(self, "_timed_out", False):
+            raise subprocess.TimeoutExpired(self.process.args, self.timeout_seconds)
         if self._output_overflow:
             raise AcpProtocolError("ACP output exceeded 16 MiB", transcript=self.transcript)
         remaining = deadline - time.monotonic()
@@ -1068,6 +1082,10 @@ class _AcpClient:
         if process is None:
             return
         self._pump_stop.set()
+        watchdog = getattr(self, "_watchdog", None)
+        if watchdog is not None:
+            watchdog.cancel()
+            watchdog.join()
         terminate_owned_process(process)
         for thread in getattr(self, "_threads", []):
             thread.join(timeout=2)

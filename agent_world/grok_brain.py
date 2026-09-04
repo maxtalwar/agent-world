@@ -25,9 +25,10 @@ from agent_world.decision_failure import (
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.process_transport import run_process, terminate_owned_process
+from agent_world.interface import dynamic_observation_json
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
-from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
+from agent_world.decision_contract import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 from agent_world.provider_limits import is_quota_detail
 from agent_world.provider_telemetry import record_provider_attempt
 
@@ -133,9 +134,7 @@ class GrokBrain:
         if blocking_failure is not None:
             return _failure_decision(blocking_failure[1])
         static_context = build_static_context(observation.get("world", {}))
-        dynamic_json = json.dumps(
-            build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True
-        )
+        dynamic_json = dynamic_observation_json(observation)
         system_prompt, user_prompt = build_grok_prompts(static_context, dynamic_json)
         request_payload = json.dumps(
             {"system": system_prompt, "user": user_prompt, "schema": AGENT_DECISION_SCHEMA},
@@ -302,7 +301,7 @@ class GrokBrain:
             except Exception as exc:
                 adapter_detail = f"{type(exc).__name__}: {exc}"
                 parsed_decision = None
-            if parsed_decision is not None and parsed_decision.intent.startswith("Invalid JSON response:"):
+            if parsed_decision is not None and parsed_decision.failure_kind == "model_output":
                 adapter_detail = parsed_decision.intent
             if adapter_detail is not None:
                 self._record_usage(

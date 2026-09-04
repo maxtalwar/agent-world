@@ -1,0 +1,56 @@
+{
+  "drip_http": {
+    "configured_total_deadline_seconds": 0.1,
+    "actual_seconds": 0.1,
+    "error": "OpenRouterHardDeadlineError"
+  },
+  "partial_stdout": {
+    "deadline_seconds": 0.05,
+    "actual_seconds": 0.05,
+    "error": "TimeoutExpired"
+  },
+  "history_scaling": [
+    {
+      "synthetic_events": 0,
+      "observation_ms": 0.122,
+      "snapshot_ms": 0.516,
+      "control_event_scan_ms": 0.036,
+      "observer_state_ms": 0.081,
+      "event_file_bytes": 1120
+    },
+    {
+      "synthetic_events": 1000,
+      "observation_ms": 0.154,
+      "snapshot_ms": 0.429,
+      "control_event_scan_ms": 0.03,
+      "observer_state_ms": 0.071,
+      "event_file_bytes": 159120
+    },
+    {
+      "synthetic_events": 10000,
+      "observation_ms": 0.096,
+      "snapshot_ms": 0.416,
+      "control_event_scan_ms": 0.03,
+      "observer_state_ms": 0.087,
+      "event_file_bytes": 1590120
+    },
+    {
+      "synthetic_events": 100000,
+      "observation_ms": 0.096,
+      "snapshot_ms": 0.451,
+      "control_event_scan_ms": 0.029,
+      "observer_state_ms": 0.098,
+      "event_file_bytes": 15990120
+    }
+  ],
+  "finished_contract_prompt_growth": {
+    "before_chars": 1415,
+    "after_1000_finished_contracts_chars": 229325
+  },
+  "bounded_history_policy": {
+    "full_v1_dynamic_chars": 229325,
+    "bounded_v1_dynamic_chars": 4395,
+    "closed_contracts": 1000,
+    "information_treatment_changed": true
+  }
+}

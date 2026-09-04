@@ -1,0 +1,40 @@
+{
+  "date": "2026-09-04",
+  "branch": "fix/infrastructure-audit",
+  "base_commit": "f95a188",
+  "python": "3.12.3",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "package_python_source_sha256": "1133c5b292d22e2a9871c79f0983d02afa15c9632adfe962beb47db87ba8208f",
+  "tests": {
+    "command": "python3 -m unittest discover -s tests -q",
+    "count": 528,
+    "failures": 0,
+    "skipped": 0
+  },
+  "other_checks": [
+    "git diff --check",
+    "python3 -m compileall -q agent_world",
+    "benchmark_db verify",
+    "temporary database rebuild and generated leaderboard comparison",
+    "installed-wheel smoke outside checkout"
+  ],
+  "database": {
+    "integrity": "ok",
+    "foreign_key_errors": 0,
+    "runs": 55,
+    "models": 23,
+    "decisions": 22104,
+    "ticks": 2489
+  },
+  "wheel": {
+    "sha256": "ad484566c7e33fd26c5309cdb5f5e387c81cd7b7275a9c39fc5c735bf01f8438",
+    "bytes": 327916,
+    "smoke": "assets, CLI, two-tick free simulation, reports and checkpoint loading"
+  },
+  "live_provider_calls": 0,
+  "limits": [
+    "Synthetic repeated-read timings are warm-cache measurements, not model speed or billing estimates.",
+    "Paid vendor canaries and warm-process pooling equivalence were not executed.",
+    "Python 3.10 and 3.12 are configured in CI; local suite ran on Python 3.12."
+  ]
+}

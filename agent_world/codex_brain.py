@@ -37,9 +37,10 @@ from agent_world.decision_failure import (
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.io import atomic_write_text
 from agent_world.process_transport import run_process, terminate_owned_process
+from agent_world.interface import dynamic_observation_json
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
-from agent_world.openrouter_brain import SYSTEM_INSTRUCTIONS
+from agent_world.decision_contract import SYSTEM_INSTRUCTIONS
 from agent_world.rules import ACTION_SCHEMA
 
 
@@ -130,9 +131,10 @@ class CodexBrain:
         connector_profile: str = "connector-v1",
         conversation_mode: str = "fresh-conversation",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
+        decision_schema: dict[str, Any] | None = None,
     ):
         self.runtime = runtime or BrainRuntime()
-        self.decision_schema = _codex_agent_decision_schema()
+        self.decision_schema = json.loads(json.dumps(decision_schema)) if decision_schema is not None else _codex_agent_decision_schema()
         self.boundary = ConversationBoundary(
             agent_id=agent_id,
             connector_profile=connector_profile,
@@ -202,7 +204,7 @@ class CodexBrain:
             return _failure_decision(blocking_failure[1])
 
         static_context = build_static_context(observation.get("world", {}))
-        dynamic_json = json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)
+        dynamic_json = dynamic_observation_json(observation)
         full_prompt = build_codex_prompt(static_context, dynamic_json)
         invocation = self.boundary.prepare()
         prompt = (
@@ -986,15 +988,15 @@ def _provider_workspace_root() -> Path:
     return root
 
 
-def _codex_agent_decision_schema() -> dict[str, Any]:
+def _codex_agent_decision_schema(*, action_limit: int | None = None, ledger_mode: bool | None = None) -> dict[str, Any]:
     schema = json.loads(json.dumps(CODEX_AGENT_DECISION_SCHEMA))
-    raw_limit = os.environ.get("AGENT_WORLD_CODEX_ACTION_MAX_ITEMS", "4")
+    raw_limit = action_limit if action_limit is not None else os.environ.get("AGENT_WORLD_CODEX_ACTION_MAX_ITEMS", "4")
     try:
         action_limit = max(1, min(16, int(raw_limit)))
     except ValueError:
         action_limit = 4
     schema["properties"]["actions"]["maxItems"] = action_limit
-    if os.environ.get("AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE") == "1":
+    if ledger_mode if ledger_mode is not None else os.environ.get("AGENT_WORLD_TOWN_LEDGER_MESSAGE_MODE") == "1":
         modes = schema["properties"]["messages"]["items"]["properties"]["mode"]["enum"]
         modes.append("ledger")
         schema["properties"]["messages"]["items"]["properties"]["text"]["description"] = (

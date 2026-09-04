@@ -27,9 +27,10 @@ from agent_world.interface import (
     parse_agent_response,
 )
 from agent_world.process_transport import run_process, terminate_owned_process
+from agent_world.interface import dynamic_observation_json
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
-from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
+from agent_world.decision_contract import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 from agent_world.provider_limits import is_quota_detail
 from agent_world.provider_telemetry import record_provider_attempt
 
@@ -136,9 +137,7 @@ class ZCodeBrain:
         if blocking_failure is not None:
             return _failure_decision(blocking_failure[1])
         static_context = build_static_context(observation.get("world", {}))
-        dynamic_json = json.dumps(
-            build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True
-        )
+        dynamic_json = dynamic_observation_json(observation)
         prompt = build_zcode_prompt(static_context, dynamic_json)
         request_meta = {
             "agent_id": observation.get("self", {}).get("id"),
@@ -184,7 +183,7 @@ class ZCodeBrain:
                         failure_kind="quota",
                         provider="zcode_cli",
                         model=self.model,
-                        response_model=self.resolved_model,
+                        response_model=None,
                         billing_mode="zai_coding_plan",
                         reasoning_effort=self.reasoning_effort,
                         request_meta=request_meta,
@@ -203,7 +202,7 @@ class ZCodeBrain:
                         failure_kind="authentication",
                         provider="zcode_cli",
                         model=self.model,
-                        response_model=self.resolved_model,
+                        response_model=None,
                         billing_mode="zai_coding_plan",
                         reasoning_effort=self.reasoning_effort,
                         request_meta=request_meta,
@@ -222,7 +221,7 @@ class ZCodeBrain:
                         failure_kind="provider",
                         provider="zcode_cli",
                         model=self.model,
-                        response_model=self.resolved_model,
+                        response_model=None,
                         billing_mode="zai_coding_plan",
                         reasoning_effort=self.reasoning_effort,
                         request_meta=request_meta,
@@ -279,7 +278,7 @@ class ZCodeBrain:
                 return _failure_decision(
                     attributed_failure_message("ZCode", attribution, detail)
                 )
-            if decision.intent.startswith("Invalid JSON response:"):
+            if decision.failure_kind == "model_output":
                 detail = decision.intent
                 self._record_usage(
                     usage, result, {**request_meta, **attribution.usage_metadata(detail)}
@@ -357,7 +356,8 @@ class ZCodeBrain:
         self.runtime.record_usage(
             {
                 "model": self.model,
-                "response_model": self.resolved_model,
+                "response_model": (result or {}).get("model"),
+                "configured_model": self.resolved_model,
                 "provider": "zcode_cli",
                 "api_style": "zcode_headless_json",
                 "base_url": None,
