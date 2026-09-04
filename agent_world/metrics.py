@@ -64,7 +64,7 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
     structure_counts = Counter(structure.type for structure in complete_structures)
     invalid_reasons = Counter(event.message for event in state.events if event.type == "invalid_action")
     contention_reasons = Counter(event.message for event in state.events if event.type == "contention_failure")
-    llm_failures = [event for event in state.events if is_decision_failure_message(event.type, event.message)]
+    llm_failures = [event for event in state.events if event_matches_failure(event, is_decision_failure_message)]
     build_readiness = _build_readiness(state)
     death_ticks = {event.actor_id: event.tick for event in state.events if event.type == "death"}
     lifespans = sorted(death_ticks.get(agent.id, state.tick) for agent in state.agents.values())
@@ -182,10 +182,10 @@ def compute_metrics(state: WorldState) -> dict[str, Any]:
         },
         "llm": {
             "decision_failures": len(llm_failures),
-            "quota_failures": sum(is_quota_failure_message(event.type, event.message) for event in state.events),
+            "quota_failures": sum(event_matches_failure(event, is_quota_failure_message) for event in state.events),
             "rate_limit_failures": sum(
                 ("429" in event.message or "rate_limit" in event.message)
-                and not is_quota_failure_message(event.type, event.message)
+                and not event_matches_failure(event, is_quota_failure_message)
                 for event in llm_failures
             ),
         },
@@ -663,3 +663,25 @@ def _has_access_grant(agent: Any, access: set[str]) -> bool:
 
 def _controls_owner(agent: Any, owner_id: str | None) -> bool:
     return owner_id == agent.id or (owner_id is not None and owner_id in agent.groups)
+
+
+def event_matches_failure(event: Any, classifier: Any) -> bool:
+    """Prefer typed new outcomes; retain text classifiers for historical ledgers."""
+    if isinstance(event, dict):
+        event_type, data, message = event.get("type"), event.get("data") or {}, event.get("message")
+    else:
+        event_type, data, message = event.type, event.data, event.message
+    if event_type == "agent_response" and "failure_kind" in data:
+        kind = data["failure_kind"]
+        expected = {
+            "is_decision_failure_message": {"model_output", "authentication", "quota", "provider", "harness"},
+            "is_auth_failure_message": {"authentication"},
+            "is_quota_failure_message": {"quota"},
+            "is_provider_failure_message": {"provider"},
+            "is_model_output_failure_message": {"model_output"},
+            "is_confirmed_model_contract_failure_message": {"model_output"},
+            "is_harness_failure_message": {"harness"},
+            "is_ambiguous_boundary_failure_message": {"harness"},
+        }
+        return kind in expected.get(classifier.__name__, set())
+    return classifier(event_type, message)

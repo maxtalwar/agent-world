@@ -40,6 +40,7 @@ from agent_world.interface import (
     parse_agent_response,
 )
 from agent_world.models import AgentDecision
+from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 from agent_world.provider_telemetry import record_provider_attempt
 
@@ -1200,13 +1201,6 @@ def _jsonrpc_error_detail(value: Any) -> str:
     return _clean_detail(message)
 
 
-def _failure_decision(message: str) -> AgentDecision:
-    return AgentDecision(
-        intent=message,
-        actions=[{"type": "wait"}],
-        messages=[],
-        memory_updates=[],
-    )
 
 
 def _failure_detail(stdout: str, stderr: str) -> str:

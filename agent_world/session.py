@@ -16,6 +16,7 @@ from agent_world.brain_runtime import BrainRuntime
 from agent_world.codex_brain import summarize_plan_usage
 from agent_world.io import atomic_write_json
 from agent_world.metrics import (
+    event_matches_failure,
     is_authentication_detail,
     is_decision_failure_message,
     is_provider_failure_message,
@@ -317,9 +318,7 @@ class SimulationSession:
                     self.flush()
                     break
                 if any(
-                    is_quota_failure_message(
-                        getattr(event, "type", None), getattr(event, "message", None)
-                    )
+                    event.data.get("failure_kind") == "quota"
                     for event in events
                 ):
                     status = "stopped"
@@ -331,9 +330,7 @@ class SimulationSession:
                         scope="public",
                     )
                 elif any(
-                    is_provider_failure_message(
-                        getattr(event, "type", None), getattr(event, "message", None)
-                    )
+                    event.data.get("failure_kind") == "provider"
                     for event in events
                 ):
                     status = "stopped"
@@ -610,7 +607,7 @@ class SimulationSession:
                 continue
             cohort_id = assignments[event.actor_id].id
             attempts[cohort_id] += 1
-            if is_decision_failure_message(event.type, event.message):
+            if event_matches_failure(event, is_decision_failure_message):
                 failures[cohort_id] += 1
 
         cohorts: list[dict[str, Any]] = []

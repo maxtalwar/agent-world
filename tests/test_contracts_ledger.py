@@ -458,6 +458,9 @@ class OrganicInterfaceGatingTests(unittest.TestCase):
                     "snapshot": engine.snapshot(),
                     "events": [event.to_dict() for event in engine.state.events],
                 }
+                # Outcome metadata is additive telemetry, not agent-visible mechanics.
+                for event in bundle["events"]:
+                    event["data"].pop("failure_kind", None)
                 encoded = json.dumps(bundle, sort_keys=True, separators=(",", ":")).encode()
                 self.assertEqual(hashlib.sha256(encoded).hexdigest(), digest)
 

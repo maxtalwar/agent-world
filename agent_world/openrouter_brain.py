@@ -26,6 +26,7 @@ from agent_world.decision_failure import (
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
+from agent_world.decision_outcome import failure_decision
 from agent_world.provider_telemetry import record_provider_attempt
 
 
@@ -217,11 +218,8 @@ class OpenRouterBrain:
                         )
                     ),
                 )
-                return AgentDecision(
-                    intent=f"OpenRouter boundary failed: {detail}",
-                    actions=[{"type": "wait"}],
-                    messages=[],
-                    memory_updates=[],
+                return failure_decision(
+                    message=f"OpenRouter boundary failed: {detail}",
                 )
 
             attribution = attribute_decision_failure(
@@ -237,15 +235,12 @@ class OpenRouterBrain:
                     response,
                     timed_request_meta(attribution.usage_metadata(adapter_detail)),
                 )
-                return AgentDecision(
-                    intent=attributed_failure_message(
+                return failure_decision(
+                    message=attributed_failure_message(
                         "OpenRouter",
                         attribution,
                         adapter_detail,
                     ),
-                    actions=[{"type": "wait"}],
-                    messages=[],
-                    memory_updates=[],
                 )
 
             adapter_detail: str | None = None
@@ -264,15 +259,12 @@ class OpenRouterBrain:
                     response,
                     timed_request_meta(attribution.usage_metadata(adapter_detail)),
                 )
-                return AgentDecision(
-                    intent=attributed_failure_message(
+                return failure_decision(
+                    message=attributed_failure_message(
                         "OpenRouter",
                         attribution,
                         adapter_detail,
                     ),
-                    actions=[{"type": "wait"}],
-                    messages=[],
-                    memory_updates=[],
                 )
             assert parsed_decision is not None
             self._record_usage(response, timed_request_meta())
@@ -282,19 +274,13 @@ class OpenRouterBrain:
             return _quota_decision(str(exc))
         except OpenRouterRateLimitError as exc:
             message = f"OpenRouter provider unavailable: {exc}"
-            return AgentDecision(
-                intent=message,
-                actions=[{"type": "wait"}],
-                messages=[],
-                memory_updates=[],
+            return failure_decision(
+                message=message,
             )
         except OSError as exc:
             message = f"OpenRouter provider unavailable: {exc}"
-            return AgentDecision(
-                intent=message,
-                actions=[{"type": "wait"}],
-                messages=[],
-                memory_updates=[],
+            return failure_decision(
+                message=message,
             )
         except (ValueError, KeyError, json.JSONDecodeError) as exc:
             detail = f"{type(exc).__name__}: {exc}"
@@ -316,11 +302,8 @@ class OpenRouterBrain:
                     **ambiguous_boundary_metadata(detail, detail),
                 }
             )
-            return AgentDecision(
-                intent=f"OpenRouter boundary failed: {detail}",
-                actions=[{"type": "wait"}],
-                messages=[],
-                memory_updates=[],
+            return failure_decision(
+                message=f"OpenRouter boundary failed: {detail}",
             )
 
     def _chat_payload(self, static_context: str, dynamic_json: str) -> dict[str, Any]:
@@ -620,11 +603,8 @@ class OpenRouterQuotaError(ValueError):
 
 
 def _quota_decision(message: str) -> AgentDecision:
-    return AgentDecision(
-        intent=message,
-        actions=[{"type": "wait"}],
-        messages=[],
-        memory_updates=[],
+    return failure_decision(
+        message=message,
     )
 
 

@@ -26,10 +26,11 @@ from agent_world.metrics import (
     is_quota_failure_message,
 )
 from agent_world.models import AgentDecision
+from agent_world.decision_outcome import restore_decision
 from agent_world.world import WorldEngine
 
 
-PENDING_TICK_SCHEMA_VERSION = 1
+PENDING_TICK_SCHEMA_VERSION = 2
 MAX_PENDING_TICK_BYTES = 1_000_000
 
 
@@ -74,7 +75,7 @@ def pending_tick_cached_agent_ids(path: Path | None, engine: WorldEngine) -> set
         and records[agent_id].get("observation_sha256")
         == _observation_sha256(observation)
         and not _is_retryable_failure(
-            AgentDecision.from_json_like(records[agent_id].get("decision"))
+            restore_decision(records[agent_id].get("decision"))
         )
     }
 
@@ -130,7 +131,7 @@ class PendingTickJournal:
             ):
                 changed = True
                 continue
-            decision = AgentDecision.from_json_like(record.get("decision"))
+            decision = restore_decision(record.get("decision"))
             if _is_retryable_failure(decision):
                 changed = True
                 continue
@@ -186,7 +187,7 @@ class PendingTickJournal:
             "decisions": self.records,
             "failures": self.failures,
         }
-        encoded = json.dumps(payload, sort_keys=True).encode("utf-8")
+        encoded = (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
         if len(encoded) > MAX_PENDING_TICK_BYTES:
             raise ValueError(
                 f"Pending-tick journal exceeded {MAX_PENDING_TICK_BYTES} bytes"
@@ -205,7 +206,11 @@ def _read_pending_payload(path: Path | None) -> dict[str, Any] | None:
     if path is None or not path.exists():
         return None
     try:
-        value = json.loads(path.read_text(encoding="utf-8"))
+        with path.open("rb") as handle:
+            encoded = handle.read(MAX_PENDING_TICK_BYTES + 1)
+        if len(encoded) > MAX_PENDING_TICK_BYTES:
+            raise ValueError("Pending-tick journal exceeds its size limit")
+        value = json.loads(encoded)
     except (OSError, json.JSONDecodeError):
         return None
     return value if isinstance(value, dict) else None
@@ -219,11 +224,7 @@ def _observation_sha256(observation: dict[str, Any]) -> str:
 
 
 def _is_retryable_failure(decision: AgentDecision) -> bool:
-    return (
-        is_quota_failure_message("agent_response", decision.intent)
-        or is_provider_failure_message("agent_response", decision.intent)
-        or is_ambiguous_boundary_failure_message("agent_response", decision.intent)
-    )
+    return decision.failure_kind not in {None, "model_output"}
 
 
 class SimulationRunner:
@@ -292,18 +293,16 @@ class SimulationRunner:
 
             def record_completed(agent_id: str, decision: AgentDecision) -> None:
                 decisions[agent_id] = decision
-                if is_auth_failure_message("agent_response", decision.intent):
+                if decision.failure_kind == "authentication":
                     authentication_failures[agent_id] = decision.intent
                     journal.record_failure(agent_id, decision, retry_round=retry_round)
-                elif is_quota_failure_message("agent_response", decision.intent):
+                elif decision.failure_kind == "quota":
                     quota_failures[agent_id] = decision.intent
                     journal.record_failure(agent_id, decision, retry_round=retry_round)
-                elif is_provider_failure_message("agent_response", decision.intent):
+                elif decision.failure_kind == "provider":
                     provider_failures[agent_id] = decision.intent
                     journal.record_failure(agent_id, decision, retry_round=retry_round)
-                elif is_ambiguous_boundary_failure_message(
-                    "agent_response", decision.intent
-                ):
+                elif decision.failure_kind == "harness":
                     journal.record_failure(agent_id, decision, retry_round=retry_round)
                 else:
                     journal.record_decision(agent_id, decision)
@@ -380,39 +379,14 @@ class SimulationRunner:
     def _guard_systemic_boundary_failure(
         self, decisions: dict[str, AgentDecision]
     ) -> None:
-        """Halt when every living agent fails identically at the boundary.
-
-        The quota and provider classifiers match known message text, so a
-        provider phrasing nobody has seen yet slips through and each agent's
-        failure becomes a fabricated wait action while the world advances. That
-        is how a Claude weekly-limit trial burned eighteen ticks against a
-        provider refusing every call.
-
-        Independent subprocesses do not produce byte-identical failure text by
-        coincidence, so an identical message across a whole population is
-        external by construction. One such tick is conclusive with a population;
-        with a single survivor left it could be a transient, so that case has to
-        persist before it counts.
-        """
-
+        """Any infrastructure failure freezes the tick, including a lone failure."""
         failures = [
-            decision.intent
-            for decision in decisions.values()
-            if is_ambiguous_boundary_failure_message("agent_response", decision.intent)
+            decision.intent for decision in decisions.values()
+            if decision.failure_kind == "harness"
         ]
-        messages = set(failures)
-        every_agent_failed_alike = (
-            bool(decisions) and len(failures) == len(decisions) and len(messages) == 1
-        )
-        if not every_agent_failed_alike:
-            self._systemic_boundary_streak = 0
-            return
-        self._systemic_boundary_streak += 1
-        if len(decisions) >= 2 or self._systemic_boundary_streak >= 3:
+        if failures:
             raise ModelDecisionsUnusableError(
-                sorted(messages),
-                agents=len(decisions),
-                consecutive_ticks=self._systemic_boundary_streak,
+                sorted(set(failures)), agents=len(failures), consecutive_ticks=1
             )
 
     def _collect_decisions(
@@ -439,15 +413,7 @@ class SimulationRunner:
             }
             for future in as_completed(futures):
                 agent_id = futures[future]
-                try:
-                    decisions[agent_id] = parse_agent_response(future.result())
-                except Exception as exc:  # Defensive shell around third-party brains.
-                    decisions[agent_id] = AgentDecision(
-                        intent=f"Agent brain failed: {exc}",
-                        actions=[{"type": "wait"}],
-                        messages=[],
-                        memory_updates=[],
-                    )
+                decisions[agent_id] = parse_agent_response(future.result())
                 if on_decision is not None:
                     on_decision(agent_id, decisions[agent_id])
         return decisions

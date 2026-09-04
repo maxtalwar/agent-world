@@ -48,8 +48,8 @@ class BrainRuntime:
 
     def record_usage(self, record: dict[str, Any]) -> None:
         with self._lock:
+            append_usage_record(record, self.usage_path)
             self._usage_records.append(dict(record))
-        append_usage_record(record, self.usage_path)
 
     def usage_records(self) -> list[dict[str, Any]]:
         with self._lock:
@@ -64,8 +64,8 @@ class BrainRuntime:
 
         item = dict(record)
         with self._lock:
-            self._provider_event_records.append(item)
             append_usage_record(item, self.provider_events_path)
+            self._provider_event_records.append(item)
 
     def provider_event_records(self) -> list[dict[str, Any]]:
         with self._lock:
@@ -93,15 +93,16 @@ class BrainRuntime:
                 raise ValueError("Invalid usage rollback checkpoint.")
             kept = [dict(record) for record in self._usage_records[:checkpoint]]
             partial = [dict(record) for record in self._usage_records[checkpoint:]]
+            if self.usage_path is None or not partial:
+                self._usage_records = kept
+                return None
+            partial_path = self.usage_path.with_name(
+                f"{self.usage_path.stem}-partial-tick-{attempted_tick}{self.usage_path.suffix}"
+            )
+            append_usage_records(partial, partial_path)
+            replace_usage_records(kept, self.usage_path)
             self._usage_records = kept
-        if self.usage_path is None or not partial:
-            return None
-        partial_path = self.usage_path.with_name(
-            f"{self.usage_path.stem}-partial-tick-{attempted_tick}{self.usage_path.suffix}"
-        )
-        append_usage_records(partial, partial_path)
-        replace_usage_records(kept, self.usage_path)
-        return partial_path
+            return partial_path
 
     def quota_message(self, scope: str = "default") -> str | None:
         with self._lock:
@@ -173,9 +174,11 @@ class BrainRuntime:
         with self._lock:
             now = time.monotonic()
             next_allowed_at = self._next_allowed_at.get(scope, 0.0)
-            if now < next_allowed_at:
-                time.sleep(next_allowed_at - now)
-            self._next_allowed_at[scope] = time.monotonic() + minimum_interval_seconds
+            reserved_at = max(now, next_allowed_at)
+            self._next_allowed_at[scope] = reserved_at + minimum_interval_seconds
+        # Reserving is serialized; waiting must not block other providers or telemetry.
+        if reserved_at > now:
+            time.sleep(reserved_at - now)
 
     def scoped(self, scope: str) -> "ScopedBrainRuntime":
         """Return a provider-isolated view backed by this run's usage ledger."""

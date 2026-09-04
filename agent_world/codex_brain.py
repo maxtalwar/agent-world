@@ -35,7 +35,9 @@ from agent_world.decision_failure import (
     attributed_failure_message,
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
+from agent_world.io import atomic_write_text
 from agent_world.models import AgentDecision
+from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import SYSTEM_INSTRUCTIONS
 from agent_world.rules import ACTION_SCHEMA
 
@@ -129,6 +131,7 @@ class CodexBrain:
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
     ):
         self.runtime = runtime or BrainRuntime()
+        self.decision_schema = _codex_agent_decision_schema()
         self.boundary = ConversationBoundary(
             agent_id=agent_id,
             connector_profile=connector_profile,
@@ -160,7 +163,7 @@ class CodexBrain:
         self._stable_schema_path: Path | None = None
         if connector_profile in {"connector-v2", "connector-v3"} or conversation_mode != "fresh-conversation":
             self._stable_work_dir = _codex_decision_working_directory(connector_profile)
-            self._stable_schema_path = _write_codex_schema(Path(self._stable_work_dir))
+            self._stable_schema_path = _write_codex_schema(Path(self._stable_work_dir), self.decision_schema)
 
     def capture_plan_usage(self) -> dict[str, Any]:
         """Read the account's current Codex plan limits without spending a model turn.
@@ -383,7 +386,7 @@ class CodexBrain:
                 return _failure_decision(f"Codex boundary failed: {detail}")
             attribution = attribute_decision_failure(
                 response_text,
-                _codex_agent_decision_schema(),
+                self.decision_schema,
                 codex_nested_arguments=True,
             )
             if attribution.origin == "model_output":
@@ -474,12 +477,12 @@ class CodexBrain:
     ) -> subprocess.CompletedProcess[str]:
         if self.connector_profile == "connector-v1" and self.conversation_mode == "fresh-conversation":
             with tempfile.TemporaryDirectory(prefix="agent-world-codex-") as temp_dir:
-                schema_path = _write_codex_schema(Path(temp_dir))
+                schema_path = _write_codex_schema(Path(temp_dir), self.decision_schema)
                 return self._run_command(prompt, invocation, temp_dir, schema_path)
         work_dir = self._stable_work_dir or _codex_decision_working_directory(
             self.connector_profile
         )
-        schema_path = self._stable_schema_path or _write_codex_schema(Path(work_dir))
+        schema_path = self._stable_schema_path or _write_codex_schema(Path(work_dir), self.decision_schema)
         return self._run_command(prompt, invocation, work_dir, schema_path)
 
     def _run_command(
@@ -766,8 +769,6 @@ def _parse_action_arguments(text: str) -> dict[str, Any]:
     return value
 
 
-def _failure_decision(message: str) -> AgentDecision:
-    return AgentDecision(intent=message, actions=[{"type": "wait"}], messages=[], memory_updates=[])
 
 
 def _failure_detail(stdout: str, stderr: str) -> str:
@@ -988,11 +989,14 @@ def _codex_agent_decision_schema() -> dict[str, Any]:
     return schema
 
 
-def _write_codex_schema(directory: Path) -> Path:
-    schema_path = directory / "agent-decision.schema.json"
-    serialized = json.dumps(_codex_agent_decision_schema(), sort_keys=True)
-    if not schema_path.exists() or schema_path.read_text(encoding="utf-8") != serialized:
-        schema_path.write_text(serialized, encoding="utf-8")
+def _write_codex_schema(directory: Path, schema: dict[str, Any] | None = None) -> Path:
+    serialized = json.dumps(schema if schema is not None else _codex_agent_decision_schema(), sort_keys=True)
+    digest = hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+    schema_path = directory / f"agent-decision-{digest}.schema.json"
+    if not schema_path.exists():
+        atomic_write_text(schema_path, serialized, fsync=True)
+    elif schema_path.read_text(encoding="utf-8") != serialized:
+        raise ValueError("Content-addressed decision schema is corrupt")
     return schema_path
 
 

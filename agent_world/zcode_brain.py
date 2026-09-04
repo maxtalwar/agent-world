@@ -14,6 +14,7 @@ from typing import Any
 import uuid
 
 from agent_world.brain_runtime import BrainRuntime
+from agent_world.brain_boundary import CONNECTOR_PROFILES, normalize_connector_profile, normalize_conversation_mode
 from agent_world.decision_failure import (
     ambiguous_boundary_metadata,
     attribute_decision_failure,
@@ -26,6 +27,7 @@ from agent_world.interface import (
     parse_agent_response,
 )
 from agent_world.models import AgentDecision
+from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 from agent_world.provider_limits import is_quota_detail
 from agent_world.provider_telemetry import record_provider_attempt
@@ -60,7 +62,11 @@ class ZCodeBrain:
         session_max_turns: int = 1,
     ):
         del session_max_turns
-        if conversation_mode != "stateless":
+        connector_profile = normalize_connector_profile(connector_profile)
+        conversation_mode = normalize_conversation_mode(conversation_mode)
+        if connector_profile not in CONNECTOR_PROFILES:
+            raise ValueError(f"unsupported connector profile: {connector_profile}")
+        if conversation_mode != "fresh-conversation":
             raise ValueError("ZCodeBrain supports only stateless conversation mode")
         self.runtime = runtime or BrainRuntime()
         self.agent_id = agent_id
@@ -90,7 +96,7 @@ class ZCodeBrain:
         self._command_prefix = _zcode_command_prefix(self.executable)
         self._stable_work_dir = (
             _zcode_decision_working_directory(connector_profile)
-            if connector_profile in {"stateless-v2", "stateless-v3"}
+            if connector_profile in {"connector-v2", "connector-v3"}
             else None
         )
 
@@ -144,7 +150,7 @@ class ZCodeBrain:
             ).hexdigest(),
             "request_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
             "connector_profile": self.connector_profile,
-            "conversation_mode": "stateless",
+            "conversation_mode": self.conversation_mode,
         }
         started_at = time.monotonic()
         try:
@@ -471,10 +477,6 @@ def _parse_result_json(stdout: str) -> dict[str, Any] | None:
     return value if isinstance(value, dict) else None
 
 
-def _failure_decision(message: str) -> AgentDecision:
-    return AgentDecision(
-        intent=message, actions=[{"type": "wait"}], messages=[], memory_updates=[]
-    )
 
 
 def _timeout_stream(value: str | bytes | None) -> bytes:
@@ -597,7 +599,7 @@ def _is_provider_error(detail: str) -> bool:
 def _zcode_decision_working_directory(
     connector_profile: str = "stateless-v2",
 ) -> str:
-    if connector_profile == "stateless-v3":
+    if normalize_connector_profile(connector_profile) == "connector-v3":
         configured = os.environ.get("AGENT_WORLD_PROVIDER_WORKSPACE_ROOT")
         root = (
             Path(configured).expanduser()

@@ -542,6 +542,8 @@ class AgentDecision:
     actions: list[dict[str, Any]] = field(default_factory=list)
     messages: list[dict[str, Any]] = field(default_factory=list)
     memory_updates: list[str] = field(default_factory=list)
+    # Internal adapter outcome; model JSON must never set this field.
+    failure_kind: str | None = None
 
     @classmethod
     def from_json_like(cls, value: Any) -> "AgentDecision":

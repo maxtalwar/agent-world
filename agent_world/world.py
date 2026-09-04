@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import Counter
 from dataclasses import asdict
 import json
+import copy
 import math
 import random
 from typing import Any, Iterable
@@ -268,6 +269,22 @@ class WorldEngine:
         return event
 
     def tick(self, decisions: dict[str, AgentDecision | dict[str, Any]]) -> list[Event]:
+        """Resolve atomically; an internal error must never persist a partial tick."""
+        history = self.state.events
+        before = len(history)
+        # Do not copy the growing event ledger on every tick.
+        saved = copy.deepcopy(self.state, {id(history): history})
+        rng_state = self.rng.getstate()
+        try:
+            return self._resolve_tick(decisions)
+        except BaseException:
+            del history[before:]
+            self.state.__dict__.clear()
+            self.state.__dict__.update(saved.__dict__)
+            self.rng.setstate(rng_state)
+            raise
+
+    def _resolve_tick(self, decisions: dict[str, AgentDecision | dict[str, Any]]) -> list[Event]:
         before = len(self.state.events)
         self._reset_structure_capacity()
         for agent_id in self._actor_order():
@@ -283,6 +300,7 @@ class WorldEngine:
                 message=decision.intent,
                 data={
                     "intent": decision.intent,
+                    "failure_kind": decision.failure_kind,
                     "actions": decision.actions,
                     "messages": decision.messages,
                     "memory_updates": decision.memory_updates,
@@ -345,6 +363,9 @@ class WorldEngine:
 
     def _dispatch_action(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         action_type = str(action.get("type", "")).strip()
+        if action_type == "record_agreement" and not isinstance(action.get("parties", []), list):
+            self._invalid(agent, action, "Agreement parties must be a list.")
+            return action_points
         handlers = {
             "wait": self._action_wait,
             "move": self._action_move,
@@ -1396,7 +1417,7 @@ class WorldEngine:
             return action_points - 1
         try:
             deadline_tick = int(action.get("deadline_tick"))
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             self._invalid(agent, action, "deadline_tick must be an absolute integer tick.")
             return action_points - 1
         ticks_ahead = deadline_tick - self.state.tick
@@ -1996,7 +2017,7 @@ class WorldEngine:
             for key, value in items.items():
                 try:
                     count = int(value)
-                except (TypeError, ValueError):
+                except (TypeError, ValueError, OverflowError):
                     continue
                 if count > 0:
                     parsed[str(key)] = count
@@ -2830,7 +2851,7 @@ class WorldEngine:
     def _target_position(self, action: dict[str, Any], default: Position) -> Position:
         try:
             return Position(int(action.get("x", default.x)), int(action.get("y", default.y)))
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             return default
 
     def _first_available(self, resources: Counter[str], allowed: object) -> str:
@@ -2842,7 +2863,7 @@ class WorldEngine:
     def _bounded_quantity(self, value: Any, default: int, maximum: int) -> int:
         try:
             quantity = int(value)
-        except (TypeError, ValueError):
+        except (TypeError, ValueError, OverflowError):
             quantity = default
         return max(0, min(quantity, maximum))
 
@@ -2957,7 +2978,7 @@ class WorldEngine:
         for item, qty in value.items():
             try:
                 parsed = int(qty)
-            except (TypeError, ValueError):
+            except (TypeError, ValueError, OverflowError):
                 continue
             if parsed > 0:
                 counter[str(item)] += parsed

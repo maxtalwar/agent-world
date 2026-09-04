@@ -16,6 +16,7 @@ from typing import Any
 
 from agent_world.benchmarks import build_benchmark_results
 from agent_world.metrics import (
+    event_matches_failure,
     is_ambiguous_boundary_failure_message,
     is_decision_failure_message,
     is_harness_failure_message,
@@ -110,35 +111,32 @@ def build_report(
     llm_failures = [
         event
         for event in events
-        if is_decision_failure_message(event.get("type"), event.get("message"))
+        if event_matches_failure(event, is_decision_failure_message)
     ]
     model_output_failures = [
         event
         for event in llm_failures
-        if is_model_output_failure_message(event.get("type"), event.get("message"))
+        if event_matches_failure(event, is_model_output_failure_message)
     ]
     quota_failures = [
         event
         for event in llm_failures
-        if is_quota_failure_message(event.get("type"), event.get("message"))
+        if event_matches_failure(event, is_quota_failure_message)
     ]
     provider_failures = [
         event
         for event in llm_failures
-        if is_provider_failure_message(event.get("type"), event.get("message"))
+        if event_matches_failure(event, is_provider_failure_message)
     ]
     ambiguous_boundary_failures = [
         event
         for event in llm_failures
-        if is_ambiguous_boundary_failure_message(
-            event.get("type"),
-            event.get("message"),
-        )
+        if event_matches_failure(event, is_ambiguous_boundary_failure_message)
     ]
     harness_failures = [
         event
         for event in llm_failures
-        if is_harness_failure_message(event.get("type"), event.get("message"))
+        if event_matches_failure(event, is_harness_failure_message)
     ]
     decision_attempts = sum(event.get("type") == "agent_response" for event in events)
     decision_failure_rate = (

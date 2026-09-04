@@ -20,6 +20,8 @@ def atomic_write_text(path: Path, text: str, *, fsync: bool = False) -> None:
             if fsync:
                 os.fsync(handle.fileno())
         os.replace(temporary, path)
+        if fsync:
+            fsync_directory(path.parent)
     finally:
         if temporary.exists():
             temporary.unlink()
@@ -31,3 +33,14 @@ def atomic_write_json(path: Path, value: Any, *, fsync: bool = False) -> None:
         json.dumps(value, indent=2, sort_keys=True) + "\n",
         fsync=fsync,
     )
+
+
+def fsync_directory(path: Path) -> None:
+    """Make a successful atomic rename durable on supported POSIX filesystems."""
+    if os.name != "posix":
+        return
+    descriptor = os.open(path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)

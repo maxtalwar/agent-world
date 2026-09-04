@@ -179,6 +179,10 @@ MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
 _USAGE_LOG_LOCK = threading.Lock()
 
 
+class UsagePersistenceError(RuntimeError):
+    """Usage could not be made durable; never report the call as accounted for."""
+
+
 def append_usage_record(record: dict[str, Any], usage_path: Path | None) -> bool:
     """Append one complete JSONL usage record without concurrent interleaving."""
 
@@ -189,9 +193,11 @@ def append_usage_record(record: dict[str, Any], usage_path: Path | None) -> bool
             usage_path.parent.mkdir(parents=True, exist_ok=True)
             with usage_path.open("a", encoding="utf-8") as handle:
                 handle.write(json.dumps(record, sort_keys=True) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
         return True
-    except OSError:
-        return False
+    except OSError as exc:
+        raise UsagePersistenceError(f"Cannot persist usage ledger {usage_path}: {exc}") from exc
 
 
 def append_usage_records(records: list[dict[str, Any]], usage_path: Path | None) -> bool:
@@ -205,9 +211,11 @@ def append_usage_records(records: list[dict[str, Any]], usage_path: Path | None)
             with usage_path.open("a", encoding="utf-8") as handle:
                 for record in records:
                     handle.write(json.dumps(record, sort_keys=True) + "\n")
+                handle.flush()
+                os.fsync(handle.fileno())
         return True
-    except OSError:
-        return False
+    except OSError as exc:
+        raise UsagePersistenceError(f"Cannot persist usage ledger {usage_path}: {exc}") from exc
 
 
 def replace_usage_records(records: list[dict[str, Any]], usage_path: Path | None) -> bool:
@@ -230,8 +238,8 @@ def replace_usage_records(records: list[dict[str, Any]], usage_path: Path | None
                 os.fsync(handle.fileno())
             os.replace(temp_path, usage_path)
         return True
-    except OSError:
-        return False
+    except OSError as exc:
+        raise UsagePersistenceError(f"Cannot persist usage ledger {usage_path}: {exc}") from exc
     finally:
         if temp_path is not None and temp_path.exists():
             temp_path.unlink()

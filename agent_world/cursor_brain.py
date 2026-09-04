@@ -35,6 +35,7 @@ from agent_world.decision_failure import (
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.models import AgentDecision
+from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
 
 
@@ -633,8 +634,6 @@ def _parse_result_json(stdout: str) -> dict[str, Any] | None:
     return value if isinstance(value, dict) else None
 
 
-def _failure_decision(message: str) -> AgentDecision:
-    return AgentDecision(intent=message, actions=[{"type": "wait"}], messages=[], memory_updates=[])
 
 
 def _failure_detail(result: dict[str, Any] | None, stdout: str, stderr: str) -> str:

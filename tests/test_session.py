@@ -12,6 +12,7 @@ from agent_world.benchmarks import (
 )
 from agent_world.brain_factory import BrainSpec, PopulationGroup, PopulationSpec
 from agent_world.brain_runtime import BrainRuntime
+from agent_world.decision_outcome import failure_decision
 from agent_world.models import AgentDecision, WorldConfig
 from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
 from agent_world.session import SimulationSession
@@ -137,7 +138,7 @@ class SimulationSessionTests(unittest.TestCase):
         class QuotaBrain:
             def decide(self, _observation):
                 return AgentDecision(
-                    intent="Codex quota unavailable: test limit",
+                    failure_kind="quota", intent="Codex quota unavailable: test limit",
                     actions=[{"type": "wait"}],
                 )
 
@@ -243,7 +244,7 @@ class SimulationSessionTests(unittest.TestCase):
         class FailedBrain:
             def decide(self, _observation):
                 return AgentDecision(
-                    intent="Cursor decision failed: bad model alias",
+                    failure_kind="model_output", intent="Cursor model output failed: invalid JSON",
                     actions=[{"type": "wait"}],
                 )
 
@@ -277,7 +278,7 @@ class SimulationSessionTests(unittest.TestCase):
             def decide(self, _observation):
                 self.calls += 1
                 intent = "Invalid JSON response: test" if self.calls == 1 else "wait"
-                return AgentDecision(intent=intent, actions=[{"type": "wait"}])
+                return AgentDecision(failure_kind="model_output" if self.calls == 1 else None, intent=intent, actions=[{"type": "wait"}])
 
         class HealthyBrain:
             def decide(self, _observation):
@@ -306,7 +307,7 @@ class SimulationSessionTests(unittest.TestCase):
         class ProviderFailureBrain:
             def decide(self, _observation):
                 return AgentDecision(
-                    intent="Codex provider unavailable: stream disconnected",
+                    failure_kind="provider", intent="Codex provider unavailable: stream disconnected",
                     actions=[{"type": "wait"}],
                 )
 
@@ -338,7 +339,7 @@ class SimulationSessionTests(unittest.TestCase):
         class AuthenticationBrain:
             def decide(self, _observation):
                 return AgentDecision(
-                    intent="Claude authentication required: not logged in",
+                    failure_kind="authentication", intent="Claude authentication required: not logged in",
                     actions=[{"type": "wait"}],
                 )
 
@@ -385,7 +386,7 @@ class SimulationSessionTests(unittest.TestCase):
             def decide(self, _observation):
                 self.calls += 1
                 return AgentDecision(
-                    intent="ZCode provider unavailable: exceeded 300s timeout",
+                    failure_kind="provider", intent="ZCode provider unavailable: exceeded 300s timeout",
                     actions=[{"type": "wait"}],
                 )
 
@@ -558,7 +559,7 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
                 # Exhausted for the first tick's attempt, healthy afterwards.
                 if self.calls <= 1:
                     return AgentDecision(
-                        intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
+                        failure_kind="quota", intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
                     )
                 return AgentDecision(intent="wait", actions=[{"type": "wait"}])
 
@@ -586,7 +587,7 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
         class AlwaysLimitedBrain:
             def decide(self, _observation):
                 return AgentDecision(
-                    intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
+                    failure_kind="quota", intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
                 )
 
         slept: list[float] = []
@@ -606,7 +607,7 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
         class AlwaysLimitedBrain:
             def decide(self, _observation):
                 return AgentDecision(
-                    intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
+                    failure_kind="quota", intent=QuotaWaitAndResumeTests.WEEKLY_LIMIT, actions=[]
                 )
 
         slept: list[float] = []
@@ -627,7 +628,7 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
         class UnknownFailureBrain:
             def decide(self, _observation):
                 return AgentDecision(
-                    intent="Claude boundary failed: claude -p exited 1: novel outage text",
+                    failure_kind="harness", intent="Claude boundary failed: claude -p exited 1: novel outage text",
                     actions=[],
                 )
 
@@ -645,13 +646,12 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
         paused = [e for e in engine.state.events if e.type == "run_paused"]
         self.assertEqual(paused[0].data["affected_agents"], 2)
 
-    def test_one_agent_failing_alone_does_not_halt_the_run(self) -> None:
-        # Only a whole-population identical failure is conclusive; a single
-        # agent's boundary failure is ordinary and must be scored as such.
+    def test_one_infrastructure_failure_freezes_the_tick(self) -> None:
+        # Any confirmed infrastructure failure freezes the tick.
         class FlakyBrain:
             def decide(self, _observation):
                 return AgentDecision(
-                    intent="Claude boundary failed: claude -p exited 1: novel outage text",
+                    failure_kind="harness", intent="Claude boundary failed: claude -p exited 1: novel outage text",
                     actions=[],
                 )
 
@@ -667,5 +667,5 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
 
         result = session.run()
 
-        self.assertEqual(result.status, "completed")
-        self.assertEqual(result.final_tick, 2)
+        self.assertEqual(result.status, "paused_checkpoint")
+        self.assertEqual(result.final_tick, 0)
