@@ -16,6 +16,13 @@ on resume, and never relabel historical evidence or pool different recipes.
 General experiments may override recipe defaults without claiming benchmark
 certification. Enforce only actual world/connector constraints on those runs.
 
+Define new benchmark designs in `agent_world/recipes/ID.json`; registration
+and packaging are automatic. Validate with `agent-world recipes --validate
+PATH` and inspect with `agent-world recipes ID`. Use a new ID for changes
+to a published recipe. Reuse implemented scoring/transfer policies instead
+of branching launch, report, or finalization code on benchmark version names.
+See `docs/experiment-recipes.md` for the data model and authoring workflow.
+
 ## Agent workflow routing
 
 The repository-tracked skills in `.agents/skills` are the canonical operating

@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from agent_world.benchmarks import _merge_numeric_tree, score_benchmark_counts
+from agent_world.protocols import get_recipe
 from agent_world.run_report import _normalize_loaded_usage_record
 from agent_world.usage import (
     USD_RATE_CARD_EFFECTIVE_DATE,
@@ -779,6 +780,9 @@ def _run_record(
             "entrepreneurship": cohort_records[0]["entrepreneurship"],
             "economic_productivity": cohort_records[0]["economic_productivity"],
             "raw_metrics_json": _json(raw),
+            "recipe_id": trial.get("declared_protocol") or _path_get(report, "benchmarks", "protocol", "id"),
+            "report_recipe_id": _path_get(report, "benchmarks", "protocol", "id"),
+            "recipe_digest": _path_get(report, "benchmarks", "protocol", "recipe_fingerprint_sha256"),
             "scores_json": _json(scores),
         }
     )
@@ -898,6 +902,26 @@ def _insert_tick_metrics(
         )
 
 
+def _pool_recipe_counts(records: list[dict[str, Any]]) -> tuple[dict, dict]:
+    recipe_ids = {record.get("recipe_id") or record.get("benchmark_protocol") for record in records}
+    if len(recipe_ids) != 1:
+        raise ValueError("Cannot pool different benchmark recipes into one catalog model result")
+    recipe_id = next(iter(recipe_ids))
+    # Pre-recipe catalog evidence was intentionally rescored by the shared
+    # participant formulas. Keep that explicit historical compatibility only.
+    legacy = {None, "participant-v1", "participant-v2", "participant-v3", "participant-v4", "participant-v5"}
+    recipe = get_recipe(None if recipe_id in legacy else recipe_id)
+    for record in records:
+        if record.get("recipe_digest") and record.get("report_recipe_id", recipe.id) != recipe.id:
+            raise ValueError("Recipe-aware report conflicts with its declared trial")
+        if record.get("recipe_digest") not in {None, recipe.digest}:
+            raise ValueError("Catalog evidence recipe differs from its registered definition")
+    raw: dict[str, Any] = {}
+    for record in records:
+        _merge_numeric_tree(raw, json.loads(record["raw_metrics_json"]))
+    return raw, score_benchmark_counts(raw, recipe.id)
+
+
 def _insert_model_results(
     connection: sqlite3.Connection,
     models: list[dict[str, Any]],
@@ -916,10 +940,7 @@ def _insert_model_results(
         ]
         if not records:
             continue
-        raw: dict[str, Any] = {}
-        for record in records:
-            _merge_numeric_tree(raw, json.loads(record["raw_metrics_json"]))
-        scores = score_benchmark_counts(raw)
+        raw, scores = _pool_recipe_counts(records)
         decisions = [decision for record in records for decision in run_decisions[record["run_id"]]]
         latency = _latency_summary(decision.get("duration_seconds") for decision in decisions)
         calls = sum(record["calls"] for record in records)

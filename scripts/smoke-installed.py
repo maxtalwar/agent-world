@@ -11,6 +11,8 @@ package = Path(agent_world.__file__).resolve().parent
 checkout = Path(__file__).resolve().parents[1]
 assert package != checkout / "agent_world", f"Imported checkout instead of wheel: {package}"
 assert (package / "static" / "observer.html").is_file()
+assert (package / "recipes" / "participant-v6.json").is_file()
+assert (package / "recipes" / "participant-v7.json").is_file()
 with tempfile.TemporaryDirectory(prefix="agent-world-wheel-smoke-") as temporary:
     for recipe in (None, "participant-v6", "participant-v7"):
         root = Path(temporary) / (recipe or "experiment")
@@ -31,4 +33,10 @@ with tempfile.TemporaryDirectory(prefix="agent-world-wheel-smoke-") as temporary
         report = json.loads((root/"run-report.json").read_text())
         assert report["run"]["final_tick"] == 2
         assert report["benchmarks"]["protocol"]["id"] == (recipe or "participant-v7")
-print("Installed wheel: assets, default/v6/v7 simulations, reports and checkpoints passed.")
+result = subprocess.run([
+    sys.executable, "-m", "agent_world.cli", "recipes", "--validate",
+    str(checkout / "configs" / "recipe-examples" / "small-society.json"),
+], cwd=tempfile.gettempdir(), text=True, capture_output=True, timeout=30)
+assert result.returncode == 0, result.stdout + result.stderr
+assert json.loads(result.stdout)[0]["id"] == "small-society"
+print("Installed wheel: JSON recipes, authoring validation, simulations, reports and checkpoints passed.")

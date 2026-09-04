@@ -139,8 +139,8 @@ Every config has these top-level fields:
 | `run_id` | Unique filesystem-safe identifier. It names the job, supervisors, cohorts, and default output directory. |
 | `kind` | `benchmark` or `experiment`. This is an evidence boundary, not just a label. |
 | `question` | Required for experiments; the concrete claim or harness behavior being tested. |
-| `protocol` | Benchmark only: `participant-v6` or `participant-v7` (default). Both run in the current checkout. Locks certification settings. |
-| `recipe` | Optional experiment defaults: `participant-v6` or `participant-v7`. World, effort, population, horizon, and seeds remain overridable; this does not request certification. |
+| `protocol` | Benchmark only: any registered JSON recipe ID; `participant-v7` is the default. Locks the selected recipe’s certification settings. |
+| `recipe` | Optional experiment defaults from any registered JSON recipe. World, effort, population, horizon, and seeds remain overridable; this does not request certification. |
 | `model` | Provider boundary, callable model ID, reasoning effort, or an experimental mixed population. |
 | `seeds` | Cells to launch. Defaults to `[11, 41]` for a benchmark and `[11]` for an experiment. |
 | `world` | Preset and optional world treatments. Omit locked benchmark settings; the protocol owns them. |

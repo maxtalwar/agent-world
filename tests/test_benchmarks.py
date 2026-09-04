@@ -36,6 +36,7 @@ from agent_world.benchmarks import (
 )
 from agent_world.cli import _apply_benchmark_protocol, _resolve_provider_max_workers
 from agent_world.run_report import _render_benchmark_lines
+from agent_world.models import WorldConfig
 
 
 def _protocol_report(
@@ -52,34 +53,35 @@ def _protocol_report(
     from agent_world.protocols import get_recipe
     recipe = get_recipe(protocol_id)
     reasoning_effort = reasoning_effort or recipe.reasoning_effort
-    agents = [f"agent-{index}" for index in range(1, 11)]
+    agents = [f"agent-{index}" for index in range(1, recipe.defaults()["agents"] + 1)]
     cohort = {
         "brain": "codex",
         "model": "gpt-test",
         "reasoning_effort": reasoning_effort,
         "provider": "codex_cli",
         "agents": agents,
-        "initial_agents": 10,
+        "initial_agents": recipe.defaults()["agents"],
     }
     report = {
         "source": source,
         "run": {
             "completed": True,
-            "final_tick": 50,
-            "target_ticks": 50,
+            "final_tick": recipe.defaults()["ticks"],
+            "target_ticks": recipe.defaults()["ticks"],
         },
         "config": {
+            **{key: value for key, value in recipe.defaults().items() if key in WorldConfig.__dataclass_fields__},
             "seed": seed,
             "transfer_kind_mode": recipe.defaults()["transfer_kind_mode"],
-            "economy_mode": "organic",
-            "world_variant": "frontier",
-            "geography_mode": "dispersed",
-            "specialization_mode": "generalists",
-            "objective_mode": "neutral",
+            "economy_mode": recipe.defaults()["economy_mode"],
+            "world_variant": recipe.defaults()["world_variant"],
+            "geography_mode": recipe.defaults()["geography_mode"],
+            "specialization_mode": recipe.defaults()["specialization_mode"],
+            "objective_mode": recipe.defaults()["objective_mode"],
         },
         "population": {
             "type": "codex",
-            "total_agents": 10,
+            "total_agents": recipe.defaults()["agents"],
             "cohorts": {"cohort-1": cohort},
         },
         "reliability": {
@@ -101,6 +103,8 @@ def _protocol_report(
         "message": "started",
         "data": {
             "benchmark_protocol": protocol_id,
+            "observation_history_policy": recipe.defaults()["observation_history_policy"],
+            "codex_action_max_items": recipe.defaults()["codex_action_max_items"],
             "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"], protocol_id),
             "decision_mode": "raw",
             "turn_resolution": "simultaneous",
@@ -139,7 +143,7 @@ def _protocol_report(
             "Expecting value: line 1 column 1 (char 0)"
         )
     snapshot = {
-        "tick": 50,
+        "tick": recipe.defaults()["ticks"],
         "agents": {
             agent_id: {
                 "alive": True,

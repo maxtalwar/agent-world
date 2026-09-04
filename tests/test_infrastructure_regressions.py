@@ -455,11 +455,12 @@ class InfrastructureRegressions(unittest.TestCase):
             with patch("agent_world.managed_runs.Path.cwd", return_value=linked):
                 self.assertEqual(_canonical_root(), root)
 
-    def test_historical_cells_pin_current_orchestration_separately(self):
+    def test_pinned_cells_pin_current_orchestration_separately(self):
         from agent_world.managed_runs import build_launch_plan
         config = {"run_id": "fixture", "kind": "benchmark", "protocol": "participant-v6",
                   "source": {"commit": "old"}, "seeds": [11], "model": {"brain": "codex", "id": "fixture"}}
-        with patch("agent_world.managed_runs._git", side_effect=["a"*40, "b"*40]):
+        from agent_world.protocols import get_recipe
+        with patch("agent_world.managed_runs._git", side_effect=["a"*40, json.dumps(get_recipe("participant-v6").to_dict()), "b"*40]):
             plan = build_launch_plan(config, Path("/fixture"))
         self.assertEqual(plan["launch_commit"], "a"*40)
         self.assertEqual(plan["orchestrator_commit"], "b"*40)

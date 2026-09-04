@@ -18,10 +18,8 @@ from typing import Any
 from agent_world.ablation import format_table, run_ablation
 from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.benchmarks import (
-    BENCHMARK_ALLOWED_SEEDS,
     BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
     BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS,
-    BENCHMARK_DIAGNOSTIC_TICKS,
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_QUOTA_WAIT_HOURS,
     aggregate_benchmark_reports,
@@ -114,6 +112,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="agent-world")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
+    recipes_parser = subparsers.add_parser("recipes", help="Validate and show registered JSON recipes.")
+    recipes_parser.add_argument("recipe", nargs="?", choices=list(RECIPES))
+    recipes_parser.add_argument("--validate", type=Path, default=None, help="Validate an unregistered JSON recipe file.")
+
     artifact_parser = subparsers.add_parser("artifacts", help="Inventory or export managed run evidence.")
     artifact_parser.add_argument("run_id")
     artifact_parser.add_argument("--export", type=Path, default=None)
@@ -164,8 +166,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--max-run-tokens", type=int, default=None)
     run_parser.add_argument("--max-run-cost-usd", type=float, default=None)
     run_parser.add_argument("--world-config-json", default=None, help="Experiment-only WorldConfig overrides as JSON.")
-    run_parser.add_argument("--width", type=int, default=16)
-    run_parser.add_argument("--height", type=int, default=16)
+    run_parser.add_argument("--width", type=int, default=None)
+    run_parser.add_argument("--height", type=int, default=None)
     run_parser.add_argument("--preset", choices=sorted(RUN_PRESETS), default=None)
     run_parser.add_argument("--objective-mode", choices=["neutral", "collective", "individual"], default=None)
     run_parser.add_argument("--economy-mode", choices=["baseline", "commerce", "organic"], default=None)
@@ -315,13 +317,13 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument(
         "--startup-health-check-tick",
         type=int,
-        default=5,
+        default=None,
         help="Audit model-response failures after this many completed ticks; 0 disables the gate.",
     )
     run_parser.add_argument(
         "--startup-health-max-failure-rate",
         type=float,
-        default=0.2,
+        default=None,
         help="Stop when a model cohort exceeds this decision-failure rate at the startup check.",
     )
     run_parser.add_argument(
@@ -504,7 +506,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.command == "setup":
+    if args.command == "recipes":
+        from agent_world.protocols import load_recipe
+        if args.recipe and args.validate:
+            parser.error("Use a registered recipe id or --validate FILE, not both")
+        selected = [load_recipe(args.validate)] if args.validate else ([get_recipe(args.recipe)] if args.recipe else RECIPES.values())
+        print(json.dumps([recipe.to_dict() | {"digest": recipe.digest} for recipe in selected], indent=2))
+    elif args.command == "setup":
         _setup(args)
     elif args.command == "artifacts":
         from agent_world.artifacts import inventory_job, export_job
@@ -747,6 +755,13 @@ def _run(args: argparse.Namespace) -> None:
             if saved_digest is not None and saved_digest != get_recipe(saved_recipe).digest:
                 raise ValueError("Recipe changed after this checkpoint")
         args.recipe = saved_recipe
+        for name, fallback in (("startup_health_check_tick", 5), ("startup_health_max_failure_rate", 0.2)):
+            value = saved.get(name, fallback)
+            if name == "startup_health_check_tick" and value is None:
+                value = 0
+            if getattr(args, name, None) not in {None, value}:
+                raise ValueError(f"Cannot change {name} when resuming")
+            setattr(args, name, value)
         saved_budget = saved.get("claude_thinking_budget_tokens")
         if saved_budget is None and saved_benchmark:
             saved_budget = BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
@@ -849,8 +864,8 @@ def _run(args: argparse.Namespace) -> None:
             args.brain = args.brain or "survival"
             args.agents = args.agents if args.agents is not None else 5
         config = WorldConfig(
-            width=args.width,
-            height=args.height,
+            width=args.width if args.width is not None else 16,
+            height=args.height if args.height is not None else 16,
             seed=args.seed,
             objective_mode=getattr(args, "objective_mode", "neutral"),
             economy_mode=getattr(args, "economy_mode", "baseline"),
@@ -865,6 +880,12 @@ def _run(args: argparse.Namespace) -> None:
             town_ledger_output_mode=getattr(args, "town_ledger_output_mode", None) or "action",
             world_variant=getattr(args, "world_variant", None) or "classic",
         )
+        if getattr(args, "recipe", None):
+            recipe_world = {
+                name: getattr(args, name) for name in WorldConfig.__dataclass_fields__
+                if name in get_recipe(args.recipe).defaults()
+            }
+            config = WorldConfig(**(asdict(config) | recipe_world))
         if getattr(args, "world_config_json", None):
             if getattr(args, "benchmark_protocol", None):
                 raise ValueError("World config overrides are experiment-only")
@@ -875,15 +896,21 @@ def _run(args: argparse.Namespace) -> None:
         names = [f"Agent {index + 1}" for index in range(args.agents)]
         engine = WorldEngine.create(config=config, agent_names=names)
 
-    if getattr(args, "benchmark_protocol", None) and getattr(args, "observation_history_policy", None) not in {None, "full-v1"}:
-        raise ValueError("Benchmark protocols require the full-v1 observation policy")
+    if getattr(args, "benchmark_protocol", None):
+        expected_history = get_recipe(args.benchmark_protocol).defaults()["observation_history_policy"]
+        if getattr(args, "observation_history_policy", None) not in {None, expected_history}:
+            raise ValueError(f"Selected benchmark recipe requires the {expected_history} observation policy")
     saved_history_policy = getattr(engine, "_observation_history_policy", "full-v1")
     requested_history_policy = getattr(args, "observation_history_policy", None)
     if resumed and requested_history_policy not in {None, saved_history_policy}:
         raise ValueError("A checkpoint must be resumed with its original observation history policy.")
     args.observation_history_policy = requested_history_policy or saved_history_policy
 
-    codex_action_max_items = getattr(args, "codex_action_max_items", None) or 4
+    requested_action_limit = getattr(args, "codex_action_max_items", None)
+    saved_action_limit = getattr(engine, "_codex_action_max_items", 4)
+    if resumed and requested_action_limit not in {None, saved_action_limit}:
+        raise ValueError("Cannot change Codex action limit when resuming")
+    codex_action_max_items = (saved_action_limit if resumed else 4) if requested_action_limit is None else requested_action_limit
     if codex_action_max_items < 1 or codex_action_max_items > 16:
         raise ValueError("--codex-action-max-items must be between 1 and 16")
     engine._codex_action_max_items = codex_action_max_items
@@ -940,11 +967,12 @@ def _run(args: argparse.Namespace) -> None:
     # still clamped to this run's global worker pool.
     provider_max_workers = _resolve_provider_max_workers(args, max_workers)
     decision_mode = args.decision_mode or "raw"
-    startup_health_check_tick = getattr(args, "startup_health_check_tick", 5) or None
+    configured_gate = getattr(args, "startup_health_check_tick", None)
+    startup_health_check_tick = (5 if configured_gate is None else configured_gate) or None
     quota_wait_hours = max(0.0, float(getattr(args, "quota_wait_hours", None) or 0.0))
-    startup_health_max_failure_rate = getattr(
-        args, "startup_health_max_failure_rate", 0.2
-    )
+    startup_health_max_failure_rate = getattr(args, "startup_health_max_failure_rate", None)
+    if startup_health_max_failure_rate is None:
+        startup_health_max_failure_rate = 0.2
     checkpoint_path = getattr(args, "checkpoint", None)
     if checkpoint_path is None:
         checkpoint_path = resume_checkpoint
@@ -1173,7 +1201,7 @@ def _run(args: argparse.Namespace) -> None:
         plan_usage_path=plan_usage_path,
         plan_usage_checkpoints=list(checkpoint_extra.get("plan_usage_checkpoints") or []),
         benchmark_checkpoint_ticks=(
-            BENCHMARK_DIAGNOSTIC_TICKS
+            get_recipe(args.benchmark_protocol).checkpoints
             if getattr(args, "benchmark_protocol", None) in RECIPES
             else ()
         ),
@@ -1418,10 +1446,10 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         if getattr(args, argument, None) is None:
             setattr(args, argument, provider_worker_defaults[provider])
     if args.seed is None:
-        args.seed = 11
-    if args.seed not in BENCHMARK_ALLOWED_SEEDS:
+        args.seed = recipe.provisional_seed
+    if args.seed not in recipe.allowed_seeds:
         declared = ", ".join(
-            str(seed) for seed in sorted(BENCHMARK_ALLOWED_SEEDS)
+            str(seed) for seed in sorted(recipe.allowed_seeds)
         )
         raise ValueError(
             f"{recipe.id} requires one of the declared seeds: "

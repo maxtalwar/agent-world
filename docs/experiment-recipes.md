@@ -13,6 +13,88 @@ Both recipes use the frontier world, ten generalists, fifty ticks, fresh
 conversations, and connector-v3. Their score formulas are shared; revision
 numbers are local to the protocol. Worker counts are operational settings.
 
+## Add a benchmark without editing Python
+
+Recipes are standalone JSON documents in `agent_world/recipes/ID.json`.
+Every file in that directory is automatically registered and packaged with the
+installed application. V6 and v7 use this same mechanism; neither has a special
+launch or finalization path.
+
+Start with [small-society.json](../configs/recipe-examples/small-society.json),
+an unregistered example with three agents, six ticks, a 32×32 world, seeds
+5 and 9, bounded observation history, and custom scoring targets:
+
+```bash
+agent-world recipes --validate configs/recipe-examples/small-society.json
+cp configs/recipe-examples/small-society.json agent_world/recipes/small-society.json
+agent-world recipes small-society
+```
+
+Edit its values and keep the filename equal to its `id`. For a different
+name, rename both. `agent-world recipes` validates and lists every registered
+recipe. Commit and push the definition before launching: the detached source
+checkout must contain exactly the definition selected at planning time. An
+explicit `source.commit` is checked for that same JSON definition before
+launch; pre-JSON historical studies use their original checkout/interface.
+
+Then choose `"protocol": "small-society"` in a managed benchmark config, or
+`"recipe": "small-society"` in an experiment config. No Python registry edit
+or version-specific launcher, scorer, or finalizer is needed. The example is
+not registered by default and does not change either established benchmark.
+
+### JSON data model
+
+| Field | Meaning |
+| --- | --- |
+| `schema_version` | Recipe document format; currently 1. |
+| `id` | Unique lowercase name with digits/hyphens; must equal the filename stem. |
+| `defaults` | Frozen world, population, horizon, and harness settings. Experiments may override them. |
+| `replications.required_seeds` | Nonempty, unique integer seeds required for certification. |
+| `replications.extended_seeds` | Optional evidence, disjoint from required seeds. |
+| `replications.provisional_seed` | A required seed that can stand alone provisionally. |
+| `checkpoints` | Positive scoring checkpoints; the last must equal `defaults.ticks`. |
+| `transfer_accounting` | `self_declared` or `frozen_classifier`; selects finalization behavior. |
+| `scoring.policy` | Implemented scoring method; currently `participant`. |
+| `scoring.revision` | Positive revision label within this recipe. |
+| `scoring.parameters` | Positive finite targets for material endowment, initiative, net value creation, and enterprise supply. |
+
+The supplied files spell out every required default. Additional
+`WorldConfig` fields may be included in `defaults`, including reserve,
+resource, memory, and seasonal settings; `seed` belongs in the replication
+policy instead. The loader checks field names, primitive types, modes, actual
+world construction, accounting consistency, and seed/checkpoint relationships.
+The current handcrafted maps support 16×16 or 32×32 worlds; 32×32 requires
+dispersed geography. JSON configures supported world mechanics rather than
+creating new map generators.
+
+Harness settings include connector/conversation modes, reasoning effort,
+session length, action limits, observation-history policy, Claude's thinking
+ceiling, and the startup health gate. Worker counts remain operational run
+settings. Certification still requires a uniform model cohort, simultaneous
+decisions, clean execution, and private I/O evidence under the implemented
+participant scoring method.
+
+The `participant` scoring method uses the existing formulas with the recipe's
+four configured reference targets. Changing a target changes the calculation
+and its reported formula. A genuinely new scoring algorithm or world mechanic
+requires an implementation; unsupported policy names fail validation rather
+than falling back to another algorithm.
+
+### Immutable identity
+
+There is no inheritance from a moving default recipe. A published recipe ID
+should keep its behavior: use a new ID/file for a changed experiment design.
+Whitespace and key ordering do not affect its digest. World settings, seeds,
+checkpoints, transfer policy, and scoring parameters do. Editing another
+recipe does not invalidate the selected recipe.
+
+Reports, trajectories, finalization readiness, and catalog aggregation use the
+selected definition. A catalog model result must pool one recipe; use separate
+catalog entries for separate recipes. Legacy reports without recipe digests
+retain their explicitly declared trial identity even when their old renderer
+printed a different current-protocol header. New recipe-aware reports with
+conflicting identities or digests are rejected.
+
 ## Select a benchmark
 
 Use the managed interface with a config such as:
@@ -45,11 +127,11 @@ standard reasoning policy.
   "schema_version": 1,
   "run_id": "glm-v6-small-world",
   "kind": "experiment",
-  "question": "How does a small GLM society behave in a smaller frontier world?",
+  "question": "How does a small GLM society behave in a larger frontier world?",
   "recipe": "participant-v6",
   "model": {"brain": "zcode", "id": "glm-5.3", "reasoning_effort": "max"},
   "runtime": {"agents": 3, "ticks": 7},
-  "world": {"width": 12, "height": 12}
+  "world": {"width": 32, "height": 32}
 }
 ```
 

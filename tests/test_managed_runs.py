@@ -136,7 +136,7 @@ class ManagedRunConfigTests(unittest.TestCase):
 
     @patch("agent_world.managed_runs._git")
     def test_plan_pins_commit_and_creates_one_cell_per_seed(self, git) -> None:
-        git.side_effect = ["a" * 40, ""]
+        git.side_effect = ["a" * 40, "", ""]
         plan = build_launch_plan(_config("benchmark"), Path("/repo"))
         self.assertEqual(plan["launch_commit"], "a" * 40)
         self.assertEqual([cell["seed"] for cell in plan["cells"]], [11, 41])

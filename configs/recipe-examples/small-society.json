@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "id": "small-society",
+  "defaults": {
+    "ticks": 6,
+    "agents": 3,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "objective_mode": "neutral",
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "reasoning_effort": "low",
+    "connector_profile": "connector-v3",
+    "conversation_mode": "fresh-conversation",
+    "session_max_turns": 10,
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "assignment_strategy": "ordered",
+    "assignment_seed": 0,
+    "width": 32,
+    "height": 32,
+    "claude_thinking_budget_tokens": 2048,
+    "startup_health_check_tick": 1,
+    "startup_health_max_failure_rate": 0.2,
+    "transfer_kind_mode": "self_declared",
+    "season_length_ticks": 3,
+    "observation_history_policy": "bounded-v1",
+    "codex_action_max_items": 6
+  },
+  "transfer_accounting": "self_declared",
+  "replications": {
+    "required_seeds": [
+      5,
+      9
+    ],
+    "extended_seeds": [
+      17
+    ],
+    "provisional_seed": 5
+  },
+  "checkpoints": [
+    2,
+    4,
+    6
+  ],
+  "scoring": {
+    "policy": "participant",
+    "revision": 1,
+    "parameters": {
+      "material_endowment_multiple": 4,
+      "initiative_per_100_agent_ticks": 5,
+      "value_creation_per_100_agent_ticks": 20,
+      "enterprise_supply_per_100_agent_ticks": 10
+    }
+  }
+}

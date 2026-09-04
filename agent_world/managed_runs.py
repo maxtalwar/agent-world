@@ -16,10 +16,9 @@ import time
 from typing import Any
 
 from agent_world.benchmarks import (
-    BENCHMARK_ALLOWED_SEEDS,
     BENCHMARK_PROTOCOL_ID,
 )
-from agent_world.protocols import RECIPES, get_recipe
+from agent_world.protocols import RECIPES, get_recipe, recipe_from_dict
 from agent_world.jsonl_tail import tail_for
 from agent_world.io import atomic_write_json
 
@@ -135,7 +134,8 @@ def load_run_config(path: Path) -> dict[str, Any]:
         if effort is not None and effort not in _REASONING_EFFORTS:
             raise ValueError(f"Unsupported model.reasoning_effort: {effort!r}")
 
-    seeds = value.get("seeds", [11, 41] if kind == "benchmark" else [11])
+    benchmark_recipe = get_recipe(value.get("protocol")) if kind == "benchmark" else None
+    seeds = value.get("seeds", list(benchmark_recipe.required_seeds) if benchmark_recipe else [11])
     if not isinstance(seeds, list) or not seeds or not all(
         isinstance(seed, int) and not isinstance(seed, bool) for seed in seeds
     ):
@@ -146,15 +146,11 @@ def load_run_config(path: Path) -> dict[str, Any]:
 
     if kind == "benchmark":
         protocol = value.get("protocol") or BENCHMARK_PROTOCOL_ID
-        if not isinstance(protocol, str) or not re.fullmatch(r"participant-v[0-9]+", protocol):
-            raise ValueError(
-                f"protocol must name a participant suite such as {BENCHMARK_PROTOCOL_ID!r}"
-            )
         recipe = get_recipe(protocol)
         if value.get("recipe") not in {None, recipe.id}:
             raise ValueError("Benchmark protocol and recipe must agree")
         value["protocol"] = protocol
-        undeclared = sorted(set(seeds) - set(BENCHMARK_ALLOWED_SEEDS))
+        undeclared = sorted(set(seeds) - recipe.allowed_seeds)
         if undeclared:
             raise ValueError(f"Benchmark seeds are not declared by {protocol}: {undeclared}")
         incompatible_blocks = {
@@ -320,12 +316,26 @@ def build_launch_plan(config: dict[str, Any], root: Path, *, run_id: str | None 
     commit = _git(root, "rev-parse", f"{requested_commit}^{{commit}}")
     if requested_commit == "HEAD" and _git(root, "status", "--porcelain", "--untracked-files=no"):
         raise ValueError("Refusing to launch from dirty tracked source; commit it or set source.commit")
+    if requested_commit == "HEAD" and _git(root, "status", "--porcelain", "--untracked-files=all", "--", "agent_world/recipes"):
+        raise ValueError("Commit recipe files before launching from HEAD")
+    selected_recipe = config.get("protocol") or config.get("recipe")
+    if requested_commit != "HEAD" and selected_recipe:
+        try:
+            definition = _git(root, "show", f"{commit}:agent_world/recipes/{selected_recipe}.json")
+            pinned_recipe = recipe_from_dict(json.loads(definition))
+        except (subprocess.CalledProcessError, ValueError) as exc:
+            raise ValueError(
+                "source.commit must contain the selected JSON recipe; launch older "
+                "pre-recipe studies through their original checkout"
+            ) from exc
+        if pinned_recipe.digest != get_recipe(selected_recipe).digest:
+            raise ValueError("Selected recipe differs in source.commit; use that checkout's definition")
     output_root = Path(config.get("output_dir") or DEFAULT_OUTPUT_ROOT / resolved_id)
     if not output_root.is_absolute():
         output_root = root / output_root
     job_dir = root / DEFAULT_JOB_ROOT / resolved_id
     target_ticks = (
-        50
+        get_recipe(config["protocol"]).defaults()["ticks"]
         if config["kind"] == "benchmark"
         else int((config.get("runtime") or {}).get("ticks",
             get_recipe(config["recipe"]).defaults()["ticks"] if config.get("recipe") else 25))

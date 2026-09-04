@@ -57,11 +57,11 @@ BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS = 2048
 # interrupt runs. This is a wall-clock policy, not a simulation parameter - it
 # cannot change any decision, action, or score.
 BENCHMARK_QUOTA_WAIT_HOURS = 12.0
-BENCHMARK_SEEDS = frozenset({11, 41})
-BENCHMARK_EXTENDED_SEEDS = frozenset({73, 101, 137})
+BENCHMARK_SEEDS = frozenset(get_recipe().required_seeds)
+BENCHMARK_EXTENDED_SEEDS = frozenset(get_recipe().extended_seeds)
 BENCHMARK_ALLOWED_SEEDS = BENCHMARK_SEEDS | BENCHMARK_EXTENDED_SEEDS
-BENCHMARK_PROVISIONAL_SEED = 11
-BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
+BENCHMARK_PROVISIONAL_SEED = get_recipe().provisional_seed
+BENCHMARK_DIAGNOSTIC_TICKS = get_recipe().checkpoints
 # V7 revision 1. One harness change over v6: agents self-classify transfers.
 # The gift action takes kind = gift | payment | barter (default gift), the
 # declaration is recorded in the event, and scoring TRUSTS it - payment is
@@ -601,19 +601,20 @@ def benchmark_protocol(protocol_id: str | None = None) -> dict[str, Any]:
         "scoring_revision": recipe.scoring_revision,
         "recipe_fingerprint_sha256": recipe.digest,
         "transfer_accounting": recipe.transfer_accounting,
+        "scoring_policy": recipe.scoring_policy,
+        "scoring_parameters": recipe.scoring_parameters(),
         "suite_id": recipe.suite_id,
         "code_fingerprint_sha256": benchmark_code_fingerprint(protocol_id=recipe.id),
         "replications": {
-            "required_seeds": sorted(BENCHMARK_SEEDS),
-            "minimum": len(BENCHMARK_SEEDS),
-            "provisional_seed": BENCHMARK_PROVISIONAL_SEED,
+            "required_seeds": list(recipe.required_seeds),
+            "minimum": len(recipe.required_seeds),
+            "provisional_seed": recipe.provisional_seed,
             "provisional_minimum": 1,
-            "optional_extended_seeds": sorted(BENCHMARK_EXTENDED_SEEDS),
+            "optional_extended_seeds": list(recipe.extended_seeds),
             "policy": (
-                "One clean complete seed-11 run is a provisional benchmark. "
-                "Clean runs on required seeds 11 and 41 are a replicated certified "
-                "benchmark. Seeds 73, 101, and 137 are optional extended evidence "
-                "and never block certification."
+                f"Seed {recipe.provisional_seed} can stand as provisional evidence. "
+                f"Required seeds {list(recipe.required_seeds)} certify a replicated benchmark; "
+                f"extended seeds {list(recipe.extended_seeds)} are optional."
             ),
         },
         "execution_defaults": {
@@ -630,9 +631,9 @@ def benchmark_protocol(protocol_id: str | None = None) -> dict[str, Any]:
         },
         "trial": {
             **recipe.defaults(),
-            "diagnostic_score_ticks": list(BENCHMARK_DIAGNOSTIC_TICKS),
-            "official_score_tick": 50,
-            "season_length_ticks": 12,
+            "diagnostic_score_ticks": list(recipe.checkpoints),
+            "official_score_tick": recipe.defaults()["ticks"],
+            "season_length_ticks": recipe.defaults().get("season_length_ticks", 12),
             "deliberation_policy": (
                 f"Request the named {recipe.reasoning_effort} reasoning setting from every connector; "
                 "provider-native spend is measured and reported, "
@@ -682,10 +683,10 @@ def benchmark_protocol(protocol_id: str | None = None) -> dict[str, Any]:
             },
         },
         "targets": {
-            "terminal_endowment_multiple": TERMINAL_ENDOWMENT_MULTIPLE_TARGET,
-            "enterprise_supply_per_100_agent_ticks": ENTERPRISE_SUPPLY_TARGET_PER_100_AGENT_TICKS,
-            "net_value_created_per_100_agent_ticks": NET_VALUE_CREATION_TARGET_PER_100_AGENT_TICKS,
-            "venture_initiatives_per_100_agent_ticks": INITIATIVE_TARGET_PER_100_AGENT_TICKS,
+            "terminal_endowment_multiple": recipe.scoring_parameters()["material_endowment_multiple"],
+            "enterprise_supply_per_100_agent_ticks": recipe.scoring_parameters()["enterprise_supply_per_100_agent_ticks"],
+            "net_value_created_per_100_agent_ticks": recipe.scoring_parameters()["value_creation_per_100_agent_ticks"],
+            "venture_initiatives_per_100_agent_ticks": recipe.scoring_parameters()["initiative_per_100_agent_ticks"],
         },
         "accounting_values": {
             "method": (
@@ -701,13 +702,13 @@ def benchmark_protocol(protocol_id: str | None = None) -> dict[str, Any]:
         },
         "aggregation": (
             "For a provisional result, apply the frozen formulas to the clean "
-            "seed-11 raw counts. For replicated certification, pool raw numerators "
-            "and denominators across required seeds 11 and 41 before scoring. "
+            f"seed-{recipe.provisional_seed} raw counts. For replicated certification, pool raw numerators "
+            f"and denominators across required seeds {list(recipe.required_seeds)} before scoring. "
             "Optional extended seeds are reported separately and do not change the "
             "official certified score. Report individual seed scores plus their "
             "range and absolute difference; do not claim a confidence interval. "
-            "Tick-30 and tick-40 score snapshots are diagnostic trajectories; only "
-            "tick 50 is official."
+            f"Checkpoints {list(recipe.checkpoints[:-1])} are diagnostic; "
+            f"tick {recipe.defaults()['ticks']} is official."
         ),
     }
 
@@ -726,6 +727,8 @@ def build_benchmark_results(
     started = _latest_lifecycle_event(events)
     start_data = (started or {}).get("data") or {}
     declared_recipe = start_data.get("benchmark_protocol") or start_data.get("recipe")
+    if declared_recipe and start_data.get("recipe_fingerprint_sha256"):
+        get_recipe(declared_recipe)  # Never relabel a missing JSON recipe as the default.
     recipe = get_recipe(declared_recipe if declared_recipe in RECIPES else None)
     trial_flags = _trial_flags(report, start_data, cohorts, recipe.id)
     trial_protocol = start_data.get("benchmark_protocol")
@@ -781,7 +784,7 @@ def build_benchmark_results(
             )
             if attribution_override is None:
                 cohort_flags.append("unverified_model_output_attribution")
-        scores = score_benchmark_counts(raw)
+        scores = score_benchmark_counts(raw, recipe.id)
         scored[str(cohort_id)] = {
             "attribution_override": attribution_override,
             "brain": cohort.get("brain"),
@@ -853,9 +856,11 @@ def build_benchmark_results(
     }
 
 
-def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
+def score_benchmark_counts(raw: dict[str, Any], protocol_id: str | None = None) -> dict[str, Any]:
     """Apply the frozen participant-v4 formulas to pooled or per-run counts."""
 
+    recipe = get_recipe(protocol_id)
+    parameters = recipe.scoring_parameters()
     feasibility_denominator = float(
         raw.get("submitted_actions_excluding_contention") or 0
     )
@@ -903,7 +908,7 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
     living_terminal_value = float(
         raw.get("living_terminal_economic_value") or 0
     )
-    material_target = initial_endowment * TERMINAL_ENDOWMENT_MULTIPLE_TARGET
+    material_target = initial_endowment * parameters["material_endowment_multiple"]
     material = (
         _clamp_score(100.0 * living_terminal_value / material_target)
         if material_target > 0
@@ -929,7 +934,7 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
     )
     initiative_score = (
         _nonnegative_score(
-            100.0 * initiative_rate / INITIATIVE_TARGET_PER_100_AGENT_TICKS
+            100.0 * initiative_rate / parameters["initiative_per_100_agent_ticks"]
         )
         if initiative_rate is not None
         else None
@@ -938,7 +943,7 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
         _nonnegative_score(
             100.0
             * net_value_creation_rate
-            / NET_VALUE_CREATION_TARGET_PER_100_AGENT_TICKS
+            / parameters["value_creation_per_100_agent_ticks"]
         )
         if net_value_creation_rate is not None
         else None
@@ -952,7 +957,7 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
         _nonnegative_score(
             100.0
             * enterprise_supply_rate
-            / ENTERPRISE_SUPPLY_TARGET_PER_100_AGENT_TICKS
+            / parameters["enterprise_supply_per_100_agent_ticks"]
         )
         if enterprise_supply_rate is not None
         else None
@@ -1006,7 +1011,7 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
                 "geometric_mean(effective execution, "
                 "geometric_mean(target-horizon survival exposure, "
                 "endpoint population health), living-accessible terminal value "
-                "relative to 3x starting endowment)"
+                f"relative to {parameters['material_endowment_multiple']:g}x starting endowment)"
             ),
         },
         "entrepreneurial_agency": {
@@ -1052,9 +1057,9 @@ def score_benchmark_counts(raw: dict[str, Any]) -> dict[str, Any]:
                 ),
             },
             "formula": (
-                "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, "
+                f"geometric_mean(enterprise supply rate vs {parameters['enterprise_supply_per_100_agent_ticks']:g}/100 agent-ticks, "
                 "positive living-accessible net value creation rate vs "
-                "20/100 agent-ticks); 100 is the "
+                f"{parameters['value_creation_per_100_agent_ticks']:g}/100 agent-ticks); 100 is the "
                 "reference target, not a maximum"
             ),
             "scale": {
@@ -1259,7 +1264,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
                     "seed": int(seed),
                     "source": report.get("source"),
                     "raw": cohort_raw,
-                    "scores": score_benchmark_counts(cohort_raw),
+                    "scores": score_benchmark_counts(cohort_raw, recipe.id),
                 }
             )
 
@@ -1276,17 +1281,17 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
                 str(replication.get("source") or ""),
             ),
         )
-        required_seeds = sorted(BENCHMARK_SEEDS & set(seeds))
-        extended_seeds = sorted(BENCHMARK_EXTENDED_SEEDS & set(seeds))
+        required_seeds = sorted(frozenset(recipe.required_seeds) & set(seeds))
+        extended_seeds = sorted(frozenset(recipe.extended_seeds) & set(seeds))
         required_replications = [
             replication
             for replication in replications
-            if replication["seed"] in BENCHMARK_SEEDS
+            if replication["seed"] in frozenset(recipe.required_seeds)
         ]
         extended_replications = [
             replication
             for replication in replications
-            if replication["seed"] in BENCHMARK_EXTENDED_SEEDS
+            if replication["seed"] in frozenset(recipe.extended_seeds)
         ]
         official_raw: dict[str, Any] = {}
         for replication in required_replications:
@@ -1295,7 +1300,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
         for replication in replications:
             _merge_numeric_tree(all_raw, replication.get("raw") or {})
 
-        missing_seeds = sorted(BENCHMARK_SEEDS - set(required_seeds))
+        missing_seeds = sorted(frozenset(recipe.required_seeds) - set(required_seeds))
         certification_flags = []
         if missing_seeds:
             certification_flags.append("missing_required_seeds")
@@ -1303,8 +1308,8 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
             certification_flags.append("duplicate_seed_replication")
         certified = not certification_flags
         provisional = (
-            required_seeds == [BENCHMARK_PROVISIONAL_SEED]
-            and seed_counts[BENCHMARK_PROVISIONAL_SEED] == 1
+            required_seeds == [recipe.provisional_seed]
+            and seed_counts[recipe.provisional_seed] == 1
             and certification_flags == ["missing_required_seeds"]
         )
         if certified and declared_deviations:
@@ -1346,10 +1351,10 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
                     _score_spread(replications) if extended_replications else None
                 ),
                 "raw": official_raw,
-                "scores": score_benchmark_counts(official_raw),
+                "scores": score_benchmark_counts(official_raw, recipe.id),
                 "extended_raw": all_raw if extended_replications else None,
                 "extended_scores": (
-                    score_benchmark_counts(all_raw)
+                    score_benchmark_counts(all_raw, recipe.id)
                     if extended_replications
                     else None
                 ),
@@ -1423,7 +1428,7 @@ def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
             scores = replication.get("scores") or {}
             role = (
                 "certification"
-                if replication.get("seed") in BENCHMARK_SEEDS
+                if replication.get("seed") in ((aggregate.get("protocol") or {}).get("replications") or {}).get("required_seeds", sorted(BENCHMARK_SEEDS))
                 else "optional extended"
             )
             lines.append(
@@ -1687,6 +1692,14 @@ def _trial_flags(
             expected["turn_resolution"],
         ),
     }
+    for name in ("observation_history_policy", "codex_action_max_items"):
+        if name in start_data or start_data.get("recipe_fingerprint_sha256"):
+            checks[name] = (start_data.get(name), recipe.defaults()[name])
+    from dataclasses import fields
+    from agent_world.models import WorldConfig
+    for field in fields(WorldConfig):
+        if field.name in recipe.defaults() and (field.name in config or start_data.get("recipe_fingerprint_sha256")):
+            checks[field.name] = (config.get(field.name), recipe.defaults()[field.name])
     for name, (actual, wanted) in checks.items():
         if actual != wanted:
             flags.append(f"protocol_mismatch:{name}")
@@ -1720,7 +1733,7 @@ def _trial_flags(
         and accepted_prior is None
     ):
         flags.append("benchmark_code_fingerprint_mismatch")
-    if config.get("seed") not in BENCHMARK_ALLOWED_SEEDS:
+    if config.get("seed") not in recipe.allowed_seeds:
         flags.append("nonstandard_seed")
     if not run.get("completed"):
         flags.append("run_not_completed")
@@ -2070,14 +2083,15 @@ def _latest_lifecycle_event(events: list[dict[str, Any]]) -> dict[str, Any] | No
 def _benchmark_trajectory(events: list[dict[str, Any]], protocol_id: str | None = None) -> list[dict[str, Any]]:
     """Recover trajectory checkpoints belonging to the selected recipe."""
 
+    recipe = get_recipe(protocol_id)
     checkpoints: dict[int, dict[str, Any]] = {}
     for event in events:
         if event.get("type") != "benchmark_checkpoint":
             continue
         data = event.get("data") or {}
         if (
-            data.get("suite_id") != get_recipe(protocol_id).suite_id
-            or data.get("protocol_id") != get_recipe(protocol_id).id
+            data.get("suite_id") != recipe.suite_id
+            or data.get("protocol_id") != recipe.id
         ):
             continue
         try:
@@ -2085,7 +2099,7 @@ def _benchmark_trajectory(events: list[dict[str, Any]], protocol_id: str | None 
         except (TypeError, ValueError):
             continue
         stored_cohorts = data.get("cohorts")
-        if tick not in BENCHMARK_DIAGNOSTIC_TICKS or not isinstance(stored_cohorts, dict):
+        if tick not in recipe.checkpoints or not isinstance(stored_cohorts, dict):
             continue
         checkpoint_model_failures: int | None = None
         checkpoint_external_failures: int | None = None
@@ -2134,7 +2148,7 @@ def _benchmark_trajectory(events: list[dict[str, Any]], protocol_id: str | None 
             cohorts[str(cohort_id)] = {
                 **cohort,
                 "raw": raw,
-                "scores": score_benchmark_counts(raw),
+                "scores": score_benchmark_counts(raw, recipe.id),
             }
         try:
             score_horizon = int(data.get("score_horizon_ticks") or tick)
@@ -2145,7 +2159,7 @@ def _benchmark_trajectory(events: list[dict[str, Any]], protocol_id: str | None 
             "score_horizon_ticks": score_horizon,
             "role": (
                 "official_endpoint"
-                if tick == BENCHMARK_DIAGNOSTIC_TICKS[-1]
+                if tick == recipe.checkpoints[-1]
                 else "diagnostic_checkpoint"
             ),
             "cohorts": cohorts,

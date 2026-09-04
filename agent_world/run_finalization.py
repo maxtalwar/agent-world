@@ -29,6 +29,8 @@ V6_VERDICTS = {
     "unrequited_transfer",
     "unclassifiable",
 }
+from agent_world.protocols import get_recipe
+
 V7_TRANSFER_KINDS = {"gift", "payment", "barter"}
 
 
@@ -315,6 +317,8 @@ def finalize_job(
     protocol = job.get("protocol")
     if job.get("kind") != "benchmark":
         raise ValueError("Managed finalization currently applies to benchmark jobs")
+    recipe = get_recipe(protocol)
+    mode_suffix = protocol.removeprefix("participant-")
     cell_results = []
     reports = []
     completed_seeds = []
@@ -340,7 +344,7 @@ def finalize_job(
         events = _read_events(events_path)
         gifts = [event for event in events if event.get("type") == "gift"]
         transfer_complete = True
-        if protocol == "participant-v6":
+        if recipe.transfer_accounting == "frozen_classifier":
             artifact = events_path.parent / "gift-classifications.json"
             if gifts and not artifact.exists():
                 if dry_run or not classify_v6:
@@ -348,13 +352,13 @@ def finalize_job(
                 else:
                     artifact = _classify_v6_gifts(cell, root)
             if gifts and artifact.exists():
-                transfer_modes.append("frozen_classifier_v6")
+                transfer_modes.append(f"frozen_classifier_{mode_suffix}")
                 transfer_artifacts.append(_relative(artifact, root))
             elif gifts:
-                transfer_modes.append("classification_required_v6")
+                transfer_modes.append(f"classification_required_{mode_suffix}")
             else:
                 transfer_modes.append("none_no_gifts")
-        elif protocol == "participant-v7":
+        elif recipe.transfer_accounting == "self_declared":
             invalid = [
                 index
                 for index, gift in enumerate(gifts)
@@ -362,7 +366,7 @@ def finalize_job(
             ]
             if invalid:
                 transfer_complete = False
-            transfer_modes.append("self_declared_v7")
+            transfer_modes.append(f"self_declared_{mode_suffix}")
         else:
             transfer_complete = False
             transfer_modes.append("unsupported_protocol")
@@ -399,7 +403,7 @@ def finalize_job(
             completed_seeds.append(cell["seed"])
         if status["state"] == "paused_checkpoint":
             waiting_seeds.append(cell["seed"])
-    required_complete = {11, 41}.issubset(completed_seeds)
+    required_complete = set(recipe.required_seeds).issubset(completed_seeds)
     if waiting_seeds:
         readiness_status = "waiting_quota"
     elif any("integrity" in blocker for blocker in all_blockers):
@@ -410,7 +414,7 @@ def finalize_job(
         readiness_status = "diagnostic_only"
     elif required_complete:
         readiness_status = "ready"
-    elif 11 in completed_seeds:
+    elif recipe.provisional_seed in completed_seeds:
         readiness_status = "provisional_ready"
     else:
         readiness_status = "diagnostic_only"
