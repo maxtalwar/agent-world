@@ -42,6 +42,6 @@ Read `docs/run-quickstart.md` for managed launch, status, resume, and config syn
 
 ## Handoff
 
-Report the experiment question, seed, settings, cohort, launch commit, last completed tick, integrity, usage, cost/classification status, artifacts, and exact conclusion supported. If later analysis needs accounting that was intentionally skipped, finish it through this skill before using `$analyze-agent-world-benchmarks` for a diagnostic analysis.
+Report the experiment question, seed, settings, cohort, launch commit, last completed tick, integrity, usage, cost/classification status, artifacts, and exact conclusion supported. If a later performance report needs accounting that was intentionally skipped, finish it through this skill before using `$report-agent-world-runs`.
 
 Validate changed code or metadata, record only genuinely surprising evidence in `docs/insights.md`, then make a scoped commit and push it. Never commit secrets or populated environment files.

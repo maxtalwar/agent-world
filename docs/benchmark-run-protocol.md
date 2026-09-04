@@ -7,7 +7,7 @@ Worktree mechanics remain documented in
 [isolated-run-worktrees.md](isolated-run-worktrees.md), and logs and checkpoints
 in [observability.md](observability.md).
 
-The run workflow produces evidence. The analysis workflow interprets and
+The run workflow produces evidence. The reporting workflow interprets and
 admits that evidence. A simulation reaching its last tick is not by itself an
 analysis-ready benchmark result.
 
@@ -281,7 +281,7 @@ status includes:
 
 The run workflow does not add a new result to `data/run-sources.json` or claim
 a leaderboard position. Once evidence is `ready` or `provisional_ready`, the
-analysis workflow validates it, interprets performance, and performs durable
+reporting workflow validates it, interprets performance, and performs durable
 catalog/database/leaderboard admission as one scoped change.
 
 ## Repository hygiene

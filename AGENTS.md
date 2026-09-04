@@ -1,5 +1,26 @@
 # Repository workflow
 
+## Agent workflow routing
+
+The repository-tracked skills in `.agents/skills` are the canonical operating
+manuals:
+
+- Use `$setup-agent-world` for first-time setup, machine migration, harness
+  readiness, or worker-capacity configuration.
+- Use `$run-agent-world-benchmark` only for explicit benchmarks, leaderboard
+  results, certification, provisional benchmarks, or named participant
+  protocols.
+- Use `$run-agent-world-experiment` for ordinary simulations, smoke tests,
+  harness tests, and exploratory runs.
+- Use `$report-agent-world-runs` only to score, interpret, and report on
+  completed benchmark or ordinary-run evidence.
+- Do not load a run-reporting skill for setup, launch, monitoring, generic
+  engineering, or questions that merely sound analytical.
+
+Agents that do not automatically discover repository skills should read the
+matching `SKILL.md` directly and follow it as the task manual. The executable
+CLI remains the source of truth for behavior.
+
 - Before selecting a model for a benchmark or making a cross-model performance
   claim, query `data/model-benchmarks.sqlite`, generated from
   `data/run-sources.json`; its schema and example queries

@@ -20,9 +20,7 @@ from agent_world.benchmarks import (
     BENCHMARK_ALLOWED_SEEDS,
     BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
     BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS,
-    BENCHMARK_DEFAULT_MAX_WORKERS,
     BENCHMARK_DIAGNOSTIC_TICKS,
-    BENCHMARK_PROVIDER_MAX_WORKERS,
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_QUOTA_WAIT_HOURS,
     BENCHMARK_REASONING_EFFORT,
@@ -64,6 +62,13 @@ from agent_world.runner import (
 from agent_world.session import SimulationSession
 from agent_world.devin_brain import DevinBrain
 from agent_world.grok_brain import GrokBrain
+from agent_world.host_profile import (
+    build_host_profile,
+    default_host_profile_path,
+    format_setup_summary,
+    resolved_worker_recommendations,
+    write_host_profile,
+)
 from agent_world.zcode_brain import ZCodeBrain
 from agent_world.usage import (
     append_usage_records,
@@ -112,6 +117,27 @@ def build_parser() -> argparse.ArgumentParser:
     artifact_parser = subparsers.add_parser("artifacts", help="Inventory or export managed run evidence.")
     artifact_parser.add_argument("run_id")
     artifact_parser.add_argument("--export", type=Path, default=None)
+
+    setup_parser = subparsers.add_parser(
+        "setup",
+        help="Inspect this host and recommend machine-local worker ceilings.",
+    )
+    setup_parser.add_argument(
+        "--write-profile",
+        action="store_true",
+        help="Write the recommendations for future runs and isolated worktrees.",
+    )
+    setup_parser.add_argument(
+        "--profile",
+        type=Path,
+        default=None,
+        help="Profile path; defaults to the user configuration directory.",
+    )
+    setup_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the detected profile as JSON.",
+    )
 
     run_parser = subparsers.add_parser("run", help="Run a deterministic simulation.")
     run_parser.add_argument(
@@ -473,7 +499,9 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> None:
     parser = build_parser()
     args = parser.parse_args(argv)
-    if args.command == "artifacts":
+    if args.command == "setup":
+        _setup(args)
+    elif args.command == "artifacts":
         from agent_world.artifacts import inventory_job, export_job
         result = export_job(args.run_id, args.export) if args.export else inventory_job(args.run_id)
         print(json.dumps(result, indent=2, sort_keys=True))
@@ -617,15 +645,16 @@ _PROVIDER_WORKER_ARGUMENTS = {
 def _resolve_provider_max_workers(
     args: argparse.Namespace, max_workers: int
 ) -> dict[str, int]:
-    """Resolve provider defaults and clamp every semaphore to the global pool."""
+    """Resolve host defaults and clamp every semaphore to the global pool."""
 
     if max_workers < 1:
         raise ValueError("max_workers must be at least 1")
+    _, provider_defaults = resolved_worker_recommendations()
     resolved: dict[str, int] = {}
     for provider, argument in _PROVIDER_WORKER_ARGUMENTS.items():
         requested = getattr(args, argument, None)
         provider_workers = (
-            BENCHMARK_PROVIDER_MAX_WORKERS[provider]
+            provider_defaults[provider]
             if requested is None
             else int(requested)
         )
@@ -633,6 +662,20 @@ def _resolve_provider_max_workers(
             raise ValueError(f"{argument} must be at least 1")
         resolved[provider] = min(max_workers, provider_workers)
     return resolved
+
+
+def _setup(args: argparse.Namespace) -> None:
+    profile = build_host_profile()
+    profile_path = args.profile or default_host_profile_path()
+    written_path = (
+        write_host_profile(profile, profile_path) if args.write_profile else None
+    )
+    if args.json:
+        print(json.dumps(profile, indent=2, sort_keys=True))
+        if written_path is not None:
+            print(f"Wrote {written_path}", file=sys.stderr)
+        return
+    print(format_setup_summary(profile, path=written_path))
 
 
 def _run(args: argparse.Namespace) -> None:
@@ -870,12 +913,10 @@ def _run(args: argparse.Namespace) -> None:
     args.model = brain_spec.model if not population_spec.mixed else None
     args.reasoning_effort = brain_spec.reasoning_effort if not population_spec.mixed else None
     args.max_workers = max_workers
-    # A matched desktop ramp found 40 Codex workers fastest while four
-    # simultaneous cells sustained 99 observed child processes without swap.
-    # Claude Code and Grok Build use a deliberately lower inferred default of
-    # 20 because their account limits preclude the same direct ramp. Provider
-    # values are ceilings inside the global pool: a 12-worker run therefore
-    # uses 12 Codex, Claude, or Grok workers, never 40 or 20.
+    # Provider ceilings come from the machine-local host profile when present,
+    # with checked-in safe fallbacks for clones that have not run setup yet.
+    # Explicit run flags override recommendations. Every provider semaphore is
+    # still clamped to this run's global worker pool.
     provider_max_workers = _resolve_provider_max_workers(args, max_workers)
     decision_mode = args.decision_mode or "raw"
     startup_health_check_tick = getattr(args, "startup_health_check_tick", 5) or None
@@ -1313,9 +1354,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         )
 
     benchmark_provider = BRAIN_TYPE_PROVIDERS[args.brain]
-    benchmark_max_workers = BENCHMARK_PROVIDER_MAX_WORKERS.get(
-        benchmark_provider, BENCHMARK_DEFAULT_MAX_WORKERS
-    )
+    _, provider_worker_defaults = resolved_worker_recommendations()
     locked = {
         "ticks": 50,
         "agents": 10,
@@ -1347,24 +1386,11 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
                 f"received {current!r}."
             )
         setattr(args, name, required)
-
-    # Concurrency only changes the throughput of independent decisions made
-    # from the same frozen tick. Supply provider-aware defaults without locking
-    # them as part of the behavioral protocol.
-    operational_defaults = {
-        "max_workers": benchmark_max_workers,
-        "codex_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["codex_cli"],
-        "claude_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["claude_cli"],
-        "cursor_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["cursor_cli"],
-        "devin_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["devin_cli"],
-        "grok_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["grok_cli"],
-        "openrouter_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["openrouter"],
-        "zcode_max_workers": BENCHMARK_PROVIDER_MAX_WORKERS["zcode_cli"],
-    }
-    for name, default in operational_defaults.items():
-        if getattr(args, name, None) is None:
-            setattr(args, name, default)
-
+    if getattr(args, "max_workers", None) is None:
+        args.max_workers = provider_worker_defaults[benchmark_provider]
+    for provider, argument in _PROVIDER_WORKER_ARGUMENTS.items():
+        if getattr(args, argument, None) is None:
+            setattr(args, argument, provider_worker_defaults[provider])
     if args.seed is None:
         args.seed = 11
     if args.seed not in BENCHMARK_ALLOWED_SEEDS:

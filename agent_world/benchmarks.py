@@ -348,6 +348,7 @@ BENCHMARK_CORE_FINGERPRINT_FILES = (
     "request_context.py",
     "tool_boundary.py",
     "brain_factory.py",
+    "host_profile.py",
     "decision_outcome.py",
     "event_index.py",
     "io.py",
