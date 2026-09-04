@@ -1,0 +1,154 @@
+{
+  "audited_commit": "2d073da06635c215cb7dfa9e1b7a9574860cbfb4",
+  "date": "2026-09-04",
+  "environment": "Python 3.12, Ubuntu 24.04 under WSL; local synthetic probes",
+  "scope": "Infrastructure audit only; no live model calls or new model benchmark results.",
+  "baseline_tests": {
+    "command": "python3 -m unittest discover -s tests",
+    "tests": 493,
+    "seconds": 8.006,
+    "skipped": 1,
+    "result": "OK"
+  },
+  "source_size": {
+    "python_modules": 40,
+    "python_lines": 27232,
+    "test_modules": 29,
+    "test_lines": 11684
+  },
+  "failure_probes": {
+    "intent_false_auth": {
+      "error": "ModelAuthenticationRequiredError",
+      "tick": 0
+    },
+    "different_boundary_failures": {
+      "tick_advanced_to": 1,
+      "failures": [
+        "Codex boundary failed: missing payload agent-1",
+        "Codex boundary failed: missing payload agent-2"
+      ]
+    },
+    "exception_concurrent_False": {
+      "tick": 0,
+      "error": "RuntimeError"
+    },
+    "exception_concurrent_True": {
+      "tick": 1,
+      "error": null
+    },
+    "schema_collision": {
+      "same_path": true,
+      "first_schema_now_has_maxItems": 8
+    },
+    "partial_world_checkpoint": {
+      "contract_valid": true,
+      "status": "failed",
+      "error": "TypeError: 'NoneType' object is not iterable",
+      "tick": 0,
+      "memory": [
+        "tick 0: accepted before tick failure"
+      ],
+      "responses_in_checkpoint": 2
+    },
+    "ledger_integrity": {
+      "modified_ledger_loaded": true
+    },
+    "journal_execution_identity": {
+      "reused_intent": "old model"
+    },
+    "cross_provider_lock_seconds": 0.27,
+    "prompt_baseline": {
+      "static_chars": 6303,
+      "dynamic_chars": 1349
+    },
+    "prompt_organic": {
+      "static_chars": 7678,
+      "dynamic_chars": 1415
+    }
+  },
+  "timing_probes": {
+    "drip_http": {
+      "configured_total_deadline_seconds": 0.1,
+      "actual_seconds": 0.478,
+      "error": null
+    },
+    "partial_stdout": {
+      "deadline_seconds": 0.05,
+      "actual_seconds": 0.363,
+      "error": null
+    },
+    "history_scaling": [
+      {
+        "synthetic_events": 0,
+        "observation_ms": 0.106,
+        "snapshot_ms": 0.52,
+        "control_event_scan_ms": 0.045,
+        "observer_state_ms": 0.568,
+        "event_file_bytes": 1120
+      },
+      {
+        "synthetic_events": 1000,
+        "observation_ms": 0.145,
+        "snapshot_ms": 0.449,
+        "control_event_scan_ms": 2.3,
+        "observer_state_ms": 3.827,
+        "event_file_bytes": 159120
+      },
+      {
+        "synthetic_events": 10000,
+        "observation_ms": 0.657,
+        "snapshot_ms": 0.441,
+        "control_event_scan_ms": 22.989,
+        "observer_state_ms": 35.923,
+        "event_file_bytes": 1590120
+      },
+      {
+        "synthetic_events": 100000,
+        "observation_ms": 5.872,
+        "snapshot_ms": 0.431,
+        "control_event_scan_ms": 240.357,
+        "observer_state_ms": 542.096,
+        "event_file_bytes": 15990120
+      }
+    ],
+    "finished_contract_prompt_growth": {
+      "before_chars": 1415,
+      "after_1000_finished_contracts_chars": 229325
+    }
+  },
+  "boundary_probes": {
+    "zcode_factory": {
+      "profile": "connector-v3",
+      "conversation": "fresh-conversation",
+      "error": "ValueError: ZCodeBrain supports only stateless conversation mode"
+    },
+    "session_collision": {
+      "id_a": "aw-audit-x-seed-11",
+      "id_b": "aw-audit-x-seed-11"
+    },
+    "provenance_membership_check": {
+      "provenance": {
+        "status": "verified",
+        "requested": "requested-model",
+        "resolved": [
+          "requested-model",
+          "unexpected-model"
+        ]
+      },
+      "blockers": []
+    },
+    "config_boolean_ticks_accepted": true
+  },
+  "accounting_probes": {
+    "duplicate_coverage": {
+      "usage_record_coverage_pct": 100.0,
+      "benchmark_integrity_status": "clean",
+      "quality_flags": []
+    },
+    "usage_write_failure": {
+      "in_memory_rows": 1,
+      "write_error_raised": false,
+      "usage_file_created": false
+    }
+  }
+}

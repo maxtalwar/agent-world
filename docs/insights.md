@@ -22,6 +22,14 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-04 — Failure classification can manufacture or suppress agent behavior
+
+**The infrastructure can change whether a world tick advances without any model changing its decision quality.** In offline probes against commit `2d073da`, two distinct connector-boundary failure messages advanced a two-agent world to tick 1 as wait actions, while an ordinary valid intent—“Avoid unauthorized access to stores.”—paused the world at tick 0 as an authentication failure. The same synthetic brain exception failed sequential execution at tick 0 but advanced concurrent execution to tick 1. The runner routes failures using intent-message classifiers, and its ambiguous-boundary guard requires identical messages across the population.
+
+A separate probe submitted `record_agreement` with `parties: null`. The declared decision schema accepted it, but world resolution raised `TypeError` after earlier mutations. The resulting checkpoint still said tick 0 while containing agent 1's new memory and both agent-response events. This is a partial world transaction saved as recoverable state.
+
+These are synthetic harness findings, not evidence about any model's behavior or a claim that specific historical trials were affected. They show why typed infrastructure outcomes and atomic tick commits matter to interpreting apparent inactivity, survival, and reliability. Reproductions and captured outputs: [infrastructure audit](infrastructure-audit-2026-09-04.md), findings 1–2, and [evidence.json](../reports/infrastructure-audit-2026-09-04/evidence.json). No model calls were made.
+
 ## 2026-09-02 — Historical OpenRouter reports omitted paid partial-tick work
 
 **Before durable per-agent tick caching, OpenRouter's final run reports
