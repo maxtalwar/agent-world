@@ -47,6 +47,13 @@ ZCODE_DISALLOWED_TOOLS = ",".join(
     )
 )
 
+# ZCode 0.16.5 includes hidden reasoning inside ``outputTokens`` but reports
+# ``reasoningTokens`` as zero. Agent World decisions expose only the final JSON,
+# so subtract its token share using the measured density of this connector's
+# structured output. The density was calibrated by retokenizing 930 GLM-5.3
+# decisions with Z.ai's published tokenizer (859,278 chars / 253,222 tokens).
+ZCODE_VISIBLE_CHARS_PER_OUTPUT_TOKEN = 859_278 / 253_222
+
 
 class ZCodeBrain:
     """Stateless GLM brain using the user's saved Z.ai Coding Plan login."""
@@ -353,6 +360,30 @@ class ZCodeBrain:
         request_meta: dict[str, Any],
     ) -> None:
         projection = (result or {}).get("projection")
+        completion_tokens = _usage_int(
+            usage,
+            "outputTokens",
+            "output_tokens",
+            "completionTokens",
+            "completion_tokens",
+        )
+        reasoning_tokens = _usage_int(usage, "reasoningTokens", "reasoning_tokens")
+        provider_reasoning = reasoning_tokens if any(key in usage for key in ("reasoningTokens", "reasoning_tokens")) else None
+        reasoning_source = None
+        response = (result or {}).get("response")
+        visible_output_chars = len(response) if isinstance(response, str) else None
+        if (
+            reasoning_tokens == 0
+            and self.model.lower() in {"glm-5.3", "zai/glm-5.3"}
+            and visible_output_chars is not None
+            and completion_tokens > 0
+        ):
+            visible_tokens = max(
+                1,
+                round(visible_output_chars / ZCODE_VISIBLE_CHARS_PER_OUTPUT_TOKEN),
+            )
+            reasoning_tokens = max(0, completion_tokens - visible_tokens)
+            reasoning_source = "estimated_output_minus_visible"
         self.runtime.record_usage(
             {
                 "model": self.model,
@@ -370,19 +401,24 @@ class ZCodeBrain:
                     usage,
                     "cachedInputTokens",
                     "cached_input_tokens",
+                    "cacheReadTokens",
+                    "cache_read_tokens",
                     "cacheReadInputTokens",
                     "cache_read_input_tokens",
                 ),
-                "completion_tokens": _usage_int(
+                "cache_write_tokens": _usage_int(
                     usage,
-                    "outputTokens",
-                    "output_tokens",
-                    "completionTokens",
-                    "completion_tokens",
+                    "cacheWriteTokens",
+                    "cache_write_tokens",
+                    "cacheCreationInputTokens",
+                    "cache_creation_input_tokens",
                 ),
-                "reasoning_tokens": _usage_int(
-                    usage, "reasoningTokens", "reasoning_tokens"
-                ),
+                "completion_tokens": completion_tokens,
+                "reasoning_tokens": reasoning_tokens,
+                "reasoning_tokens_source": reasoning_source,
+                "provider_reported_reasoning_tokens": provider_reasoning,
+                "reasoning_estimate_calibration": "glm-5.3-zcode-0.16.5-930-decisions" if reasoning_source else None,
+                "visible_output_chars": visible_output_chars,
                 "cost": 0,
                 "provider_reported_cost_usd": 0,
                 "time": time.time(),

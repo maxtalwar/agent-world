@@ -46,8 +46,12 @@ def _protocol_report(
     harness_failure: bool = False,
     unverified_failure: bool = False,
     workers: int = 40,
-    reasoning_effort: str = "low",
+    reasoning_effort: str | None = None,
+    protocol_id: str = BENCHMARK_PROTOCOL_ID,
 ) -> dict:
+    from agent_world.protocols import get_recipe
+    recipe = get_recipe(protocol_id)
+    reasoning_effort = reasoning_effort or recipe.reasoning_effort
     agents = [f"agent-{index}" for index in range(1, 11)]
     cohort = {
         "brain": "codex",
@@ -66,6 +70,7 @@ def _protocol_report(
         },
         "config": {
             "seed": seed,
+            "transfer_kind_mode": recipe.defaults()["transfer_kind_mode"],
             "economy_mode": "organic",
             "world_variant": "frontier",
             "geography_mode": "dispersed",
@@ -95,8 +100,8 @@ def _protocol_report(
         "actor_id": None,
         "message": "started",
         "data": {
-            "benchmark_protocol": BENCHMARK_PROTOCOL_ID,
-            "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"]),
+            "benchmark_protocol": protocol_id,
+            "benchmark_code_fingerprint": benchmark_code_fingerprint(["codex_cli"], protocol_id),
             "decision_mode": "raw",
             "turn_resolution": "simultaneous",
             "global_max_workers": workers,
@@ -196,7 +201,7 @@ class BenchmarkTests(unittest.TestCase):
 
         # V5's one harness change: Claude gets the same opportunity to think
         # that Codex models have always had, inside a declared ceiling.
-        self.assertEqual(os.environ.get("CLAUDE_MAX_THINKING_TOKENS"), "2048")
+        self.assertEqual(os.environ.get("CLAUDE_MAX_THINKING_TOKENS"), self._saved_thinking)
         self.assertEqual(args.claude_thinking_budget_tokens, 2048)
         self.assertEqual(
             benchmark_protocol()["trial"]["claude_thinking_budget_tokens"], 2048
@@ -1408,8 +1413,7 @@ class BenchmarkTests(unittest.TestCase):
         self.assertEqual(aggregate["rejected"][0]["reason"], "diagnostic_only")
 
 
-if __name__ == "__main__":
-    unittest.main()
+
 
 
 class BenchmarkFingerprintScopeTests(unittest.TestCase):
@@ -1509,8 +1513,8 @@ class ResumeFingerprintGuardTests(unittest.TestCase):
         )
 
     def test_resume_refuses_a_checkpoint_from_an_earlier_protocol(self) -> None:
-        # Splicing two suites into one trial: the opening ticks ran a different
-        # world. The compatibility registry must not wave this through.
+        # A historical source fingerprint cannot be accepted merely because
+        # its recipe is now selectable in the current checkout.
         from agent_world.cli import _check_resume_fingerprint
 
         with self.assertRaises(ValueError) as caught:
@@ -1572,6 +1576,7 @@ class PriorSuiteAcceptanceTests(unittest.TestCase):
     def _v4_report(self, seed: int, source: str, provider: str = "codex_cli") -> dict:
         report = _protocol_report(seed, source)
         report["benchmarks"]["suite_id"] = self.V4_SUITE
+        report["benchmarks"]["protocol"]["id"] = "participant-v4"
         report["benchmarks"]["protocol"]["code_fingerprint_sha256"] = self.V4_FINGERPRINT
         report["benchmarks"]["cohorts"]["cohort-1"]["provider"] = provider
         report["usage"] = {"calls": 500, "reasoning_tokens": 400_000}
@@ -1617,3 +1622,49 @@ class PriorSuiteAcceptanceTests(unittest.TestCase):
             aggregate["rejected"][0]["reason"],
             "missing_or_incompatible_benchmark_suite",
         )
+
+
+class VersionedRecipeScoringTests(unittest.TestCase):
+    def test_both_recipes_score_and_aggregate_independently_in_one_process(self):
+        for protocol_id in ("participant-v6", "participant-v7", "participant-v6"):
+            report = _protocol_report(11, protocol_id, protocol_id=protocol_id)
+            self.assertTrue(report["benchmarks"]["trial"]["protocol_compliant"])
+            self.assertEqual(report["benchmarks"]["protocol"]["id"], protocol_id)
+            aggregate = aggregate_benchmark_reports([report])
+            self.assertEqual(aggregate["protocol"]["id"], protocol_id)
+            self.assertEqual(aggregate["rejected"], [])
+            self.assertEqual(len(aggregate["results"]), 1)
+            self.assertEqual(aggregate["results"][0]["scoring_revision"], 2 if protocol_id == "participant-v6" else 1)
+
+    def test_mixed_recipes_require_selection_and_never_pool_counts(self):
+        v6 = _protocol_report(11, "v6", protocol_id="participant-v6")
+        v7 = _protocol_report(41, "v7", protocol_id="participant-v7")
+        with self.assertRaisesRegex(ValueError, "Mixed benchmark recipes"):
+            aggregate_benchmark_reports([v6, v7])
+        selected = aggregate_benchmark_reports([v6, v7], "participant-v6")
+        self.assertEqual(len(selected["results"]), 1)
+        self.assertFalse(selected["results"][0]["certified"])
+        self.assertEqual(selected["rejected"][0]["source"], "v7")
+
+    def test_each_recipe_resumes_only_with_its_own_source_fingerprint(self):
+        from agent_world.cli import _check_resume_fingerprint
+        for protocol_id in ("participant-v6", "participant-v7"):
+            fingerprint = benchmark_code_fingerprint(["codex_cli"], protocol_id)
+            _check_resume_fingerprint(protocol_id, fingerprint, ["codex_cli"])
+            other = "participant-v7" if protocol_id == "participant-v6" else "participant-v6"
+            with self.assertRaises(ValueError):
+                _check_resume_fingerprint(other, fingerprint, ["codex_cli"])
+
+    def test_v6_does_not_trust_a_v7_self_declared_payment(self):
+        events = [{"type": "gift", "actor_id": "a", "data": {
+            "to": "b", "items": {"coin": 7}, "kind": "payment",
+        }}]
+        v6 = _enterprise_supply(events, {"a", "b"}, transfer_accounting="frozen_classifier")
+        v7 = _enterprise_supply(events, {"a", "b"}, transfer_accounting="self_declared")
+        self.assertNotEqual(v6, v7)
+        classified = _enterprise_supply(events, {"a", "b"}, {0: "payment_for_service"}, "frozen_classifier")
+        self.assertEqual(classified, v7)
+
+
+if __name__ == "__main__":
+    unittest.main()

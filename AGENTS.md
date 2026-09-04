@@ -1,5 +1,21 @@
 # Repository workflow
 
+## Laboratory-first architecture
+
+Agent World is a laboratory for exploring the societies and capabilities of
+LLM agents across different worlds, populations, harnesses, and configurations.
+The laboratory supports experiments. Benchmarks define particular experiments
+and decide which results qualify for a leaderboard. Benchmark eligibility
+must never determine which experiments the laboratory permits.
+
+Keep benchmark protocols as explicit, versioned recipes and certification
+policies, separate from simulation mechanics and connector capabilities.
+Support multiple recipes in one checkout; do not replace a global protocol
+constant to run an older study. Preserve recipe identity and source provenance
+on resume, and never relabel historical evidence or pool different recipes.
+General experiments may override recipe defaults without claiming benchmark
+certification. Enforce only actual world/connector constraints on those runs.
+
 ## Agent workflow routing
 
 The repository-tracked skills in `.agents/skills` are the canonical operating

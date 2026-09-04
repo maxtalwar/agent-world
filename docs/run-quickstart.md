@@ -7,6 +7,9 @@ and launches a durable job controller that owns the run through recovery and
 finalization. You do not enter a worktree, keep the launch terminal open, or
 babysit ticks.
 
+See [versioned recipes](experiment-recipes.md) for selecting a benchmark version
+or using its defaults in an unrestricted experiment.
+
 ## Fire off a run
 
 Start from an example, give it a unique `run_id`, and set the exact model
@@ -136,7 +139,8 @@ Every config has these top-level fields:
 | `run_id` | Unique filesystem-safe identifier. It names the job, supervisors, cohorts, and default output directory. |
 | `kind` | `benchmark` or `experiment`. This is an evidence boundary, not just a label. |
 | `question` | Required for experiments; the concrete claim or harness behavior being tested. |
-| `protocol` | Benchmark only. Omit to use the current supported participant protocol. A named protocol locks benchmark-defining settings. Historical protocols require `source.commit` pointing to a revision that implements them. |
+| `protocol` | Benchmark only: `participant-v6` or `participant-v7` (default). Both run in the current checkout. Locks certification settings. |
+| `recipe` | Optional experiment defaults: `participant-v6` or `participant-v7`. World, effort, population, horizon, and seeds remain overridable; this does not request certification. |
 | `model` | Provider boundary, callable model ID, reasoning effort, or an experimental mixed population. |
 | `seeds` | Cells to launch. Defaults to `[11, 41]` for a benchmark and `[11]` for an experiment. |
 | `world` | Preset and optional world treatments. Omit locked benchmark settings; the protocol owns them. |

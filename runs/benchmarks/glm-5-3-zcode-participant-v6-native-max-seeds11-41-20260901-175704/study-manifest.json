@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "study_id": "glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704",
+  "status": "resumed_running",
+  "created_at_utc": "2026-09-01T17:57:04Z",
+  "launched_at_utc": "2026-09-01T17:59:53Z",
+  "recovered_at_utc": "2026-09-01T21:43:26Z",
+  "study_type": "benchmark_trial_controlled_variant",
+  "suite_id": "agent-world-participant-v6",
+  "benchmark_protocol": "participant-v6",
+  "benchmark_scoring_revision": 2,
+  "supersedes_invalid_study": "glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953",
+  "supersession_reason": "The predecessor omitted ZCode from the shared failure taxonomy, allowing quota refusals to advance the world as fabricated wait actions. This replacement launches from the repaired source commit with unique cells.",
+  "operational_incident": {
+    "classification": "external_supervisor_timeout",
+    "diagnosis": "Both parent processes disappeared without any terminal ledger event or run-manifest update. Their last partial-tick usage writes occurred 14m49s and 15m20s after launch, there was no kernel OOM evidence, and both temporary execution sessions were subsequently unavailable. The evidence strongly identifies temporary command-session reclamation rather than a model, provider, or benchmark stop.",
+    "evidence": {
+      "seed_11_last_completed_tick": 2,
+      "seed_41_last_completed_tick": 5,
+      "seed_11_terminal_event": null,
+      "seed_41_terminal_event": null,
+      "kernel_oom_evidence": false
+    },
+    "fix": "Resume the same checkpoints through the same cohort IDs and launch commit under detached tmux supervision. Run seed 41 first and seed 11 second so account-wide ZCode concurrency stays at four rather than eight.",
+    "supervisor_session": "glm53-zcode-v6-resume-20260901"
+  },
+  "targets": {
+    "glm-5.3": {
+      "brain": "zcode",
+      "provider": "zcode_cli",
+      "route": "Z.ai Coding Plan through the first-party ZCode headless CLI",
+      "billing_mode": "zai_coding_plan",
+      "callable_model": "glm-5.3",
+      "provider_model_selector": "zai/glm-5.3",
+      "resolved_model_expected": "glm-5.3",
+      "reasoning_effort_requested": "max",
+      "seeds": [11, 41]
+    }
+  },
+  "result_tier": {
+    "requested": "replicated_analytical_variant",
+    "required_seeds_per_model": [11, 41],
+    "policy": "Both integrity-clean, complete v6 cells are required for a replicated analytical result. Native Max effort is a declared protocol deviation, so this study is not eligible for the closed standardized v6 certification pool."
+  },
+  "declared_deviations": [
+    {
+      "field": "reasoning_effort",
+      "standard_v6_value": "medium",
+      "actual_value": "max",
+      "reason": "ZCode CLI 0.16.5 exposes no reliable headless effort selector and GLM 5.3 runs at its native Max default. Recording medium would misstate the executed treatment."
+    },
+    {
+      "field": "provider_connector",
+      "standard_v6_status": "No historical ZCode connector existed when v6 closed.",
+      "actual_value": "zcode_cli stateless-v3 compatibility connector",
+      "reason": "The provider-scoped connector was integrated onto the proven v6 source revision without changing v6 world, schema, scoring, or four-worker limits."
+    }
+  ],
+  "preflight": {
+    "installed_cli": "ZCode CLI 0.16.5 CJS bundle",
+    "doctor_status": "passed 2026-09-01T17:57:04Z",
+    "coding_plan_config_present": true,
+    "local_model_catalog_contains": "glm-5.3",
+    "preserved_smoke_evidence": "runs/experiments/glm-5-3-zcode-frontier-smoke-20260901-163341",
+    "preserved_smoke_contract_valid": true,
+    "preserved_v6_schema_probe": "glm53-zcode-v6-schema-probe-s11-20260901",
+    "quota_regression": "The exact ZCode ProviderBusinessError [1302] message is classified as quota; the incomplete tick is discarded and the completed-tick checkpoint is retained.",
+    "validation": "379 tests passed with 1 intentional skip at the repaired source commit."
+  },
+  "protocol_provenance": {
+    "launch_commit": "e16492dc76f873388a9c197e4286bb44d555d903",
+    "launch_branch": "codex/glm53-zcode-v6",
+    "v6_base_commit": "8bbd62e6b1bc7dc09b6239d3b6d3c4df6e59c793",
+    "dirty_worktree": false
+  },
+  "replications": {
+    "required_seeds": [11, 41],
+    "cells": {
+      "glm-5-3-zcode-v6-native-max-seed-11": {
+        "seed": 11,
+        "status": "queued_resume_after_seed_41",
+        "cohort": "glm53-zcode-v6-fixed-s11-20260901",
+        "target_tick": 50,
+        "completed_tick": 2,
+        "completed_decisions": 20,
+        "completed_decision_failures": 0,
+        "orphaned_partial_tick_usage_records_to_quarantine": 8,
+        "out": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed11/run.jsonl",
+        "snapshot": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed11/run-snapshot.json"
+      },
+      "glm-5-3-zcode-v6-native-max-seed-41": {
+        "seed": 41,
+        "status": "resumed_running",
+        "cohort": "glm53-zcode-v6-fixed-s41-20260901",
+        "target_tick": 50,
+        "completed_tick": 5,
+        "completed_decisions": 50,
+        "model_contract_failures": 5,
+        "startup_health_gate": "passed",
+        "orphaned_partial_tick_usage_records_to_quarantine": 8,
+        "out": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed41/run.jsonl",
+        "snapshot": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/glm-5-3-zcode-v6-seed41/run-snapshot.json"
+      }
+    }
+  },
+  "locked_trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [30, 40],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "max",
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "quota_wait_hours": 12
+  },
+  "launcher": "scripts/run-isolated-cohort",
+  "supervisor": {
+    "type": "tmux_detached_sequential",
+    "session": "glm53-zcode-v6-resume-20260901",
+    "script": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/resume-sequence.sh",
+    "log": "runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704/resume-supervisor.log",
+    "sequence": [41, 11]
+  },
+  "analysis_readiness": {
+    "schema_version": 1,
+    "status": "diagnostic_only",
+    "completed_seeds": [],
+    "waiting_seeds": [],
+    "blockers": [
+      "Seed 41 is running from its tick-5 checkpoint; seed 11 is queued behind it at tick 2.",
+      "Native Max effort differs from Participant v6's standardized medium-effort policy."
+    ]
+  }
+}

@@ -18,8 +18,8 @@ from typing import Any
 from agent_world.benchmarks import (
     BENCHMARK_ALLOWED_SEEDS,
     BENCHMARK_PROTOCOL_ID,
-    BENCHMARK_REASONING_EFFORT,
 )
+from agent_world.protocols import RECIPES, get_recipe
 from agent_world.jsonl_tail import tail_for
 from agent_world.io import atomic_write_json
 
@@ -33,13 +33,13 @@ CONTROLLER_PROGRESS_INTERVAL_TICKS = 10
 CONTROLLER_STALL_SECONDS = 3600.0
 
 _TOP_LEVEL_KEYS = {
-    "schema_version", "run_id", "kind", "question", "protocol", "model",
+    "schema_version", "run_id", "kind", "question", "protocol", "recipe", "model",
     "seeds", "world", "runtime", "harness", "output_dir", "source",
 }
 _MODEL_KEYS = {"brain", "id", "reasoning_effort", "population"}
 _WORLD_OPTIONS = {
     "overrides", "preset", "width", "height", "world_variant", "objective_mode", "economy_mode",
-    "geography_mode", "specialization_mode", "action_feedback_mode",
+    "geography_mode", "specialization_mode", "action_feedback_mode", "transfer_kind_mode",
     "communication_action_cost", "town_ledger_action_cost",
     "town_ledger_prompt_mode", "town_ledger_seed_mode",
     "town_ledger_output_mode", "codex_action_max_items",
@@ -53,7 +53,7 @@ _HARNESS_OPTIONS = {
     "connector_profile", "conversation_mode", "session_max_turns",
     "observation_history_policy", "decision_mode", "assignment_strategy", "assignment_seed",
     "startup_health_check_tick", "startup_health_max_failure_rate",
-    "no_agent_io_log",
+    "no_agent_io_log", "claude_thinking_budget_tokens",
 }
 _PROVIDER_WORKER_FLAGS = {
     "openrouter": "openrouter-max-workers", "codex": "codex-max-workers",
@@ -150,11 +150,9 @@ def load_run_config(path: Path) -> dict[str, Any]:
             raise ValueError(
                 f"protocol must name a participant suite such as {BENCHMARK_PROTOCOL_ID!r}"
             )
-        if protocol != BENCHMARK_PROTOCOL_ID and not source.get("commit"):
-            raise ValueError(
-                f"Protocol {protocol!r} is not current in this checkout; set source.commit "
-                "to a clean revision whose low-level CLI implements that suite"
-            )
+        recipe = get_recipe(protocol)
+        if value.get("recipe") not in {None, recipe.id}:
+            raise ValueError("Benchmark protocol and recipe must agree")
         value["protocol"] = protocol
         undeclared = sorted(set(seeds) - set(BENCHMARK_ALLOWED_SEEDS))
         if undeclared:
@@ -180,24 +178,29 @@ def load_run_config(path: Path) -> dict[str, Any]:
                 "Benchmark protocol owns these settings; omit them from the config: "
                 + ", ".join(configured)
             )
-        if protocol == BENCHMARK_PROTOCOL_ID:
-            if model.get("reasoning_effort") not in {
-                None,
-                BENCHMARK_REASONING_EFFORT,
-            }:
-                raise ValueError(
-                    f"{protocol} requires "
-                    f"model.reasoning_effort={BENCHMARK_REASONING_EFFORT!r} "
-                    f"for brain={model['brain']!r}"
-                )
+        if model.get("reasoning_effort") not in {None, recipe.reasoning_effort}:
+            raise ValueError(
+                f"{protocol} requires model.reasoning_effort={recipe.reasoning_effort!r} "
+                f"for brain={model['brain']!r}"
+            )
+        model["reasoning_effort"] = recipe.reasoning_effort
     elif value.get("protocol") is not None:
         raise ValueError("Experiment configs must omit protocol")
+    if value.get("recipe") is not None:
+        recipe = get_recipe(value["recipe"])
+        if model.get("reasoning_effort") is None:
+            model["reasoning_effort"] = recipe.reasoning_effort
     if kind == "experiment" and not str(value.get("question") or "").strip():
         raise ValueError("Experiment configs require a concrete question")
 
     for key in ("ticks", "agents", "max_workers"):
         if key in runtime and (not isinstance(runtime[key], int) or isinstance(runtime[key], bool) or runtime[key] < 1):
             raise ValueError(f"runtime.{key} must be a positive integer")
+    thinking_budget = harness.get("claude_thinking_budget_tokens")
+    if thinking_budget is not None and (
+        not isinstance(thinking_budget, int) or isinstance(thinking_budget, bool) or thinking_budget < 0
+    ):
+        raise ValueError("harness.claude_thinking_budget_tokens must be a non-negative integer")
     quota_wait = runtime.get("quota_wait_hours")
     if quota_wait is not None and (
         not isinstance(quota_wait, (int, float))
@@ -219,10 +222,12 @@ def load_run_config(path: Path) -> dict[str, Any]:
     from agent_world.brain_factory import BrainSpec, PopulationSpec
     from agent_world.models import WorldConfig
     from agent_world.cli import build_parser
+    selected_recipe = value.get("protocol") or value.get("recipe")
+    defaults = get_recipe(selected_recipe).defaults() if selected_recipe else {}
     shared = {
         "reasoning_effort": model.get("reasoning_effort"),
         "max_workers": runtime.get("max_workers"),
-        "connector_profile": harness.get("connector_profile", "connector-v1"),
+        "connector_profile": harness.get("connector_profile", defaults.get("connector_profile", "connector-v1")),
         "conversation_mode": harness.get("conversation_mode", "fresh-conversation"),
         "session_max_turns": harness.get("session_max_turns", 10),
     }
@@ -247,10 +252,6 @@ def load_run_config(path: Path) -> dict[str, Any]:
     with contextlib.redirect_stderr(io.StringIO()):
         try:
             arguments = build_cell_command(value, seeds[0], Path("/dry-run"))[3:]
-            if kind == "benchmark" and protocol != BENCHMARK_PROTOCOL_ID:
-                # Historical protocol semantics belong to the explicitly pinned source.
-                position = arguments.index("--benchmark-protocol")
-                del arguments[position:position + 2]
             build_parser().parse_args(arguments)
         except SystemExit as exc:
             raise ValueError("Run configuration contains invalid CLI option values") from exc
@@ -270,6 +271,8 @@ def build_cell_command(config: dict[str, Any], seed: int, output: Path) -> list[
     command = ["python3", "-m", "agent_world.cli", "run"]
     if config["kind"] == "benchmark":
         command.extend(["--benchmark-protocol", config["protocol"]])
+    if config.get("recipe") and config["kind"] != "benchmark":
+        command.extend(["--recipe", config["recipe"]])
     model = config["model"]
     if model.get("population"):
         for population in model["population"]:
@@ -324,7 +327,8 @@ def build_launch_plan(config: dict[str, Any], root: Path, *, run_id: str | None 
     target_ticks = (
         50
         if config["kind"] == "benchmark"
-        else int((config.get("runtime") or {}).get("ticks", 25))
+        else int((config.get("runtime") or {}).get("ticks",
+            get_recipe(config["recipe"]).defaults()["ticks"] if config.get("recipe") else 25))
     )
     cells = []
     for seed in config["seeds"]:
@@ -350,6 +354,9 @@ def build_launch_plan(config: dict[str, Any], root: Path, *, run_id: str | None 
         "schema_version": JOB_SCHEMA_VERSION, "run_id": resolved_id,
         "kind": config["kind"], "question": config.get("question"),
         "protocol": config.get("protocol"), "launch_commit": commit,
+        "recipe": config.get("protocol") or config.get("recipe"),
+        "recipe_fingerprint_sha256": (get_recipe(config.get("protocol") or config.get("recipe")).digest
+            if config.get("protocol") or config.get("recipe") else None),
         "orchestrator_commit": commit if requested_commit == "HEAD" else _git(root, "rev-parse", "HEAD"),
         "source_root": str(root), "job_dir": str(job_dir),
         "config": config, "created_at_utc": utc_now(), "cells": cells,

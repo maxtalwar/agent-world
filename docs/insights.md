@@ -22,6 +22,110 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-03 — ZCode usage gaps erased cache savings but retained text made reasoning recoverable
+
+**The GLM 5.3 ZCode benchmark recorded every cache read as zero because the
+connector omitted ZCode's exact `cacheReadTokens` spelling, while its missing
+provider reasoning subtotal can be reconstructed closely from text ZCode
+retained locally.**
+The connector already recognizes and tests `reasoningTokens`, but ZCode 0.16.5
+persisted `reasoning_tokens = 0` and omitted that field from each raw provider
+usage object even when its stream diagnostics recorded `reasoning-delta`
+events. ZCode nevertheless retained complete reasoning text for 929 of 930
+calls: 15,250,150 characters. Retokenizing each preserved reasoning block with
+Z.ai's published GLM 5.3 tokenizer yields 4,466,301 reasoning tokens, or
+4,802.5 per call. As a cross-check, retokenized reasoning plus visible output
+fell only 1–4 tokens short of provider output on every call—1,877 tokens total,
+or 0.0398%—consistent with hidden block separators. The result should therefore
+be reported as an estimate (`~4,802 tok/decision`), not as provider-supplied
+telemetry. Separately, all 930 session IDs matched ZCode's local `model_usage`
+rows, which contained 8,747,072 `cache_read_input_tokens`; the Agent World
+ledgers recorded zero because `zcode_brain.py` accepts `cacheReadInputTokens`
+but not the emitted `cacheReadTokens`. Repricing the recovered usage at Z.ai's
+published GLM 5.3 rates per million tokens—$1.40 uncached input, $0.26 cached
+input, and $4.40 output—gives $14.575577 for seed 11 and $12.141778 for seed
+41, or $13.358678 per run. The reports and catalog should be corrected only
+after the parser, rate card, and deterministic recovery path are implemented
+and tested together. Future ZCode calls now recognize its cache-read and
+cache-write field names and record an explicitly labelled
+`estimated_output_minus_visible` reasoning count; a nonzero provider-reported
+reasoning count automatically takes precedence.
+Evidence:
+`agent_world/zcode_brain.py`,
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704`,
+ZCode's local read-only `model_usage` rows for the 930 recorded session IDs,
+ZCode's local retained message parts, `https://docs.z.ai/guides/overview/pricing`,
+and `https://huggingface.co/zai-org/GLM-5.3`.
+
+## 2026-09-03 — GLM 5.3 built a strong service economy despite failing one decision contract in five
+
+**Across its two clean-integrity Participant-v6 diagnostic cells, GLM 5.3
+created unusually strong enterprise and service activity even though 208 of
+930 decisions failed the model-output contract, exposing a sharp split between
+economic planning ability and concise schema compliance.** The pooled result
+scored 62.55 competence, 80.60 entrepreneurship, and 135.88 economic
+productivity: 12 of 20 agents survived, 14 structures were completed, 14 trades
+settled, and 95.625 units of enterprise supply were recorded, including 34.625
+of classified service income. Seed 11 produced an active commodity market and
+two access-sharing shelter ventures; seed 41 produced a public-fee well with
+three payments and a contributor dividend, plus paid shelter access and
+survival aid distinguished by the frozen gift classifier. Reliability was much
+weaker: 187 of the 208 failed decisions were overlong `intent` fields. No
+provider, quota, harness, or ambiguous-envelope failures contaminated these
+cells, so this is attributable model behavior rather than fabricated world
+activity. The run remains diagnostic rather than leaderboard-certified because
+it used the new ZCode connector and native Max effort instead of the closed v6
+provider set and standardized medium effort. For context, the GLM 5.2 v6 pair
+had pooled competence 13.27, one survivor, two structures, and zero enterprise,
+but those OpenRouter/medium cells had invalid integrity; the provider, effort,
+and integrity differences prevent treating the gap as a controlled
+model-version effect.
+Evidence:
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704`,
+compared diagnostically with
+`runs/benchmarks/glm-5-2-openrouter-participant-v6-replicated-seeds11-41-20260818-120919`.
+
+## 2026-09-01 — A live terminal session is not a detached run supervisor
+
+**Two healthy checkpointed ZCode cells vanished within seconds of the
+15-minute boundary because they were launched as long-lived command sessions,
+not under the repository's detached process pattern.** Both processes started
+at 10:59 local time; their last partial-tick usage writes landed at 11:14:42
+and 11:14:57. Neither ledger contains `run_completed`, `run_paused`,
+`run_stopped`, or `run_failed`, both run manifests remained `running`, and the
+kernel journal contains no OOM or killed-process evidence. Seed 41 had passed
+its tick-5 health gate and seed 11 had correctly frozen at tick 2 for a ZCode
+rate-limit wait before the external interruption. This was an operational
+supervision failure, not model or provider behavior. Recovery reused the exact
+checkpoints, cohort worktrees, and launch commit under a detached `tmux`
+supervisor; the cells were sequenced to keep account-wide ZCode concurrency at
+four rather than eight.
+Evidence:
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-175704`.
+
+## 2026-09-01 — An omitted provider prefix turned a ZCode rate limit into a fake model collapse
+
+**A ZCode `[1302][Rate limit reached for requests]` response was cached as a
+quota failure inside the connector but omitted from v6's shared failure
+taxonomy, so 184 provider refusals were laundered into agent `wait` actions and
+the world advanced to tick 50 as if GLM 5.3 had chosen them.** Seed 11 made only
+19 real provider calls for 203 recorded decisions: 18 valid decisions, one
+confirmed model-contract failure, and 184 cached quota messages. Because the
+quota prefix was unrecognized, the five-tick health gate reported success,
+all agents died by tick 23, and the run emitted a normal completion report.
+This was a harness artifact, not model behavior and not a valid score. The
+parallel seed 41 was manually stopped at completed tick 9; its preserved
+ledger contains 85 valid decisions and five model-contract failures, plus ten
+usage rows from the interrupted incomplete tick. The repair adds every ZCode
+failure class to the common taxonomy and a regression proving the exact 1302
+message discards the incomplete tick and pauses at the completed-tick
+checkpoint. Both original cells are retained but explicitly invalidated; a
+clean study must launch from the repaired commit rather than resume evidence
+whose source fingerprint lacked the guard.
+Evidence:
+`runs/benchmarks/glm-5-3-zcode-participant-v6-native-max-seeds11-41-20260901-171953`,
+`agent_world/metrics.py`, `tests/test_session.py`.
+
 ## 2026-09-04 — Failure classification can manufacture or suppress agent behavior
 
 **The infrastructure can change whether a world tick advances without any model changing its decision quality.** In offline probes against commit `2d073da`, two distinct connector-boundary failure messages advanced a two-agent world to tick 1 as wait actions, while an ordinary valid intent—“Avoid unauthorized access to stores.”—paused the world at tick 0 as an authentication failure. The same synthetic brain exception failed sequential execution at tick 0 but advanced concurrent execution to tick 1. The runner routes failures using intent-message classifiers, and its ambiguous-boundary guard requires identical messages across the population.

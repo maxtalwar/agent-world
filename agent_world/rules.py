@@ -750,3 +750,19 @@ for action in ACTION_SCHEMA:
     cost = _ACTION_COSTS.get(str(action["type"]))
     if cost is not None:
         action["cost"] = dict(cost)
+
+
+def action_schema_for_transfers(mode: str = "self_declared") -> list[dict]:
+    """Render transfer affordances without mutating the shared action schema."""
+    if mode == "self_declared":
+        return ACTION_SCHEMA
+    if mode != "external":
+        raise ValueError("Unsupported transfer kind mode")
+    return [
+        {
+            **{key: value for key, value in action.items() if key != "note"},
+            "parameters": {key: value for key, value in action["parameters"].items() if key != "kind"},
+            "example": {key: value for key, value in action["example"].items() if key != "kind"},
+        } if action["type"] == "gift" else action
+        for action in ACTION_SCHEMA
+    ]

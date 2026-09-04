@@ -191,7 +191,7 @@ class ManagedFinalizationTests(unittest.TestCase):
                     "benchmark_integrity_status": "clean",
                     "usage_record_coverage_pct": 100.0,
                 },
-                "benchmarks": {"trial": {"protocol_compliant": True}},
+                "benchmarks": {"protocol": {"id": "participant-v7"}, "trial": {"protocol_compliant": True}},
                 "usage": {"total_cost_usd": 0},
             }
             result = finalize_job("test", root=root)
@@ -220,7 +220,7 @@ class ManagedFinalizationTests(unittest.TestCase):
                             "benchmark_integrity_status": "clean",
                             "usage_record_coverage_pct": 100.0,
                         },
-                        "benchmarks": {"trial": {"protocol_compliant": True}},
+                        "benchmarks": {"protocol": {"id": "participant-v7"}, "trial": {"protocol_compliant": True}},
                         "usage": {"total_cost_usd": 0},
                     }
                 ),
@@ -246,6 +246,37 @@ class ManagedFinalizationTests(unittest.TestCase):
             self.assertTrue(
                 any("transfer accounting" in blocker for blocker in result["analysis_readiness"]["blockers"])
             )
+
+
+
+
+
+class RecipeFinalizationTests(unittest.TestCase):
+    def test_finalization_checks_recipe_identity_and_digest(self):
+        from agent_world.run_finalization import _audit_report
+        from agent_world.protocols import get_recipe
+        recipe = get_recipe("participant-v6")
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "manifest.json"
+            manifest.write_text(json.dumps({"resolved_models": {"fixture": 10}}))
+            cell = {"seed": 11, "target_ticks": 50, "run_manifest": str(manifest)}
+            job = {"protocol": recipe.id, "recipe_fingerprint_sha256": recipe.digest,
+                   "config": {"model": {"id": "fixture"}}}
+            report = {
+                "run": {"completed": True, "final_tick": 50},
+                "reliability": {"benchmark_integrity_status": "clean", "usage_record_coverage_pct": 100.0},
+                "benchmarks": {
+                    "protocol": {"id": recipe.id, "recipe_fingerprint_sha256": recipe.digest},
+                    "trial": {"protocol_compliant": True},
+                },
+            }
+            self.assertEqual(_audit_report(job, cell, report)["blockers"], [])
+            for field, wrong in (("id", "participant-v7"), ("recipe_fingerprint_sha256", "changed")):
+                with self.subTest(field=field):
+                    original = report["benchmarks"]["protocol"][field]
+                    report["benchmarks"]["protocol"][field] = wrong
+                    self.assertTrue(_audit_report(job, cell, report)["blockers"])
+                    report["benchmarks"]["protocol"][field] = original
 
 
 if __name__ == "__main__":

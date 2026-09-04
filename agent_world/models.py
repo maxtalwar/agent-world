@@ -75,6 +75,7 @@ class WorldConfig:
     economy_mode: str = "baseline"
     objective_mode: str = "neutral"
     action_feedback_mode: str = "baseline"
+    transfer_kind_mode: str = "self_declared"
     # None selects the treatment default: one AP in commerce, free in baseline
     # and organic. Organic speech remains local, so this avoids suppressing
     # society formation merely because the action budget is coarse.
@@ -125,6 +126,8 @@ class WorldConfig:
             raise ValueError("economy_mode must be baseline, commerce, or organic")
         if self.objective_mode not in {"neutral", "collective", "individual"}:
             raise ValueError("objective_mode must be neutral, collective, or individual")
+        if self.transfer_kind_mode not in {"external", "self_declared"}:
+            raise ValueError("transfer_kind_mode must be external or self_declared")
         if self.action_feedback_mode not in {"baseline", "causal", "minimal", "none"}:
             raise ValueError("action_feedback_mode must be baseline, causal, minimal, or none")
         if self.town_ledger_prompt_mode not in {

@@ -21,7 +21,10 @@ seed 11 only. It must not silently acquire seed 41 or benchmark status.
 
 Participant v6, v7, and future suite versions are protocol selections inside
 this one benchmark workflow. Keeping one workflow prevents isolation, quota,
-accounting, and evidence rules from drifting across per-version skills.
+accounting, and evidence rules from drifting across per-version skills. V6 and
+v7 are both implemented in the current checkout: select `protocol` in the
+managed config. Source pinning preserves a particular execution; it is not
+required merely to choose v6. See [versioned recipes](experiment-recipes.md).
 
 ## Default interpretation
 

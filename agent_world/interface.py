@@ -11,7 +11,7 @@ from typing import Any
 
 from agent_world.models import Agent, AgentDecision, Event, Position, WorldState
 from agent_world.rules import (
-    ACTION_SCHEMA,
+    action_schema_for_transfers,
     COMMUNICATION_ACTION_TYPES,
     GROUP_ADMIN_ACTION_TYPES,
     MECHANICS_SUMMARY,
@@ -129,7 +129,8 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         set() if state.config.economy_mode == "organic" else ORGANIC_ONLY_ACTION_TYPES
     )
     valid_actions = [
-        action for action in ACTION_SCHEMA if action.get("type") not in schema_disabled_actions
+        action for action in action_schema_for_transfers(state.config.transfer_kind_mode)
+        if action.get("type") not in schema_disabled_actions
     ]
     feedback_mode = getattr(state.config, "action_feedback_mode", "baseline")
     recent_events = _recent_visible_events(state, agent, radius)
@@ -184,6 +185,7 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "town_ledger_prompt_mode": getattr(state.config, "town_ledger_prompt_mode", "baseline"),
             "town_ledger_seed_mode": getattr(state.config, "town_ledger_seed_mode", "none"),
             "town_ledger_output_mode": getattr(state.config, "town_ledger_output_mode", "action"),
+            **({"transfer_kind_mode": "external"} if state.config.transfer_kind_mode == "external" else {}),
             "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
             "trade_settlement": (
                 "physical_meeting_at_escrow_position"
@@ -523,7 +525,7 @@ def _render_static_context(world: dict[str, Any]) -> str:
     structure_names = [
         name for name, recipe in world_recipes.items() if not recipe.get("outputs")
     ]
-    for action in ACTION_SCHEMA:
+    for action in action_schema_for_transfers(world.get("transfer_kind_mode", "self_declared")):
         if action.get("type") in disabled_actions:
             continue
         if world.get("economy_mode") != "organic" and action.get("type") in ORGANIC_ONLY_ACTION_TYPES:

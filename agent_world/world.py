@@ -1633,7 +1633,8 @@ class WorldEngine:
         return action_points
 
     def _action_gift(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
-        kind = str(action.get("kind") or "gift").strip().lower()
+        self_declared = self.state.config.transfer_kind_mode == "self_declared"
+        kind = str(action.get("kind") or "gift").strip().lower() if self_declared else "gift"
         if kind not in TRANSFER_KINDS:
             self._invalid(
                 agent,
@@ -1672,7 +1673,7 @@ class WorldEngine:
             actor_id=agent.id,
             position=agent.position,
             message=f"{agent.name} {kind_phrase} {target.name}.",
-            data={"to": target.id, "items": dict(items), "kind": kind},
+            data={"to": target.id, "items": dict(items), **({"kind": kind} if self_declared else {})},
             recipients={target.id},
         )
         return action_points - 1

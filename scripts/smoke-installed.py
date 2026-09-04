@@ -12,15 +12,23 @@ checkout = Path(__file__).resolve().parents[1]
 assert package != checkout / "agent_world", f"Imported checkout instead of wheel: {package}"
 assert (package / "static" / "observer.html").is_file()
 with tempfile.TemporaryDirectory(prefix="agent-world-wheel-smoke-") as temporary:
-    root = Path(temporary)
-    result = subprocess.run([
-        sys.executable, "-m", "agent_world.cli", "run", "--brain", "survival",
-        "--ticks", "2", "--agents", "2", "--seed", "11",
-        "--out", str(root/"run.jsonl"), "--snapshot", str(root/"run-snapshot.json"),
-    ], cwd=root, text=True, capture_output=True, timeout=30)
-    assert result.returncode == 0, result.stdout + result.stderr
-    engine, _ = load_run_checkpoint(root/"run-checkpoint.pkl")
-    assert engine.state.tick == 2
-    report = json.loads((root/"run-report.json").read_text())
-    assert report["run"]["final_tick"] == 2
-print("Installed wheel: assets, CLI, simulation, report and checkpoint passed.")
+    for recipe in (None, "participant-v6", "participant-v7"):
+        root = Path(temporary) / (recipe or "experiment")
+        root.mkdir()
+        command = [
+            sys.executable, "-m", "agent_world.cli", "run", "--brain", "survival",
+            "--ticks", "2", "--agents", "2", "--seed", "11",
+            "--out", str(root/"run.jsonl"), "--snapshot", str(root/"run-snapshot.json"),
+        ]
+        if recipe:
+            command.extend(["--recipe", recipe])
+        result = subprocess.run(command, cwd=root, text=True, capture_output=True, timeout=30)
+        assert result.returncode == 0, result.stdout + result.stderr
+        engine, extra = load_run_checkpoint(root/"run-checkpoint.pkl")
+        assert engine.state.tick == 2
+        assert extra["run"]["recipe"] == recipe
+        assert extra["run"]["benchmark_protocol"] is None
+        report = json.loads((root/"run-report.json").read_text())
+        assert report["run"]["final_tick"] == 2
+        assert report["benchmarks"]["protocol"]["id"] == (recipe or "participant-v7")
+print("Installed wheel: assets, default/v6/v7 simulations, reports and checkpoints passed.")

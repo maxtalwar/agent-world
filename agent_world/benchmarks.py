@@ -28,9 +28,11 @@ from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 # while maximum reasoning would make the field needlessly slow and expensive.
 # Provider-native allocation within low remains model behavior and is measured,
 # not equalized. V6 stays frozen as the historical medium-effort suite.
-BENCHMARK_SUITE_ID = "agent-world-participant-v7"
-BENCHMARK_PROTOCOL_ID = "participant-v7"
-BENCHMARK_REASONING_EFFORT = "low"
+from agent_world.protocols import DEFAULT_PROTOCOL_ID, RECIPES, get_recipe
+
+BENCHMARK_SUITE_ID = get_recipe().suite_id
+BENCHMARK_PROTOCOL_ID = DEFAULT_PROTOCOL_ID
+BENCHMARK_REASONING_EFFORT = get_recipe().reasoning_effort
 # Operational throughput defaults. They are recorded for observability but are
 # not part of the behavioral treatment: every agent decides from the same
 # frozen tick state regardless of how many decisions are collected in parallel.
@@ -72,7 +74,7 @@ BENCHMARK_DIAGNOSTIC_TICKS = (30, 40, 50)
 # (gift-classifications.json) classified historical gifts from ledger
 # evidence; when such an artifact is present it still takes precedence over
 # declarations, so rescored v6 ledgers keep their audited verdicts.
-BENCHMARK_SCORING_REVISION = 1
+BENCHMARK_SCORING_REVISION = get_recipe().scoring_revision
 
 GIFT_VERDICT_PAYMENT = "payment_for_service"
 GIFT_VERDICT_BARTER = "barter_settlement"
@@ -359,6 +361,7 @@ BENCHMARK_CORE_FINGERPRINT_FILES = (
     "provider_telemetry.py",
     "usage.py",
     "benchmarks.py",
+    "protocols.py",
     "brain_boundary.py",
     "brain_runtime.py",
     "cli.py",
@@ -542,10 +545,15 @@ def _behavior_source_uncached(path: Path) -> bytes:
         tree = ast.parse(raw)
     except SyntaxError:
         return raw
+    # Recipe data is hashed through the selected recipe's canonical digest.
+    # Adding an unrelated recipe must not invalidate an existing one.
+    ignored = FINGERPRINT_EXEMPT_REGISTRIES
+    if path.name == "protocols.py":
+        ignored = ignored | {"RECIPES", "DEFAULT_PROTOCOL_ID"}
     tree.body = [
         node
         for node in tree.body
-        if _registry_assignment_name(node) not in FINGERPRINT_EXEMPT_REGISTRIES
+        if _registry_assignment_name(node) not in ignored
     ]
     for node in ast.walk(tree):
         if not isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -559,7 +567,7 @@ def _behavior_source_uncached(path: Path) -> bytes:
     return ast.dump(tree).encode("utf-8")
 
 
-def benchmark_code_fingerprint(providers: Iterable[str] | None = None) -> str:
+def benchmark_code_fingerprint(providers: Iterable[str] | None = None, protocol_id: str | None = None) -> str:
     """Hash benchmark formulas, world sources, and the adapters a trial used.
 
     ``providers`` scopes which adapters are included. Passing ``None`` covers
@@ -576,21 +584,25 @@ def benchmark_code_fingerprint(providers: Iterable[str] | None = None) -> str:
         for provider in providers:
             scoped.update(BENCHMARK_PROVIDER_FINGERPRINT_FILES.get(provider, ()))
         names = tuple(sorted(set(BENCHMARK_CORE_FINGERPRINT_FILES) | scoped))
-    digest = hashlib.sha256()
+    digest = hashlib.sha256(get_recipe(protocol_id).digest.encode())
     for name in names:
         digest.update(name.encode("utf-8"))
         digest.update(_behavior_source(package_dir / name))
     return digest.hexdigest()
 
 
-def benchmark_protocol() -> dict[str, Any]:
-    """Return the current frozen participant trial and scoring specification."""
+def benchmark_protocol(protocol_id: str | None = None) -> dict[str, Any]:
+    """Return a selected frozen participant recipe and scoring specification."""
+
+    recipe = get_recipe(protocol_id)
 
     return {
-        "id": BENCHMARK_PROTOCOL_ID,
-        "scoring_revision": BENCHMARK_SCORING_REVISION,
-        "suite_id": BENCHMARK_SUITE_ID,
-        "code_fingerprint_sha256": benchmark_code_fingerprint(),
+        "id": recipe.id,
+        "scoring_revision": recipe.scoring_revision,
+        "recipe_fingerprint_sha256": recipe.digest,
+        "transfer_accounting": recipe.transfer_accounting,
+        "suite_id": recipe.suite_id,
+        "code_fingerprint_sha256": benchmark_code_fingerprint(protocol_id=recipe.id),
         "replications": {
             "required_seeds": sorted(BENCHMARK_SEEDS),
             "minimum": len(BENCHMARK_SEEDS),
@@ -617,29 +629,16 @@ def benchmark_protocol() -> dict[str, Any]:
             ),
         },
         "trial": {
-            "agents": 10,
-            "ticks": 50,
+            **recipe.defaults(),
             "diagnostic_score_ticks": list(BENCHMARK_DIAGNOSTIC_TICKS),
             "official_score_tick": 50,
-            "preset": "frontier-generalists",
-            "world_variant": "frontier",
             "season_length_ticks": 12,
-            "economy_mode": "organic",
-            "geography_mode": "dispersed",
-            "specialization_mode": "generalists",
-            "objective_mode": "neutral",
-            "reasoning_effort": BENCHMARK_REASONING_EFFORT,
             "deliberation_policy": (
-                "Request the named low reasoning setting from every connector; "
-                "provider-native spend within low is measured and reported, "
+                f"Request the named {recipe.reasoning_effort} reasoning setting from every connector; "
+                "provider-native spend is measured and reported, "
                 "never equalized. Connectors must not silently promote an "
-                "unsupported low request to a higher effort."
+                "unsupported request to another effort."
             ),
-            "claude_thinking_budget_tokens": BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
-            "decision_mode": "raw",
-            "action_feedback_mode": "baseline",
-            "connector_profile": "connector-v3",
-            "conversation_mode": "fresh-conversation",
             "population": "one uniform model cohort",
             "turn_resolution": "simultaneous",
             "agent_io_log": True,
@@ -726,7 +725,9 @@ def build_benchmark_results(
     config = report.get("config") or {}
     started = _latest_lifecycle_event(events)
     start_data = (started or {}).get("data") or {}
-    trial_flags = _trial_flags(report, start_data, cohorts)
+    declared_recipe = start_data.get("benchmark_protocol") or start_data.get("recipe")
+    recipe = get_recipe(declared_recipe if declared_recipe in RECIPES else None)
+    trial_flags = _trial_flags(report, start_data, cohorts, recipe.id)
     trial_protocol = start_data.get("benchmark_protocol")
     classification = report.get("gift_classifications") or {}
     gift_verdicts = {
@@ -752,6 +753,7 @@ def build_benchmark_results(
             final_tick=int(run.get("final_tick") or 0),
             target_ticks=int(run.get("target_ticks") or 0),
             gift_verdicts=gift_verdicts,
+            transfer_accounting=recipe.transfer_accounting,
         )
         cohort_flags = list(trial_flags)
         if raw["submitted_actions_excluding_contention"] <= 0:
@@ -801,13 +803,13 @@ def build_benchmark_results(
         for cohort in cohorts.values()
         if cohort.get("provider")
     }
-    protocol = benchmark_protocol()
+    protocol = benchmark_protocol(recipe.id)
     protocol["code_fingerprint_sha256"] = benchmark_code_fingerprint(
-        report_providers or None
+        report_providers or None, recipe.id
     )
 
     return {
-        "suite_id": BENCHMARK_SUITE_ID,
+        "suite_id": recipe.suite_id,
         "protocol": protocol,
         "trial": {
             "declared_protocol": trial_protocol,
@@ -815,7 +817,8 @@ def build_benchmark_results(
                 "benchmark_code_fingerprint"
             ),
             "source_fingerprint_compatible": (
-                start_data.get("benchmark_code_fingerprint")
+                recipe.id == DEFAULT_PROTOCOL_ID
+                and start_data.get("benchmark_code_fingerprint")
                 in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS
             ),
             "protocol_compliant": not trial_flags,
@@ -834,9 +837,9 @@ def build_benchmark_results(
                 "artifact_sha256": classification.get("artifact_sha256"),
                 "judge": classification.get("judge"),
                 "policy": (
-                    "Frozen artifact judged from ledger evidence; scoring "
-                    "reads it deterministically. Unclassified gifts are "
-                    "unscored, never a compliance failure."
+                    "Frozen artifact judged from ledger evidence; unclassified gifts are unscored."
+                    if recipe.transfer_accounting == "frozen_classifier"
+                    else "Transfers use the sender-declared gift, payment, or barter kind."
                 ),
             },
             "certification": (
@@ -846,7 +849,7 @@ def build_benchmark_results(
             ),
         },
         "cohorts": scored,
-        "trajectory": _benchmark_trajectory(events),
+        "trajectory": _benchmark_trajectory(events, recipe.id),
     }
 
 
@@ -1095,9 +1098,15 @@ def _report_providers(benchmark: dict[str, Any]) -> set[str]:
     }
 
 
-def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, Any]:
+def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: str | None = None) -> dict[str, Any]:
     """Pool protocol-compliant replication counts into model benchmark results."""
 
+    reports = list(reports)
+    declared = {(r.get("benchmarks", {}).get("protocol") or {}).get("id") for r in reports}
+    supported = declared & set(RECIPES)
+    if protocol_id is None and len(supported) > 1:
+        raise ValueError("Mixed benchmark recipes; select a protocol explicitly before aggregating")
+    recipe = get_recipe(protocol_id or next(iter(supported), None))
     grouped: dict[tuple[str, str, str], dict[str, Any]] = {}
     rejected: list[dict[str, Any]] = []
     for report in reports:
@@ -1105,9 +1114,15 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
         report_protocol = benchmark.get("protocol") or {}
         report_fingerprint = report_protocol.get("code_fingerprint_sha256")
         prior_suite = None
-        if benchmark.get("suite_id") != BENCHMARK_SUITE_ID:
-            prior_suite = BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS.get(
-                (str(benchmark.get("suite_id")), str(report_fingerprint))
+        if benchmark.get("suite_id") != recipe.suite_id:
+            # Retain explicit historical audits; never infer equivalence between
+            # selectable recipes, even if their scoring formulas are shared.
+            prior_suite = (
+                BENCHMARK_ACCEPTED_PRIOR_SUITE_REPORTS.get(
+                    (str(benchmark.get("suite_id")), str(report_fingerprint))
+                )
+                if recipe.id == DEFAULT_PROTOCOL_ID and report_protocol.get("id") not in RECIPES
+                else None
             )
             if prior_suite is None:
                 rejected.append(
@@ -1118,10 +1133,13 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 )
                 continue
         else:
+            if report_protocol.get("id") != recipe.id:
+                rejected.append({"source": report.get("source"), "reason": "benchmark_recipe_mismatch"})
+                continue
             # Compare against a fingerprint scoped to the providers this report
             # actually used, so an unrelated adapter cannot invalidate it.
             expected_fingerprint = benchmark_code_fingerprint(
-                _report_providers(benchmark)
+                _report_providers(benchmark), recipe.id
             )
             # Membership alone decides: the registry entry is the audit that
             # the code separating the stored fingerprint from the current one
@@ -1129,7 +1147,8 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
             # wrongly reject a resumed run, which reports at the current
             # revision but keeps its launch-time fingerprint.
             compatible_prior_report = (
-                report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
+                recipe.id == DEFAULT_PROTOCOL_ID
+                and report_fingerprint in BENCHMARK_COMPATIBLE_REPORT_FINGERPRINTS
             )
             if report_fingerprint != expected_fingerprint and not compatible_prior_report:
                 rejected.append(
@@ -1318,7 +1337,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
                 "certification_flags": certification_flags,
                 "declared_deviations": declared_deviations,
                 "source_scoring_revisions": source_scoring_revisions,
-                "scoring_revision": BENCHMARK_SCORING_REVISION,
+                "scoring_revision": recipe.scoring_revision,
                 "replications": replications,
                 "required_replications": required_replications,
                 "extended_replications": extended_replications,
@@ -1343,8 +1362,8 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]]) -> dict[str, 
         )
     )
     return {
-        "suite_id": BENCHMARK_SUITE_ID,
-        "protocol": benchmark_protocol(),
+        "suite_id": recipe.suite_id,
+        "protocol": benchmark_protocol(recipe.id),
         "results": results,
         "rejected": rejected,
     }
@@ -1485,6 +1504,7 @@ def _cohort_raw_metrics(
     final_tick: int,
     target_ticks: int,
     gift_verdicts: dict[int, str] | None = None,
+    transfer_accounting: str = "self_declared",
 ) -> dict[str, Any]:
     members = set(member_ids)
     responses = [
@@ -1544,7 +1564,7 @@ def _cohort_raw_metrics(
             )
         )
     )
-    enterprise = _enterprise_supply(events, members, gift_verdicts)
+    enterprise = _enterprise_supply(events, members, gift_verdicts, transfer_accounting)
     purposeful_agent_ticks = {
         (int(event.get("tick") or 0), str(event.get("actor_id") or ""))
         for event in events
@@ -1613,13 +1633,15 @@ def _trial_flags(
     report: dict[str, Any],
     start_data: dict[str, Any],
     cohorts: dict[str, Any],
+    protocol_id: str | None = None,
 ) -> list[str]:
     run = report.get("run") or {}
     config = report.get("config") or {}
     reliability = report.get("reliability") or {}
     flags: list[str] = []
 
-    expected = benchmark_protocol()["trial"]
+    recipe = get_recipe(protocol_id)
+    expected = benchmark_protocol(recipe.id)["trial"]
     used_provider = next(
         (
             str(cohort.get("provider"))
@@ -1643,6 +1665,10 @@ def _trial_flags(
             expected["specialization_mode"],
         ),
         "objective_mode": (config.get("objective_mode"), expected["objective_mode"]),
+        "transfer_kind_mode": (
+            config.get("transfer_kind_mode", recipe.defaults()["transfer_kind_mode"]),
+            recipe.defaults()["transfer_kind_mode"],
+        ),
         "decision_mode": (start_data.get("decision_mode"), expected["decision_mode"]),
         "action_feedback_mode": (
             start_data.get("action_feedback_mode"),
@@ -1664,9 +1690,12 @@ def _trial_flags(
     for name, (actual, wanted) in checks.items():
         if actual != wanted:
             flags.append(f"protocol_mismatch:{name}")
+    if start_data.get("recipe_fingerprint_sha256") not in {None, recipe.digest}:
+        flags.append("recipe_fingerprint_mismatch")
     source_fingerprint = start_data.get("benchmark_code_fingerprint")
     compatible_source = (
-        start_data.get("benchmark_protocol") == BENCHMARK_PROTOCOL_ID
+        recipe.id == DEFAULT_PROTOCOL_ID
+        and start_data.get("benchmark_protocol") == recipe.id
         and source_fingerprint in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS
     )
     accepted_prior = accepted_prior_trial(
@@ -1674,7 +1703,7 @@ def _trial_flags(
         source_fingerprint,
     )
     if (
-        start_data.get("benchmark_protocol") != BENCHMARK_PROTOCOL_ID
+        start_data.get("benchmark_protocol") != recipe.id
         and accepted_prior is None
     ):
         flags.append("benchmark_protocol_not_declared")
@@ -1686,7 +1715,7 @@ def _trial_flags(
         if cohort.get("provider")
     }
     if (
-        source_fingerprint != benchmark_code_fingerprint(trial_providers or None)
+        source_fingerprint != benchmark_code_fingerprint(trial_providers or None, recipe.id)
         and not compatible_source
         and accepted_prior is None
     ):
@@ -1838,6 +1867,7 @@ def _enterprise_supply(
     events: list[dict[str, Any]],
     members: set[str],
     gift_verdicts: dict[int, str] | None = None,
+    transfer_accounting: str = "self_declared",
 ) -> dict[str, Any]:
     """Measure enterprise activity that survives cohort-level netting.
 
@@ -1915,7 +1945,7 @@ def _enterprise_supply(
             giver = str(event.get("actor_id") or "")
             recipient = str(data.get("to") or "")
             verdict = verdicts.get(gift_ordinal)
-            if verdict is None:
+            if verdict is None and transfer_accounting == "self_declared":
                 # V7 self-classification: trust the sender's declared kind.
                 declared = str(data.get("kind") or "").strip().lower()
                 if declared == "payment":
@@ -2037,8 +2067,8 @@ def _latest_lifecycle_event(events: list[dict[str, Any]]) -> dict[str, Any] | No
     )
 
 
-def _benchmark_trajectory(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Recover durable v4 checkpoints and apply the current scoring revision."""
+def _benchmark_trajectory(events: list[dict[str, Any]], protocol_id: str | None = None) -> list[dict[str, Any]]:
+    """Recover trajectory checkpoints belonging to the selected recipe."""
 
     checkpoints: dict[int, dict[str, Any]] = {}
     for event in events:
@@ -2046,8 +2076,8 @@ def _benchmark_trajectory(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
             continue
         data = event.get("data") or {}
         if (
-            data.get("suite_id") != BENCHMARK_SUITE_ID
-            or data.get("protocol_id") != BENCHMARK_PROTOCOL_ID
+            data.get("suite_id") != get_recipe(protocol_id).suite_id
+            or data.get("protocol_id") != get_recipe(protocol_id).id
         ):
             continue
         try:

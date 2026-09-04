@@ -86,7 +86,12 @@ class ClaudeBrain:
         connector_profile: str = "connector-v1",
         conversation_mode: str = "fresh-conversation",
         session_max_turns: int = DEFAULT_SESSION_MAX_TURNS,
+        thinking_budget_tokens: int | None = None,
     ):
+        self.thinking_budget_tokens = (int(os.environ.get("CLAUDE_MAX_THINKING_TOKENS", "0"))
+                                       if thinking_budget_tokens is None else thinking_budget_tokens)
+        if self.thinking_budget_tokens < 0:
+            raise ValueError("thinking_budget_tokens must be non-negative")
         self.runtime = runtime or BrainRuntime()
         self.boundary = ConversationBoundary(
             agent_id=agent_id,
@@ -116,7 +121,7 @@ class ClaudeBrain:
                 text=True,
                 capture_output=True,
                 timeout=min(self.timeout_seconds, 30),
-                env=_plan_auth_environment(),
+                env=_plan_auth_environment(self.thinking_budget_tokens),
                 check=False,
             )
             status = json.loads(completed.stdout or "{}")
@@ -500,7 +505,7 @@ class ClaudeBrain:
             text=True,
             capture_output=True,
             timeout=self.timeout_seconds,
-            env=_plan_auth_environment(),
+            env=_plan_auth_environment(self.thinking_budget_tokens),
             check=False,
         )
 
@@ -692,7 +697,7 @@ def _claude_effort(reasoning_effort: str) -> str:
     return "low" if effort == "minimal" else effort
 
 
-def _plan_auth_environment() -> dict[str, str]:
+def _plan_auth_environment(thinking_budget_tokens: int | None = None) -> dict[str, str]:
     child_env = os.environ.copy()
     # API and third-party-gateway credentials take precedence over the saved
     # claude.ai login. Remove them so decisions bill the subscription plan.
@@ -709,7 +714,8 @@ def _plan_auth_environment() -> dict[str, str]:
     child_env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] = "1"
     # Extended thinking burns thousands of plan tokens and ~a minute per tick
     # for a single schema-constrained decision; keep it off unless asked for.
-    child_env["MAX_THINKING_TOKENS"] = os.environ.get("CLAUDE_MAX_THINKING_TOKENS", "0")
+    child_env["MAX_THINKING_TOKENS"] = (os.environ.get("CLAUDE_MAX_THINKING_TOKENS", "0")
+                                        if thinking_budget_tokens is None else str(thinking_budget_tokens))
     # Nested-session guard: allow launching claude from inside another claude.
     child_env.pop("CLAUDECODE", None)
     return child_env

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from agent_world.io import read_jsonl_records
+from agent_world.protocols import DEFAULT_PROTOCOL_ID, RECIPES, get_recipe
 
 import argparse
 import os
@@ -23,7 +24,6 @@ from agent_world.benchmarks import (
     BENCHMARK_DIAGNOSTIC_TICKS,
     BENCHMARK_PROTOCOL_ID,
     BENCHMARK_QUOTA_WAIT_HOURS,
-    BENCHMARK_REASONING_EFFORT,
     aggregate_benchmark_reports,
     benchmark_code_fingerprint,
     format_benchmark_leaderboard,
@@ -335,12 +335,16 @@ def build_parser() -> argparse.ArgumentParser:
             f"{BENCHMARK_QUOTA_WAIT_HOURS} for {BENCHMARK_PROTOCOL_ID} trials."
         ),
     )
+    run_parser.add_argument("--claude-thinking-budget-tokens", type=int, default=None)
+    run_parser.add_argument("--recipe", choices=list(RECIPES), default=None,
+                            help="Use versioned experiment defaults; overrides remain allowed.")
+    run_parser.add_argument("--transfer-kind-mode", choices=["external", "self_declared"], default=None)
     run_parser.add_argument(
         "--benchmark-protocol",
-        choices=[BENCHMARK_PROTOCOL_ID],
+        choices=list(RECIPES),
         default=None,
         help=(
-            f"Lock this run to the standardized {BENCHMARK_PROTOCOL_ID} benchmark trial. "
+            "Lock this run to the selected standardized benchmark recipe. "
             "Seed 11 alone can earn provisional status; seeds 11 and 41 "
             "provide replicated certification."
         ),
@@ -422,10 +426,11 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_parser = subparsers.add_parser(
         "benchmark",
         help=(
-            f"Pool {BENCHMARK_PROTOCOL_ID} benchmark scores from completed "
+            "Pool scores within a selected benchmark recipe from completed "
             "run-report.json files."
         ),
     )
+    benchmark_parser.add_argument("--protocol", choices=list(RECIPES), default=None)
     benchmark_parser.add_argument(
         "paths",
         type=Path,
@@ -605,29 +610,22 @@ def _check_resume_fingerprint(
     BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS are audited as behaviorally
     identical to the current code and remain resumable.
 
-    A checkpoint from an earlier protocol is refused outright. Its opening
-    ticks ran a different world, so finishing it here would splice two suites
-    into one trial - and the compatibility registry, which is scoped per
-    protocol, would otherwise wave exactly that through. Resume such a
-    checkpoint from a worktree pinned to its own launch commit.
+    Each registered recipe is resumable in this checkout when its source
+    fingerprint matches. Historical checkpoints with different behavior still
+    require their original source; selecting a recipe never waives that guard.
     """
 
     if saved_benchmark is None:
         return
-    if str(saved_benchmark) != BENCHMARK_PROTOCOL_ID:
-        raise ValueError(
-            f"This checkpoint was recorded under {saved_benchmark}, but this "
-            f"checkout runs {BENCHMARK_PROTOCOL_ID}. Resuming would run the "
-            "remaining ticks in a different world than the completed ones. "
-            "Resume it from a worktree pinned to its own launch commit."
-        )
-    if saved_fingerprint == benchmark_code_fingerprint(providers or None):
+    recipe = get_recipe(str(saved_benchmark))
+    if saved_fingerprint == benchmark_code_fingerprint(providers or None, recipe.id):
         return
-    if saved_fingerprint in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS:
+    if recipe.id == DEFAULT_PROTOCOL_ID and saved_fingerprint in BENCHMARK_COMPATIBLE_SOURCE_FINGERPRINTS:
         return
     raise ValueError(
         "The benchmark-defining code changed after this checkpoint; "
-        f"resume would not be a valid {BENCHMARK_PROTOCOL_ID} replication."
+        f"resume would not be a valid {recipe.id} replication. "
+        "Resume historical checkpoints from a worktree pinned to its own launch commit."
     )
 
 
@@ -741,6 +739,23 @@ def _run(args: argparse.Namespace) -> None:
             raise ValueError(
                 "A checkpoint must be resumed with its original benchmark protocol."
             )
+        saved_recipe = saved.get("recipe") or saved_benchmark
+        if getattr(args, "recipe", None) not in {None, saved_recipe}:
+            raise ValueError("Cannot change recipe when resuming a checkpoint")
+        if saved_recipe in RECIPES:
+            saved_digest = saved.get("recipe_fingerprint_sha256")
+            if saved_digest is not None and saved_digest != get_recipe(saved_recipe).digest:
+                raise ValueError("Recipe changed after this checkpoint")
+        args.recipe = saved_recipe
+        saved_budget = saved.get("claude_thinking_budget_tokens")
+        if saved_budget is None and saved_benchmark:
+            saved_budget = BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
+        if getattr(args, "claude_thinking_budget_tokens", None) not in {None, saved_budget}:
+            raise ValueError("Cannot change Claude thinking budget when resuming")
+        args.claude_thinking_budget_tokens = saved_budget
+        requested_transfer = getattr(args, "transfer_kind_mode", None)
+        if requested_transfer not in {None, engine.state.config.transfer_kind_mode}:
+            raise ValueError("Cannot change transfer accounting when resuming")
         args.benchmark_protocol = saved_benchmark
         args.benchmark_code_fingerprint = saved.get(
             "benchmark_code_fingerprint"
@@ -842,6 +857,7 @@ def _run(args: argparse.Namespace) -> None:
             geography_mode=getattr(args, "geography_mode", "shared_oasis"),
             specialization_mode=getattr(args, "specialization_mode", "generalists"),
             action_feedback_mode=getattr(args, "action_feedback_mode", None) or "baseline",
+            transfer_kind_mode=getattr(args, "transfer_kind_mode", None) or "self_declared",
             communication_action_cost=getattr(args, "communication_action_cost", None),
             town_ledger_action_cost=getattr(args, "town_ledger_action_cost", None) if getattr(args, "town_ledger_action_cost", None) is not None else 1,
             town_ledger_prompt_mode=getattr(args, "town_ledger_prompt_mode", None) or "baseline",
@@ -871,6 +887,11 @@ def _run(args: argparse.Namespace) -> None:
     if codex_action_max_items < 1 or codex_action_max_items > 16:
         raise ValueError("--codex-action-max-items must be between 1 and 16")
     engine._codex_action_max_items = codex_action_max_items
+    if getattr(args, "claude_thinking_budget_tokens", None) is None:
+        args.claude_thinking_budget_tokens = int(os.environ.get("CLAUDE_MAX_THINKING_TOKENS", "0"))
+    if args.claude_thinking_budget_tokens < 0:
+        raise ValueError("Claude thinking budget must be non-negative")
+    engine._claude_thinking_budget_tokens = args.claude_thinking_budget_tokens
 
     if args.ticks < engine.state.tick:
         raise ValueError(
@@ -1019,6 +1040,8 @@ def _run(args: argparse.Namespace) -> None:
         "conversation_mode": args.conversation_mode,
         "session_max_turns": args.session_max_turns,
         "benchmark_protocol": getattr(args, "benchmark_protocol", None),
+        "recipe": getattr(args, "recipe", None),
+        "recipe_fingerprint_sha256": get_recipe(args.recipe).digest if getattr(args, "recipe", None) else None,
         "benchmark_code_fingerprint": getattr(
             args, "benchmark_code_fingerprint", None
         ),
@@ -1075,6 +1098,9 @@ def _run(args: argparse.Namespace) -> None:
                 "conversation_mode": args.conversation_mode,
                 "session_max_turns": args.session_max_turns,
                 "benchmark_protocol": getattr(args, "benchmark_protocol", None),
+                "recipe": getattr(args, "recipe", None),
+                "claude_thinking_budget_tokens": args.claude_thinking_budget_tokens,
+                "recipe_fingerprint_sha256": get_recipe(args.recipe).digest if getattr(args, "recipe", None) else None,
                 "benchmark_code_fingerprint": getattr(
                     args, "benchmark_code_fingerprint", None
                 ),
@@ -1148,7 +1174,7 @@ def _run(args: argparse.Namespace) -> None:
         plan_usage_checkpoints=list(checkpoint_extra.get("plan_usage_checkpoints") or []),
         benchmark_checkpoint_ticks=(
             BENCHMARK_DIAGNOSTIC_TICKS
-            if getattr(args, "benchmark_protocol", None) == BENCHMARK_PROTOCOL_ID
+            if getattr(args, "benchmark_protocol", None) in RECIPES
             else ()
         ),
         startup_health_check_tick=startup_health_check_tick,
@@ -1250,6 +1276,9 @@ def _ordinary_run_manifest(
             "sequential" if args.sequential_decisions else "simultaneous"
         ),
         "benchmark_protocol": getattr(args, "benchmark_protocol", None),
+        "recipe": getattr(args, "recipe", None),
+        "claude_thinking_budget_tokens": getattr(args, "claude_thinking_budget_tokens", None),
+        "recipe_fingerprint_sha256": get_recipe(args.recipe).digest if getattr(args, "recipe", None) else None,
         "benchmark_code_fingerprint": getattr(
             args, "benchmark_code_fingerprint", None
         ),
@@ -1325,7 +1354,7 @@ def _benchmark(args: argparse.Namespace) -> None:
         if not isinstance(value, dict):
             raise ValueError(f"Benchmark report must be a JSON object: {path}")
         reports.append(value)
-    aggregate = aggregate_benchmark_reports(reports)
+    aggregate = aggregate_benchmark_reports(reports, getattr(args, "protocol", None))
     markdown = format_benchmark_leaderboard(aggregate)
     print(markdown, end="")
     if args.out is not None:
@@ -1338,50 +1367,47 @@ def _benchmark(args: argparse.Namespace) -> None:
 
 
 def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
-    if getattr(args, "benchmark_protocol", None) != BENCHMARK_PROTOCOL_ID:
+    """Apply recipe defaults; certification locks require explicit benchmark intent."""
+    protocol_id = getattr(args, "benchmark_protocol", None)
+    recipe_id = getattr(args, "recipe", None)
+    if protocol_id and recipe_id and protocol_id != recipe_id:
+        raise ValueError("Benchmark protocol and recipe must agree")
+    if not protocol_id and not recipe_id:
+        return
+    recipe = get_recipe(protocol_id or recipe_id)
+    args.recipe = recipe.id
+    if not protocol_id:
+        defaults = recipe.defaults()
+        explicit_preset = getattr(args, "preset", None)
+        if explicit_preset:
+            defaults.update({"world_variant": "classic", **RUN_PRESETS[explicit_preset]})
+        for name, value in defaults.items():
+            if name == "agents" and getattr(args, "population", None):
+                continue
+            if getattr(args, name, None) is None:
+                setattr(args, name, value)
         return
     if getattr(args, "population", None):
         raise ValueError(
-            f"{BENCHMARK_PROTOCOL_ID} uses one uniform model cohort; omit --population."
+            f"{recipe.id} uses one uniform model cohort; omit --population."
         )
     if args.brain not in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"}:
         raise ValueError(
-            f"{BENCHMARK_PROTOCOL_ID} requires an explicit model-backed --brain."
+            f"{recipe.id} requires an explicit model-backed --brain."
         )
     if getattr(args, "sequential_decisions", False):
         raise ValueError(
-            f"{BENCHMARK_PROTOCOL_ID} requires simultaneous decision collection."
+            f"{recipe.id} requires simultaneous decision collection."
         )
 
     benchmark_provider = BRAIN_TYPE_PROVIDERS[args.brain]
     _, provider_worker_defaults = resolved_worker_recommendations()
-    locked = {
-        "ticks": 50,
-        "agents": 10,
-        "preset": "frontier-generalists",
-        "world_variant": "frontier",
-        "objective_mode": "neutral",
-        "economy_mode": "organic",
-        "geography_mode": "dispersed",
-        "specialization_mode": "generalists",
-        "reasoning_effort": BENCHMARK_REASONING_EFFORT,
-        "connector_profile": "connector-v3",
-        "conversation_mode": "fresh-conversation",
-        "session_max_turns": 10,
-        "decision_mode": "raw",
-        "action_feedback_mode": "baseline",
-        "assignment_strategy": "ordered",
-        "assignment_seed": 0,
-        "width": 16,
-        "height": 16,
-        "startup_health_check_tick": 5,
-        "startup_health_max_failure_rate": 0.2,
-    }
+    locked = recipe.defaults()
     for name, required in locked.items():
         current = getattr(args, name, None)
         if current is not None and current != required:
             raise ValueError(
-                f"{BENCHMARK_PROTOCOL_ID} requires "
+                f"{recipe.id} requires "
                 f"--{name.replace('_', '-')}={required}; "
                 f"received {current!r}."
             )
@@ -1398,20 +1424,13 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
             str(seed) for seed in sorted(BENCHMARK_ALLOWED_SEEDS)
         )
         raise ValueError(
-            f"{BENCHMARK_PROTOCOL_ID} requires one of the declared seeds: "
+            f"{recipe.id} requires one of the declared seeds: "
             f"{declared}."
         )
     if getattr(args, "no_agent_io_log", False):
         raise ValueError(
-            f"{BENCHMARK_PROTOCOL_ID} requires private agent I/O logging."
+            f"{recipe.id} requires private agent I/O logging."
         )
-    # Claude's low-effort adaptive thinking remains bounded by the declared
-    # safety ceiling. The effort dial is the shared protocol control; the token
-    # budget is only a ceiling and never a target spend.
-    os.environ["CLAUDE_MAX_THINKING_TOKENS"] = str(
-        BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
-    )
-    args.claude_thinking_budget_tokens = BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS
     # A rate limit should suspend a trial, never damage it. Waiting keeps the
     # world frozen at a completed tick, so this is scheduling policy only.
     if getattr(args, "quota_wait_hours", None) is None:
@@ -1420,7 +1439,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
     # invoke, so later edits to unrelated providers cannot invalidate it.
     provider = BRAIN_TYPE_PROVIDERS.get(args.brain)
     args.benchmark_code_fingerprint = benchmark_code_fingerprint(
-        [provider] if provider else None
+        [provider] if provider else None, recipe.id
     )
 
 

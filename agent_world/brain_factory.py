@@ -546,6 +546,8 @@ def create_population_brains(
                 action_limit=getattr(engine, "_codex_action_max_items", 4),
                 ledger_mode=engine.state.config.town_ledger_output_mode == "message",
             )
+        if spec.type == "claude" and "thinking_budget_tokens" in inspect.signature(brain_class).parameters:
+            kwargs["thinking_budget_tokens"] = getattr(engine, "_claude_thinking_budget_tokens", None)
         brain = brain_class(**kwargs)
         executable = getattr(brain, "executable", None)
         path = Path(shutil.which(executable) or executable) if executable else None

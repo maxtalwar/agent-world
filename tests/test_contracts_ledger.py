@@ -458,6 +458,8 @@ class OrganicInterfaceGatingTests(unittest.TestCase):
                     "snapshot": engine.snapshot(),
                     "events": [event.to_dict() for event in engine.state.events],
                 }
+                # The new explicit default is additive configuration metadata.
+                self.assertEqual(bundle["snapshot"]["config"].pop("transfer_kind_mode"), "self_declared")
                 # Outcome metadata is additive telemetry, not agent-visible mechanics.
                 for event in bundle["events"]:
                     event["data"].pop("failure_kind", None)

@@ -253,6 +253,12 @@ def _audit_report(
     coverage = reliability.get("usage_record_coverage_pct")
     if coverage != 100.0:
         blockers.append(f"Seed {cell['seed']} usage coverage is {coverage!r}, not 100%. ")
+    benchmark_protocol = (report.get("benchmarks") or {}).get("protocol") or {}
+    if job.get("protocol") and benchmark_protocol.get("id") != job["protocol"]:
+        blockers.append(f"Seed {cell['seed']} report belongs to a different or missing recipe.")
+    expected_recipe_hash = job.get("recipe_fingerprint_sha256")
+    if expected_recipe_hash and benchmark_protocol.get("recipe_fingerprint_sha256") != expected_recipe_hash:
+        blockers.append(f"Seed {cell['seed']} recipe fingerprint does not match its launch.")
     if job.get("protocol") and not trial.get("protocol_compliant"):
         blockers.append(f"Seed {cell['seed']} is not protocol compliant.")
     run_manifest_path = Path(cell["run_manifest"])

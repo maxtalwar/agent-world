@@ -256,8 +256,11 @@ headless parser does not accept it. Z.ai documents Max as GLM-5.3's native
 default, so this connector accepts only `reasoning_effort=max` rather than
 silently ignoring another requested treatment. Participant v7 requires `low`
 for every connector, so ZCode 0.16.5 is not v7-eligible until the harness
-exposes an auditable low control. Historical v6 launches remain pinned to their
-original Max-capable source. ZCode retains a 20-worker provider ceiling,
+exposes an auditable low control. For a v6-based Max-effort experiment, select
+`"recipe": "participant-v6"` with `"kind": "experiment"` and explicitly request
+Max. Both v6 and v7 recipes run in the same checkout; only resuming old
+checkpoints or reproducing old source requires the original commit. See
+[versioned recipes](docs/experiment-recipes.md). ZCode retains a 20-worker provider ceiling,
 clamped to the run population.
 
 ### Cursor subscription agents

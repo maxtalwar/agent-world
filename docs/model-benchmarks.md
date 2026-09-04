@@ -5,6 +5,13 @@ The suite and scoring rules live in this document; operators launching,
 resuming, or finalizing a standardized benchmark must also follow the canonical
 [benchmark run protocol](benchmark-run-protocol.md).
 
+V6 and v7 are independently selectable recipes in the same checkout. V7 is the
+default for an unspecified benchmark request. General experiments may borrow
+either recipe and override it without claiming certification. Recipe identity,
+recipe digest, and execution source are recorded separately; results from
+different recipes are never automatically pooled. See
+[versioned experiment recipes](experiment-recipes.md).
+
 ## Participant v7: self-classified transfers
 
 V7 keeps the v6 frontier world and every scoring formula, changes the

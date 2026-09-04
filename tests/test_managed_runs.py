@@ -113,16 +113,17 @@ class ManagedRunConfigTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not declared"):
             self._load(value)
 
-    def test_historical_protocol_requires_pinned_source_commit(self) -> None:
+    def test_v6_recipe_does_not_require_pinned_source_commit(self) -> None:
         value = _config("benchmark")
         value["protocol"] = "participant-v6"
-        with self.assertRaisesRegex(ValueError, "set source.commit"):
-            self._load(value)
+        value["model"]["reasoning_effort"] = "medium"
+        self.assertEqual(self._load(value)["protocol"], "participant-v6")
 
     def test_historical_protocol_accepts_pinned_source_commit(self) -> None:
         value = _config("benchmark")
         value["protocol"] = "participant-v6"
         value["source"] = {"commit": "abc123"}
+        value["model"]["reasoning_effort"] = "medium"
         self.assertEqual(self._load(value)["protocol"], "participant-v6")
 
     def test_command_maps_structured_blocks(self) -> None:
