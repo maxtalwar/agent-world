@@ -242,7 +242,7 @@ class ManagedRunControllerLaunchTests(unittest.TestCase):
             self.assertFalse(manifest.exists())
             self.assertTrue(archived.exists())
             self.assertEqual(cell["previous_run_manifests"], [str(archived)])
-            self.assertEqual(cell["session"], "aw-test-seed-11-r2")
+            self.assertTrue(cell["session"].startswith("aw-test-seed-11-r2-"))
             run.assert_called_once()
 
 

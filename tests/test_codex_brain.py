@@ -77,7 +77,7 @@ class CodexBrainTests(unittest.TestCase):
         os.environ["OPENAI_API_KEY"] = "must-not-leak"
         os.environ["OPENROUTER_API_KEY"] = "must-not-leak"
         try:
-            with patch("agent_world.codex_brain.subprocess.run", return_value=completed) as run:
+            with patch("agent_world.codex_brain.run_process", return_value=completed) as run:
                 brain = CodexBrain(executable="/usr/local/bin/codex", model="gpt-5.6-luna", reasoning_effort="low")
                 decision = brain.decide({"tick": 2, "self": {"id": "agent-1"}})
         finally:
@@ -127,7 +127,7 @@ class CodexBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.codex_brain.subprocess.run",
+            "agent_world.codex_brain.run_process",
             return_value=completed,
         ):
             brain = CodexBrain(executable="codex")
@@ -171,7 +171,7 @@ class CodexBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.codex_brain.subprocess.run",
+            "agent_world.codex_brain.run_process",
             return_value=completed,
         ), patch(
             "agent_world.codex_brain.parse_agent_response",
@@ -211,7 +211,7 @@ class CodexBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.codex_brain.subprocess.run",
+            "agent_world.codex_brain.run_process",
             return_value=completed,
         ):
             brain = CodexBrain(executable="codex")
@@ -229,7 +229,7 @@ class CodexBrainTests(unittest.TestCase):
             ["codex"], 0, stdout=_successful_stdout(), stderr=""
         )
         with patch("agent_world.codex_brain._codex_version_text", return_value="codex-cli 0.142.5"), patch(
-            "agent_world.codex_brain.subprocess.run", return_value=completed
+            "agent_world.codex_brain.run_process", return_value=completed
         ) as run:
             brain = CodexBrain(executable="codex", connector_profile="connector-v2")
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
@@ -268,7 +268,7 @@ class CodexBrainTests(unittest.TestCase):
         with patch(
             "agent_world.codex_brain._codex_version_text",
             return_value="codex-cli 0.145.0-alpha.30",
-        ), patch("agent_world.codex_brain.subprocess.run", return_value=completed) as run:
+        ), patch("agent_world.codex_brain.run_process", return_value=completed) as run:
             brain = CodexBrain(executable="codex", connector_profile="connector-v3")
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
 
@@ -312,7 +312,7 @@ class CodexBrainTests(unittest.TestCase):
             ["codex"], 0, stdout=_successful_stdout(), stderr=""
         )
         with patch("agent_world.codex_brain._codex_version_text", return_value="codex-cli 0.142.5"), patch(
-            "agent_world.codex_brain.subprocess.run", return_value=completed
+            "agent_world.codex_brain.run_process", return_value=completed
         ) as run:
             brain = CodexBrain(
                 executable="codex",
@@ -340,7 +340,7 @@ class CodexBrainTests(unittest.TestCase):
             stdout="",
             stderr="You have hit your usage limit. Try again later.",
         )
-        with patch("agent_world.codex_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.codex_brain.run_process", return_value=completed) as run:
             brain = CodexBrain(executable="codex")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -354,7 +354,7 @@ class CodexBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["codex"], 1, stdout="", stderr="Rate limit reached. Try again later."
         )
-        with patch("agent_world.codex_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.codex_brain.run_process", return_value=completed) as run:
             brain = CodexBrain(executable="codex")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -370,7 +370,7 @@ class CodexBrainTests(unittest.TestCase):
             stdout="",
             stderr="stream disconnected before completion: error sending request",
         )
-        with patch("agent_world.codex_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.codex_brain.run_process", return_value=completed) as run:
             brain = CodexBrain(executable="codex")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})

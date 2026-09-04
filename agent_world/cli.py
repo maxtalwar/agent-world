@@ -859,7 +859,10 @@ def _run(args: argparse.Namespace) -> None:
         checkpoint_path = args.out.with_name(args.out.stem + "-checkpoint.pkl")
     pending_tick_path = pending_tick_path_for_artifacts(args.out, checkpoint_path)
     cached_pending_agents = (
-        pending_tick_cached_agent_ids(pending_tick_path, engine) if resumed else set()
+        pending_tick_cached_agent_ids(
+            pending_tick_path, engine,
+            brains=create_population_brains(engine, population_spec, BrainRuntime()),
+        ) if resumed else set()
     )
     usage_path: Path | None = None
     initial_usage: list[dict[str, Any]] = []

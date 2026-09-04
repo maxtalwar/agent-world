@@ -13,6 +13,8 @@ import os
 from pathlib import Path
 import re
 import ssl
+import threading
+import socket
 import time
 from typing import Any
 from urllib.parse import urlsplit
@@ -461,11 +463,24 @@ class OpenRouterBrain:
         if "openrouter.ai" in self.base_url:
             headers["X-Title"] = "Agent World"
             headers["HTTP-Referer"] = "https://github.com/agent-world"
+        watchdog = None
+        transport_socket = None
         try:
+            connection.connect()
+            transport_socket = connection.sock
+            def expire():
+                if transport_socket is not None:
+                    try:
+                        transport_socket.shutdown(socket.SHUT_RDWR)
+                    except OSError:
+                        pass
+            watchdog = threading.Timer(max(0, deadline - time.monotonic()), expire)
+            watchdog.daemon = True
+            watchdog.start()
             connection.request(
                 "POST",
                 target,
-                body=json.dumps(payload).encode("utf-8"),
+                body=json.dumps(payload, separators=(",", ":"), sort_keys=True).encode("utf-8"),
                 headers=headers,
             )
             self._set_connection_timeout(connection, deadline)
@@ -475,6 +490,7 @@ class OpenRouterBrain:
             }
             trace_id = _provider_trace_id(response_headers)
             body = self._read_response_body(response, connection, deadline)
+            self._remaining_timeout(deadline)
             detail = body.decode("utf-8", errors="replace")
             if 200 <= response.status < 300:
                 return json.loads(detail)
@@ -504,6 +520,9 @@ class OpenRouterBrain:
                 )
             raise ValueError(f"OpenRouter API error {response.status}: {detail}")
         finally:
+            if watchdog is not None:
+                watchdog.cancel()
+                watchdog.join()
             connection.close()
 
     def _open_connection(
@@ -530,8 +549,9 @@ class OpenRouterBrain:
     def _set_connection_timeout(
         self, connection: http_client.HTTPConnection, deadline: float
     ) -> None:
+        remaining = self._remaining_timeout(deadline)
         if connection.sock is not None:
-            connection.sock.settimeout(self._remaining_timeout(deadline))
+            connection.sock.settimeout(remaining)
 
     def _read_response_body(
         self,
@@ -540,12 +560,16 @@ class OpenRouterBrain:
         deadline: float,
     ) -> bytes:
         chunks: list[bytes] = []
+        size = 0
         while True:
             self._set_connection_timeout(connection, deadline)
-            chunk = response.read(64 * 1024)
+            chunk = response.read1(64 * 1024)
             if not chunk:
                 return b"".join(chunks)
             chunks.append(chunk)
+            size += len(chunk)
+            if size > 16 * 1024 * 1024:
+                raise ValueError("Provider response exceeded 16 MiB")
 
     def _quota_message(self) -> str | None:
         return self.runtime.quota_message()

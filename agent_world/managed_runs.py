@@ -194,12 +194,13 @@ def load_run_config(path: Path) -> dict[str, Any]:
         raise ValueError("Experiment configs require a concrete question")
 
     for key in ("ticks", "agents", "max_workers"):
-        if key in runtime and (not isinstance(runtime[key], int) or runtime[key] < 1):
+        if key in runtime and (not isinstance(runtime[key], int) or isinstance(runtime[key], bool) or runtime[key] < 1):
             raise ValueError(f"runtime.{key} must be a positive integer")
     quota_wait = runtime.get("quota_wait_hours")
     if quota_wait is not None and (
         not isinstance(quota_wait, (int, float))
         or isinstance(quota_wait, bool)
+        or not __import__("math").isfinite(quota_wait)
         or quota_wait < 0
     ):
         raise ValueError("runtime.quota_wait_hours must be a non-negative number")
@@ -207,7 +208,7 @@ def load_run_config(path: Path) -> dict[str, Any]:
     if workers is not None:
         workers = _require_mapping(workers, "runtime.provider_max_workers")
         _reject_unknown(workers, set(_PROVIDER_WORKER_FLAGS), "provider worker")
-        if any(not isinstance(count, int) or count < 1 for count in workers.values()):
+        if any(not isinstance(count, int) or isinstance(count, bool) or count < 1 for count in workers.values()):
             raise ValueError("Every provider worker limit must be a positive integer")
     return value
 
@@ -307,7 +308,8 @@ def build_launch_plan(config: dict[str, Any], root: Path, *, run_id: str | None 
 
 def _session_name(run_id: str, cell_id: str, resume_count: int) -> str:
     raw = f"aw-{run_id}-{cell_id}" + (f"-r{resume_count}" if resume_count else "")
-    return re.sub(r"[^A-Za-z0-9_-]", "-", raw)[:78]
+    digest = __import__("hashlib").sha256(raw.encode()).hexdigest()[:16]
+    return re.sub(r"[^A-Za-z0-9_-]", "-", raw)[:61] + "-" + digest
 
 
 def _tmux_active(session: str | None) -> bool:

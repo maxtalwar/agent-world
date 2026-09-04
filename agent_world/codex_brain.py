@@ -36,6 +36,7 @@ from agent_world.decision_failure import (
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
 from agent_world.io import atomic_write_text
+from agent_world.process_transport import run_process, terminate_owned_process
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import SYSTEM_INSTRUCTIONS
@@ -492,7 +493,7 @@ class CodexBrain:
         work_dir: str,
         schema_path: Path,
     ) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
+        return run_process(
             self._command(schema_path, invocation),
             cwd=work_dir,
             input=prompt,
@@ -811,6 +812,7 @@ def _read_plan_usage_from_app_server(
         stderr=subprocess.PIPE,
         text=True,
         env=_plan_auth_environment(),
+        start_new_session=True,
     )
     if process.stdin is None or process.stdout is None:
         process.kill()
@@ -827,14 +829,10 @@ def _read_plan_usage_from_app_server(
             process.stdin.close()
         except OSError:
             pass
-        try:
-            process.wait(timeout=2)
-        except subprocess.TimeoutExpired:
-            process.terminate()
-            try:
-                process.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                process.kill()
+        terminate_owned_process(process)
+        for stream in (process.stdout, process.stderr):
+            if stream is not None:
+                stream.close()
 
 
 def _read_app_server_response(
@@ -843,30 +841,46 @@ def _read_app_server_response(
     deadline: float,
 ) -> dict[str, Any]:
     assert process.stdout is not None
+    pending = getattr(process, "_aw_stdout_pending", b"")
+    stderr_tail = b""
+    streams = [process.stdout]
+    if process.stderr is not None:
+        streams.append(process.stderr)
     while True:
         remaining = deadline - time.monotonic()
         if remaining <= 0:
-            raise subprocess.TimeoutExpired(process.args, timeout=remaining)
-        readable, _, _ = select.select([process.stdout], [], [], remaining)
+            raise subprocess.TimeoutExpired(process.args, timeout=0)
+        if b"\n" in pending:
+            raw_line, pending = pending.split(b"\n", 1)
+            process._aw_stdout_pending = pending
+            try:
+                message = json.loads(raw_line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(message, dict) or message.get("id") != request_id:
+                continue
+            if message.get("error") is not None:
+                raise ValueError(f"codex app-server error: {message['error']}")
+            result = message.get("result")
+            if isinstance(result, dict):
+                return result
+            raise ValueError(f"codex app-server response {request_id} had no result object")
+        readable, _, _ = select.select(streams, [], [], remaining)
         if not readable:
-            raise subprocess.TimeoutExpired(process.args, timeout=remaining)
-        raw_line = process.stdout.readline()
-        if not raw_line:
-            stderr = process.stderr.read() if process.stderr is not None else ""
-            detail = " ".join(stderr.split()) or "app-server closed stdout"
-            raise ValueError(f"codex app-server exited before response {request_id}: {detail[:1000]}")
-        try:
-            message = json.loads(raw_line)
-        except json.JSONDecodeError:
-            continue
-        if message.get("id") != request_id:
-            continue
-        if message.get("error") is not None:
-            raise ValueError(f"codex app-server error: {message['error']}")
-        result = message.get("result")
-        if isinstance(result, dict):
-            return result
-        raise ValueError(f"codex app-server response {request_id} had no result object")
+            raise subprocess.TimeoutExpired(process.args, timeout=0)
+        for stream in readable:
+            chunk = os.read(stream.fileno(), 65536)
+            if not chunk:
+                streams.remove(stream)
+                if stream is process.stdout:
+                    raise ValueError(f"codex app-server closed stdout: {stderr_tail.decode(errors='replace')}")
+                continue
+            if stream is process.stdout:
+                pending += chunk
+                if len(pending) > 1024 * 1024:
+                    raise ValueError("codex app-server response exceeded 1 MiB")
+            else:
+                stderr_tail = (stderr_tail + chunk)[-4096:]
 
 
 def _rate_limit_buckets(result: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -1034,7 +1048,7 @@ def _resolve_codex_executable() -> str:
 @lru_cache(maxsize=8)
 def _codex_version_text(executable: str) -> str:
     try:
-        completed = subprocess.run(
+        completed = run_process(
             [executable, "--version"],
             text=True,
             capture_output=True,

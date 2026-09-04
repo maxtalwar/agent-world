@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import uuid
 import copy
 import json
 import os
@@ -10,7 +12,7 @@ import pickle
 import tempfile
 from typing import Any
 
-from agent_world.io import atomic_write_json
+from agent_world.io import atomic_write_json, fsync_directory
 from agent_world.models import Event, Position
 from agent_world.world import WorldEngine
 
@@ -32,6 +34,8 @@ class IncrementalRunWriter:
         self.checkpoint_path = checkpoint_path
         self.fsync = fsync
         self.event_offset = 0
+        self._event_digest = hashlib.sha256()
+        self._event_bytes = 0
         if self.events_path is not None:
             self.events_path.parent.mkdir(parents=True, exist_ok=True)
             if truncate_events:
@@ -45,9 +49,19 @@ class IncrementalRunWriter:
         """Make an existing checkpoint's ledger the append baseline."""
 
         if self.events_path is not None:
-            existing_count = _jsonl_line_count(self.events_path)
-            if existing_count != len(engine.state.events):
+            # Reconcile exact canonical content, including equal-length corruption.
+            expected = hashlib.sha256()
+            for event in engine.state.events:
+                expected.update(_event_bytes(event))
+            actual = hashlib.sha256()
+            if self.events_path.exists():
+                with self.events_path.open("rb") as handle:
+                    for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                        actual.update(chunk)
+            if actual.digest() != expected.digest():
                 _atomic_write_event_log(self.events_path, engine.state.events, fsync=self.fsync)
+            self._event_digest = expected
+            self._event_bytes = self.events_path.stat().st_size
         self.event_offset = len(engine.state.events)
 
     def flush(self, engine: WorldEngine, *, checkpoint_extra: dict[str, Any] | None = None) -> None:
@@ -55,15 +69,21 @@ class IncrementalRunWriter:
         if self.event_offset > len(events):
             raise ValueError("Event ledger shrank after incremental writer initialization.")
         if self.events_path is not None and self.event_offset < len(events):
-            with self.events_path.open("a", encoding="utf-8") as handle:
+            with self.events_path.open("ab") as handle:
                 for event in events[self.event_offset :]:
-                    handle.write(json.dumps(event.to_dict(), sort_keys=True) + "\n")
+                    encoded = _event_bytes(event)
+                    handle.write(encoded)
+                    self._event_digest.update(encoded)
+                    self._event_bytes += len(encoded)
                 handle.flush()
                 if self.fsync:
                     os.fsync(handle.fileno())
         self.event_offset = len(events)
+        generation = uuid.uuid4().hex
         if self.snapshot_path is not None:
-            atomic_write_json(self.snapshot_path, engine.snapshot(), fsync=True)
+            snapshot = engine.snapshot()
+            snapshot["artifact_generation"] = generation
+            atomic_write_json(self.snapshot_path, snapshot, fsync=True)
         if self.checkpoint_path is not None:
             checkpoint_engine = engine
             event_ledger: str | None = None
@@ -78,7 +98,10 @@ class IncrementalRunWriter:
             _atomic_write_pickle(
                 self.checkpoint_path,
                 {
-                    "schema_version": 1,
+                    "schema_version": 2,
+                    "artifact_generation": generation,
+                    "event_ledger_sha256": self._event_digest.hexdigest(),
+                    "event_ledger_bytes": self._event_bytes,
                     "engine": checkpoint_engine,
                     "event_ledger": event_ledger,
                     "event_ledger_name": self.events_path.name if self.events_path is not None else None,
@@ -97,7 +120,7 @@ def load_run_checkpoint(path: Path) -> tuple[WorldEngine, dict[str, Any]]:
 
     with path.open("rb") as handle:
         payload = pickle.load(handle)
-    if not isinstance(payload, dict) or payload.get("schema_version") != 1:
+    if not isinstance(payload, dict) or payload.get("schema_version") not in {1, 2}:
         raise ValueError("Unsupported Agent World checkpoint schema.")
     engine = payload.get("engine")
     if not isinstance(engine, WorldEngine):
@@ -107,9 +130,10 @@ def load_run_checkpoint(path: Path) -> tuple[WorldEngine, dict[str, Any]]:
     if event_ledger is not None:
         if not isinstance(event_count, int) or event_count < 0:
             raise ValueError("Checkpoint has an invalid event ledger length.")
-        ledger_path = Path(event_ledger)
-        if not ledger_path.exists() and payload.get("event_ledger_name"):
-            ledger_path = path.parent / str(payload["event_ledger_name"])
+        sibling = path.parent / Path(str(payload.get("event_ledger_name") or "")).name
+        ledger_path = sibling if sibling.is_file() else Path(event_ledger)
+        if payload["schema_version"] == 2:
+            _verify_ledger_prefix(ledger_path, payload["event_ledger_bytes"], payload["event_ledger_sha256"])
         engine.state.events = _read_event_log(ledger_path, event_count)
     extra = payload.get("extra") if isinstance(payload.get("extra"), dict) else {}
     return engine, extra
@@ -171,6 +195,7 @@ def _atomic_write_event_log(path: Path, events: list[Event], *, fsync: bool) -> 
             if fsync:
                 os.fsync(handle.fileno())
         os.replace(temp_path, path)
+        fsync_directory(path.parent)
     finally:
         if temp_path.exists():
             temp_path.unlink()
@@ -185,6 +210,27 @@ def _atomic_write_pickle(path: Path, value: Any) -> None:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temp_path, path)
+        fsync_directory(path.parent)
     finally:
         if temp_path.exists():
             temp_path.unlink()
+
+
+def _event_bytes(event: Event) -> bytes:
+    return (json.dumps(event.to_dict(), sort_keys=True) + "\n").encode("utf-8")
+
+
+def _verify_ledger_prefix(path: Path, size: int, expected: str) -> None:
+    if not isinstance(size, int) or isinstance(size, bool) or size < 0:
+        raise ValueError("Invalid checkpoint ledger byte count")
+    digest = hashlib.sha256()
+    remaining = size
+    with path.open("rb") as handle:
+        while remaining:
+            chunk = handle.read(min(remaining, 1024 * 1024))
+            if not chunk:
+                raise ValueError("Checkpoint ledger prefix is truncated")
+            digest.update(chunk)
+            remaining -= len(chunk)
+    if digest.hexdigest() != expected:
+        raise ValueError("Checkpoint ledger prefix integrity mismatch")

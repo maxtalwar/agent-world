@@ -26,6 +26,7 @@ from agent_world.interface import (
     build_static_context,
     parse_agent_response,
 )
+from agent_world.process_transport import run_process, terminate_owned_process
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
@@ -103,7 +104,7 @@ class ZCodeBrain:
     def preflight(self) -> str | None:
         """Verify CLI health and Coding Plan authentication without a model turn."""
         try:
-            completed = subprocess.run(
+            completed = run_process(
                 [*self._command_prefix, "doctor", "--json"],
                 text=True,
                 capture_output=True,
@@ -303,7 +304,7 @@ class ZCodeBrain:
     def _run_command(
         self, prompt: str, workspace: str
     ) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
+        return run_process(
             self._command(prompt, workspace),
             cwd=workspace,
             text=True,

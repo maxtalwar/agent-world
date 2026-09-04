@@ -102,3 +102,112 @@ class InfrastructureRegressions(unittest.TestCase):
                                conversation_mode=conversation)
             self.assertEqual(brain.connector_profile, "connector-v1")
             self.assertEqual(brain.conversation_mode, "fresh-conversation")
+
+    def test_checkpoint_rejects_equal_length_corruption_and_prefers_relocated_ledger(self):
+        from agent_world.persistence import IncrementalRunWriter, load_run_checkpoint
+        import shutil
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            original, moved = root/"original", root/"moved"
+            original.mkdir()
+            engine = self.engine()
+            engine.tick({})
+            writer = IncrementalRunWriter(original/"events.jsonl", original/"snapshot.json",
+                                          checkpoint_path=original/"checkpoint.pkl")
+            writer.flush(engine)
+            shutil.copytree(original, moved)
+            # Relocated evidence must not silently read the original absolute path.
+            path = moved/"events.jsonl"
+            data = path.read_bytes()
+            self.assertIn(b'"tick": 0', data)
+            path.write_bytes(data.replace(b'"tick": 0', b'"tick": 9', 1))
+            with self.assertRaisesRegex(ValueError, "integrity"):
+                load_run_checkpoint(moved/"checkpoint.pkl")
+            loaded, _ = load_run_checkpoint(original/"checkpoint.pkl")
+            self.assertEqual(loaded.state.tick, 1)
+
+    def test_duplicate_usage_cannot_cover_a_missing_agent(self):
+        from agent_world.run_report import build_report
+        engine = self.engine()
+        engine.tick({})
+        report = build_report([e.to_dict() for e in engine.state.events], engine.snapshot(),
+                              [{"tick": 0, "agent_id": "agent-1"}] * 2)
+        self.assertEqual(report["reliability"]["usage_record_coverage_pct"], 50)
+        self.assertEqual(report["reliability"]["benchmark_integrity_status"], "invalid")
+
+    def test_process_transport_drains_stderr_and_bounds_output(self):
+        import sys
+        from agent_world.process_transport import run_process, ProcessOutputLimitError
+        result = run_process([sys.executable, "-c",
+                              "import sys; sys.stderr.write('x'*200000); print('ok')"],
+                             text=True, timeout=2)
+        self.assertEqual(result.stdout.strip(), "ok")
+        self.assertEqual(len(result.stderr), 200000)
+        with self.assertRaises(ProcessOutputLimitError):
+            run_process([sys.executable, "-c", "print('x'*200000)"],
+                        max_output_bytes=1024, timeout=2)
+
+    def test_process_timeout_reaps_group_with_child_holding_pipes(self):
+        import subprocess
+        import sys
+        import time
+        from agent_world.process_transport import run_process
+        script = "import subprocess,sys; subprocess.Popen([sys.executable,'-c','import time; time.sleep(30)'])"
+        started = time.monotonic()
+        with self.assertRaises(subprocess.TimeoutExpired):
+            run_process([sys.executable, "-c", script], timeout=0.1)
+        self.assertLess(time.monotonic() - started, 2)
+
+    def test_partial_line_cannot_defeat_app_server_deadline(self):
+        import subprocess
+        import sys
+        import time
+        from agent_world.codex_brain import _read_app_server_response
+        process = subprocess.Popen([sys.executable, "-c",
+                                    "import sys,time; sys.stdout.write('{'); sys.stdout.flush(); time.sleep(1)"],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        started = time.monotonic()
+        try:
+            with self.assertRaises(subprocess.TimeoutExpired):
+                _read_app_server_response(process, 1, started + 0.05)
+            self.assertLess(time.monotonic() - started, 0.5)
+        finally:
+            process.kill()
+            process.wait()
+            process.stdout.close()
+            process.stderr.close()
+
+    def test_drip_http_body_obeys_wall_deadline(self):
+        import threading
+        import time
+        from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+        from agent_world.openrouter_brain import OpenRouterBrain, OpenRouterHardDeadlineError
+        class Slow(BaseHTTPRequestHandler):
+            def do_POST(self):
+                self.send_response(200)
+                self.send_header("Content-Length", "100")
+                self.end_headers()
+                try:
+                    for _ in range(100):
+                        self.wfile.write(b" ")
+                        self.wfile.flush()
+                        time.sleep(0.025)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+            def log_message(self, *args): pass
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Slow)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        brain = OpenRouterBrain(api_key="synthetic",
+                                base_url=f"http://127.0.0.1:{server.server_port}",
+                                timeout_seconds=0.08, hard_deadline_grace_seconds=0.02,
+                                min_request_interval_seconds=0)
+        started = time.monotonic()
+        try:
+            with self.assertRaises(OpenRouterHardDeadlineError):
+                brain._post_json("/test", {})
+            self.assertLess(time.monotonic() - started, 0.5)
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()

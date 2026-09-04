@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import asdict
+import inspect
+from functools import lru_cache
 import hashlib
 import json
 from pathlib import Path
@@ -49,35 +51,41 @@ def pending_tick_path_for_artifacts(
     return checkpoint_path.with_name(f"{stem}-pending-tick.json")
 
 
-def pending_tick_cached_agent_ids(path: Path | None, engine: WorldEngine) -> set[str]:
-    """Identify cache-valid agents before resume reconciles their usage rows."""
-
-    if path is None:
+def pending_tick_cached_agent_ids(
+    path: Path | None, engine: WorldEngine, *, brains: dict[str, AgentBrain] | None = None
+) -> set[str]:
+    """Use exactly the same identity checks for usage recovery and decision reuse."""
+    if path is None or brains is None:
         return set()
-    agent_ids = [
-        agent_id
-        for agent_id in sorted(engine.state.agents)
-        if engine.state.agents[agent_id].alive
-    ]
     observations = {
-        agent_id: build_observation(engine.state, agent_id) for agent_id in agent_ids
+        agent_id: build_observation(engine.state, agent_id)
+        for agent_id in sorted(brains)
+        if agent_id in engine.state.agents and engine.state.agents[agent_id].alive
     }
-    payload = _read_pending_payload(path)
-    if payload is None or payload.get("tick") != engine.state.tick:
-        return set()
-    records = payload.get("decisions")
-    if not isinstance(records, dict):
-        return set()
-    return {
-        agent_id
-        for agent_id, observation in observations.items()
-        if isinstance(records.get(agent_id), dict)
-        and records[agent_id].get("observation_sha256")
-        == _observation_sha256(observation)
-        and not _is_retryable_failure(
-            restore_decision(records[agent_id].get("decision"))
-        )
-    }
+    journal = PendingTickJournal(path, tick=engine.state.tick, observations=observations, brains=brains)
+    return set(journal.decisions)
+
+
+@lru_cache(maxsize=1)
+def _execution_source_digest() -> str:
+    digest = hashlib.sha256()
+    for path in sorted(Path(__file__).parent.glob("*.py")):
+        digest.update(path.name.encode())
+        digest.update(path.read_bytes())
+    return digest.hexdigest()
+
+
+def _brain_execution_identity(brain: AgentBrain) -> str:
+    fields = ("model", "reasoning_effort", "connector_profile", "conversation_mode",
+              "decision_schema", "api_style", "base_url", "intent", "decision")
+    values = {name: getattr(brain, name) for name in fields if hasattr(brain, name)}
+    values["class"] = f"{type(brain).__module__}.{type(brain).__qualname__}"
+    values["source"] = _execution_source_digest()
+    try:
+        values["adapter_source"] = inspect.getsource(type(brain))
+    except (OSError, TypeError):
+        pass
+    return hashlib.sha256(json.dumps(values, sort_keys=True, default=str).encode()).hexdigest()
 
 
 class PendingTickJournal:
@@ -98,6 +106,7 @@ class PendingTickJournal:
             for agent_id, observation in observations.items()
         }
         self.brains = brains
+        self.execution_identities = {key: _brain_execution_identity(brain) for key, brain in brains.items()}
         self.decisions: dict[str, AgentDecision] = {}
         self.records: dict[str, dict[str, Any]] = {}
         self.failures: list[dict[str, Any]] = []
@@ -128,6 +137,7 @@ class PendingTickJournal:
                 agent_id not in self.observation_hashes
                 or not isinstance(record, dict)
                 or record.get("observation_sha256") != self.observation_hashes[agent_id]
+                or record.get("execution_identity") != self.execution_identities[agent_id]
             ):
                 changed = True
                 continue
@@ -157,6 +167,7 @@ class PendingTickJournal:
                 brain_state = candidate
         record = {
             "observation_sha256": self.observation_hashes[agent_id],
+            "execution_identity": self.execution_identities[agent_id],
             "decision": asdict(decision),
             "brain_state": brain_state,
         }

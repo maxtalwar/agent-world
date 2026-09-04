@@ -39,6 +39,7 @@ from agent_world.interface import (
     build_static_context,
     parse_agent_response,
 )
+from agent_world.process_transport import run_process, terminate_owned_process
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
@@ -186,7 +187,7 @@ class DevinBrain:
         """Verify saved login and resolve the requested account model."""
 
         try:
-            status = subprocess.run(
+            status = run_process(
                 [self.executable, "auth", "status"],
                 text=True,
                 capture_output=True,
@@ -201,7 +202,7 @@ class DevinBrain:
                     "run `devin auth login`. Legacy Windsurf Enterprise users can "
                     "select the Windsurf login option."
                 )
-            listed = subprocess.run(
+            listed = run_process(
                 [self.executable, "models", "list", "--format", "json"],
                 text=True,
                 capture_output=True,
@@ -876,6 +877,11 @@ class _AcpClient:
         timeout_seconds: int,
     ):
         self.timeout_seconds = timeout_seconds
+        self.deadline = time.monotonic() + timeout_seconds
+        self._pump_stop = threading.Event()
+        self._output_bytes = 0
+        self._output_lock = threading.Lock()
+        self._output_overflow = False
         self.process = subprocess.Popen(
             command,
             cwd=cwd,
@@ -885,11 +891,12 @@ class _AcpClient:
             stderr=subprocess.PIPE,
             text=True,
             bufsize=1,
+            start_new_session=True,
         )
         if self.process.stdin is None or self.process.stdout is None or self.process.stderr is None:
             self.close()
             raise AcpProtocolError("failed to open ACP subprocess pipes")
-        self._events: queue.Queue[tuple[str, str | None]] = queue.Queue()
+        self._events: queue.Queue[tuple[str, str | None]] = queue.Queue(maxsize=256)
         self._next_id = 1
         self.transcript: list[dict[str, Any]] = []
         self._stderr_lines: list[str] = []
@@ -915,10 +922,26 @@ class _AcpClient:
 
     def _pump(self, source: str, stream: TextIO) -> None:
         try:
-            for line in stream:
-                self._events.put((source, line.rstrip("\r\n")))
+            while not self._pump_stop.is_set():
+                line = stream.readline(65536)
+                if not line:
+                    break
+                with self._output_lock:
+                    self._output_bytes += len(line.encode("utf-8"))
+                    if self._output_bytes > 16 * 1024 * 1024:
+                        self._output_overflow = True
+                        return
+                self._enqueue((source, line.rstrip("\r\n")))
         finally:
-            self._events.put((source, None))
+            self._enqueue((source, None))
+
+    def _enqueue(self, value) -> None:
+        while not self._pump_stop.is_set():
+            try:
+                self._events.put(value, timeout=0.1)
+                return
+            except queue.Full:
+                pass
 
     def request(self, method: str, params: dict[str, Any]) -> dict[str, Any]:
         request_id = self._next_id
@@ -931,7 +954,7 @@ class _AcpClient:
                 "params": params,
             }
         )
-        deadline = time.monotonic() + self.timeout_seconds
+        deadline = self.deadline
         while True:
             message = self._next_message(deadline)
             if message is None:
@@ -953,6 +976,8 @@ class _AcpClient:
                 self._reject_server_request(message)
 
     def _next_message(self, deadline: float) -> dict[str, Any] | None:
+        if self._output_overflow:
+            raise AcpProtocolError("ACP output exceeded 16 MiB", transcript=self.transcript)
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise subprocess.TimeoutExpired(self.process.args, self.timeout_seconds)
@@ -1040,14 +1065,15 @@ class _AcpClient:
 
     def close(self) -> None:
         process = getattr(self, "process", None)
-        if process is None or process.poll() is not None:
+        if process is None:
             return
-        process.terminate()
-        try:
-            process.wait(timeout=1)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait(timeout=1)
+        self._pump_stop.set()
+        terminate_owned_process(process)
+        for thread in getattr(self, "_threads", []):
+            thread.join(timeout=2)
+        for stream in (process.stdin, process.stdout, process.stderr):
+            if stream is not None:
+                stream.close()
 
 
 def _config_options(value: dict[str, Any]) -> list[dict[str, Any]]:

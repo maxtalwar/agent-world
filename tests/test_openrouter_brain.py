@@ -96,6 +96,9 @@ class MissingOutputOpenRouterBrain(OpenRouterBrain):
 class OpenRouterBrainTests(unittest.TestCase):
     def test_hard_deadline_closes_the_live_connection(self) -> None:
         class FakeSocket:
+            def shutdown(self, _how):
+                pass
+
             def settimeout(self, _timeout):
                 return None
 
@@ -105,7 +108,7 @@ class OpenRouterBrainTests(unittest.TestCase):
             def getheaders(self):
                 return []
 
-            def read(self, _size):
+            def read1(self, _size):
                 time.sleep(0.03)
                 return b"{"
 
@@ -113,6 +116,9 @@ class OpenRouterBrainTests(unittest.TestCase):
             def __init__(self):
                 self.sock = FakeSocket()
                 self.closed = False
+
+            def connect(self):
+                pass
 
             def request(self, *_args, **_kwargs):
                 return None

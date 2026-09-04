@@ -81,7 +81,7 @@ class DevinBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.devin_brain.subprocess.run",
+            "agent_world.devin_brain.run_process",
             side_effect=[status, models],
         ) as run:
             brain = DevinBrain(executable="devin", model="swe-1-6-fast")
@@ -102,7 +102,7 @@ class DevinBrainTests(unittest.TestCase):
             stdout="Not logged in",
             stderr="",
         )
-        with patch("agent_world.devin_brain.subprocess.run", return_value=status):
+        with patch("agent_world.devin_brain.run_process", return_value=status):
             error = DevinBrain(executable="devin").preflight()
         self.assertIn("run `devin auth login`", error or "")
 
@@ -229,6 +229,7 @@ class DevinBrainTests(unittest.TestCase):
 
     def test_non_json_acp_stdout_is_a_safe_protocol_failure(self) -> None:
         client = _AcpClient.__new__(_AcpClient)
+        client._output_overflow = False
         client.timeout_seconds = 1
         client.process = SimpleNamespace(args=["devin", "acp"], poll=lambda: None)
         client._events = queue.Queue()

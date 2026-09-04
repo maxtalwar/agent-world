@@ -50,7 +50,7 @@ class GrokBrainTests(unittest.TestCase):
             stdout="Logged in with grok.com\n* grok-4.6 (default)\n- grok-4.5\n",
             stderr="",
         )
-        with patch("agent_world.grok_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.grok_brain.run_process", return_value=completed) as run:
             brain = GrokBrain(executable="grok", model="grok-4.6")
             error = brain.preflight()
         self.assertIsNone(error)
@@ -68,7 +68,7 @@ class GrokBrainTests(unittest.TestCase):
             ["grok"], 0, stdout=_successful_stdout("hold position"), stderr=""
         )
         with patch.dict(os.environ, {"XAI_API_KEY": "must-not-leak"}), patch(
-            "agent_world.grok_brain.subprocess.run", return_value=completed
+            "agent_world.grok_brain.run_process", return_value=completed
         ) as run:
             brain = GrokBrain(
                 executable="grok",
@@ -110,7 +110,7 @@ class GrokBrainTests(unittest.TestCase):
             ["grok"], 0, stdout=_successful_stdout("continue"), stderr=""
         )
         with patch(
-            "agent_world.grok_brain.subprocess.run", return_value=completed
+            "agent_world.grok_brain.run_process", return_value=completed
         ) as run:
             brain = GrokBrain(executable="grok", model="grok-4.6")
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
@@ -134,7 +134,7 @@ class GrokBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.grok_brain.subprocess.run", return_value=completed
+            "agent_world.grok_brain.run_process", return_value=completed
         ) as run:
             brain = GrokBrain(executable="grok", model="grok-4.6")
             first = brain.decide({"tick": 20, "self": {"id": "agent-1"}})
@@ -152,7 +152,7 @@ class GrokBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["grok"], 0, stdout=json.dumps(result), stderr=""
         )
-        with patch("agent_world.grok_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.grok_brain.run_process", return_value=completed):
             brain = GrokBrain(executable="grok")
             decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
         self.assertTrue(decision.intent.startswith("Grok model output contract failed:"))
@@ -167,7 +167,7 @@ class GrokBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["grok"], 0, stdout=json.dumps(result), stderr=""
         )
-        with patch("agent_world.grok_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.grok_brain.run_process", return_value=completed):
             brain = GrokBrain(executable="grok")
             decision = brain.decide({"tick": 3, "self": {"id": "agent-1"}})
 
@@ -204,7 +204,7 @@ class GrokBrainTests(unittest.TestCase):
 
     def test_timeout_attempts_are_recorded_without_opening_quota_circuit(self) -> None:
         with patch(
-            "agent_world.grok_brain.subprocess.run",
+            "agent_world.grok_brain.run_process",
             side_effect=subprocess.TimeoutExpired(["grok"], 3),
         ) as run:
             brain = GrokBrain(executable="grok", timeout_seconds=3)

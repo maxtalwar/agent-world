@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from collections import Counter
+import hashlib
+import uuid
 import json
 from pathlib import Path
 import threading
@@ -34,6 +36,7 @@ class BrainRuntime:
         )
         self._lock = threading.RLock()
         self._usage_records = [dict(record) for record in (initial_records or [])]
+        self.run_identity = next((str(row["run_identity"]) for row in self._usage_records if row.get("run_identity")), uuid.uuid4().hex)
         self._provider_event_records: list[dict[str, Any]] = []
         if self.provider_events_path is not None:
             self.provider_events_path.parent.mkdir(parents=True, exist_ok=True)
@@ -47,9 +50,16 @@ class BrainRuntime:
         self._next_allowed_at: dict[str, float] = {}
 
     def record_usage(self, record: dict[str, Any]) -> None:
+        item = dict(record)
+        item.setdefault("record_id", uuid.uuid4().hex)
+        item.setdefault("run_identity", self.run_identity)
+        if item.get("agent_id") is not None and item.get("tick") is not None:
+            identity = json.dumps([self.run_identity, item["tick"], item["agent_id"]])
+            item.setdefault("logical_decision_id", hashlib.sha256(identity.encode()).hexdigest())
+        item.setdefault("model_provenance", "observed" if item.get("response_model") else "requested_only")
         with self._lock:
-            append_usage_record(record, self.usage_path)
-            self._usage_records.append(dict(record))
+            append_usage_record(item, self.usage_path)
+            self._usage_records.append(item)
 
     def usage_records(self) -> list[dict[str, Any]]:
         with self._lock:

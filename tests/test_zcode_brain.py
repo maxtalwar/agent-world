@@ -62,7 +62,7 @@ class ZCodeBrainTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with patch.dict(os.environ, {"ZCODE_CONFIG_PATH": str(config)}), patch(
-                "agent_world.zcode_brain.subprocess.run", return_value=completed
+                "agent_world.zcode_brain.run_process", return_value=completed
             ) as run:
                 brain = ZCodeBrain(executable="zcode-cli")
                 error = brain.preflight()
@@ -78,7 +78,7 @@ class ZCodeBrainTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as root, patch.dict(
             os.environ, {"ZCODE_CONFIG_PATH": str(Path(root) / "missing.json")}
-        ), patch("agent_world.zcode_brain.subprocess.run", return_value=completed):
+        ), patch("agent_world.zcode_brain.run_process", return_value=completed):
             error = ZCodeBrain(executable="zcode-cli").preflight()
         self.assertIn("zcode-cli login --no-browser", error or "")
 
@@ -100,7 +100,7 @@ class ZCodeBrainTests(unittest.TestCase):
                 encoding="utf-8",
             )
             with patch.dict(os.environ, {"ZCODE_CONFIG_PATH": str(config)}), patch(
-                "agent_world.zcode_brain.subprocess.run", return_value=completed
+                "agent_world.zcode_brain.run_process", return_value=completed
             ):
                 error = ZCodeBrain(executable="zcode-cli").preflight()
         self.assertIn("glm-5.3 is absent", error or "")
@@ -117,7 +117,7 @@ class ZCodeBrainTests(unittest.TestCase):
                 "ZCODE_CONFIG_PATH": str(Path(tempfile.gettempdir()) / "missing-zcode-config.json"),
             },
         ), patch(
-            "agent_world.zcode_brain.subprocess.run", return_value=completed
+            "agent_world.zcode_brain.run_process", return_value=completed
         ) as run:
             brain = ZCodeBrain(executable="zcode-cli")
             decision = brain.decide({"tick": 2, "self": {"id": "agent-1"}})
@@ -157,7 +157,7 @@ class ZCodeBrainTests(unittest.TestCase):
             stderr="Error: usage limit reached; retry later",
         )
         with patch(
-            "agent_world.zcode_brain.subprocess.run", return_value=completed
+            "agent_world.zcode_brain.run_process", return_value=completed
         ) as run:
             brain = ZCodeBrain(executable="zcode-cli")
             first = brain.decide({"tick": 20, "self": {"id": "agent-1"}})
@@ -176,7 +176,7 @@ class ZCodeBrainTests(unittest.TestCase):
             ),
         ]
         with patch.dict(os.environ, {"ZCODE_TIMEOUT_RETRIES": "1"}), patch(
-            "agent_world.zcode_brain.subprocess.run", side_effect=failures
+            "agent_world.zcode_brain.run_process", side_effect=failures
         ) as run:
             brain = ZCodeBrain(executable="zcode-cli", timeout_seconds=300)
             decision = brain.decide({"tick": 44, "self": {"id": "agent-7"}})
@@ -201,7 +201,7 @@ class ZCodeBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["zcode-cli"], 0, stdout=json.dumps(result), stderr=""
         )
-        with patch("agent_world.zcode_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.zcode_brain.run_process", return_value=completed):
             brain = ZCodeBrain(executable="zcode-cli")
             decision = brain.decide({"tick": 4, "self": {"id": "agent-1"}})
         self.assertTrue(decision.intent.startswith("ZCode model output contract failed:"))

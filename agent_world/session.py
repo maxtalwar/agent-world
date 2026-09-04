@@ -134,8 +134,10 @@ class SimulationSession:
         self.quota_wait_max_seconds = float(quota_wait_max_seconds)
         self.quota_wait_poll_max_seconds = float(quota_wait_poll_max_seconds)
         self._sleep = sleep
-        self._quota_wait_used = 0.0
-        self._quota_backoff_seconds = 300.0
+        saved_quota = getattr(engine, "_session_quota_state", {})
+        self._quota_wait_used = float(saved_quota.get("reserved_seconds", 0.0))
+        self._quota_backoff_seconds = float(saved_quota.get("backoff_seconds", 300.0))
+        self._quota_resume_until = float(saved_quota.get("resume_at", 0.0))
         self.pending_tick_path = pending_tick_path or pending_tick_path_for_artifacts(
             writer.events_path, writer.checkpoint_path
         )
@@ -183,6 +185,9 @@ class SimulationSession:
                 else "provider_unavailable"
             )
         try:
+            if status == "running" and self._quota_resume_until > time.time():
+                self._sleep_for_quota(self._quota_resume_until - time.time())
+                self.runtime.clear_quota_unavailable()
             while status == "running" and self.engine.state.tick < self.target_ticks:
                 if self.before_tick is not None and self.before_tick():
                     status = "stopped"
@@ -497,7 +502,14 @@ class SimulationSession:
                 self._quota_backoff_seconds * 2, self.quota_wait_poll_max_seconds
             )
             source = "backoff"
-        delay = max(60.0, min(delay, remaining))
+        delay = min(remaining, max(60.0, delay))
+        self._quota_wait_used += delay
+        self._quota_resume_until = time.time() + delay
+        self.engine._session_quota_state = {
+            "reserved_seconds": self._quota_wait_used,
+            "backoff_seconds": self._quota_backoff_seconds,
+            "resume_at": self._quota_resume_until,
+        }
 
         self.engine.log_event(
             "run_quota_wait",
@@ -512,15 +524,17 @@ class SimulationSession:
                 "wait_seconds": round(delay, 1),
                 "wait_source": source,
                 "provider_reset_at_utc": reset_at.isoformat() if reset_at else None,
-                "waited_seconds_total": round(self._quota_wait_used + delay, 1),
+                "waited_seconds_total": round(self._quota_wait_used, 1),
+                "resume_at_unix": self._quota_resume_until,
                 "wait_budget_seconds": self.quota_wait_max_seconds,
                 "provider_messages": messages,
             },
             scope="public",
         )
         self.flush()
-        self._sleep(delay)
-        self._quota_wait_used += delay
+        self._sleep_for_quota(delay)
+        self._quota_resume_until = 0.0
+        self.engine._session_quota_state["resume_at"] = 0.0
         # Clear the cached quota flag so the retry makes a real call instead of
         # short-circuiting on the message that triggered this wait.
         self.runtime.clear_quota_unavailable()
@@ -535,6 +549,17 @@ class SimulationSession:
         )
         self.flush()
         return True
+
+    def _sleep_for_quota(self, seconds: float) -> None:
+        # Check operator stop requests between bounded waits; preserve reserved
+        # budget before sleeping so crashes cannot reset the quota allowance.
+        remaining = seconds
+        while remaining > 0:
+            if self.before_tick is not None and self.before_tick():
+                return
+            delay = min(30.0, remaining)
+            self._sleep(delay)
+            remaining -= delay
 
     def start(self) -> None:
         if self._started:

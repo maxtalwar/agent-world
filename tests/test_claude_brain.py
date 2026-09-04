@@ -51,7 +51,7 @@ class ClaudeBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["claude", "auth", "status"], 0, stdout=json.dumps({"loggedIn": True}), stderr=""
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
             error = ClaudeBrain(executable="claude").preflight()
 
         self.assertIsNone(error)
@@ -62,7 +62,7 @@ class ClaudeBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["claude", "auth", "status"], 1, stdout=json.dumps({"loggedIn": False}), stderr=""
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.claude_brain.run_process", return_value=completed):
             error = ClaudeBrain(executable="claude").preflight()
 
         self.assertIn("Claude Code is not logged in", error or "")
@@ -80,7 +80,7 @@ class ClaudeBrainTests(unittest.TestCase):
         old_api_key = os.environ.get("ANTHROPIC_API_KEY")
         os.environ["ANTHROPIC_API_KEY"] = "must-not-leak"
         try:
-            with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+            with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
                 brain = ClaudeBrain(executable="/usr/local/bin/claude", model="claude-sonnet-5", reasoning_effort="low")
                 decision = brain.decide({"tick": 2, "self": {"id": "agent-1"}})
         finally:
@@ -125,7 +125,7 @@ class ClaudeBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.claude_brain.subprocess.run",
+            "agent_world.claude_brain.run_process",
             return_value=completed,
         ):
             brain = ClaudeBrain(executable="claude")
@@ -148,7 +148,7 @@ class ClaudeBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.claude_brain.subprocess.run",
+            "agent_world.claude_brain.run_process",
             return_value=completed,
         ), patch(
             "agent_world.claude_brain.parse_agent_response",
@@ -177,7 +177,7 @@ class ClaudeBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.claude_brain.subprocess.run",
+            "agent_world.claude_brain.run_process",
             return_value=completed,
         ):
             brain = ClaudeBrain(executable="claude")
@@ -200,7 +200,7 @@ class ClaudeBrainTests(unittest.TestCase):
             ["claude"], 1, stdout=envelope, stderr=""
         )
         with patch(
-            "agent_world.claude_brain.subprocess.run",
+            "agent_world.claude_brain.run_process",
             return_value=completed,
         ):
             brain = ClaudeBrain(executable="claude")
@@ -230,7 +230,7 @@ class ClaudeBrainTests(unittest.TestCase):
             ["claude"], 1, stdout=json.dumps(result), stderr=""
         )
         with patch(
-            "agent_world.claude_brain.subprocess.run",
+            "agent_world.claude_brain.run_process",
             return_value=completed,
         ):
             brain = ClaudeBrain(executable="claude")
@@ -248,7 +248,7 @@ class ClaudeBrainTests(unittest.TestCase):
             ["claude"], 0, stdout=_successful_stdout(intent="recovered"), stderr=""
         )
         with patch(
-            "agent_world.claude_brain.subprocess.run",
+            "agent_world.claude_brain.run_process",
             side_effect=[failure, success],
         ) as run:
             brain = ClaudeBrain(executable="claude", conversation_mode="fresh-conversation")
@@ -261,7 +261,7 @@ class ClaudeBrainTests(unittest.TestCase):
 
     def test_minimal_effort_maps_to_low_for_the_cli(self) -> None:
         completed = subprocess.CompletedProcess(["claude"], 0, stdout=_successful_stdout(), stderr="")
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
             brain = ClaudeBrain(executable="claude", reasoning_effort="minimal")
             brain.decide({"tick": 0, "self": {"id": "agent-1"}})
         command = run.call_args.args[0]
@@ -271,7 +271,7 @@ class ClaudeBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["claude"], 0, stdout=_successful_stdout(), stderr=""
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
             brain = ClaudeBrain(
                 executable="claude",
                 connector_profile="connector-v2",
@@ -299,7 +299,7 @@ class ClaudeBrainTests(unittest.TestCase):
             stdout="",
             stderr="Claude usage limit reached. Your limit will reset at 3pm.",
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
             brain = ClaudeBrain(executable="claude")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -316,7 +316,7 @@ class ClaudeBrainTests(unittest.TestCase):
             stdout="",
             stderr="You've hit your session limit · resets 12:40am (America/New_York)",
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
             brain = ClaudeBrain(executable="claude")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -332,7 +332,7 @@ class ClaudeBrainTests(unittest.TestCase):
             stdout="",
             stderr="You're out of usage credits. Run /usage-credits to keep using Haiku.",
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
             brain = ClaudeBrain(executable="claude")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -345,7 +345,7 @@ class ClaudeBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["claude"], 1, stdout="", stderr="API Error: Unable to connect to API (ConnectionRefused)"
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
             brain = ClaudeBrain(executable="claude")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -361,7 +361,7 @@ class ClaudeBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["claude"], 1, stdout="", stderr="Not logged in. Please run /login."
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.claude_brain.run_process", return_value=completed) as run:
             brain = ClaudeBrain(executable="claude")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -384,7 +384,7 @@ class ClaudeBrainTests(unittest.TestCase):
             }
         )
         completed = subprocess.CompletedProcess(["claude"], 0, stdout=stdout, stderr="")
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.claude_brain.run_process", return_value=completed):
             brain = ClaudeBrain(executable="claude")
             decision = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
         self.assertTrue(decision.intent.startswith("Claude boundary failed:"))
@@ -445,7 +445,7 @@ class ClaudeFencedOutputTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["claude"], 0, stdout=self._stdout_with_text(fenced), stderr=""
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.claude_brain.run_process", return_value=completed):
             brain = ClaudeBrain(executable="claude")
             decision = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
 
@@ -456,7 +456,7 @@ class ClaudeFencedOutputTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["claude"], 0, stdout=self._stdout_with_text('```json\n{"intent":'), stderr=""
         )
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.claude_brain.run_process", return_value=completed):
             brain = ClaudeBrain(executable="claude")
             decision = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
 
@@ -487,7 +487,7 @@ class ClaudeThinkingEstimateTests(unittest.TestCase):
             }
         )
         completed = subprocess.CompletedProcess(["claude"], 0, stdout=stdout, stderr="")
-        with patch("agent_world.claude_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.claude_brain.run_process", return_value=completed):
             brain = ClaudeBrain(executable="claude")
             brain.decide({"tick": 1, "self": {"id": "agent-1"}})
 

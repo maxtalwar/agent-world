@@ -14,6 +14,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from agent_world.io import atomic_write_json, atomic_write_text
 from agent_world.benchmarks import build_benchmark_results
 from agent_world.metrics import (
     event_matches_failure,
@@ -59,7 +60,19 @@ def build_report(
     plan_usage: dict[str, Any] | None = None,
     gift_classifications: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    usage_records = usage_records or []
+    attempted_records = usage_records or []
+    # Partial-tick calls cost money even when their decisions were not committed.
+    seen_records: set[str] = set()
+    unique_attempts = []
+    for row in attempted_records:
+        identity = row.get("record_id")
+        if identity and identity in seen_records:
+            continue
+        if identity:
+            seen_records.add(identity)
+        unique_attempts.append(row)
+    attempted_records = unique_attempts
+    usage_records = [row for row in attempted_records if row.get("committed", True)]
     sim_events = [event for event in events if event["type"] not in AGENT_IO_EVENT_TYPES]
     action_counts = Counter(event["type"] for event in sim_events)
     final_tick = snapshot.get("tick", max((event["tick"] for event in events), default=0))
@@ -142,10 +155,14 @@ def build_report(
     decision_failure_rate = (
         round(100 * len(llm_failures) / decision_attempts, 2) if decision_attempts else 0.0
     )
+    expected_decisions = {(event.get("tick"), event.get("actor_id"))
+                          for event in events if event.get("type") == "agent_response"}
+    recorded_decisions = {(row.get("tick"), row.get("agent_id")) for row in usage_records
+                          if row.get("tick") is not None and row.get("agent_id") is not None}
+    covered_decisions = expected_decisions & recorded_decisions
     usage_coverage = (
-        round(100 * len(usage_records) / decision_attempts, 2)
-        if decision_attempts and usage_records
-        else None
+        round(100 * len(covered_decisions) / len(expected_decisions), 2)
+        if expected_decisions and attempted_records else None
     )
     quality_flags: list[str] = []
     if model_output_failures:
@@ -183,6 +200,10 @@ def build_report(
     completion_tokens = sum(record.get("completion_tokens") or 0 for record in usage_records)
     usage = {
         "calls": len(usage_records),
+        "attempted_calls": len(attempted_records),
+        "discarded_calls": len(attempted_records) - len(usage_records),
+        "attempted_provider_cost_usd": sum(row.get("cost") or 0 for row in attempted_records),
+        "attempted_token_cost": summarize_usd_cost(attempted_records),
         "total_cost_usd": round(total_cost, 4),
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
@@ -328,6 +349,11 @@ def build_report(
             "decision_attempts": decision_attempts,
             "decision_failure_rate_pct": decision_failure_rate,
             "usage_record_coverage_pct": usage_coverage,
+            "usage_coverage_basis": "distinct_tick_and_agent",
+            "missing_usage_decisions": [
+                {"tick": tick, "agent_id": agent} for tick, agent in
+                sorted(expected_decisions - recorded_decisions, key=lambda item: (str(item[0]), str(item[1])))
+            ],
             "llm_failure_events": len(llm_failures),
             "model_output_failure_events": len(model_output_failures),
             "llm_quota_failure_events": len(quota_failures),
@@ -1657,6 +1683,10 @@ def write_report(
     target_ticks: int | None = None,
     plan_usage: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if plan_usage is None:
+        plan_path = out_stem.with_name(out_stem.name + "-plan-usage.json")
+        if plan_path.is_file():
+            plan_usage = json.loads(plan_path.read_text(encoding="utf-8"))
     gift_classifications = _load_gift_classifications(
         out_stem.parent / "gift-classifications.json",
         out_stem.with_name(out_stem.name + ".jsonl"),
@@ -1673,8 +1703,8 @@ def write_report(
     )
     json_path = out_stem.with_name(out_stem.name + "-report.json")
     md_path = out_stem.with_name(out_stem.name + "-report.md")
-    json_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    md_path.write_text(render_markdown(report), encoding="utf-8")
+    atomic_write_json(json_path, report, fsync=True)
+    atomic_write_text(md_path, render_markdown(report), fsync=True)
     return report
 
 
@@ -1734,6 +1764,13 @@ def load_run_files(stem: Path) -> tuple[list[dict[str, Any]], dict[str, Any], li
         if usage_path.exists()
         else []
     )
+    for partial in sorted(stem.parent.glob(stem.name + "-usage-partial-tick-*.jsonl")):
+        with partial.open(encoding="utf-8") as handle:
+            for line in handle:
+                if line.strip():
+                    row = _normalize_loaded_usage_record(json.loads(line))
+                    row["committed"] = False
+                    usage_records.append(row)
     return events, snapshot, usage_records
 
 

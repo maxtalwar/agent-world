@@ -53,7 +53,7 @@ class CursorBrainTests(unittest.TestCase):
             stdout="Available models\ncursor-grok-4.5-low - Cursor Grok 4.5 Low\n",
             stderr="",
         )
-        with patch("agent_world.cursor_brain.subprocess.run", side_effect=[status, models]) as run:
+        with patch("agent_world.cursor_brain.run_process", side_effect=[status, models]) as run:
             brain = CursorBrain(executable="cursor-agent", model="cursor-grok-4.5", reasoning_effort="low")
             error = brain.preflight()
 
@@ -66,7 +66,7 @@ class CursorBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["cursor-agent", "status"], 1, stdout="Not logged in", stderr=""
         )
-        with patch("agent_world.cursor_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.cursor_brain.run_process", return_value=completed):
             error = CursorBrain(executable="cursor-agent").preflight()
         self.assertIn("Cursor Agent is not logged in", error or "")
 
@@ -75,7 +75,7 @@ class CursorBrainTests(unittest.TestCase):
         models = subprocess.CompletedProcess(
             ["cursor-agent", "--list-models"], 0, stdout="auto - Auto\n", stderr=""
         )
-        with patch("agent_world.cursor_brain.subprocess.run", side_effect=[status, models]):
+        with patch("agent_world.cursor_brain.run_process", side_effect=[status, models]):
             error = CursorBrain(
                 executable="cursor-agent", model="cursor-grok-4.5", reasoning_effort="medium"
             ).preflight()
@@ -117,7 +117,7 @@ class CursorBrainTests(unittest.TestCase):
         old_key = os.environ.get("CURSOR_API_KEY")
         os.environ["CURSOR_API_KEY"] = "must-not-leak"
         try:
-            with patch("agent_world.cursor_brain.subprocess.run", return_value=completed) as run:
+            with patch("agent_world.cursor_brain.run_process", return_value=completed) as run:
                 brain = CursorBrain(
                     executable="/usr/local/bin/cursor-agent",
                     model="cursor-grok-4.5-low",
@@ -165,7 +165,7 @@ class CursorBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.cursor_brain.subprocess.run",
+            "agent_world.cursor_brain.run_process",
             return_value=completed,
         ):
             brain = CursorBrain(executable="cursor-agent")
@@ -188,7 +188,7 @@ class CursorBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.cursor_brain.subprocess.run",
+            "agent_world.cursor_brain.run_process",
             return_value=completed,
         ), patch(
             "agent_world.cursor_brain.parse_agent_response",
@@ -217,7 +217,7 @@ class CursorBrainTests(unittest.TestCase):
             stderr="",
         )
         with patch(
-            "agent_world.cursor_brain.subprocess.run",
+            "agent_world.cursor_brain.run_process",
             return_value=completed,
         ):
             brain = CursorBrain(executable="cursor-agent")
@@ -238,7 +238,7 @@ class CursorBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["cursor-agent"], 0, stdout=_successful_stdout(), stderr=""
         )
-        with patch("agent_world.cursor_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.cursor_brain.run_process", return_value=completed) as run:
             brain = CursorBrain(
                 executable="cursor-agent",
                 connector_profile="connector-v2",
@@ -269,7 +269,7 @@ class CursorBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["cursor-agent"], 0, stdout=_successful_stdout(), stderr=""
         )
-        with patch("agent_world.cursor_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.cursor_brain.run_process", return_value=completed) as run:
             brain = CursorBrain(
                 executable="cursor-agent",
                 connector_profile="connector-v2",
@@ -290,7 +290,7 @@ class CursorBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["cursor-agent"], 1, stdout="", stderr="Usage limit reached; try again later"
         )
-        with patch("agent_world.cursor_brain.subprocess.run", return_value=completed) as run:
+        with patch("agent_world.cursor_brain.run_process", return_value=completed) as run:
             brain = CursorBrain(executable="cursor-agent")
             first = brain.decide({"tick": 0, "self": {"id": "agent-1"}})
             second = brain.decide({"tick": 1, "self": {"id": "agent-1"}})
@@ -302,7 +302,7 @@ class CursorBrainTests(unittest.TestCase):
         completed = subprocess.CompletedProcess(
             ["cursor-agent"], 1, stdout="", stderr="Service unavailable: network error"
         )
-        with patch("agent_world.cursor_brain.subprocess.run", return_value=completed):
+        with patch("agent_world.cursor_brain.run_process", return_value=completed):
             decision = CursorBrain(executable="cursor-agent").decide(
                 {"tick": 0, "self": {"id": "agent-1"}}
             )
@@ -317,7 +317,7 @@ class CursorBrainTests(unittest.TestCase):
 
     def test_timeout_attempts_are_recorded_without_opening_quota_circuit(self) -> None:
         with patch(
-            "agent_world.cursor_brain.subprocess.run",
+            "agent_world.cursor_brain.run_process",
             side_effect=subprocess.TimeoutExpired(["cursor-agent"], 3),
         ) as run:
             brain = CursorBrain(executable="cursor-agent", timeout_seconds=3)

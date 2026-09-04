@@ -24,6 +24,7 @@ from agent_world.decision_failure import (
     attributed_failure_message,
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
+from agent_world.process_transport import run_process, terminate_owned_process
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
@@ -102,7 +103,7 @@ class GrokBrain:
 
     def preflight(self) -> str | None:
         try:
-            listed = subprocess.run(
+            listed = run_process(
                 [self.executable, "models"],
                 text=True,
                 capture_output=True,
@@ -364,7 +365,7 @@ class GrokBrain:
     def _run_command(
         self, system_prompt: str, user_prompt: str, workspace: str
     ) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
+        return run_process(
             self._command(system_prompt, user_prompt, workspace),
             cwd=workspace,
             text=True,

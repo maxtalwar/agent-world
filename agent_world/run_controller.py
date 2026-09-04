@@ -129,7 +129,11 @@ def _quota_resume_at(cell: dict[str, Any]) -> datetime | None:
     event = _latest_control_event(cell["events"])
     if not event or event.get("type") != "run_quota_wait":
         return None
-    wait_seconds = (event.get("data") or {}).get("wait_seconds")
+    data = event.get("data") or {}
+    resume_at = data.get("resume_at_unix")
+    if isinstance(resume_at, (int, float)) and not isinstance(resume_at, bool):
+        return datetime.fromtimestamp(resume_at, tz=timezone.utc)
+    wait_seconds = data.get("wait_seconds")
     if not isinstance(wait_seconds, (int, float)) or isinstance(wait_seconds, bool):
         return None
     try:
@@ -391,7 +395,10 @@ def reconcile_once(
                 cell["controller_attention"] = "startup_health_check_failed"
                 continue
             if status["supervisor_active"]:
-                if _quota_waiting(cell):
+                quota_deadline = _quota_resume_at(cell)
+                if _quota_waiting(cell) and (
+                    quota_deadline is not None and now < quota_deadline + timedelta(seconds=policy.stall_seconds)
+                ):
                     cell["controller_state"] = "waiting_quota"
                     continue
                 cell["controller_state"] = "running"

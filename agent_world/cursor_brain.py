@@ -34,6 +34,7 @@ from agent_world.decision_failure import (
     attributed_failure_message,
 )
 from agent_world.interface import build_dynamic_observation, build_static_context, parse_agent_response
+from agent_world.process_transport import run_process, terminate_owned_process
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
@@ -97,7 +98,7 @@ class CursorBrain:
         """Verify subscription login and resolve the requested account model."""
 
         try:
-            status = subprocess.run(
+            status = run_process(
                 [self.executable, "status"],
                 text=True,
                 capture_output=True,
@@ -109,7 +110,7 @@ class CursorBrain:
             if status.returncode != 0 or "not logged in" in detail.lower():
                 return "Cursor provider unavailable: Cursor Agent is not logged in; run `cursor-agent login`."
 
-            listed = subprocess.run(
+            listed = run_process(
                 [self.executable, "--list-models"],
                 text=True,
                 capture_output=True,
@@ -474,7 +475,7 @@ class CursorBrain:
         invocation: ConversationInvocation,
         workspace: str,
     ) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
+        return run_process(
             self._command(workspace, invocation),
             cwd=workspace,
             input=prompt,

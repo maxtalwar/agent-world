@@ -103,7 +103,7 @@ class BrainRuntimeTests(unittest.TestCase):
         first.record_usage({"run": "first"})
         first.mark_quota_unavailable("first exhausted")
 
-        self.assertEqual(first.usage_records(), [{"run": "first"}])
+        self.assertEqual(first.usage_records()[0]["run"], "first")
         self.assertEqual(second.usage_records(), [])
         self.assertEqual(first.quota_message(), "first exhausted")
         self.assertIsNone(second.quota_message())
@@ -146,10 +146,10 @@ class BrainRuntimeTests(unittest.TestCase):
 
             partial_path = runtime.rollback_usage(checkpoint, attempted_tick=1)
 
-            self.assertEqual(runtime.usage_records(), [{"call": 1, "tick": 0}])
+            self.assertEqual([(row["call"], row["tick"]) for row in runtime.usage_records()], [(1, 0)])
             self.assertEqual(
                 [json.loads(line) for line in usage_path.read_text().splitlines()],
-                [{"call": 1, "tick": 0}],
+                runtime.usage_records(),
             )
             self.assertIsNotNone(partial_path)
             self.assertIn('"call": 2', partial_path.read_text())

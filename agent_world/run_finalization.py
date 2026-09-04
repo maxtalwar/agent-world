@@ -262,7 +262,7 @@ def _audit_report(
     )
     resolved_models = sorted((run_manifest.get("resolved_models") or {}).keys())
     requested_model = ((job.get("config") or {}).get("model") or {}).get("id")
-    provenance_verified = requested_model in resolved_models
+    provenance_verified = bool(requested_model) and resolved_models == [requested_model]
     if not provenance_verified:
         blockers.append(
             f"Seed {cell['seed']} requested model {requested_model!r}; recorded response models "

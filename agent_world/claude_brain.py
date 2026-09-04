@@ -44,6 +44,7 @@ from agent_world.interface import (
     build_static_context,
     parse_agent_response,
 )
+from agent_world.process_transport import run_process, terminate_owned_process
 from agent_world.models import AgentDecision
 from agent_world.decision_outcome import failure_decision as _failure_decision
 from agent_world.openrouter_brain import AGENT_DECISION_SCHEMA, SYSTEM_INSTRUCTIONS
@@ -109,7 +110,7 @@ class ClaudeBrain:
         """Verify saved Claude-plan authentication without spending a model turn."""
 
         try:
-            completed = subprocess.run(
+            completed = run_process(
                 [self.executable, "auth", "status"],
                 text=True,
                 capture_output=True,
@@ -491,7 +492,7 @@ class ClaudeBrain:
         # Run in an empty cwd so no project CLAUDE.md, settings, or git state
         # can leak into the decision context. One stable directory per process
         # keeps the request prefix identical across calls.
-        return subprocess.run(
+        return run_process(
             self._command(system_prompt, invocation, fresh_session_id),
             cwd=_decision_working_directory(),
             input=user_prompt,
