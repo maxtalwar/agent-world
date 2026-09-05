@@ -115,7 +115,7 @@ class GrokBrain:
         except (OSError, subprocess.TimeoutExpired) as exc:
             return f"Grok provider unavailable: authentication/model preflight failed: {exc}"
         detail = f"{listed.stdout}\n{listed.stderr}".strip()
-        if listed.returncode != 0 or "not logged in" in detail.lower():
+        if listed.returncode != 0 or any(marker in detail.lower() for marker in ("not logged in", "not authenticated")):
             return "Grok provider unavailable: Grok CLI is not logged in; run grok login."
         if self.model not in parse_grok_model_list(listed.stdout):
             return f"Grok provider unavailable: model {self.model!r} is not available on this account"
@@ -394,7 +394,7 @@ class GrokBrain:
             "--no-subagents",
             "--no-plan",
             "--max-turns", "1",
-            "--permission-mode", "plan",
+            "--permission-mode", "dontAsk",
             "--disallowed-tools", GROK_DISALLOWED_TOOLS,
             "--cwd", workspace,
         ]
@@ -458,7 +458,10 @@ class GrokBrain:
 
 def build_grok_prompts(static_context: str, dynamic_json: str) -> tuple[str, str]:
     return (
-        f"{GROK_HARNESS_INSTRUCTIONS}\n\n{SYSTEM_INSTRUCTIONS}\n\n{static_context}",
+        GROK_HARNESS_INSTRUCTIONS,
+        # Grok 4.5 Build can ignore --system-prompt-override. Put every
+        # behavior-defining instruction in the reliably delivered user turn.
+        f"{GROK_HARNESS_INSTRUCTIONS}\n\n{SYSTEM_INSTRUCTIONS}\n\n{static_context}\n\n"
         f"The current private observation follows as JSON:\n{dynamic_json}",
     )
 

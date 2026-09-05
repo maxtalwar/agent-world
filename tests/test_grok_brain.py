@@ -57,6 +57,24 @@ class GrokBrainTests(unittest.TestCase):
         self.assertEqual(brain.resolved_model, "grok-4.6")
         self.assertEqual(run.call_args.args[0], ["grok", "models"])
 
+    def test_logged_out_catalog_does_not_pass_preflight(self) -> None:
+        completed = subprocess.CompletedProcess(
+            ["grok", "models"], 0,
+            stdout="You are not authenticated.\n* grok-4.6 (default)\n", stderr="")
+        with patch("agent_world.grok_brain.run_process", return_value=completed):
+            error = GrokBrain(executable="grok", model="grok-4.6").preflight()
+        self.assertIsNotNone(error)
+
+    def test_user_turn_contains_rulebook_even_if_system_override_is_ignored(self) -> None:
+        from agent_world.grok_brain import build_grok_prompts
+        system, user = build_grok_prompts("UNIQUE WORLD RULEBOOK", '{"tick":0}')
+        self.assertIn("UNIQUE WORLD RULEBOOK", user)
+        self.assertIn('{"tick":0}', user)
+        self.assertIn("simulation decision", user)
+        brain = GrokBrain(executable="grok")
+        command = brain._command(system, user, "/tmp")
+        self.assertEqual(command[command.index("--permission-mode") + 1], "dontAsk")
+
     def test_model_list_parser(self) -> None:
         self.assertEqual(
             parse_grok_model_list("* grok-4.6 (default)\n- grok-4.5\n"),

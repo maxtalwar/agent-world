@@ -635,8 +635,7 @@ class SimulationSession:
 
     def _should_run_startup_health_check(self) -> bool:
         return (
-            not self.resumed
-            and self.startup_health_check_tick is not None
+            self.startup_health_check_tick is not None
             and self.engine.state.tick == self.startup_health_check_tick
         )
 

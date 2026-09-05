@@ -1414,3 +1414,25 @@ Evidence: runs/jobs/grok-4-6-v7-20260905/controller-events.jsonl records the
 the tick-3 pause and subsequent trajectory without a run_health_check event.
 Launch source: bf5b0a188e80883b02a67436af5fed1ad63fcbdc; predicate:
 agent_world/session.py, _should_run_startup_health_check.
+
+## 2026-09-05 — Grok 4.5 Build omitted a system-only simulation rulebook
+
+Native chat_history.jsonl for the Grok 4.5 v7 attempt contains the private
+observation and the CLI's coding instructions, but no supplied simulation
+rulebook or harness instructions. Its plan-agent session suggested exploring
+the workspace to discover valid actions. Grok 4.6 traces retained the supplied
+rulebook. Thus apparent 4.5 game failures cannot be interpreted as failures
+to follow rules it received.
+
+The connector now places the complete rulebook and decision instructions in
+the user turn, which both native model paths deliver, and uses dontAsk
+permission mode rather than selecting a coding-plan agent. Tool denials and
+the one-turn limit remain. Early checkpoint resumes also retain their pending
+startup health check; regression coverage checks cumulative pre/post-resume
+attempts and prevents a duplicate gate after later resume.
+
+Evidence: runs/managed/grok-4-5-v7-20260905/seed-11/
+run-usage-partial-tick-0.jsonl links native session
+01a06f87-2e15-7603-a897-566a8e6772b8; its retained native transcript contains
+no simulation rulebook. These initial trials remain preserved separately from
+validation of the corrected connector.

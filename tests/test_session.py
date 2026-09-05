@@ -303,6 +303,30 @@ class SimulationSessionTests(unittest.TestCase):
         health = next(event for event in engine.state.events if event.type == "run_health_check")
         self.assertEqual(health.data["status"], "passed")
 
+    def test_resumed_session_before_gate_still_checks_health(self) -> None:
+        class HealthyBrain:
+            def decide(self, _observation):
+                return AgentDecision(intent="wait", actions=[{"type": "wait"}])
+
+        engine = WorldEngine.create(WorldConfig(seed=11), agent_names=["A1"])
+        brain = BrainSpec(type="cursor", model="cursor-grok-4.5", reasoning_effort="low")
+        def make_session(target, resumed):
+            return SimulationSession(
+                engine=engine, brain_spec=brain, runtime=BrainRuntime(),
+                writer=IncrementalRunWriter(None, None, fsync=False),
+                target_ticks=target, brains={"agent-1": HealthyBrain()},
+                log_agent_io=False, startup_health_check_tick=2, resumed=resumed,
+            )
+        make_session(1, False).run()
+        make_session(3, True).run()
+        checks = [e for e in engine.state.events if e.type == "run_health_check"]
+        self.assertEqual(len(checks), 1)
+        self.assertEqual(checks[0].tick, 2)
+        self.assertEqual(checks[0].data["status"], "passed")
+        self.assertEqual(checks[0].data["cohorts"][0]["attempts"], 2)
+        make_session(4, True).run()
+        self.assertEqual(sum(e.type == "run_health_check" for e in engine.state.events), 1)
+
     def test_session_discards_tick_when_provider_becomes_unavailable(self) -> None:
         class ProviderFailureBrain:
             def decide(self, _observation):
