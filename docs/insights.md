@@ -1546,3 +1546,33 @@ Evidence: the participant-v7 rows in data/model-benchmarks.sqlite,
 model_results joined to models, and docs/v7-leaderboard-results-2026-09-05.md.
 Only corrected-rulebook Grok studies are included; native cancellation and
 checkpoint recovery caveats remain attached to those results.
+
+## 2026-09-05 — The v6/v7 Grok comparison confounds reasoning with ledger work
+
+The historical admitted Grok 4.6 v6 study used medium reasoning and averaged
+3743 reasoning tokens per recorded decision; v7 low averaged 738. However,
+the v7 launch also introduced a town-ledger action and a baseline instruction
+to post useful missing facts, absent from the historical v6 source. Successful
+notes cost one of four AP: Grok 4.6 posted 414 across 900 recorded decisions
+(11.5% of the nominal action budget); Grok 4.5 posted 460 across 892 (12.9%).
+This cost is observed; attributing the survival collapse to it requires an
+ablation. Lower reasoning alone has not been isolated.
+
+Both v7 Groks retained four agents in seed 11 and one in seed 41, with heavy
+late-run losses. Their pooled competence gap is about six points, versus
+within-model seed ranges of 25.9 and 32.0. Historical v6 Grok 4.5 evidence was
+a Cursor diagnostic, unlike Grok 4.6's native-CLI study. The cross-version
+ranking is not a controlled model-only comparison.
+
+Zero pooled entrepreneurship is also not zero economic activity: v7 Grok 4.5
+supplied 123 units of enterprise value but lost 90.75 units of living-accessible
+value relative to starting endowments. Its seed-11 entrepreneurship was 19.96;
+pooling the seed-41 losses makes the value-creation factor zero. Muse gained
+200.75 units but had zero enterprise supply, zeroing the other factor.
+
+Evidence: protocol-specific model_results/raw_metrics in the database;
+corrected v7 Grok reports and ledger_note events; historical Grok 4.6 v6
+source 8bbd62e; current interface.py baseline LEDGER RULE and
+world.py _action_post_ledger_note. Native event audit found no tool executions
+in the 992 retained historical v6 Grok 4.6 sessions; v7 Grok tool attempts were
+cancelled, so successful hidden tool use is not supported as an explanation.

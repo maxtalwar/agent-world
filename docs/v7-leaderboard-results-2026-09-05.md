@@ -54,3 +54,19 @@ Grok's long-context threshold. Raw CLI-reported cost remains separate.
 
 Muse 1.1 has no score: it has not completed a tick because its service returns
 429. No model substitution or v6/v7 pooling was performed.
+
+## Interpretation caveat added after audit
+
+The historical v6/v7 comparison is not a reasoning-only experiment. The new
+town-ledger action costs one AP and its baseline prompt solicits useful notes;
+it was absent from the historical v6 Grok source. Grok 4.6 spent 414 AP on
+successful notes across 900 decisions (11.5% of its nominal budget). Reasoning
+fell from about 3743 tokens/decision at medium in v6 to 738 at low in v7.
+Neither change's causal contribution has been isolated. Grok 4.5's historical
+v6 result also used Cursor and was diagnostic.
+
+All-zero pooled entrepreneurship obscures component differences: Grok 4.5
+had 123 enterprise-supply value but negative pooled living value creation;
+Muse had positive value creation but no enterprise supply. Grok 4.5 seed 11
+alone scored 19.96 entrepreneurship. The official pooled zero is consistent
+with the formula, not evidence that no entrepreneurial actions occurred.
