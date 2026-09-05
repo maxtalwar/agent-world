@@ -114,3 +114,49 @@ retain the per-seed metrics, reliability, action counts, and API-list accounting
 Each source is runs/managed/gpt-5-6-luna-{low,high}-ledger-{off,on}-20260905/seed-{11,41}/
 with run-report.json, run-manifest.json, run.jsonl, and run-usage.jsonl.
 [Predeclared design](ledger-factorial-experiment-2026-09-05.md).
+
+
+## Follow-up: historical Luna comparison and board decision
+
+The user decided to omit the message board from the next benchmark world.
+This is a design decision based on these exploratory results, not a claim
+that the board is harmful in every setting. Existing v7 recipes and evidence
+remain immutable; the next recipe's effort level and identity are still to
+be selected. No additional experiment or leaderboard rebuild was launched.
+
+The verified model database shows that v6 Luna medium also scored zero
+entrepreneurship, individually on both seeds and pooled. The positive v6
+result belongs to the separate Luna Max controlled variant.
+
+| Evidence | Effort | Reasoning tokens/decision | Competence | Entrepreneurship | Survivors /20 | Living value minus initial | Enterprise supply |
+|---|---|---:|---:|---:|---:|---:|---:|
+| V6 Luna | Medium | 474 | 35.45 | 0.00 | 8 | -93.75 | 1 |
+| Current no-board experiment | High | 1104 | 43.01 | 0.00 | 8 | -31.00 | 14 |
+| V6 Luna Max controlled variant | Max | 3773 | 65.06 | 34.11 | 15 | +258.625 | 18 |
+
+The current high/off worlds finish with living-accessible value 92.5 and
+146.5 against 135 each initially: changes -42.5 and +11.5. Pooled value is
+239 against 270, a loss of 31. The score floors its positive-value component
+at zero, then takes its geometric mean with enterprise supply; hence zero,
+despite five farms and eleven completed trades. Seed 41 alone scores 4.8.
+
+These historical runs are useful context, not a controlled effort ladder.
+World config fields match except the new ledger fields and self-declared
+transfer kinds. Historical v6 transfers use frozen external classification;
+the current experiment uses declarations. Historical manifests name
+stateless-v3/stateless, versus connector-v3/fresh-conversation now, and the
+runs have different source commits, dates, hosts, and native CLI environments.
+Those differences must not be assumed behaviorally identical. Transfer
+classification alone does not remove the current negative-value gate.
+
+The scoring arithmetic is consistent. A real measurement limitation remains:
+one zero can conceal very different levels of trade, production, and survival,
+and positive activity in one seed can be hidden by pooling. Report signed
+value creation and enterprise supply alongside the aggregate rather than
+interpreting zero as no entrepreneurship.
+
+Historical evidence: catalog keys gpt-5.6-luna and gpt-5.6-luna-max in
+data/run-sources.json and data/model-benchmarks.sqlite; both seed reports and
+manifests were inspected. Historical source commits are
+0af16493855cc711497c99ecc54f43a10f7a40c2 (medium) and
+d3bf99058dcb60453d4faad7fa52344f5f978603 (max).
