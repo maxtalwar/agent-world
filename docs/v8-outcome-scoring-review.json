@@ -498,130 +498,6 @@
         }
       }
     },
-    "Fable 5 historical v6": {
-      "cells": [
-        {
-          "report_path": "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-report.json",
-          "seed": 11,
-          "horizon_and_tail": [
-            50,
-            12
-          ],
-          "original_recipe": "participant-v6",
-          "source_commit": "a86d06f0612692b3a122f9d1c06af3d5ddf07144",
-          "raw": {
-            "execution_valid_decisions": 352.0,
-            "execution_decisions": 500.0,
-            "health_point_ticks": 43160.0,
-            "health_point_tick_capacity": 50000.0,
-            "tail_health_point_ticks": 7492.0,
-            "tail_health_point_tick_capacity": 12000.0,
-            "endpoint_health_points": 498.0,
-            "endpoint_health_capacity": 1000.0
-          },
-          "scores": {
-            "execution": {
-              "score": 70.4,
-              "formula": "100 * fully executable decisions / resolved decisions",
-              "components": {
-                "valid_decisions": 352.0,
-                "decisions": 500.0
-              }
-            },
-            "capability": {
-              "score": 73.41,
-              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
-              "components": {
-                "full_horizon_health_pct": 86.32,
-                "final_window_health_pct": 62.4333
-              }
-            }
-          },
-          "original_execution": 89.62,
-          "original_competence": 85.12,
-          "sha256": {
-            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-report.json": "c15cb445d7611f9bf342f5c117b44bcd2479ab6d1893daf4b26e15e599126581",
-            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-snapshot.json": "f1ae76ad3bc7fc9bcdbcd16ab37d08ec404f40a150da4bd366e8fe2f67b2d255",
-            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run.jsonl": "58ac3fd133491a1377120c9b8a3dc1aee66b6e3475ed7260cbd51d56e807e6d0",
-            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-manifest.json": "1aa0eef3271f75c52588061945aeda6ab035dba0378d0b63ec008a78d9852033"
-          }
-        },
-        {
-          "report_path": "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-report.json",
-          "seed": 41,
-          "horizon_and_tail": [
-            50,
-            12
-          ],
-          "original_recipe": "participant-v6",
-          "source_commit": "1baaf2cde6b0beb2d3d9b0ad7077343096c895c0",
-          "raw": {
-            "execution_valid_decisions": 370.0,
-            "execution_decisions": 500.0,
-            "health_point_ticks": 42980.0,
-            "health_point_tick_capacity": 50000.0,
-            "tail_health_point_ticks": 7611.0,
-            "tail_health_point_tick_capacity": 12000.0,
-            "endpoint_health_points": 540.0,
-            "endpoint_health_capacity": 1000.0
-          },
-          "scores": {
-            "execution": {
-              "score": 74.0,
-              "formula": "100 * fully executable decisions / resolved decisions",
-              "components": {
-                "valid_decisions": 370.0,
-                "decisions": 500.0
-              }
-            },
-            "capability": {
-              "score": 73.84,
-              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
-              "components": {
-                "full_horizon_health_pct": 85.96,
-                "final_window_health_pct": 63.425
-              }
-            }
-          },
-          "original_execution": 89.8,
-          "original_competence": 87.06,
-          "sha256": {
-            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-report.json": "db341e3ad997e1f324f1822cdd6ed391d75127ce84166015c342d2d0cb062775",
-            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-snapshot.json": "f505d82f5d3bbdbeaf1636c3ce2ff1ea0b7a386954c3b647576f4b80ec935240",
-            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run.jsonl": "0eb14d6b11a848c771bd3c8e2136f0fe3af93409fae6b42ee749a0569de1bbc7",
-            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-manifest.json": "cefa6aba7769709ec9bdda67bcd31dfb98284144525c303abc8a5e9e714ac063"
-          }
-        }
-      ],
-      "raw": {
-        "execution_valid_decisions": 722.0,
-        "execution_decisions": 1000.0,
-        "health_point_ticks": 86140.0,
-        "health_point_tick_capacity": 100000.0,
-        "tail_health_point_ticks": 15103.0,
-        "tail_health_point_tick_capacity": 24000.0,
-        "endpoint_health_points": 1038.0,
-        "endpoint_health_capacity": 2000.0
-      },
-      "scores": {
-        "execution": {
-          "score": 72.2,
-          "formula": "100 * fully executable decisions / resolved decisions",
-          "components": {
-            "valid_decisions": 722.0,
-            "decisions": 1000.0
-          }
-        },
-        "capability": {
-          "score": 73.63,
-          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
-          "components": {
-            "full_horizon_health_pct": 86.14,
-            "final_window_health_pct": 62.9292
-          }
-        }
-      }
-    },
     "GPT-5.6 Luna Max historical v6": {
       "cells": [
         {
@@ -866,6 +742,84 @@
           "components": {
             "full_horizon_health_pct": 64.967,
             "final_window_health_pct": 20.3208
+          }
+        }
+      }
+    },
+    "Fable 5 historical v6, seed 11 only": {
+      "cells": [
+        {
+          "report_path": "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-report.json",
+          "seed": 11,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v6",
+          "source_commit": "a86d06f0612692b3a122f9d1c06af3d5ddf07144",
+          "raw": {
+            "execution_valid_decisions": 352.0,
+            "execution_decisions": 500.0,
+            "health_point_ticks": 43160.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 7492.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 498.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 70.4,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 352.0,
+                "decisions": 500.0
+              }
+            },
+            "capability": {
+              "score": 73.41,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 86.32,
+                "final_window_health_pct": 62.4333
+              }
+            }
+          },
+          "original_execution": 89.62,
+          "original_competence": 85.12,
+          "sha256": {
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-report.json": "c15cb445d7611f9bf342f5c117b44bcd2479ab6d1893daf4b26e15e599126581",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-snapshot.json": "f1ae76ad3bc7fc9bcdbcd16ab37d08ec404f40a150da4bd366e8fe2f67b2d255",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run.jsonl": "58ac3fd133491a1377120c9b8a3dc1aee66b6e3475ed7260cbd51d56e807e6d0",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-manifest.json": "1aa0eef3271f75c52588061945aeda6ab035dba0378d0b63ec008a78d9852033"
+          }
+        }
+      ],
+      "raw": {
+        "execution_valid_decisions": 352.0,
+        "execution_decisions": 500.0,
+        "health_point_ticks": 43160.0,
+        "health_point_tick_capacity": 50000.0,
+        "tail_health_point_ticks": 7492.0,
+        "tail_health_point_tick_capacity": 12000.0,
+        "endpoint_health_points": 498.0,
+        "endpoint_health_capacity": 1000.0
+      },
+      "scores": {
+        "execution": {
+          "score": 70.4,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 352.0,
+            "decisions": 500.0
+          }
+        },
+        "capability": {
+          "score": 73.41,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 86.32,
+            "final_window_health_pct": 62.4333
           }
         }
       }

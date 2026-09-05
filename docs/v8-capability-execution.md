@@ -11,10 +11,13 @@ saved evidence with original provenance. Do not tune formulas to favor a model
 or to reproduce the old ranking. Scoring reviews are counterfactual analyses,
 not new v8 benchmark trials.
 
-The review includes fourteen completed worlds: all eight Luna factorial
-worlds plus both admitted seeds of historical Luna medium, Luna Max, and
-Fable 5. An excluded historical Fable provider-failure continuation was rejected
-by the integrity gate; only its catalog-admitted recovered counterpart is used.
+The review includes thirteen completed worlds: all eight Luna factorial
+worlds, both admitted seeds of historical Luna medium and Luna Max, and
+historical Fable 5 seed 11. An excluded historical Fable provider-failure continuation was rejected
+by the integrity gate. Its recovered counterpart also has a different report
+recipe label from seed 11, so the strict pooling check excludes that reference
+rather than merging unlike recipe labels. No historical artifacts were repaired
+or relabelled by this review.
 
 ## Capability
 
@@ -92,7 +95,7 @@ Raw additive numerators and denominators are pooled before scoring.
 | Luna high, board on | 60.47 | 41.80 |
 | Historical Luna medium v6 | 60.07 | 36.33 |
 | Historical Luna Max v6 | 74.48 | 53.48 |
-| Historical Fable 5 v6 | 72.20 | 73.63 |
+| Historical Fable 5 v6, seed 11 only | 70.40 | 73.41 |
 
 The most informative change is the high-effort Luna board comparison. The new
 capability metric nearly ties the two conditions. Board on has better
