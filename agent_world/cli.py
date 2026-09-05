@@ -72,6 +72,7 @@ from agent_world.muse_brain import MuseBrain
 from agent_world.zcode_brain import ZCodeBrain
 from agent_world.usage import (
     append_usage_records,
+    summarize_provider_cost,
     summarize_codex_simulation_credits,
 )
 from agent_world.world import WorldEngine
@@ -1349,7 +1350,8 @@ def _report_llm_usage(args: argparse.Namespace, ticks_completed: int, records: l
     if not records:
         return
     usage_path = args.out.with_name(args.out.stem + "-usage.jsonl") if args.out else None
-    total_cost = sum(record.get("cost") or 0 for record in records)
+    provider_cost = summarize_provider_cost(records)
+    total_cost = provider_cost["total_cost_usd"]
     prompt_tokens = sum(record.get("prompt_tokens") or 0 for record in records)
     cached_tokens = sum(record.get("cached_tokens") or 0 for record in records)
     completion_tokens = sum(record.get("completion_tokens") or 0 for record in records)
@@ -1357,9 +1359,10 @@ def _report_llm_usage(args: argparse.Namespace, ticks_completed: int, records: l
     summary = {
         "calls": len(records),
         "ticks_completed": ticks_completed,
-        "total_cost_usd": round(total_cost, 6),
-        "cost_per_call_usd": round(total_cost / len(records), 6),
-        "cost_per_tick_usd": round(total_cost / ticks_completed, 6) if ticks_completed else None,
+        "total_cost_usd": total_cost,
+        "provider_cost_coverage": provider_cost,
+        "cost_per_call_usd": round(total_cost / len(records), 6) if total_cost is not None else None,
+        "cost_per_tick_usd": round(total_cost / ticks_completed, 6) if ticks_completed and total_cost is not None else None,
         "prompt_tokens": prompt_tokens,
         "cached_prompt_tokens": cached_tokens,
         "cache_hit_rate_pct": round(100 * cached_tokens / prompt_tokens, 1) if prompt_tokens else 0,

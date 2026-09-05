@@ -22,6 +22,22 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-05 — Missing native charges appeared as free calls in shared reports
+
+**Twenty successful native smoke-test decisions with unreported monetary cost
+were rendered as zero-dollar calls by Agent World's shared summaries.** Both
+new adapters retained `cost: null`, but the CLI summary and run-report header
+summed `cost or 0`. The first ten Antigravity and ten Muse decisions therefore
+appeared free despite no reported charge and no equivalent API rate card.
+Shared aggregation now distinguishes a complete known cost from a reported
+subtotal with missing calls; markdown says provider cost unavailable. This is
+an accounting artifact, not evidence of either model's efficiency. The original
+reports remain beside corrected ones as `run-report-before-cost-fix.*`.
+Evidence and immutable ledger hashes:
+[readiness report](native-connector-validation-2026-09-05.md) and local
+`runs/diagnostics/native-connectors-20260905/validation.json`.
+Regression coverage: `tests/test_usage.py` and `tests/test_run_report.py`.
+
 ## 2026-09-04 — Muse's completion metadata does not establish returned model identity
 
 **Muse Code 1.0.3 reports its requested model as the completed model even when

@@ -26,7 +26,7 @@ from agent_world.metrics import (
     is_quota_failure_message,
 )
 from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
-from agent_world.usage import summarize_codex_simulation_credits, summarize_usd_cost
+from agent_world.usage import summarize_codex_simulation_credits, summarize_usd_cost, summarize_provider_cost
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
 SUBSISTENCE_ITEMS = frozenset({"food", "water"})
@@ -200,7 +200,8 @@ def build_report(
         if event.get("type") == "run_phase_timing":
             phase_totals.update({key: value for key, value in (event.get("data") or {}).items() if isinstance(value, (int, float))})
             phase_samples += 1
-    total_cost = sum(record.get("cost") or 0 for record in usage_records)
+    provider_cost = summarize_provider_cost(usage_records)
+    total_cost = provider_cost["total_cost_usd"]
     prompt_tokens = sum(record.get("prompt_tokens") or 0 for record in usage_records)
     cached_tokens = sum(record.get("cached_tokens") or 0 for record in usage_records)
     completion_tokens = sum(record.get("completion_tokens") or 0 for record in usage_records)
@@ -209,9 +210,10 @@ def build_report(
         "phase_timing": {"samples": phase_samples, "total_seconds": dict(phase_totals)},
         "attempted_calls": len(attempted_records),
         "discarded_calls": len(attempted_records) - len(usage_records),
-        "attempted_provider_cost_usd": sum(row.get("cost") or 0 for row in attempted_records),
+        "attempted_provider_cost_usd": summarize_provider_cost(attempted_records)["total_cost_usd"],
         "attempted_token_cost": summarize_usd_cost(attempted_records),
-        "total_cost_usd": round(total_cost, 4),
+        "total_cost_usd": round(total_cost, 4) if total_cost is not None else None,
+        "provider_cost_coverage": provider_cost,
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
         "reasoning_tokens": sum(record.get("reasoning_tokens") or 0 for record in usage_records),
@@ -465,7 +467,7 @@ def _summarize_population(
             "decisions": decision_count,
             "usage": {
                 "calls": len(cohort_usage),
-                "total_cost_usd": round(sum(record.get("cost") or 0 for record in cohort_usage), 4),
+                "total_cost_usd": summarize_provider_cost(cohort_usage)["total_cost_usd"],
                 "prompt_tokens": prompt_tokens,
                 "cached_tokens": sum(record.get("cached_tokens") or 0 for record in cohort_usage),
                 "completion_tokens": completion_tokens,
@@ -1384,7 +1386,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         + ("" if run["completed"] else f" — **stopped early: {run['stop_reason']}**"),
         f"- Agents: {survival['living']} living / {survival['dead']} dead",
         f"- Action points/tick: {report['config'].get('action_points_per_tick')} | seed: {report['config'].get('seed')}",
-        f"- LLM: {usage['calls']} calls, ${usage['total_cost_usd']}, {usage['cache_hit_rate_pct']}% cache hit"
+        f"- LLM: {usage['calls']} calls, "
+        + (f"${usage['total_cost_usd']}" if usage.get("total_cost_usd") is not None else "provider cost unavailable")
+        + f", {usage['cache_hit_rate_pct']}% cache hit"
         if usage["calls"]
         else "- Brain: scripted (no LLM usage)",
         *(_render_efficiency_lines(usage.get("efficiency")) if usage["calls"] else []),

@@ -173,6 +173,15 @@ class RunReportTests(unittest.TestCase):
         self.assertEqual(report["run"]["status"], "completed")
         self.assertEqual(report["run"]["completion_evidence"], "run_completed")
 
+    def test_missing_provider_charge_is_rendered_as_unavailable(self):
+        events, snapshot = _run_short_sim()
+        report = build_report(events, snapshot, [{"model": "muse-spark-1.3", "cost": None,
+                                                "prompt_tokens": 100, "completion_tokens": 20}])
+        self.assertIsNone(report["usage"]["total_cost_usd"])
+        self.assertIsNone(report["usage"]["attempted_provider_cost_usd"])
+        self.assertIn("provider cost unavailable", render_markdown(report))
+        self.assertNotIn("1 calls, $0", render_markdown(report))
+
     def test_usage_records_are_aggregated(self) -> None:
         events, snapshot = _run_short_sim()
         usage = [

@@ -8,12 +8,34 @@ import unittest
 
 from agent_world.usage import (
     append_usage_record,
+    summarize_provider_cost,
     summarize_codex_simulation_credits,
     summarize_usd_cost,
 )
 
 
 class UsageTests(unittest.TestCase):
+    def test_unknown_provider_cost_is_not_zero(self):
+        for records in ([{"cost": None}], [{}], [{"cost": 0.02}, {"cost": None}]):
+            with self.subTest(records=records):
+                result = summarize_provider_cost(records)
+                self.assertFalse(result["available"])
+                self.assertIsNone(result["total_cost_usd"])
+                self.assertEqual(result["unreported_calls"], 1)
+
+    def test_reported_zero_and_subtotal_are_preserved(self):
+        self.assertEqual(summarize_provider_cost([{"cost": 0}])["total_cost_usd"], 0)
+        self.assertEqual(summarize_provider_cost([])["total_cost_usd"], 0)
+        result = summarize_provider_cost([{"cost": 0.02}, {"cost": None}])
+        self.assertEqual(result["reported_subtotal_usd"], 0.02)
+        result = summarize_provider_cost([{"cost": 0, "provider_reported_cost_usd": 0.03}])
+        self.assertEqual(result["total_cost_usd"], 0.03)
+
+    def test_api_estimate_does_not_invent_provider_charge(self):
+        result = summarize_usd_cost([{"model": "gpt-5.6-luna", "prompt_tokens": 100, "cost": None}])
+        self.assertTrue(result["available"])
+        self.assertIsNone(result["provider_reported_cost_usd"])
+
     def test_codex_credits_are_run_scoped_and_reasoning_is_not_double_counted(self) -> None:
         summary = summarize_codex_simulation_credits(
             [
@@ -209,7 +231,9 @@ class UsageTests(unittest.TestCase):
         assert summary is not None
         self.assertFalse(summary["available"])
         self.assertEqual(summary["unknown_models"], ["future-model"])
-        self.assertEqual(summary["provider_reported_cost_usd"], 1.25)
+        self.assertIsNone(summary["provider_reported_cost_usd"])
+        self.assertEqual(summary["provider_cost_coverage"]["reported_subtotal_usd"], 1.25)
+        self.assertEqual(summary["provider_cost_coverage"]["unreported_calls"], 1)
         # Known models are still priced even when others are unknown.
         self.assertEqual(summary["models"]["gpt-5.6-sol"]["cost_usd"], 5.0)
 

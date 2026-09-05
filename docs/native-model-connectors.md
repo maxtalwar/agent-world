@@ -3,7 +3,9 @@
 Agent World supports the official native CLIs through `AntigravityBrain`
 (`antigravity_cli`) and `MuseBrain` (`muse_cli`). These are laboratory
 connectors; benchmark certification remains the responsibility of the selected
-versioned recipe. No model-backed runs are launched by installation or setup.
+versioned recipe. No model-backed runs are launched by installation or setup. Explicitly authorized
+live serial and four-worker tests subsequently passed; see the
+[readiness evidence](native-connector-validation-2026-09-05.md).
 
 ## Installation and accounts
 
@@ -34,7 +36,7 @@ a model. CLI 1.1.26 returns empty stdout from both `agy agents` and
 `agy --print /agents`, even though the interactive `/agents` panel correctly
 discovers the workspace definition. That empty output is not an authentication
 or discovery failure. The isolated definition was verified in that panel with
-a Google AI Pro account; live decisions remain a separate smoke-test step.
+a Google AI Pro account. The subsequent live smoke tests passed.
 
 Muse preflight checks binary version and the presence of account credentials.
 It does **not** prove that a saved token is valid, that a plan has quota, or that
@@ -55,7 +57,7 @@ The authenticated Google catalog on 2026-09-04 included
 `gemini-3.7-flash-low`, `gemini-3.7-flash-medium`, and
 `gemini-3.7-flash-high`. Use the exact slug and matching effort. The connector
 does not silently replace unavailable models or change effort. Muse defaults
-to `muse-spark-1.3`; its actual account entitlement remains to be tested.
+to `muse-spark-1.3`; live calls with the configured account passed the readiness tests.
 
 Example ordinary experiment config, to save and launch **after account setup
 and authorization to spend model quota**:

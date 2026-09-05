@@ -369,6 +369,26 @@ def summarize_codex_simulation_credits(records: list[dict[str, Any]]) -> dict[st
     }
 
 
+def summarize_provider_cost(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Preserve unknown charges; a known subtotal is not a complete run cost."""
+    reported = []
+    for record in records:
+        value = record.get("provider_reported_cost_usd")
+        if value is None:
+            value = record.get("cost")
+        if value is not None:
+            reported.append(Decimal(str(value)))
+    subtotal = round(float(sum(reported, Decimal(0))), 6)
+    missing = len(records) - len(reported)
+    return {
+        "available": missing == 0,
+        "reported_calls": len(reported),
+        "unreported_calls": missing,
+        "reported_subtotal_usd": subtotal,
+        "total_cost_usd": subtotal if not missing else None,
+    }
+
+
 def summarize_usd_cost(records: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Estimate a run's USD cost from token usage at API list prices.
 
@@ -400,14 +420,8 @@ def summarize_usd_cost(records: list[dict[str, Any]]) -> dict[str, Any] | None:
     }
     models: dict[str, dict[str, Any]] = {}
     unknown_models: set[str] = set()
-    provider_reported = 0.0
 
     for record in records:
-        provider_reported += float(
-            record.get("provider_reported_cost_usd")
-            if record.get("provider_reported_cost_usd") is not None
-            else record.get("cost") or 0
-        )
         prompt_tokens = _nonnegative_int(record.get("prompt_tokens"))
         cached_tokens = min(prompt_tokens, _nonnegative_int(record.get("cached_tokens")))
         cache_write_tokens = min(
@@ -457,6 +471,7 @@ def summarize_usd_cost(records: list[dict[str, Any]]) -> dict[str, Any] | None:
             model_row["cost_usd"] += value
 
     total_cost = sum(components.values(), Decimal(0))
+    provider_cost = summarize_provider_cost(records)
     return {
         "available": not unknown_models,
         "basis": "token_derived_api_list_price",
@@ -472,7 +487,8 @@ def summarize_usd_cost(records: list[dict[str, Any]]) -> dict[str, Any] | None:
             "output": _decimal_number(components["output"]),
             "total": _decimal_number(total_cost),
         },
-        "provider_reported_cost_usd": round(provider_reported, 6),
+        "provider_reported_cost_usd": provider_cost["total_cost_usd"],
+        "provider_cost_coverage": provider_cost,
         "models": {
             model: {
                 **{key: value for key, value in row.items() if key != "cost_usd"},
