@@ -301,9 +301,11 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         "devin",
         "grok",
         "zcode",
+        "antigravity",
+        "muse",
     }:
         raise ValueError(
-            "brain must be survival, openrouter, codex, claude, cursor, devin, grok, or zcode."
+            "brain must be survival, openrouter, codex, claude, cursor, devin, grok, zcode, antigravity, or muse."
         )
     spec = BrainSpec.resolve(
         brain, model=payload.get("model"), reasoning_effort=payload.get("reasoning_effort"),
@@ -366,12 +368,12 @@ def _parse_run_config(payload: dict[str, Any]) -> RunConfig:
         brain=brain,
         model=(
             model
-            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"}
+            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode", "antigravity", "muse"}
             else None
         ),
         reasoning_effort=(
             reasoning_effort
-            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"}
+            if brain in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode", "antigravity", "muse"}
             else None
         ),
         log_agent_io=bool(payload.get("log_agent_io", TUNED_OBSERVATORY_DEFAULTS["log_agent_io"])),

@@ -22,6 +22,26 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-04 — Muse's completion metadata does not establish returned model identity
+
+**Muse Code 1.0.3 reports its requested model as the completed model even when
+the provider response names a different model, and its stdout omits usage
+available in the retained session log.** A loopback fake Responses server
+returned `provider-reported-different` to a request for `muse-spark-1.3`.
+The native `model_completed.model` event still named `muse-spark-1.3`.
+Agent World therefore records it as native configuration with requested-only
+provenance, not observed provider identity. In the same offline protocol test,
+synthetic usage of 100 input, 20 output, 50 cached, and 8 reasoning tokens was
+absent from stdout but present in the retained root-run completion. Mirrored
+goal-attribution records must not be counted a second time. Earlier offline
+echo inspection also showed default reminder tasks; disabling their runtime
+capabilities reduced the fixture to one model request per decision. These are
+harness artifacts, not evidence about Muse Spark's capabilities or live costs.
+Evidence: `tests/test_muse_native_offline.py` (installed native binary, loopback
+server, including an alternate returned model), `tests/test_native_headless_brains.py`
+(trace deduplication and reminder auditing), and
+[connector notes](native-model-connectors.md). No live model quota was used.
+
 ## 2026-09-03 — ZCode usage gaps erased cache savings but retained text made reasoning recoverable
 
 **The GLM 5.3 ZCode benchmark recorded every cache read as zero because the

@@ -162,7 +162,7 @@ For a uniform cohort, set `brain`, `id`, and optionally `reasoning_effort`:
 ```
 
 `brain` selects the actual connector (`openrouter`, `codex`, `claude`,
-`cursor`, `devin`, `grok`, or `zcode`); `id` is the callable model identifier
+`cursor`, `devin`, `grok`, `zcode`, `antigravity`, or `muse`); `id` is the callable model identifier
 for that connector. The boundary is part of provenance: the same model name
 through OpenRouter and a first-party CLI is a different run configuration.
 
@@ -196,7 +196,7 @@ entirely because its protocol rejects incompatible overrides.
 - `max_workers` is the global same-tick decision pool. It is not the number of
   run cells. It is an operational throughput knob, not a benchmark treatment.
 - `provider_max_workers` optionally sets connector ceilings by `openrouter`,
-  `codex`, `claude`, `cursor`, `devin`, `grok`, or `zcode`. Every ceiling is
+  `codex`, `claude`, `cursor`, `devin`, `grok`, `zcode`, `antigravity`, or `muse`. Every ceiling is
   still clamped by `max_workers`. Benchmark configs may set either worker
   field without becoming experimental or losing protocol compliance.
 - Worker count does not change what an agent sees: the engine freezes the tick,
@@ -286,3 +286,6 @@ Neither command deletes artifacts. Retain catalog-referenced evidence, and
 review unreferenced worktrees/caches only after a verified export. JSON/JSONL
 artifacts are portable; pickle checkpoints require trusted compatible Python
 source. Copy the event ledger beside its checkpoint when relocating it.
+
+For Antigravity and Muse Code installation, authentication, exact model IDs,
+and telemetry limits, see [native model connectors](native-model-connectors.md).

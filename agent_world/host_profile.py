@@ -34,6 +34,8 @@ FALLBACK_PROVIDER_MAX_WORKERS: dict[str, int] = {
     "devin_cli": 4,
     "grok_cli": 20,
     "zcode_cli": 20,
+    "antigravity_cli": 4,
+    "muse_cli": 4,
 }
 
 _HARNESS_COMMANDS: dict[str, tuple[str, ...]] = {
@@ -43,6 +45,8 @@ _HARNESS_COMMANDS: dict[str, tuple[str, ...]] = {
     "devin_cli": ("devin",),
     "grok_cli": ("grok",),
     "zcode_cli": ("zcode-cli",),
+    "antigravity_cli": ("agy",),
+    "muse_cli": ("muse",),
 }
 
 
@@ -110,6 +114,8 @@ def recommend_worker_limits(host: Mapping[str, Any]) -> dict[str, Any]:
         "devin_cli": ordinary_default,
         "grok_cli": half_capacity,
         "zcode_cli": half_capacity,
+        "antigravity_cli": ordinary_default,
+        "muse_cli": ordinary_default,
     }
     return {
         "ordinary_default": ordinary_default,

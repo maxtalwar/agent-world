@@ -45,6 +45,8 @@ BENCHMARK_PROVIDER_MAX_WORKERS = {
     "devin_cli": 4,
     "grok_cli": 20,
     "zcode_cli": 20,
+    "antigravity_cli": 4,
+    "muse_cli": 4,
 }
 # Safety ceiling for Claude adaptive thinking per decision
 # (MAX_THINKING_TOKENS). The shared protocol control is effort=low; this cap is
@@ -390,6 +392,8 @@ BENCHMARK_PROVIDER_FINGERPRINT_FILES: dict[str, tuple[str, ...]] = {
     "devin_cli": ("devin_brain.py",),
     "grok_cli": ("grok_brain.py",),
     "zcode_cli": ("zcode_brain.py",),
+    "antigravity_cli": ("antigravity_brain.py", "headless_brain.py"),
+    "muse_cli": ("muse_brain.py", "headless_brain.py"),
     "openrouter": ("openrouter_brain.py",),
     "openai_compatible": ("openrouter_brain.py",),
 }

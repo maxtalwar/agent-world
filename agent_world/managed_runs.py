@@ -59,6 +59,7 @@ _PROVIDER_WORKER_FLAGS = {
     "claude": "claude-max-workers", "cursor": "cursor-max-workers",
     "devin": "devin-max-workers", "grok": "grok-max-workers",
     "zcode": "zcode-max-workers",
+    "antigravity": "antigravity-max-workers", "muse": "muse-max-workers",
 }
 _MODEL_BACKED_BRAINS = set(_PROVIDER_WORKER_FLAGS)
 _REASONING_EFFORTS = {"minimal", "low", "medium", "high", "xhigh", "max"}
@@ -128,7 +129,7 @@ def load_run_config(path: Path) -> dict[str, Any]:
     if population is None:
         if model["brain"] not in _MODEL_BACKED_BRAINS:
             raise ValueError(
-                "model.brain must be openrouter, codex, claude, cursor, devin, grok, or zcode"
+                "model.brain must be openrouter, codex, claude, cursor, devin, grok, zcode, antigravity, or muse"
             )
         effort = model.get("reasoning_effort")
         if effort is not None and effort not in _REASONING_EFFORTS:

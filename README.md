@@ -263,6 +263,16 @@ checkpoints or reproducing old source requires the original commit. See
 [versioned recipes](docs/experiment-recipes.md). ZCode retains a 20-worker provider ceiling,
 clamped to the run population.
 
+### Antigravity and Muse Code agents
+
+Native connectors are registered as `antigravity` (`agy`) and `muse`
+(Muse Code). Defaults are `gemini-3.7-flash-low` and `muse-spark-1.3`,
+both requesting low effort. They use fresh conversations and start with four
+workers per provider. See [setup and validation](docs/native-model-connectors.md)
+for account requirements, managed-run examples, tool boundaries, and telemetry
+limitations. Installation and model catalog access alone do not prove account
+eligibility or benchmark readiness.
+
 ### Cursor subscription agents
 
 `CursorBrain` runs Grok and other models exposed by the installed Cursor Agent

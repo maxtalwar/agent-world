@@ -67,6 +67,8 @@ from agent_world.host_profile import (
     resolved_worker_recommendations,
     write_host_profile,
 )
+from agent_world.antigravity_brain import AntigravityBrain
+from agent_world.muse_brain import MuseBrain
 from agent_world.zcode_brain import ZCodeBrain
 from agent_world.usage import (
     append_usage_records,
@@ -175,14 +177,14 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--specialization-mode", choices=["generalists", "specialists"], default=None)
     run_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode", "antigravity", "muse"],
         default=None,
     )
     run_parser.add_argument(
         "--model",
         default=None,
         help=(
-            "Model for --brain openrouter/codex/claude/cursor/devin/grok/zcode. "
+            "Model for --brain openrouter/codex/claude/cursor/devin/grok/zcode/antigravity/muse. "
             "Uses the selected brain's environment default."
         ),
     )
@@ -202,7 +204,7 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["minimal", "low", "medium", "high", "xhigh", "max"],
         default=None,
         help=(
-            "Reasoning effort for --brain openrouter/codex/claude/cursor/devin/grok/zcode. "
+            "Reasoning effort for --brain openrouter/codex/claude/cursor/devin/grok/zcode/antigravity/muse. "
             "Uses the selected brain's environment default."
         ),
     )
@@ -243,6 +245,8 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--devin-max-workers", type=int, default=None)
     run_parser.add_argument("--grok-max-workers", type=int, default=None)
     run_parser.add_argument("--zcode-max-workers", type=int, default=None)
+    run_parser.add_argument("--antigravity-max-workers", type=int, default=None)
+    run_parser.add_argument("--muse-max-workers", type=int, default=None)
     run_parser.add_argument(
         "--openrouter-max-workers",
         dest="openrouter_max_workers",
@@ -412,7 +416,7 @@ def build_parser() -> argparse.ArgumentParser:
     ablate_parser.add_argument("--seed", type=int, default=11)
     ablate_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode", "antigravity", "muse"],
         default="survival",
     )
     ablate_parser.add_argument("--model", default=None)
@@ -459,7 +463,7 @@ def build_parser() -> argparse.ArgumentParser:
     experiment_parser.add_argument("--seeds", type=int, nargs="+", default=[11])
     experiment_parser.add_argument(
         "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"],
+        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode", "antigravity", "muse"],
         default="survival",
         help="Defaults to the free local scripted brain. LLM calls occur only when explicitly selected.",
     )
@@ -644,6 +648,8 @@ _PROVIDER_WORKER_ARGUMENTS = {
     "devin_cli": "devin_max_workers",
     "grok_cli": "grok_max_workers",
     "zcode_cli": "zcode_max_workers",
+    "antigravity_cli": "antigravity_max_workers",
+    "muse_cli": "muse_max_workers",
     "openrouter": "openrouter_max_workers",
 }
 
@@ -813,6 +819,8 @@ def _run(args: argparse.Namespace) -> None:
             "devin_max_workers",
             "grok_max_workers",
             "zcode_max_workers",
+            "antigravity_max_workers",
+            "muse_max_workers",
             "openrouter_max_workers",
             "decision_mode",
         ):
@@ -1113,6 +1121,8 @@ def _run(args: argparse.Namespace) -> None:
                 "devin_max_workers": provider_max_workers["devin_cli"],
                 "grok_max_workers": provider_max_workers["grok_cli"],
                 "zcode_max_workers": provider_max_workers["zcode_cli"],
+                "antigravity_max_workers": provider_max_workers["antigravity_cli"],
+                "muse_max_workers": provider_max_workers["muse_cli"],
                 "openrouter_max_workers": provider_max_workers["openrouter"],
                 "decision_mode": decision_mode,
                 "log_agent_io": not args.no_agent_io_log,
@@ -1419,7 +1429,7 @@ def _apply_benchmark_protocol(args: argparse.Namespace) -> None:
         raise ValueError(
             f"{recipe.id} uses one uniform model cohort; omit --population."
         )
-    if args.brain not in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode"}:
+    if args.brain not in {"openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode", "antigravity", "muse"}:
         raise ValueError(
             f"{recipe.id} requires an explicit model-backed --brain."
         )
@@ -1564,6 +1574,10 @@ def _ablate(args: argparse.Namespace) -> None:
             return CursorBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         if args.brain == "grok":
             return GrokBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
+        if args.brain == "antigravity":
+            return AntigravityBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
+        if args.brain == "muse":
+            return MuseBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         if args.brain == "zcode":
             return ZCodeBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
         if args.brain == "devin":
