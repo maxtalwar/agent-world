@@ -108,7 +108,7 @@ class GrokBrainTests(unittest.TestCase):
             command[command.index("--disallowed-tools") + 1].split(",")
         )
         self.assertTrue(
-            {"run_terminal_command", "list_dir", "ask_user_question", "search_tool"}
+            {"run_terminal_command", "list_dir", "ask_user_question", "search_tool", "write"}
             <= disallowed_tools
         )
         self.assertNotIn("XAI_API_KEY", run.call_args.kwargs["env"])

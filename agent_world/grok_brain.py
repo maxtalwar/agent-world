@@ -48,6 +48,7 @@ GROK_DISALLOWED_TOOLS = ",".join(
         "grep",
         "read_file",
         "search_replace",
+        "write",
         "list_dir",
         "web_search",
         "web_fetch",

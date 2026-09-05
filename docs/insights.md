@@ -1486,3 +1486,22 @@ Evidence: runs/jobs/muse-spark-1-1-v7-20260905/controller-events.jsonl records
 the 04:14 UTC reap and resume. Its seed-11/run.jsonl records 3900 seconds of
 waits against 43200 seconds, followed by run_resumed with quota_wait_hours=0.
 Validation: 592 unit tests passed.
+
+## 2026-09-05 — Grok cancellation can mean attempted file output
+
+The corrected Grok 4.6 seed-11 trial paused at tick 45 because agent-10 tried
+to invoke the native write tool with its decision JSON as file content.
+The CLI's permission layer cancelled the call, ending the turn with
+PermissionCancelled rather than returning structured output. The user-turn
+rulebook was present. This is not evidence of a provider outage or missing
+rules, and the proposed file content was not salvaged as a valid decision.
+
+The connector's exclusion list omitted the observed native tool name write.
+It is now excluded for future launches, with command-construction regression
+coverage. Existing studies remain pinned to their launch source; this change
+has not been live-validated or applied to their harness. Their cancellation
+and recovery history must remain visible in any eventual admission decision.
+
+Evidence: native Grok session 01a06fd0-5d89-7cc0-b415-4b5a4f57c530,
+events.jsonl and updates.jsonl; run-usage-partial-tick-45.jsonl in
+runs/managed/grok-4-6-v7-corrected-20260905/seed-11.
