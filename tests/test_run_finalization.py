@@ -252,6 +252,33 @@ class ManagedFinalizationTests(unittest.TestCase):
 
 
 class RecipeFinalizationTests(unittest.TestCase):
+    def test_requested_identity_is_sufficient_without_response_attestation(self):
+        from agent_world.run_finalization import _audit_report
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "manifest.json"
+            cell = {"seed": 11, "target_ticks": 50, "run_manifest": str(manifest)}
+            job = {"config": {"model": {"id": "requested-model"}}}
+            report = {
+                "run": {"completed": True, "final_tick": 50},
+                "reliability": {"benchmark_integrity_status": "clean",
+                                "usage_record_coverage_pct": 100.0},
+            }
+            for resolved, expected in [
+                ({"unknown": 10}, "requested_only"),
+                ({}, "requested_only"),
+                ({"requested-model": 10}, "verified"),
+                ({"different-model": 10}, "needs_review"),
+                ({"requested-model": 9, "different-model": 1}, "needs_review"),
+            ]:
+                with self.subTest(resolved=resolved):
+                    manifest.write_text(json.dumps({"resolved_models": resolved}))
+                    result = _audit_report(job, cell, report)
+                    self.assertEqual(result["model_provenance"]["status"], expected)
+                    self.assertEqual(bool(result["blockers"]), expected == "needs_review")
+            job["config"]["model"]["id"] = None
+            self.assertEqual(_audit_report(job, cell, report)["model_provenance"]["status"],
+                             "needs_review")
+
     def test_finalization_checks_recipe_identity_and_digest(self):
         from agent_world.run_finalization import _audit_report
         from agent_world.protocols import get_recipe

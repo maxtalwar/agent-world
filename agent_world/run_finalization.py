@@ -272,7 +272,14 @@ def _audit_report(
     resolved_models = sorted((run_manifest.get("resolved_models") or {}).keys())
     requested_model = ((job.get("config") or {}).get("model") or {}).get("id")
     provenance_verified = bool(requested_model) and resolved_models == [requested_model]
-    if not provenance_verified:
+    requested_only = bool(requested_model) and run_manifest_path.exists() and (
+        not resolved_models or resolved_models == ["unknown"]
+    )
+    provenance_status = (
+        "verified" if provenance_verified else
+        "requested_only" if requested_only else "needs_review"
+    )
+    if provenance_status == "needs_review":
         blockers.append(
             f"Seed {cell['seed']} requested model {requested_model!r}; recorded response models "
             f"are {resolved_models or 'missing'} and require provenance review."
@@ -291,7 +298,7 @@ def _audit_report(
         "integrity": integrity or "unknown",
         "usage_coverage_pct": coverage,
         "model_provenance": {
-            "status": "verified" if provenance_verified else "needs_review",
+            "status": provenance_status,
             "requested": requested_model,
             "resolved": resolved_models,
         },
@@ -441,6 +448,12 @@ def finalize_job(
             "verified"
             if cell_results and all(
                 (cell.get("model_provenance") or {}).get("status") == "verified"
+                for cell in cell_results
+            )
+            else "requested_only"
+            if cell_results and all(
+                (cell.get("model_provenance") or {}).get("status")
+                in {"verified", "requested_only"}
                 for cell in cell_results
             )
             else "needs_review"

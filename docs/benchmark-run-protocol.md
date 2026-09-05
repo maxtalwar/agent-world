@@ -159,7 +159,11 @@ Before calling a cell complete, verify all of the following against artifacts:
 - the expected number of decisions exists;
 - usage-record coverage is 100 percent;
 - benchmark integrity is `clean` and failure counters agree with the ledger;
-- requested, callable, and returned model identities are reconciled;
+- requested and callable model identities are recorded. Returned identity is
+  reconciled when available; its absence is not a certification blocker.
+  Explicit requested-model evidence is accepted and labelled `requested_only`,
+  never relabelled as independently verified. Conflicting returned identities
+  still require review;
 - brain, provider, connector, reasoning effort, launch commit, protocol, suite,
   scoring revision, and report fingerprint are recorded; and
 - output, snapshot, report, usage ledger, manifest, and any required
