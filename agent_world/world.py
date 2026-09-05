@@ -1584,6 +1584,9 @@ class WorldEngine:
     def _action_post_ledger_note(
         self, agent: Agent, action: dict[str, Any], action_points: int
     ) -> int:
+        if self.state.config.town_ledger_output_mode == "disabled":
+            self._invalid(agent, action, "The town ledger is disabled in this world.")
+            return action_points - 1
         if self.state.config.economy_mode != "organic":
             self._invalid(agent, action, "The town ledger is available only in organic worlds.")
             return action_points - 1

@@ -289,3 +289,7 @@ source. Copy the event ledger beside its checkpoint when relocating it.
 
 For Antigravity and Muse Code installation, authentication, exact model IDs,
 and telemetry limits, see [native model connectors](native-model-connectors.md).
+
+For experiments, town_ledger_output_mode may be "disabled": this removes the
+board from observations, action listings, and prompts and rejects posting.
+It requires town_ledger_seed_mode "none". Existing defaults are unchanged.

@@ -469,3 +469,27 @@ class OrganicInterfaceGatingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class DisabledTownLedgerTests(unittest.TestCase):
+    def test_disabled_board_removes_prompt_observation_and_action(self):
+        engine = _organic_engine(town_ledger_output_mode="disabled")
+        observation = build_observation(engine.state, "agent-1")
+        self.assertNotIn("town_ledger", observation)
+        self.assertNotIn("town_ledger", build_dynamic_observation(observation))
+        self.assertNotIn("post_ledger_note", [a["type"] for a in observation["valid_actions"]])
+        self.assertNotIn("post_ledger_note", observation["world"]["mechanics"]["action_notes"])
+        for mode in ("baseline", "legacy", "mandated"):
+            world = {**observation["world"], "town_ledger_prompt_mode": mode}
+            self.assertNotIn("ledger", build_static_context(world).lower())
+
+    def test_disabled_board_rejects_post_without_creating_note(self):
+        engine = _organic_engine(town_ledger_output_mode="disabled")
+        engine.tick({"agent-1": AgentDecision(actions=[
+            {"type": "post_ledger_note", "title": "Offer", "body": "Food available"}
+        ])})
+        self.assertFalse(any(e.type == "ledger_note" for e in engine.state.events))
+        self.assertTrue(any("disabled" in e.message for e in engine.state.events))
+
+    def test_disabled_board_rejects_seeded_notes(self):
+        with self.assertRaisesRegex(ValueError, "Disabled town ledger"):
+            _organic_engine(town_ledger_output_mode="disabled", town_ledger_seed_mode="demo")

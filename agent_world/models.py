@@ -140,8 +140,10 @@ class WorldConfig:
             )
         if self.town_ledger_seed_mode not in {"none", "demo", "peer_demo", "request"}:
             raise ValueError("town_ledger_seed_mode must be none, demo, peer_demo, or request")
-        if self.town_ledger_output_mode not in {"action", "message"}:
-            raise ValueError("town_ledger_output_mode must be action or message")
+        if self.town_ledger_output_mode not in {"action", "message", "disabled"}:
+            raise ValueError("town_ledger_output_mode must be action, message, or disabled")
+        if self.town_ledger_output_mode == "disabled" and self.town_ledger_seed_mode != "none":
+            raise ValueError("Disabled town ledger requires town_ledger_seed_mode=none")
         if self.town_ledger_action_cost < 0:
             raise ValueError("town_ledger_action_cost cannot be negative")
         for name in ("communication_action_cost", "group_admin_action_cost"):

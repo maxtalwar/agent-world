@@ -308,9 +308,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run_parser.add_argument(
         "--town-ledger-output-mode",
-        choices=["action", "message"],
+        choices=["action", "message", "disabled"],
         default=None,
-        help="Represent ledger posting as a regular action or as a dedicated communication mode.",
+        help="Represent ledger posting as an action or message, or disable the town ledger.",
     )
     run_parser.add_argument(
         "--codex-action-max-items",

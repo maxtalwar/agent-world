@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "run_id": "grok-4-6-low-ledger-off-20260905",
+  "kind": "experiment",
+  "recipe": "participant-v7",
+  "question": "What is the effect of the town ledger and reasoning effort on survival, execution, production, and commerce? Factorial cell: grok-4.6, low, ledger off; matched seeds 11/41.",
+  "model": {
+    "brain": "grok",
+    "id": "grok-4.6",
+    "reasoning_effort": "low"
+  },
+  "seeds": [
+    11,
+    41
+  ],
+  "world": {
+    "preset": "frontier-generalists",
+    "town_ledger_output_mode": "disabled",
+    "town_ledger_prompt_mode": "baseline",
+    "town_ledger_seed_mode": "none",
+    "town_ledger_action_cost": 1
+  },
+  "runtime": {
+    "ticks": 50,
+    "agents": 10,
+    "max_workers": 1,
+    "provider_max_workers": {
+      "grok": 1
+    },
+    "quota_wait_hours": 12
+  },
+  "harness": {
+    "connector_profile": "connector-v3",
+    "conversation_mode": "fresh-conversation",
+    "decision_mode": "raw"
+  }
+}

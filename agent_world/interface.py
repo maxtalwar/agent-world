@@ -125,6 +125,13 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         if state.config.economy_mode == "organic"
         else set()
     )
+    ledger_enabled = state.config.town_ledger_output_mode != "disabled"
+    if not ledger_enabled:
+        disabled_actions.add("post_ledger_note")
+        mechanics = {**mechanics, "action_notes": {
+            key: value for key, value in mechanics["action_notes"].items()
+            if key != "post_ledger_note"
+        }}
     schema_disabled_actions = disabled_actions | (
         set() if state.config.economy_mode == "organic" else ORGANIC_ONLY_ACTION_TYPES
     )
@@ -270,7 +277,7 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
                     "recent_notes": ledger_notes[-8:],
                 }
             }
-            if state.config.economy_mode == "organic"
+            if state.config.economy_mode == "organic" and ledger_enabled
             else {}
         ),
         "known_groups": {
@@ -415,6 +422,8 @@ def _render_static_context(world: dict[str, Any]) -> str:
         if ledger_output_mode == "message"
         else 'add {"type":"post_ledger_note","title":"Short title","body":"Concrete body"} to actions'
     )
+    if ledger_output_mode == "disabled":
+        ledger_prompt_mode = "disabled"
     if ledger_prompt_mode == "baseline":
         if world.get("economy_mode") == "organic":
             lines.append(
@@ -526,6 +535,8 @@ def _render_static_context(world: dict[str, Any]) -> str:
         name for name, recipe in world_recipes.items() if not recipe.get("outputs")
     ]
     for action in action_schema_for_transfers(world.get("transfer_kind_mode", "self_declared")):
+        if ledger_output_mode == "disabled" and action.get("type") == "post_ledger_note":
+            continue
         if action.get("type") in disabled_actions:
             continue
         if world.get("economy_mode") != "organic" and action.get("type") in ORGANIC_ONLY_ACTION_TYPES:
@@ -588,7 +599,7 @@ def _render_static_context(world: dict[str, Any]) -> str:
                 "- each agent may have at most 3 unaccepted proposals and 5 active contracts as either party; unaccepted proposals expire after 5 ticks and may be cancelled by the proposer.",
             ]
         )
-        if world.get("town_ledger_prompt_mode", "baseline") != "baseline":
+        if ledger_output_mode != "disabled" and world.get("town_ledger_prompt_mode", "baseline") != "baseline":
             lines.extend(
                 [
                     "",
