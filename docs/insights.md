@@ -22,6 +22,23 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-05 — More reasoning amplified board use but reduced farming with the board present
+
+**Luna high reasoning improved competence in all four paired comparisons,
+while the town board coincided with much less agriculture at high effort.**
+Across seeds 11/41, high/off completed five farms and 25 harvests versus one
+farm and two harvests for high/on. Both retained eight of twenty agents,
+but endpoint health was 230 versus 96; high/on posted 323 notes, consuming
+8.58% of nominal AP. Low/on posted 100 notes (2.92% AP) and slightly improved
+competence versus low/off (27.17 versus 25.29). The board's high-effort pooled
+competence penalty (43.01 to 33.29) is mostly seed 41: seed 11 improves
+0.61 points, seed 41 loses 21.02. Board on also delayed first deaths in both
+high-effort worlds. This is a behavioral interaction worth investigating,
+not proof that communication is harmful or that AP cost is the cause.
+All eight diagnostic cells share one source commit, clean integrity, and
+complete usage coverage; output-contract failures are retained.
+[Results and evidence](luna-ledger-factorial-results-2026-09-05.md).
+
 ## 2026-09-05 — Missing native charges appeared as free calls in shared reports
 
 **Twenty successful native smoke-test decisions with unreported monetary cost
