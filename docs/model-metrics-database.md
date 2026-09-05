@@ -213,3 +213,11 @@ The builder writes atomically, verifies SQLite integrity, and records hashes of
 the builder, source catalog, reports, usage ledgers, and manifests, plus the
 effective date and sources for the USD rate card. It stores telemetry and
 outcome evidence, not prompt or response bodies.
+
+## Multiple protocol leaderboards
+
+Model keys are protocol-specific for new v7 studies. Ranking is partitioned
+by the catalog model suite; the leaderboard view exposes that suite. Use
+`python3 -m agent_world.benchmark_db leaderboard --suite participant-v7`
+for the current field, or participant-v6 for the historical comparison.
+Unfiltered output renders separate protocol tables.

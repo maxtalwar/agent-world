@@ -279,6 +279,23 @@ class RecipeFinalizationTests(unittest.TestCase):
             self.assertEqual(_audit_report(job, cell, report)["model_provenance"]["status"],
                              "needs_review")
 
+    def test_grok_alias_is_exact_and_provider_scoped(self):
+        from agent_world.run_finalization import _audit_report
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "manifest.json"
+            cell = {"seed": 11, "target_ticks": 50, "run_manifest": str(manifest)}
+            report = {"run": {"completed": True, "final_tick": 50},
+                      "reliability": {"benchmark_integrity_status": "clean",
+                                      "usage_record_coverage_pct": 100.0}}
+            for brain, returned, accepted in [
+                ("grok", "grok-4.5-build", True),
+                ("grok", "grok-4.6-build", False),
+                ("codex", "grok-4.5-build", False),
+            ]:
+                manifest.write_text(json.dumps({"resolved_models": {returned: 10}}))
+                job = {"config": {"model": {"brain": brain, "id": "grok-4.5"}}}
+                self.assertEqual(not _audit_report(job, cell, report)["blockers"], accepted)
+
     def test_finalization_checks_recipe_identity_and_digest(self):
         from agent_world.run_finalization import _audit_report
         from agent_world.protocols import get_recipe

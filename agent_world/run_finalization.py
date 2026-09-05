@@ -271,7 +271,19 @@ def _audit_report(
     )
     resolved_models = sorted((run_manifest.get("resolved_models") or {}).keys())
     requested_model = ((job.get("config") or {}).get("model") or {}).get("id")
-    provenance_verified = bool(requested_model) and resolved_models == [requested_model]
+    native_aliases = {
+        "grok-4.5": "grok-4.5-build",
+        "grok-4.6": "grok-4.6-build",
+    }
+    model_config = ((job.get("config") or {}).get("model") or {})
+    alias_verified = (
+        model_config.get("brain") == "grok"
+        and requested_model in native_aliases
+        and resolved_models == [native_aliases[requested_model]]
+    )
+    provenance_verified = bool(requested_model) and (
+        resolved_models == [requested_model] or alias_verified
+    )
     requested_only = bool(requested_model) and run_manifest_path.exists() and (
         not resolved_models or resolved_models == ["unknown"]
     )
@@ -301,6 +313,7 @@ def _audit_report(
             "status": provenance_status,
             "requested": requested_model,
             "resolved": resolved_models,
+            "basis": "reviewed_native_alias" if alias_verified else provenance_status,
         },
         "cost_accounting": cost_accounting,
         "provider_reported_cost_usd": provider_cost,

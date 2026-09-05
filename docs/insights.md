@@ -1532,3 +1532,17 @@ The public source snapshot is not asserted to match the installed binary
 revision exactly; its mechanism agrees with the installed-binary traces.
 The existing user-turn rulebook workaround avoids this system-message rewrite.
 Native session identifiers and private diagnostic artifacts remain local.
+
+## 2026-09-05 — More construction did not imply stronger survival in v7
+
+Across seeds 11 and 41, Muse Spark 1.2 retained 17/20 agents with five completed
+structures. Grok 4.5 built eight and Grok 4.6 built nine, but each retained
+only 5/20 agents. Grok 4.5 also recorded 24 accepted trades. The ranking
+therefore separates activity from sustained outcomes: construction and trade
+counts alone would suggest a different ordering than survival-sensitive
+competence. This is a two-seed observation, not a causal claim about building.
+
+Evidence: the participant-v7 rows in data/model-benchmarks.sqlite,
+model_results joined to models, and docs/v7-leaderboard-results-2026-09-05.md.
+Only corrected-rulebook Grok studies are included; native cancellation and
+checkpoint recovery caveats remain attached to those results.

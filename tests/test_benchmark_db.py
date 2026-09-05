@@ -22,11 +22,23 @@ class BenchmarkDatabaseTests(unittest.TestCase):
             catalog_digest = connection.execute(
                 "SELECT value FROM database_metadata WHERE key = 'catalog_sha256'"
             ).fetchone()[0]
-            rows = connection.execute("SELECT * FROM leaderboard ORDER BY rank").fetchall()
+            rows = [row[:-1] for row in connection.execute("SELECT * FROM leaderboard WHERE suite = 'participant-v6' ORDER BY rank").fetchall()]
         self.assertEqual(catalog_digest, hashlib.sha256(catalog.read_bytes()).hexdigest())
         digest = hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()
         self.assertEqual(len(rows), 19)
         self.assertEqual(digest, expected_leaderboard_sha256)
+
+    def test_committed_protocols_have_independent_contiguous_ranks(self):
+        from agent_world.benchmark_db import format_leaderboard
+        database = Path(__file__).resolve().parents[1] / "data/model-benchmarks.sqlite"
+        with sqlite3.connect(database) as connection:
+            for suite, count in [("participant-v6", 19), ("participant-v7", 7)]:
+                ranks = [r[0] for r in connection.execute(
+                    "SELECT rank FROM leaderboard WHERE suite=? ORDER BY rank", (suite,))]
+                self.assertEqual(ranks, list(range(1, count + 1)))
+        output = format_leaderboard(database, "participant-v7")
+        self.assertIn("Muse Spark 1.2", output)
+        self.assertNotIn("Fable 5", output)
 
     def test_latency_summary_uses_interpolated_percentiles(self) -> None:
         summary = _latency_summary([1, 3])

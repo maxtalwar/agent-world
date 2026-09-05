@@ -44,8 +44,10 @@ USD_RATE_CARD_SOURCES = {
     "anthropic": "https://platform.claude.com/docs/en/pricing",
     "openrouter": "https://openrouter.ai/models",
     "xai": "https://docs.x.ai/developers/models/grok-4.6",
+    "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5",
+    "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
 }
-USD_RATE_CARD_EFFECTIVE_DATE = "2026-08-24"
+USD_RATE_CARD_EFFECTIVE_DATE = "2026-09-05"
 # List-price API rates. Cached reads use the published cached-input rate.
 # Models with a distinct cache-write tier bill writes at that published rate;
 # models without one fall back to ordinary input pricing. Rate keys are matched
@@ -53,6 +55,14 @@ USD_RATE_CARD_EFFECTIVE_DATE = "2026-08-24"
 # ("gpt-5-6-luna-medium") and effort-tagged variants resolve to their base
 # model without collapsing "gpt-5.4-mini" into "gpt-5.4".
 MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
+    "grok-4.5": {
+        "input": Decimal("2"), "cached_input": Decimal("0.3"),
+        "cache_write": Decimal("2"), "output": Decimal("6"),
+    },
+    "muse-spark-1.2": {
+        "input": Decimal("1.25"), "cached_input": Decimal("0.15"),
+        "cache_write": Decimal("1.25"), "output": Decimal("4.25"),
+    },
     # Grok 4.6 requests below 200k input tokens. xAI publishes a higher
     # long-context tier at/above 200k; the Participant-v6 run's maximum
     # request was 18,331 input tokens, so every recorded request uses this tier.

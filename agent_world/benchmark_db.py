@@ -433,7 +433,8 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             r.reasoning_tokens_per_decision,
             r.api_list_cost_per_run_usd,
             r.reasoning_tokens_estimated,
-            m.controlled_variant
+            m.controlled_variant,
+            m.suite
         FROM model_results r
         JOIN models m USING (model_key)
         WHERE m.leaderboard_eligible = 1
@@ -1084,7 +1085,13 @@ def _insert_model_results(
         (row for row in pending if row["model_key"] in eligible),
         key=lambda row: (-float(row["competence"]), -float(row["execution"]), row["model_key"]),
     )
-    ranks = {row["model_key"]: rank for rank, row in enumerate(ranked, start=1)}
+    suites = dict(connection.execute("SELECT model_key, suite FROM models"))
+    counters: dict[str, int] = defaultdict(int)
+    ranks = {}
+    for row in ranked:
+        suite = suites[row["model_key"]]
+        counters[suite] += 1
+        ranks[row["model_key"]] = counters[suite]
     for result in pending:
         result["rank"] = ranks.get(result["model_key"])
         _insert(connection, "model_results", result)
@@ -1231,12 +1238,19 @@ def leaderboard_rows(database_path: Path) -> list[sqlite3.Row]:
         connection.close()
 
 
-def format_leaderboard(database_path: Path) -> str:
+def format_leaderboard(database_path: Path, suite: str | None = None) -> str:
+    all_rows = leaderboard_rows(database_path)
+    suites = sorted({row["suite"] for row in all_rows}, reverse=True)
+    if suite is None and len(suites) > 1:
+        return "\n".join(
+            f"## {item}\n\n" + format_leaderboard(database_path, item)
+            for item in suites
+        )
     lines = [
         "| Rank | Model | Execution | Competence | Entrepreneurship | Reasoning/decision | Cost/run |",
         "|---:|---|---:|---:|---:|---:|---:|",
     ]
-    rows = leaderboard_rows(database_path)
+    rows = [row for row in all_rows if suite is None or row["suite"] == suite]
     variant_ranks = [int(row["rank"]) for row in rows if row["controlled_variant"]]
     analytical_boundary = min(variant_ranks) if variant_ranks else None
     for row in rows:
@@ -1288,6 +1302,7 @@ def main(argv: list[str] | None = None) -> None:
     build.add_argument("--out", type=Path, default=DEFAULT_DATABASE)
     show = subparsers.add_parser("leaderboard", help="Print the compact leaderboard projection")
     show.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
+    show.add_argument("--suite", help="Restrict the table to one benchmark protocol")
     verify = subparsers.add_parser("verify", help="Run integrity and coverage checks")
     verify.add_argument("--db", type=Path, default=DEFAULT_DATABASE)
     args = parser.parse_args(argv)
@@ -1295,7 +1310,7 @@ def main(argv: list[str] | None = None) -> None:
         build_database(args.catalog, args.out)
         print(json.dumps(verify_database(args.out), indent=2, sort_keys=True))
     elif args.command == "leaderboard":
-        print(format_leaderboard(args.db), end="")
+        print(format_leaderboard(args.db, args.suite), end="")
     else:
         print(json.dumps(verify_database(args.db), indent=2, sort_keys=True))
 
