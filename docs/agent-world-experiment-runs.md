@@ -45,17 +45,20 @@ CLI help before presenting choices because the registry can evolve.
 
 ## Default scope
 
-A general experiment defaults to **seed 11 only**. Seed 41 is not an ordinary
-replication default; it belongs to benchmark certification or to an explicitly
-requested multi-seed experiment.
+A general experiment defaults to **one world per condition**, normally seed 11,
+matched across compared conditions. Non-Codex models require an explicit request
+for extra seeds because their subscription usage is scarce. "Matched seeds" alone
+does not authorize multiple replications. Codex-based models may use seeds 11
+and 41 when useful; expensive Astra experiments default to one unless additional
+replication is requested. Benchmarks retain their recipe-required two seeds.
 
 Other settings come from the experimental question:
 
 - use the fewest agents and ticks that can actually test the claim;
 - choose the relevant world, reasoning setting, connector, and feedback mode;
 - record every setting rather than describing the run as “standard”; and
-- use distinct seeds or replications only when the user asks or the experiment
-  genuinely tests variability.
+- use additional seeds only within the provider-specific usage policy above
+  or when the user explicitly requests them.
 
 Matching benchmark settings by coincidence does not turn a general run into
 benchmark evidence. Benchmark intent, suite, seeds, and locked settings must be

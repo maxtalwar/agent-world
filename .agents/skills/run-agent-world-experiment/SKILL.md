@@ -16,7 +16,7 @@ Read `docs/run-quickstart.md` for managed launch, status, resume, and config syn
 ## Route and scope the request
 
 - Only launch or resume model-backed work when the user asks.
-- Default to seed 11 only. Never add seed 41 unless the user explicitly requests it or explicitly converts the work into a standardized benchmark study before launch.
+- Default to one world per condition, normally seed 11, matching that seed across conditions. Non-Codex models require an explicit request for extra seeds; "matched seeds" alone does not authorize replication. Codex models may use seeds 11 and 41 when useful, except expensive Astra experiments default to one. Follow the usage policy in AGENTS.md; explicit user scope overrides defaults.
 - Before launching a new experiment, if the user has not specified a preset or equivalent world configuration, ask once which preset to use. Present `frontier-generalists` as the default and summarize the current alternatives from CLI help. Do not ask again when resuming an existing manifest or when the user already said to use defaults.
 - The experiment default is `frontier-generalists`: frontier world, organic economy, dispersed geography, neutral objective, and generalist agents. Use it when the user chooses the default or delegates the choice.
 - Choose agents, ticks, world, reasoning, and other settings from the experiment's purpose. Do not inherit the benchmark's full horizon or locked trial unless the user requests those settings.

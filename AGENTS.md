@@ -23,6 +23,20 @@ to a published recipe. Reuse implemented scoring/transfer policies instead
 of branching launch, report, or finalization code on benchmark version names.
 See `docs/experiment-recipes.md` for the data model and authoring workflow.
 
+## Experiment usage policy
+
+Provider subscription limits are a scarce weekly resource. For future
+experiments, default to one world per condition, normally seed 11; use the
+same seed across compared conditions. Do not interpret "matched seeds" as
+authorization for multiple replications. Non-Codex models require an explicit
+request for additional experimental seeds. Codex-based models may use two
+seeds (11 and 41) when replication helps answer the question; use one for
+expensive Astra experiments unless additional replication is requested.
+Benchmarks retain the required two seeds in their versioned recipes.
+Explicit user scope overrides these defaults. The already-launched
+September 5 Grok/Luna ledger factorial experiment is authorized to finish
+both seeds; this policy does not cancel those runs.
+
 ## Agent workflow routing
 
 The repository-tracked skills in `.agents/skills` are the canonical operating
