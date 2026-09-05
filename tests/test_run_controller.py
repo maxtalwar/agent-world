@@ -274,6 +274,26 @@ class RunControllerTests(unittest.TestCase):
 
     @patch("agent_world.run_controller._kill_session", return_value=True)
     @patch("agent_world.managed_runs._tmux_active", return_value=True)
+    def test_quota_sleep_does_not_consume_retry_stall_window(self, _active, kill):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            cell = self._cell(root, 11, tick=0, session="aw-seed-11", event={
+                "type": "run_quota_wait",
+                "data": {"resume_at_unix": NOW.timestamp()},
+            })
+            cell["controller_last_tick"] = 0
+            cell["controller_last_progress_at_utc"] = _iso(NOW - timedelta(hours=2))
+            path = self._job(root, [cell])
+            reconcile_once(path, now=NOW)
+            with Path(cell["events"]).open("a") as handle:
+                handle.write(json.dumps({"type": "run_quota_retry", "data": {}}) + "\n")
+            reconcile_once(path, now=NOW + timedelta(seconds=30))
+            kill.assert_not_called()
+            reconcile_once(path, now=NOW + timedelta(seconds=3601))
+            kill.assert_called_once()
+
+    @patch("agent_world.run_controller._kill_session", return_value=True)
+    @patch("agent_world.managed_runs._tmux_active", return_value=True)
     def test_stalled_non_quota_process_is_reaped(self, _active, kill) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

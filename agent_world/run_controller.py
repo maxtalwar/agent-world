@@ -395,6 +395,9 @@ def reconcile_once(
                     quota_deadline is not None and now < quota_deadline + timedelta(seconds=policy.stall_seconds)
                 ):
                     cell["controller_state"] = "waiting_quota"
+                    # Sleeping for a provider limit is not stalled decision work.
+                    # Give the retry its own bounded interval after the sleep.
+                    cell["controller_last_progress_at_utc"] = _iso(min(now, quota_deadline))
                     continue
                 cell["controller_state"] = "running"
                 last_progress = _parse_time(cell.get("controller_last_progress_at_utc")) or now

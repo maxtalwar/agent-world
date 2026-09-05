@@ -92,3 +92,17 @@ gate. The existing Spark 1.1 evidence and backoff remain separate.
 
 The config was validated with the managed dry-run command before launch.
 The existing completion follow-up includes this eighth study.
+
+### 04:24 UTC recovery check
+
+All four OpenAI studies completed both seeds; returned-model identity remains
+unavailable, so their certification is withheld. Corrected Grok 4.6 seed 11
+paused at tick 40 on a native cancelled response without structured output;
+it was explicitly resumed from that completed-tick checkpoint. Grok 4.5 and
+Muse 1.2 continue under their controllers.
+
+Muse 1.1's apparent exhausted wait budget was an orchestration defect:
+the controller reaped a retry after counting quota sleep as stalled time,
+then omitted the wait allowance on resume. The manager/controller fixes retain
+the original allowance and checkpointed elapsed wait. No model substitution,
+new world, or quota bypass is involved.

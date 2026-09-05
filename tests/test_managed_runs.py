@@ -10,6 +10,7 @@ from agent_world.managed_runs import (
     build_cell_command,
     build_launch_plan,
     _launch_cell,
+    _write_launcher,
     _launch_job_controller,
     cell_status,
     load_run_config,
@@ -39,6 +40,23 @@ def _config(kind: str = "experiment") -> dict:
         value["harness"] = {}
     return value
 
+
+
+class ResumeQuotaTests(unittest.TestCase):
+    def test_resume_keeps_benchmark_default_and_explicit_wait(self):
+        for kind, runtime, expected in [
+            ("benchmark", {}, "12.0"),
+            ("experiment", {"quota_wait_hours": 3.5}, "3.5"),
+            ("benchmark", {"quota_wait_hours": 0}, "0"),
+            ("experiment", {}, "0.0"),
+        ]:
+            with self.subTest(kind=kind, runtime=runtime), tempfile.TemporaryDirectory() as temp:
+                job = {"job_dir": temp, "source_root": temp, "launch_commit": "abc",
+                       "config": {"kind": kind, "runtime": runtime}}
+                cell = {"id": "seed-11", "resume_count": 1, "checkpoint": temp + "/c.pkl",
+                        "target_ticks": 50, "cohort_id": "fixture", "log": temp + "/run.log"}
+                script = _write_launcher(job, cell, resume=True).read_text()
+                self.assertIn("--quota-wait-hours " + expected, script)
 
 class ManagedRunConfigTests(unittest.TestCase):
     def _load(self, value: dict) -> dict:

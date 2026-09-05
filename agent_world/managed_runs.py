@@ -17,6 +17,7 @@ from typing import Any
 
 from agent_world.benchmarks import (
     BENCHMARK_PROTOCOL_ID,
+    BENCHMARK_QUOTA_WAIT_HOURS,
 )
 from agent_world.protocols import RECIPES, get_recipe, recipe_from_dict
 from agent_world.jsonl_tail import tail_for
@@ -411,6 +412,14 @@ def _write_launcher(job: dict[str, Any], cell: dict[str, Any], *, resume: bool) 
          "--ticks", str(cell["target_ticks"]), "--progress"]
         if resume else cell["command"]
     )
+    if resume:
+        config = job["config"]
+        quota_wait_hours = (config.get("runtime") or {}).get("quota_wait_hours")
+        if quota_wait_hours is None:
+            quota_wait_hours = (
+                BENCHMARK_QUOTA_WAIT_HOURS if config["kind"] == "benchmark" else 0.0
+            )
+        inner.extend(["--quota-wait-hours", str(quota_wait_hours)])
     isolated = [
         str(Path(cell.get("worktree") or job["source_root"]) / "scripts/run-isolated-cohort"),
         "--cohort", cell["cohort_id"], "--commit", job["launch_commit"], "--", *inner,

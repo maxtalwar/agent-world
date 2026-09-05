@@ -1465,3 +1465,24 @@ Thus both 1.2 and 1.3 succeed while 1.1 fails on this account and native CLI.
 The evidence narrows the issue to 1.1's service/access path, but cannot
 distinguish a model-specific backend fault from subscription routing or
 entitlement. It does not establish a global outage or justify replacing 1.1.
+
+## 2026-09-05 — Quota sleep was mistaken for a stalled run, then lost on resume
+
+Muse Spark 1.1's controller reaped its supervisor immediately after 65 minutes
+of recorded provider backoff because the unchanged world tick made the retry
+look stalled. The managed resume command omitted the quota-wait option, so
+the resumed CLI used zero hours instead of the original 12-hour allowance.
+The resulting quota_wait_budget_exhausted attention label did not establish
+that the allowance had actually elapsed, much less that the subscription
+balance was exhausted.
+
+The controller now excludes the protected sleep from its retry stall window,
+while still reaping a retry that really stalls. Managed resume explicitly
+preserves the configured allowance or the benchmark default; checkpointed
+wait usage remains intact. Regression tests cover the sleep/retry/stall
+transition and benchmark, explicit, and zero wait allowances.
+
+Evidence: runs/jobs/muse-spark-1-1-v7-20260905/controller-events.jsonl records
+the 04:14 UTC reap and resume. Its seed-11/run.jsonl records 3900 seconds of
+waits against 43200 seconds, followed by run_resumed with quota_wait_hours=0.
+Validation: 592 unit tests passed.
