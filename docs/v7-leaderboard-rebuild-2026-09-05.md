@@ -63,3 +63,20 @@ skipped the startup-health check because the pinned session predicate excludes
 all resumed runs. Seed 41 remains gated. This is an unresolved benchmark
 handoff blocker; advancing seed 11 is not evidence that the startup gate passed.
 The original ledger and source remain intact. See the dated insights entry.
+
+## Corrected Grok connector validation
+
+Commit 440c126 fixes early-resume startup checks and delivers the complete
+simulation rulebook in the Grok user turn. The native Grok 4.5 path had omitted
+the prior system-only rulebook. Native coding-plan mode was also removed.
+
+Managed two-agent, two-tick smoke studies
+grok-4-5-rulebook-smoke-20260905 and grok-4-6-rulebook-smoke-20260905 completed
+eight of eight decisions with usage, full rulebook presence verified in every
+native transcript, and no native tool events. The full regression suite passed
+590 tests, including the native offline Muse test. These are diagnostics, not
+leaderboard results. Initial Grok benchmark evidence is retained separately.
+
+The replacement Grok benchmark studies use the suffix -corrected-20260905
+and the same Participant v7 settings and required seeds, with four workers per
+seed. Their source is pinned separately; the old studies are not relabeled.

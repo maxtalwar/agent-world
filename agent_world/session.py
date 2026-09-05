@@ -538,7 +538,7 @@ class SimulationSession:
         self.engine.log_event(
             "run_quota_wait",
             message=(
-                f"Model quota is exhausted; waiting {round(delay / 60)} minute(s) for it to "
+                f"Provider rate or usage limit; waiting {round(delay / 60)} minute(s) for it to "
                 "reset, then retrying the same tick. The world has not advanced."
             ),
             data={
