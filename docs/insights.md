@@ -1436,3 +1436,24 @@ run-usage-partial-tick-0.jsonl links native session
 01a06f87-2e15-7603-a897-566a8e6772b8; its retained native transcript contains
 no simulation rulebook. These initial trials remain preserved separately from
 validation of the corrected connector.
+
+## 2026-09-05 — Muse 1.1 returns 429 while an identical 1.3 control succeeds
+
+Two sequential native Muse Code probes used the same saved subscription login,
+low reasoning, one model step, disabled tool execution, and the identical
+generic prompt: Reply with exactly OK. Do not use tools. The 1.3 request
+returned OK in 3.86 seconds; the 1.1 request returned service-temporarily-
+unavailable HTTP 429 after ten native attempts and 52.76 seconds. Neither
+probe sent a benchmark rulebook or simulation data.
+
+This isolates the observed refusal to the 1.1 model path under this CLI/account,
+rather than a complete account/connector outage or the simulation prompt.
+It does not distinguish backend capacity, subscription routing, or entitlement,
+and does not establish a global outage. Meta's status page still reported all
+systems operational. Original benchmark evidence remains frozen with normal
+backoff, and no model substitution was made.
+
+Local evidence: runs/diagnostics/muse-429-20260905/control-result.json and
+model-1-1-result.json. Native session IDs and error request IDs are retained
+there for support. Public references: https://dev.meta.ai/status/ and
+https://dev.meta.ai/docs/error-handling/. No support message was sent.
