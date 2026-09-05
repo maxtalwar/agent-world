@@ -1398,3 +1398,19 @@ small-model collapse is signal, not failure.
 Evidence: `runs/benchmarks/leaderboard-v6-20260728.md`,
 `runs/benchmarks/gpt-5-6-sol-participant-v6-provisional-seed11-20260728-195329`,
 `runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141`.
+
+## 2026-09-05 — Resuming before tick five can strand the managed replication gate
+
+The Grok 4.6 v7 study paused at completed tick 3 after an unusable native
+completion envelope, then resumed and advanced beyond tick 5 without emitting
+a startup health event. The controller kept seed 41 behind the missing gate.
+SimulationSession._should_run_startup_health_check unconditionally excludes
+resumed runs, including resumptions before the check tick. This is an
+orchestration failure, not a model-capability result. No passing event was
+synthesized and the pinned running source was not changed.
+
+Evidence: runs/jobs/grok-4-6-v7-20260905/controller-events.jsonl records the
+03:12 UTC resume; runs/managed/grok-4-6-v7-20260905/seed-11/run.jsonl retains
+the tick-3 pause and subsequent trajectory without a run_health_check event.
+Launch source: bf5b0a188e80883b02a67436af5fed1ad63fcbdc; predicate:
+agent_world/session.py, _should_run_startup_health_check.

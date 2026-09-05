@@ -51,3 +51,15 @@ Managed controllers own recovery and per-seed finalization. A thread follow-up
 checks completion and attention events every ten minutes and remains quiet
 without actionable changes. Completed evidence must pass the readiness audit
 before separate reporting/catalog admission; v6 and v7 results remain distinct.
+
+## Follow-up at 03:20 UTC
+
+All four OpenAI studies passed their startup gates and have both seeds active.
+Grok 4.5 requires attention after a second unusable tick-zero response set;
+its second seed remains unlaunched. Muse 1.1 remains in quota wait at tick zero.
+
+Grok 4.6 resumed after a boundary failure at tick 3. Its resumed execution
+skipped the startup-health check because the pinned session predicate excludes
+all resumed runs. Seed 41 remains gated. This is an unresolved benchmark
+handoff blocker; advancing seed 11 is not evidence that the startup gate passed.
+The original ledger and source remain intact. See the dated insights entry.
