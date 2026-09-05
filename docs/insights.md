@@ -1457,3 +1457,11 @@ Local evidence: runs/diagnostics/muse-429-20260905/control-result.json and
 model-1-1-result.json. Native session IDs and error request IDs are retained
 there for support. Public references: https://dev.meta.ai/status/ and
 https://dev.meta.ai/docs/error-handling/. No support message was sent.
+
+Follow-up: an explicitly requested, identically configured Spark 1.2 probe
+also returned OK, in 3.41 seconds (53 output tokens, zero tool calls).
+Evidence: runs/diagnostics/muse-429-20260905/model-1-2-result.json.
+Thus both 1.2 and 1.3 succeed while 1.1 fails on this account and native CLI.
+The evidence narrows the issue to 1.1's service/access path, but cannot
+distinguish a model-specific backend fault from subscription routing or
+entitlement. It does not establish a global outage or justify replacing 1.1.
