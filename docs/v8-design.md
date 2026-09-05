@@ -6,6 +6,10 @@ Status: design in progress; no recipe registered and no new runs launched.
 
 - Build the next leaderboard on a new v8 recipe; preserve v6/v7 evidence.
 - Omit the message board.
+- Use medium reasoning effort as the practical budget/quality baseline. Freeze
+  the exact model/connector mapping and output/time ceilings; medium does not
+  imply equal computation across providers. Document unsupported-setting
+  exceptions explicitly rather than silently relabelling another setting.
 - Retain explicit gift/payment/barter intent declarations; economic credit
   should be grounded in demonstrated outcomes, not a label alone.
 - Keep the main table compact: Model, Capability, Execution, Enterprise,
@@ -20,16 +24,25 @@ Status: design in progress; no recipe registered and no new runs launched.
 
 ## Still unresolved
 
-Reasoning effort is not selected. The user prefers exploring whether low or
-maximum supported effort provides a clearer cross-model policy than an
-intermediate label. Endpoint policies reduce mapping ambiguity; they do not
-equalize computation. Maximum supported effort is a reproducible configuration
-choice, not proof of a model's best achievable score or unlimited deliberation.
-The exact model/connector setting and any output/time ceiling must be frozen.
+The user proposed extending the horizon from 50 to 60 completed ticks; this
+remains a proposal, not an approved recipe change or run launch. At twelve
+ticks per season, 50 ticks includes spring, summer, autumn, winter, and two
+ticks of the next spring. Sixty ticks completes that second spring: five
+season blocks, not five annual cycles.
 
-Medium remains a possible budget/quality compromise, not a more standardized
-setting. No maximum-effort study is authorized by this discussion. Follow
-AGENTS.md's provider-specific experiment replication and usage policy.
+A longer horizon gives stored supplies and productive investments more time
+to affect observed health. It does not eliminate the terminal-stockpile
+blind spot: two societies with identical health trajectories still receive
+equal capability even if one has more useful reserves at the cutoff.
+Raw inventory value is not automatically a measure of future survival.
+
+The horizon also changes the phase emphasized by the current twelve-tick
+tail: at 50 it covers ten winter ticks and two spring ticks; at 60 it covers
+a complete spring. Sixty is a candidate for assessing post-winter recovery,
+not merely a longer version of the same scoring window. More ticks increase
+potential decisions; cost and elapsed time will also depend on survival,
+context length, and reasoning. Follow AGENTS.md's provider-specific experiment
+replication and usage policy. No new study is authorized by this discussion.
 
 Capability and execution components are implemented in
 agent_world/outcome_scoring.py and reviewed in v8-capability-execution.md.
