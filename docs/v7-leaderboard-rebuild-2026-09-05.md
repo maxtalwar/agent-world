@@ -80,3 +80,15 @@ leaderboard results. Initial Grok benchmark evidence is retained separately.
 The replacement Grok benchmark studies use the suffix -corrected-20260905
 and the same Participant v7 settings and required seeds, with four workers per
 seed. Their source is pinned separately; the old studies are not relabeled.
+
+## Additional requested model: Muse Spark 1.2
+
+The user separately requested a Spark 1.2 benchmark after its matched generic
+availability probe succeeded. Managed study muse-spark-1-2-v7-20260905 was
+launched from clean commit 0be8a2e07f5d604b656f5f620c94fc9c4c1218d5 on
+seeds 11 and 41, low reasoning, Muse Code, and two workers per seed. All other
+settings come from Participant v7. Seed 41 remains behind the standard startup
+gate. The existing Spark 1.1 evidence and backoff remain separate.
+
+The config was validated with the managed dry-run command before launch.
+The existing completion follow-up includes this eighth study.
