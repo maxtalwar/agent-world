@@ -8,7 +8,7 @@ Status: design in progress; no recipe registered and no new runs launched.
 - Omit the message board.
 - Retain explicit gift/payment/barter intent declarations; economic credit
   should be grounded in demonstrated outcomes, not a label alone.
-- Keep the main table compact: Model, Competence, Execution, Enterprise,
+- Keep the main table compact: Model, Capability, Execution, Enterprise,
   Cost/run, and Mean time/decision. Component metrics belong in detailed results.
 - Latency is mean end-to-end decision-call duration, not tick duration or
   total run elapsed time divided by decisions. Preserve retry accounting;
@@ -31,12 +31,17 @@ Medium remains a possible budget/quality compromise, not a more standardized
 setting. No maximum-effort study is authorized by this discussion. Follow
 AGENTS.md's provider-specific experiment replication and usage policy.
 
-Competence and enterprise formulas are not frozen. Proposed directions are
-to separate execution from outcome scores, consider health/capacity over time,
-and evaluate realized productive output/useful exchange without double
-counting, circular-trade rewards, or automatic enterprise erasure from negative
-terminal living wealth. The exact treatment of subsistence, charitable supply,
-productive investment, and collapse needs explicit examples and agreement.
+Capability and execution components are implemented in
+agent_world/outcome_scoring.py and reviewed in v8-capability-execution.md.
+Capability is independent of execution and economic scoring; it combines
+full-horizon and final-season population health. Execution is the fraction
+of decisions free from output-contract violations and invalid action/message
+proposals, with contention excluded. Neither is a generic intelligence score.
+
+Enterprise remains undecided. The final v8 recipe is intentionally not
+registered until enterprise and the remaining protocol decisions are complete.
+The component scorer and offline review are usable now; historical recipes,
+reports, and leaderboard rankings retain their original formulas.
 
 ## Cost evidence relevant to effort choice
 

@@ -1,0 +1,874 @@
+{
+  "evidence_class": "counterfactual_scoring_review",
+  "scoring_component_version": "outcome-execution-v1",
+  "studies": {
+    "Luna low, board off": {
+      "cells": [
+        {
+          "report_path": "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-11/run-report.json",
+          "seed": 11,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v7",
+          "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+          "raw": {
+            "execution_valid_decisions": 265.0,
+            "execution_decisions": 442.0,
+            "health_point_ticks": 32030.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 2190.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 60.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 59.95,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 265.0,
+                "decisions": 442.0
+              }
+            },
+            "capability": {
+              "score": 34.19,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 64.06,
+                "final_window_health_pct": 18.25
+              }
+            }
+          },
+          "original_execution": 78.93,
+          "original_competence": 31.18,
+          "sha256": {
+            "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-11/run-report.json": "fbff50827f9bc544a87cc1c93dcfcf39997fe643ba28b820913bc8a1ee06737a",
+            "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-11/run-snapshot.json": "231e6dd170488b97a0550cb3fbb7727f8831c7153c2faa80d18488310e1d0fc6",
+            "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-11/run.jsonl": "fb7cec84601d81a27fcf6e09173587b1c262dcb49f0040265f89aa12e89e3a12",
+            "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-11/run-manifest.json": "8ebaa280a7410a243b59a1ee6b5fb374699c88b1646edae3dca4fd223722c6be"
+          }
+        },
+        {
+          "report_path": "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-41/run-report.json",
+          "seed": 41,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v7",
+          "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+          "raw": {
+            "execution_valid_decisions": 240.0,
+            "execution_decisions": 406.0,
+            "health_point_ticks": 31071.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 979.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 19.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 59.11,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 240.0,
+                "decisions": 406.0
+              }
+            },
+            "capability": {
+              "score": 22.52,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 62.142,
+                "final_window_health_pct": 8.1583
+              }
+            }
+          },
+          "original_execution": 76.62,
+          "original_competence": 17.92,
+          "sha256": {
+            "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-41/run-report.json": "38a615a4154e4a40cff1a17ea683731ba39a3cec86cf6a45c41b16c2dd8b7d56",
+            "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-41/run-snapshot.json": "f8b58b47a9a5b93a68fe7e58f383bf65d6751f0d62e0edc338f056d3fc5eea61",
+            "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-41/run.jsonl": "d2a6f4661b59d1d3cfcd267a39503fe81864b66a7a32a06f03898c64afb9c240",
+            "runs/managed/gpt-5-6-luna-low-ledger-off-20260905/seed-41/run-manifest.json": "65dfa6bd805535806c03a99a368417aabef05b176c7c13263effe989381d95f7"
+          }
+        }
+      ],
+      "raw": {
+        "execution_valid_decisions": 505.0,
+        "execution_decisions": 848.0,
+        "health_point_ticks": 63101.0,
+        "health_point_tick_capacity": 100000.0,
+        "tail_health_point_ticks": 3169.0,
+        "tail_health_point_tick_capacity": 24000.0,
+        "endpoint_health_points": 79.0,
+        "endpoint_health_capacity": 2000.0
+      },
+      "scores": {
+        "execution": {
+          "score": 59.55,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 505.0,
+            "decisions": 848.0
+          }
+        },
+        "capability": {
+          "score": 28.87,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 63.101,
+            "final_window_health_pct": 13.2042
+          }
+        }
+      }
+    },
+    "Luna low, board on": {
+      "cells": [
+        {
+          "report_path": "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-11/run-report.json",
+          "seed": 11,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v7",
+          "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+          "raw": {
+            "execution_valid_decisions": 230.0,
+            "execution_decisions": 437.0,
+            "health_point_ticks": 32784.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 2146.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 67.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 52.63,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 230.0,
+                "decisions": 437.0
+              }
+            },
+            "capability": {
+              "score": 34.24,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 65.568,
+                "final_window_health_pct": 17.8833
+              }
+            }
+          },
+          "original_execution": 77.67,
+          "original_competence": 32.87,
+          "sha256": {
+            "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-11/run-report.json": "5e70ff2f9b1b30478c27b94271b3cd175a3730f8e4e048b73354aa098bab0b6a",
+            "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-11/run-snapshot.json": "51cbb6cc5063b30f540c35a24978500a756cd48ab9adf4c5980a093f9586d509",
+            "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-11/run.jsonl": "97724dcf81146efe39396892eca5b3641efaff5b5c44425d24334f1fcd40a035",
+            "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-11/run-manifest.json": "586738e85042354d423ab0467700fce3e75e5c8ba21324c6dafafec9fe9e14f7"
+          }
+        },
+        {
+          "report_path": "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-41/run-report.json",
+          "seed": 41,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v7",
+          "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+          "raw": {
+            "execution_valid_decisions": 248.0,
+            "execution_decisions": 418.0,
+            "health_point_ticks": 30883.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 1441.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 32.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 59.33,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 248.0,
+                "decisions": 418.0
+              }
+            },
+            "capability": {
+              "score": 27.23,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 61.766,
+                "final_window_health_pct": 12.0083
+              }
+            }
+          },
+          "original_execution": 80.22,
+          "original_competence": 19.67,
+          "sha256": {
+            "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-41/run-report.json": "eb6a482334b5b0490b34bbf8ec0850aff6dbb7dea827a23010053aec15077114",
+            "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-41/run-snapshot.json": "e9a17d252672894347c8a8cfeb306c837f1a63da44ac9d1c7f9a9da1a29aaff8",
+            "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-41/run.jsonl": "3728b7351b64734f8ea8e5db2d2e723f8de75e8ecbdf9d83750939d9ffe0ba6e",
+            "runs/managed/gpt-5-6-luna-low-ledger-on-20260905/seed-41/run-manifest.json": "32ea1efe7cfb91e59d9ca9d7e36529e9f76feb8ef2be42c294158c7dd005f1c7"
+          }
+        }
+      ],
+      "raw": {
+        "execution_valid_decisions": 478.0,
+        "execution_decisions": 855.0,
+        "health_point_ticks": 63667.0,
+        "health_point_tick_capacity": 100000.0,
+        "tail_health_point_ticks": 3587.0,
+        "tail_health_point_tick_capacity": 24000.0,
+        "endpoint_health_points": 99.0,
+        "endpoint_health_capacity": 2000.0
+      },
+      "scores": {
+        "execution": {
+          "score": 55.91,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 478.0,
+            "decisions": 855.0
+          }
+        },
+        "capability": {
+          "score": 30.85,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 63.667,
+            "final_window_health_pct": 14.9458
+          }
+        }
+      }
+    },
+    "Luna high, board off": {
+      "cells": [
+        {
+          "report_path": "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-11/run-report.json",
+          "seed": 11,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v7",
+          "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+          "raw": {
+            "execution_valid_decisions": 288.0,
+            "execution_decisions": 446.0,
+            "health_point_ticks": 32852.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 2896.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 112.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 64.57,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 288.0,
+                "decisions": 446.0
+              }
+            },
+            "capability": {
+              "score": 39.82,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 65.704,
+                "final_window_health_pct": 24.1333
+              }
+            }
+          },
+          "original_execution": 82.53,
+          "original_competence": 39.06,
+          "sha256": {
+            "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-11/run-report.json": "53ed9059bf6d91a8eb113aaa063739affddc5d06f432f62f2efedf6532df758b",
+            "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-11/run-snapshot.json": "db1ece76c1c93f986228b4f3f63297a7e874f5a95d94b4d9d1630c2084a35460",
+            "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-11/run.jsonl": "6c17b0f7574f74dcbe1455593870db123614bd32ea1f9c7e3f33a810361434b5",
+            "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-11/run-manifest.json": "761ea5cba6ab476c016630812563beb660b2d30a1fdca43d42099c8e6bf29fb5"
+          }
+        },
+        {
+          "report_path": "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-41/run-report.json",
+          "seed": 41,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v7",
+          "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+          "raw": {
+            "execution_valid_decisions": 327.0,
+            "execution_decisions": 450.0,
+            "health_point_ticks": 34698.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 3251.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 118.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 72.67,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 327.0,
+                "decisions": 450.0
+              }
+            },
+            "capability": {
+              "score": 43.36,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 69.396,
+                "final_window_health_pct": 27.0917
+              }
+            }
+          },
+          "original_execution": 85.41,
+          "original_competence": 46.52,
+          "sha256": {
+            "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-41/run-report.json": "84f865911fc8cc097e5bdfeca8d7eb4625df4d19f7320929f393159582fb4f63",
+            "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-41/run-snapshot.json": "26627ce8695f49c5a530a3b78fac35787484c58aa4c42ae75906248247fbc228",
+            "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-41/run.jsonl": "5d9d1f6bcff96b907da3a5f4eccf89497e7e8d4f0a50659e8bb83bb0173d71a3",
+            "runs/managed/gpt-5-6-luna-high-ledger-off-20260905/seed-41/run-manifest.json": "2ae9af2ba128a4f08df043ad34526d67782c3103c594f674009319bab235e2ca"
+          }
+        }
+      ],
+      "raw": {
+        "execution_valid_decisions": 615.0,
+        "execution_decisions": 896.0,
+        "health_point_ticks": 67550.0,
+        "health_point_tick_capacity": 100000.0,
+        "tail_health_point_ticks": 6147.0,
+        "tail_health_point_tick_capacity": 24000.0,
+        "endpoint_health_points": 230.0,
+        "endpoint_health_capacity": 2000.0
+      },
+      "scores": {
+        "execution": {
+          "score": 68.64,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 615.0,
+            "decisions": 896.0
+          }
+        },
+        "capability": {
+          "score": 41.59,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 67.55,
+            "final_window_health_pct": 25.6125
+          }
+        }
+      }
+    },
+    "Luna high, board on": {
+      "cells": [
+        {
+          "report_path": "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-11/run-report.json",
+          "seed": 11,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v7",
+          "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+          "raw": {
+            "execution_valid_decisions": 281.0,
+            "execution_decisions": 482.0,
+            "health_point_ticks": 37363.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 3416.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 67.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 58.3,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 281.0,
+                "decisions": 482.0
+              }
+            },
+            "capability": {
+              "score": 46.12,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 74.726,
+                "final_window_health_pct": 28.4667
+              }
+            }
+          },
+          "original_execution": 83.94,
+          "original_competence": 39.67,
+          "sha256": {
+            "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-11/run-report.json": "82a74aad70ef084035d206a37a01b87b63c34a381243718c99906d1906f07e6f",
+            "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-11/run-snapshot.json": "a65ea061fef664f49def2c7638a9b92b4828ad98c516dacca56a4777ff363e2a",
+            "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-11/run.jsonl": "327dc6805ecf35fb006dd4fe3ba1db9fea916a5afa73e32ba1d4d38c5a21d1d2",
+            "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-11/run-manifest.json": "7f452089e07ca5769b002e1e292a2de662209618504f4e1a401d4807f34ab2fa"
+          }
+        },
+        {
+          "report_path": "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-41/run-report.json",
+          "seed": 41,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v7",
+          "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+          "raw": {
+            "execution_valid_decisions": 288.0,
+            "execution_decisions": 459.0,
+            "health_point_ticks": 35208.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 2361.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 29.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 62.75,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 288.0,
+                "decisions": 459.0
+              }
+            },
+            "capability": {
+              "score": 37.22,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 70.416,
+                "final_window_health_pct": 19.675
+              }
+            }
+          },
+          "original_execution": 84.0,
+          "original_competence": 25.5,
+          "sha256": {
+            "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-41/run-report.json": "dc726d565a2127b2124f33b0972b9c74d30a598af1b9ba32a8abc879888b9298",
+            "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-41/run-snapshot.json": "6af71b6536ccc721e9997bd539e7fd08c6d2747ba30af445018d5e0374bf4dbf",
+            "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-41/run.jsonl": "695cd5f9866e321763725a6a03516e65a737856c058a754e967b13c98834fea9",
+            "runs/managed/gpt-5-6-luna-high-ledger-on-20260905/seed-41/run-manifest.json": "071672a4a99c2f81f2953b749ef628edd27df470ece4ce646639b7603926a84b"
+          }
+        }
+      ],
+      "raw": {
+        "execution_valid_decisions": 569.0,
+        "execution_decisions": 941.0,
+        "health_point_ticks": 72571.0,
+        "health_point_tick_capacity": 100000.0,
+        "tail_health_point_ticks": 5777.0,
+        "tail_health_point_tick_capacity": 24000.0,
+        "endpoint_health_points": 96.0,
+        "endpoint_health_capacity": 2000.0
+      },
+      "scores": {
+        "execution": {
+          "score": 60.47,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 569.0,
+            "decisions": 941.0
+          }
+        },
+        "capability": {
+          "score": 41.8,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 72.571,
+            "final_window_health_pct": 24.0708
+          }
+        }
+      }
+    },
+    "Fable 5 historical v6": {
+      "cells": [
+        {
+          "report_path": "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-report.json",
+          "seed": 11,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v6",
+          "source_commit": "a86d06f0612692b3a122f9d1c06af3d5ddf07144",
+          "raw": {
+            "execution_valid_decisions": 352.0,
+            "execution_decisions": 500.0,
+            "health_point_ticks": 43160.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 7492.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 498.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 70.4,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 352.0,
+                "decisions": 500.0
+              }
+            },
+            "capability": {
+              "score": 73.41,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 86.32,
+                "final_window_health_pct": 62.4333
+              }
+            }
+          },
+          "original_execution": 89.62,
+          "original_competence": 85.12,
+          "sha256": {
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-report.json": "c15cb445d7611f9bf342f5c117b44bcd2479ab6d1893daf4b26e15e599126581",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-snapshot.json": "f1ae76ad3bc7fc9bcdbcd16ab37d08ec404f40a150da4bd366e8fe2f67b2d255",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run.jsonl": "58ac3fd133491a1377120c9b8a3dc1aee66b6e3475ed7260cbd51d56e807e6d0",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed11/run-manifest.json": "1aa0eef3271f75c52588061945aeda6ab035dba0378d0b63ec008a78d9852033"
+          }
+        },
+        {
+          "report_path": "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-report.json",
+          "seed": 41,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v6",
+          "source_commit": "1baaf2cde6b0beb2d3d9b0ad7077343096c895c0",
+          "raw": {
+            "execution_valid_decisions": 370.0,
+            "execution_decisions": 500.0,
+            "health_point_ticks": 42980.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 7611.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 540.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 74.0,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 370.0,
+                "decisions": 500.0
+              }
+            },
+            "capability": {
+              "score": 73.84,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 85.96,
+                "final_window_health_pct": 63.425
+              }
+            }
+          },
+          "original_execution": 89.8,
+          "original_competence": 87.06,
+          "sha256": {
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-report.json": "db341e3ad997e1f324f1822cdd6ed391d75127ce84166015c342d2d0cb062775",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-snapshot.json": "f505d82f5d3bbdbeaf1636c3ce2ff1ea0b7a386954c3b647576f4b80ec935240",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run.jsonl": "0eb14d6b11a848c771bd3c8e2136f0fe3af93409fae6b42ee749a0569de1bbc7",
+            "runs/benchmarks/claude-fable-5-participant-v6-provisional-seed11-20260729-220002/fable5-v6-seed41-recovered-tick32/run-manifest.json": "cefa6aba7769709ec9bdda67bcd31dfb98284144525c303abc8a5e9e714ac063"
+          }
+        }
+      ],
+      "raw": {
+        "execution_valid_decisions": 722.0,
+        "execution_decisions": 1000.0,
+        "health_point_ticks": 86140.0,
+        "health_point_tick_capacity": 100000.0,
+        "tail_health_point_ticks": 15103.0,
+        "tail_health_point_tick_capacity": 24000.0,
+        "endpoint_health_points": 1038.0,
+        "endpoint_health_capacity": 2000.0
+      },
+      "scores": {
+        "execution": {
+          "score": 72.2,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 722.0,
+            "decisions": 1000.0
+          }
+        },
+        "capability": {
+          "score": 73.63,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 86.14,
+            "final_window_health_pct": 62.9292
+          }
+        }
+      }
+    },
+    "GPT-5.6 Luna Max historical v6": {
+      "cells": [
+        {
+          "report_path": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run-report.json",
+          "seed": 11,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": null,
+          "source_commit": "d3bf99058dcb60453d4faad7fa52344f5f978603",
+          "raw": {
+            "execution_valid_decisions": 380.0,
+            "execution_decisions": 493.0,
+            "health_point_ticks": 39478.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 5615.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 318.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 77.08,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 380.0,
+                "decisions": 493.0
+              }
+            },
+            "capability": {
+              "score": 60.78,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 78.956,
+                "final_window_health_pct": 46.7917
+              }
+            }
+          },
+          "original_execution": 90.64,
+          "original_competence": 72.22,
+          "sha256": {
+            "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run-report.json": "f1f9ad50aa394fcaa540db0a8e52f972208bf9686092ac242a777767e30a92d3",
+            "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run-snapshot.json": "e199fcafe06b0f6149ac12053fa17c988d66a08acda54c64d7c1f74119809e76",
+            "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run.jsonl": "7f23ba2d8e15871589107a094f3ce2402776a77779d9014a9330e0554ab3ce0c",
+            "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed11/run-manifest.json": "8cf5afe6a82ebc7479ffba9248aaf7320432e86f04aa319f03d79e0503770614"
+          }
+        },
+        {
+          "report_path": "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run-report.json",
+          "seed": 41,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": null,
+          "source_commit": "d3bf99058dcb60453d4faad7fa52344f5f978603",
+          "raw": {
+            "execution_valid_decisions": 338.0,
+            "execution_decisions": 471.0,
+            "health_point_ticks": 35786.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 3504.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 153.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 71.76,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 338.0,
+                "decisions": 471.0
+              }
+            },
+            "capability": {
+              "score": 45.72,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 71.572,
+                "final_window_health_pct": 29.2
+              }
+            }
+          },
+          "original_execution": 86.44,
+          "original_competence": 56.96,
+          "sha256": {
+            "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run-report.json": "1b5d513015bed9aee01a7fb3bccb6e24e26ef0a7ef28070de8dac4caa85aa17b",
+            "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run-snapshot.json": "54b9e9e4cbfb7f18f9a388af1101fe2f5cfeb83825a69d305e1a2fd579701e3c",
+            "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run.jsonl": "14a81a40849e0bd5986271631e675b1655a3c311173f480a7c58f9739108d85d",
+            "runs/benchmarks/codex-gpt-5-6-luna-participant-v6-max-reasoning-variant-seeds11-41-20260801-135403/luna-max-v6-seed41/run-manifest.json": "21ae856a9d76bd0d0b19f1456e7fc871f2c12323b1c7f0f0270e834eceb8a361"
+          }
+        }
+      ],
+      "raw": {
+        "execution_valid_decisions": 718.0,
+        "execution_decisions": 964.0,
+        "health_point_ticks": 75264.0,
+        "health_point_tick_capacity": 100000.0,
+        "tail_health_point_ticks": 9119.0,
+        "tail_health_point_tick_capacity": 24000.0,
+        "endpoint_health_points": 471.0,
+        "endpoint_health_capacity": 2000.0
+      },
+      "scores": {
+        "execution": {
+          "score": 74.48,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 718.0,
+            "decisions": 964.0
+          }
+        },
+        "capability": {
+          "score": 53.48,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 75.264,
+            "final_window_health_pct": 37.9958
+          }
+        }
+      }
+    },
+    "GPT-5.6 Luna historical v6": {
+      "cells": [
+        {
+          "report_path": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11/run-report.json",
+          "seed": 11,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v6",
+          "source_commit": "0af16493855cc711497c99ecc54f43a10f7a40c2",
+          "raw": {
+            "execution_valid_decisions": 241.0,
+            "execution_decisions": 421.0,
+            "health_point_ticks": 30667.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 1944.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 49.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 57.24,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 241.0,
+                "decisions": 421.0
+              }
+            },
+            "capability": {
+              "score": 31.52,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 61.334,
+                "final_window_health_pct": 16.2
+              }
+            }
+          },
+          "original_execution": 80.23,
+          "original_competence": 29.55,
+          "sha256": {
+            "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11/run-report.json": "2c8ad95a0c8182cb6fd20e1fcd63da498c8e64657f701a639d65ce0c059f5ecf",
+            "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11/run-snapshot.json": "133549a7fc5cb92443a77cfa3e690e0f331e53c075a52a68df5e451d320e30b2",
+            "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11/run.jsonl": "55546aa429d11fe8008b65ca75ee18efb380035f11e1d7577bc3afc579137b53",
+            "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11/run-manifest.json": "161155de77805b1f0354a22f6fd1305ae13e1e86de46026096c3a722a8e1a8c4"
+          }
+        },
+        {
+          "report_path": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41/run-report.json",
+          "seed": 41,
+          "horizon_and_tail": [
+            50,
+            12
+          ],
+          "original_recipe": "participant-v6",
+          "source_commit": "0af16493855cc711497c99ecc54f43a10f7a40c2",
+          "raw": {
+            "execution_valid_decisions": 281.0,
+            "execution_decisions": 448.0,
+            "health_point_ticks": 34300.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 2933.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 96.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "scores": {
+            "execution": {
+              "score": 62.72,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 281.0,
+                "decisions": 448.0
+              }
+            },
+            "capability": {
+              "score": 40.95,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 68.6,
+                "final_window_health_pct": 24.4417
+              }
+            }
+          },
+          "original_execution": 82.86,
+          "original_competence": 40.67,
+          "sha256": {
+            "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41/run-report.json": "ca2cf20754e141f08efc2f4cae652aed5bd3ff768661cca340c53d45b4c3e9dc",
+            "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41/run-snapshot.json": "9d9174e98babb2f72f9e04ac7a9746729368a88b16fa24ef561ae10230b2a4a1",
+            "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41/run.jsonl": "dc81be01f661a3b22a0cb3bf9651cd3c2961c7ec063022b99f6e1d8240986ca4",
+            "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41/run-manifest.json": "3e24dd70d5a283cfb7ac1f5b43a42cc013b7ee774c6ed4950cb78a613215dd29"
+          }
+        }
+      ],
+      "raw": {
+        "execution_valid_decisions": 522.0,
+        "execution_decisions": 869.0,
+        "health_point_ticks": 64967.0,
+        "health_point_tick_capacity": 100000.0,
+        "tail_health_point_ticks": 4877.0,
+        "tail_health_point_tick_capacity": 24000.0,
+        "endpoint_health_points": 145.0,
+        "endpoint_health_capacity": 2000.0
+      },
+      "scores": {
+        "execution": {
+          "score": 60.07,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 522.0,
+            "decisions": 869.0
+          }
+        },
+        "capability": {
+          "score": 36.33,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 64.967,
+            "final_window_health_pct": 20.3208
+          }
+        }
+      }
+    }
+  }
+}

@@ -22,6 +22,19 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-05 — Separating sustained health from wealth changes the Luna board interpretation
+
+**A health-only capability review nearly ties Luna high with and without the
+board, despite the board-off advantage in the old composite competence score.**
+On the same two seeds, board on has better full-horizon health (72.571 versus
+67.550) but lower final-season health (24.071 versus 25.613). Their geometric
+means are 41.80 and 41.59. The earlier competence gap (33.29 versus 43.01)
+also reflected terminal living wealth and execution. The farming and endpoint
+health advantage without the board remains real; the broader claim that the
+board worsened every aspect of the society is not supported. This is a change
+in the measured construct, not new model behavior or a retroactive leaderboard
+revision. [Scoring review and source hashes](v8-capability-execution.md).
+
 ## 2026-09-05 — More reasoning amplified board use but reduced farming with the board present
 
 **Luna high reasoning improved competence in all four paired comparisons,
