@@ -1,10 +1,13 @@
 # Participant v8 design notes
 
-Status: design in progress; no recipe registered and no new runs launched.
+Status: 60-tick world configuration implemented; enterprise scoring and the
+final benchmark recipe remain in design. No new runs launched.
 
 ## Agreed direction
 
 - Build the next leaderboard on a new v8 recipe; preserve v6/v7 evidence.
+- Run each benchmark world for 60 completed ticks with ten agents and
+  twelve-tick seasons. Keep required benchmark seeds 11 and 41.
 - Omit the message board.
 - Use medium reasoning effort as the practical budget/quality baseline. Freeze
   the exact model/connector mapping and output/time ceilings; medium does not
@@ -18,31 +21,42 @@ Status: design in progress; no recipe registered and no new runs launched.
   total run elapsed time divided by decisions. Preserve retry accounting;
   exclude between-call quota sleeps and machine downtime. Disclose provider
   and harness overhead and retain latency tails in detailed evidence.
+- Do not add an inventory bonus to capability. Whether useful reserves or
+  productive assets should count in enterprise remains a separate decision.
 - Audit candidate scores against retained evidence and constructed edge cases
   before freezing new formulas. Existing runs remain historical diagnostics
   under their original recipes when used to evaluate candidate scoring.
 
-## Still unresolved
+## Implemented horizon and world template
 
-The user proposed extending the horizon from 50 to 60 completed ticks; this
-remains a proposal, not an approved recipe change or run launch. At twelve
-ticks per season, 50 ticks includes spring, summer, autumn, winter, and two
-ticks of the next spring. Sixty ticks completes that second spring: five
-season blocks, not five annual cycles.
+[configs/run-configs/v8-world.example.json](../configs/run-configs/v8-world.example.json)
+encodes the agreed world: 60 ticks, ten generalists, medium effort, no board,
+self-declared commerce intent, and twelve-tick seasons. It is a managed
+experiment template until enterprise scoring and the final recipe are ready.
+It does not borrow v6/v7 recipe identity or claim v8 benchmark certification.
+Replace its run ID and placeholder model/connector before an authorized launch.
+Its single seed 11 follows the experiment usage policy; the eventual benchmark
+recipe retains both seeds 11 and 41. Worker count is operational.
 
-A longer horizon gives stored supplies and productive investments more time
+At twelve ticks per season, 60 ticks completes spring, summer, autumn, winter,
+and the next spring: five complete season blocks. Capability uses all sixty
+completed ticks and the final twelve completed ticks (49 through 60) as its
+tail. Those final twelve outcomes result from the second spring's decisions.
+The terminal state at tick 60 is the boundary before summer decisions begin.
+
+The longer horizon gives stored supplies and productive investments more time
 to affect observed health. It does not eliminate the terminal-stockpile
-blind spot: two societies with identical health trajectories still receive
-equal capability even if one has more useful reserves at the cutoff.
-Raw inventory value is not automatically a measure of future survival.
+blind spot: identical health trajectories still receive equal capability
+even if one society has more useful reserves at the cutoff. No inventory
+bonus is included.
 
-The horizon also changes the phase emphasized by the current twelve-tick
-tail: at 50 it covers ten winter ticks and two spring ticks; at 60 it covers
-a complete spring. Sixty is a candidate for assessing post-winter recovery,
-not merely a longer version of the same scoring window. More ticks increase
-potential decisions; cost and elapsed time will also depend on survival,
-context length, and reasoning. Follow AGENTS.md's provider-specific experiment
-replication and usage policy. No new study is authorized by this discussion.
+The old 50-tick horizon's final twelve outcomes span ten winter ticks and two
+spring ticks. At sixty they cover a complete spring, emphasizing post-winter
+recovery. More ticks increase potential decisions; cost and elapsed time also
+depend on survival, context length, and reasoning. Historical 50-tick evidence
+retains its original horizon and is not promoted to a 60-tick result.
+
+## Scoring and remaining work
 
 Capability and execution components are implemented in
 agent_world/outcome_scoring.py and reviewed in v8-capability-execution.md.
@@ -53,6 +67,8 @@ proposals, with contention excluded. Neither is a generic intelligence score.
 
 Enterprise remains undecided. The final v8 recipe is intentionally not
 registered until enterprise and the remaining protocol decisions are complete.
+Its world defaults must use the approved 60-tick horizon; its final checkpoint
+must also be tick 60.
 The component scorer and offline review are usable now; historical recipes,
 reports, and leaderboard rankings retain their original formulas.
 

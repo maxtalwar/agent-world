@@ -33,8 +33,10 @@ A = average H(t) across all completed ticks 1 through T.
 L = average H(t) across the last twelve completed ticks.
 Capability = sqrt(A * L).
 
-The final window is one season in the proposed 50-tick world. The implementation
-accepts an explicit tail length for other recipes; this is a scoring parameter,
+The approved v8 horizon is 60 completed ticks. The final window covers
+completed ticks 49 through 60: the outcomes of one full second spring. The
+implementation accepts an explicit tail length for other recipes; this is a
+scoring parameter,
 not inferred from model behavior. Historical review windows use one recorded
 season and cannot be pooled when horizons/windows differ.
 
@@ -54,8 +56,8 @@ they benefit capability only when they actually sustain health during the
 measured horizon. Economic accomplishments will be assessed by enterprise.
 
 Limitations: health is narrower than a complete description of agency. Economic
-investment with benefits beyond tick 50 is not credited here; that belongs in
-enterprise or a longer-horizon recipe. The final-season emphasis is an explicit
+investment with benefits beyond the measured horizon is not credited here;
+that belongs in enterprise or a longer-horizon recipe. The final-season emphasis is an explicit
 design preference, not a statistically discovered optimal weight.
 
 ## Execution
@@ -84,7 +86,8 @@ These percentages must not be compared numerically with old execution scores.
 
 ## Offline review results
 
-All values below apply the new components to old evidence, not v8 trials.
+All values below apply the new components to old 50-tick evidence, not
+60-tick v8 trials. Their original horizons and twelve-tick tails are preserved.
 Raw additive numerators and denominators are pooled before scoring.
 
 | Original evidence | New execution | New capability |

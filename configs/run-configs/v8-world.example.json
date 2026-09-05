@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "run_id": "v8-world-example",
+  "kind": "experiment",
+  "question": "Can this society sustain its population through winter and recover over the full second spring in the agreed v8 world?",
+  "model": {
+    "brain": "codex",
+    "id": "YOUR_EXACT_MODEL_ID",
+    "reasoning_effort": "medium"
+  },
+  "seeds": [
+    11
+  ],
+  "world": {
+    "preset": "frontier-generalists",
+    "objective_mode": "neutral",
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "width": 16,
+    "height": 16,
+    "action_feedback_mode": "baseline",
+    "transfer_kind_mode": "self_declared",
+    "town_ledger_seed_mode": "none",
+    "town_ledger_output_mode": "disabled",
+    "codex_action_max_items": 4,
+    "overrides": {
+      "season_length_ticks": 12,
+      "world_variant": "frontier"
+    }
+  },
+  "runtime": {
+    "ticks": 60,
+    "agents": 10,
+    "max_workers": 1
+  },
+  "harness": {
+    "connector_profile": "connector-v3",
+    "conversation_mode": "fresh-conversation",
+    "session_max_turns": 10,
+    "decision_mode": "raw",
+    "assignment_strategy": "ordered",
+    "assignment_seed": 0,
+    "observation_history_policy": "full-v1",
+    "claude_thinking_budget_tokens": 2048,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2
+  }
+}
