@@ -29,9 +29,12 @@ Google can accept OAuth while rejecting the account's Antigravity eligibility.
 In the setup check, the native TUI requested a personal Google account after
 rejecting a university account; `agy models` still returned a catalog.
 Finish onboarding and check the TUI's eligibility result. Antigravity preflight
-also requires native discovery of the isolated decision agent using `agy agents`.
-A missing agent blocks launch, even when catalog access succeeds. Agent
-discovery and live decisions still need validation with an eligible account.
+requires a valid `agy --print /usage` account-status table, which does not call
+a model. CLI 1.1.26 returns empty stdout from both `agy agents` and
+`agy --print /agents`, even though the interactive `/agents` panel correctly
+discovers the workspace definition. That empty output is not an authentication
+or discovery failure. The isolated definition was verified in that panel with
+a Google AI Pro account; live decisions remain a separate smoke-test step.
 
 Muse preflight checks binary version and the presence of account credentials.
 It does **not** prove that a saved token is valid, that a plan has quota, or that

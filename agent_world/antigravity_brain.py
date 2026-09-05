@@ -61,19 +61,26 @@ class AntigravityBrain(HeadlessBrain):
             suffix = self.model.rsplit("-", 1)[-1]
             if suffix in self.efforts and suffix != self.reasoning_effort:
                 return "Antigravity model slug effort conflicts with requested reasoning effort."
-            # A catalog is readable even when the account is ineligible. Require
-            # the native CLI to actually initialize and discover our boundary.
+            # The catalog works for ineligible accounts, and "agy agents"
+            # produces empty stdout in 1.1.26 even for valid workspace agents.
+            # /usage is handled by the CLI without inference and requires the
+            # authenticated backend. Do not treat an empty report as success.
             with tempfile.TemporaryDirectory(prefix="agent-world-agy-preflight-") as workspace:
                 self._prepare_workspace(workspace)
-                agents = run_process([self.executable, "agents"], cwd=workspace,
-                                     capture_output=True, text=True, timeout=30,
-                                     check=False, env=self._environment())
-                if agents.returncode or not re.search(
-                    rf"(?<![\w.-]){re.escape(AGENT_NAME)}(?![\w.-])", agents.stdout
-                ):
-                    return ("Antigravity cannot discover the isolated decision agent. "
-                            "Complete agy onboarding with an eligible account; catalog access alone "
-                            "does not prove readiness. Check native agent discovery before running.")
+                quota = run_process([self.executable, "--print", "/usage"], cwd=workspace,
+                                    capture_output=True, text=True, timeout=30,
+                                    check=False, env=self._environment())
+                rows = [line.split("\t") for line in quota.stdout.splitlines()]
+                has_quota_report = any(
+                    len(row) == 4
+                    and row[1] in {"Weekly Limit Remaining", "Five Hour Limit Remaining"}
+                    and re.fullmatch(r"(?:100|[0-9]{1,2})(?:\.[0-9]+)?%", row[2])
+                    for row in rows
+                )
+                if quota.returncode or not has_quota_report:
+                    return ("Antigravity account quota status unavailable. Complete agy onboarding "
+                            "with an eligible account and verify agy --print /usage. "
+                            "Model catalog access alone does not prove readiness.")
         except (OSError, ValueError, TimeoutError) as exc:
             return f"Antigravity preflight failed: {exc}"
         except subprocess.TimeoutExpired:

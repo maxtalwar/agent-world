@@ -188,7 +188,12 @@ class NativeDecisionTests(unittest.TestCase):
             self.assertIn("conflicts", brain.preflight())
 
     def test_antigravity_catalog_alone_is_not_readiness(self):
-        for discovery, expected in (("", False), ("- agent-world-decision (workspace)", True)):
+        for discovery, expected in (
+            ("", False),
+            ("Please sign in", False),
+            ("Gemini Models\tWeekly Limit Remaining\t100%\t2026-09-12T00:00:00Z", True),
+            ("Gemini Models\tWeekly Limit Remaining\t0%\t2026-09-12T00:00:00Z", True),
+        ):
             with self.subTest(discovery=discovery), patch(
                 "agent_world.antigravity_brain.Path.home", return_value=Path("/fixture")
             ), patch("agent_world.antigravity_brain.run_process", side_effect=[
