@@ -1505,3 +1505,30 @@ and recovery history must remain visible in any eventual admission decision.
 Evidence: native Grok session 01a06fd0-5d89-7cc0-b415-4b5a4f57c530,
 events.jsonl and updates.jsonl; run-usage-partial-tick-45.jsonl in
 runs/managed/grok-4-6-v7-corrected-20260905/seed-11.
+
+## 2026-09-05 — Grok model switching overwrites the system-prompt override
+
+Four controlled generic marker requests on installed Grok 1.0.5 reproduced
+the difference: 4.5 omitted the system override in both plan and dontAsk
+permission modes; 4.6 retained it in both modes. Historical inspection agreed:
+20 of 20 original 4.5 sessions omitted the override, while 210 of 210 original
+4.6 sessions retained it. The replacement coding prompt identified itself
+as Grok 4.6.
+
+Native model-setup logs showed 4.6 then 4.5 for 4.5 requests, and 4.6 then
+4.6 for 4.6 requests. The public implementation applies the custom system
+prompt at session creation, then overwrites the system message with the
+agent template on a model change. An unchanged model skips that rewrite.
+This explains the model-dependent delivery failure without different Agent
+World rulebooks. Permission mode was ruled out in the controlled test.
+
+Public source evidence, pinned to commit
+72a61251fcffb464bcc687aeb5a998e5a98ec0c9 of xai-org/grok-build:
+- [Session creation](https://github.com/xai-org/grok-build/blob/72a61251fcffb464bcc687aeb5a998e5a98ec0c9/crates/codegen/xai-grok-shell/src/agent/mvp_agent/mod.rs#L1094)
+- [Model-unchanged condition](https://github.com/xai-org/grok-build/blob/72a61251fcffb464bcc687aeb5a998e5a98ec0c9/crates/codegen/xai-grok-shell/src/agent/handlers/model_switch.rs#L217)
+- [System-message replacement](https://github.com/xai-org/grok-build/blob/72a61251fcffb464bcc687aeb5a998e5a98ec0c9/crates/codegen/xai-grok-shell/src/session/acp_session_impl/model_switch.rs#L86)
+
+The public source snapshot is not asserted to match the installed binary
+revision exactly; its mechanism agrees with the installed-binary traces.
+The existing user-turn rulebook workaround avoids this system-message rewrite.
+Native session identifiers and private diagnostic artifacts remain local.
