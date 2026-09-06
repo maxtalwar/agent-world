@@ -28,9 +28,6 @@ function render() {
   $('leader-seeds').textContent=top ? top.seeds.length+' seeds · #1' : 'Awaiting results';
   $('ranked-count').textContent=b.rows.length;$('active-count').textContent=b.active_count;
   $('field-caption').textContent=b.source==='Canonical metrics database'?'Includes labeled controlled variants.':'Completed, replicated results in this recipe.';
-  $('recipe-title').textContent='Participant '+b.title;
-  $('recipe-summary').textContent=primary[1]==='Capability'?'Capability, in the world.':'Sustained competence, measured.';
-  $('recipe-footer').innerHTML=b.trial ? '<span>'+esc(b.trial.agents)+' agents</span><span>'+esc(b.trial.ticks)+' ticks</span><span>'+esc(b.trial.seeds.length)+' seeds</span>' : '<span>Frozen scoring</span><span>Replicated evidence</span>';
   $('ranking-caption').textContent='Ranked by '+primary[1].toLowerCase()+' · '+b.source.toLowerCase();
   $('table-note').textContent='Select a model for evidence and seed details.';
   $('updated').textContent='Evidence updated '+relative(b.updated_at);
@@ -61,11 +58,13 @@ function renderTable() {
   $('no-results').textContent=b.rows.length?'No models match your search.':'Replicated rankings will appear here as studies finish.';
   $('table-body').querySelectorAll('button').forEach(el=>el.onclick=()=>showModel(el.dataset.model));
 }
-const stateLabel = state => ({running:'Running',completed:'Completed',status_stale:'Status out of date',waiting_quota:'Waiting for quota',paused_provider:'Provider paused',waiting_startup_gate:'Waiting for startup',blocked_startup_gate:'Startup blocked',needs_attention:'Needs attention',not_started:'Queued',unknown:'Status unavailable'})[state] || state.replaceAll('_',' ');
+const stateLabel = state => ({running:'Running',completed:'Completed',status_stale:'Status out of date',waiting_quota:'Quota paused',paused_provider:'Provider paused',waiting_startup_gate:'Waiting for startup',blocked_startup_gate:'Startup blocked',needs_attention:'Needs attention',not_started:'Queued',unknown:'Status unavailable'})[state] || state.replaceAll('_',' ');
 function studyMarkup(run) {
   const request=(data?.launches||[]).find(r=>r.run_id===run.id);
+  const quota=run.cells.filter(c=>c.state==='waiting_quota').length;
+  const status=run.ranked?'Ranked':quota?'Quota paused':'In study';
   const supervisor=request?.error?'<p class="attention">Monitoring: '+esc(request.error)+'</p>':'';
-  return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+(run.ranked?'Ranked':'In study')+'</span></div>'+run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+' · '+esc(stateLabel(c.state))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(c.attention?'<p class="attention">'+esc(c.attention)+'</p>':'')+(c.retry_at?'<p class="study-note">Next retry '+esc(new Date(c.retry_at).toLocaleString())+'</p>':'')).join('')+run.warnings.map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+supervisor+'<p class="study-note">Controller updated '+esc(relative(run.checked_at))+'</p></article>';
+  return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+status+'</span></div>'+run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+' · '+esc(stateLabel(c.state))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(c.attention?'<p class="attention">'+esc(c.attention)+'</p>':'')+(c.retry_at?'<p class="study-note">Next retry '+esc(new Date(c.retry_at).toLocaleString())+'</p>':'')).join('')+run.warnings.map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+supervisor+'<p class="study-note">Controller updated '+esc(relative(run.checked_at))+'</p></article>';
 }
 function renderActivity(){
   const runs=board().runs, open=runs.filter(r=>!r.ranked), complete=runs.filter(r=>r.ranked);

@@ -93,6 +93,21 @@ class LeaderboardTests(unittest.TestCase):
         self.assertEqual(run["cells"][0]["state"], "status_stale")
         self.assertEqual(run["cells"][0]["tick"], 12)
 
+    def test_controller_quota_state_wins_over_live_process_state(self):
+        from datetime import datetime, timezone
+        job, path = self.fixture(complete=False)
+        Path(job["cells"][0]["run_manifest"]).write_text('{"status":"running"}')
+        path.with_name("controller-heartbeat.json").write_text(json.dumps({
+            "checked_at_utc": datetime.now(timezone.utc).isoformat(),
+            "cells": [{"id": "seed-11", "state": "running", "controller_state": "waiting_quota", "tick": 53}],
+        }))
+        run, _, _ = self.store.managed_run(job, path)
+        self.assertEqual(run["cells"][0]["state"], "waiting_quota")
+        self.assertEqual(run["cells"][0]["tick"], 53)
+        Path(job["cells"][0]["run_manifest"]).write_text('{"status":"completed","final_tick":60}')
+        run, _, _ = self.store.managed_run(job, path)
+        self.assertEqual(run["cells"][0]["state"], "completed")
+
     def test_terminal_manifest_wins_over_stale_heartbeat(self):
         job, path = self.fixture(complete=False)
         path.with_name("controller-heartbeat.json").write_text(json.dumps({

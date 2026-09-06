@@ -226,7 +226,8 @@ class LeaderboardStore:
         reports, signatures = [], []
         for cell in job["cells"]:
             latest = heartbeat_cells.get(cell["id"], {})
-            state = latest.get("state") or cell.get("controller_state") or "unknown"
+            state = (latest.get("controller_state") or cell.get("controller_state")
+                     or latest.get("state") or "unknown")
             tick = latest.get("tick", cell.get("controller_last_tick"))
             try:
                 manifest = read_json(within(self.root, cell["run_manifest"]))
