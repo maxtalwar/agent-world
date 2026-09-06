@@ -21,6 +21,29 @@ from urllib.parse import urlsplit
 
 LOG = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
+# Model identity determines the lab, never the harness/provider transport.
+LABS = {
+    "openai": ("OpenAI", r"gpt|chatgpt|codex|o[134](?:$|[-.])"),
+    "anthropic": ("Anthropic", r"anthropic|claude|opus|sonnet|haiku|fable"),
+    "meta": ("Meta", r"meta|llama|muse"),
+    "xai": ("xAI", r"xai|x-ai|grok"),
+    "alibabacloud": ("Alibaba Cloud", r"alibaba|qwen|qwq"),
+    "google": ("Google", r"google|gemini|gemma"),
+    "deepseek": ("DeepSeek", r"deepseek"),
+    "zai": ("Z.ai", r"z-ai|zai|zhipu|glm|chatglm"),
+    "mistral": ("Mistral AI", r"mistral|mixtral|magistral|devstral|codestral"),
+    "moonshot": ("Moonshot AI", r"moonshot|kimi"),
+    "cohere": ("Cohere", r"cohere|command-r|command-a"),
+    "minimax": ("MiniMax", r"minimax"),
+}
+
+
+def model_lab(model: str) -> dict:
+    for key, (name, pattern) in LABS.items():
+        if re.search(r"(?:^|[/ :_-])(?:" + pattern + r")", model.lower()):
+            return {"id": key, "name": name}
+    return {"id": "unknown", "name": "Lab unspecified"}
+
 CLASSIC_COLUMNS = [
     ["sustained_competence", "Competence"],
     ["effective_execution", "Execution"],
@@ -128,6 +151,7 @@ class LeaderboardStore:
                 """, (r["model_key"],))]
                 board["rows"].append({
                     "id": r["model_key"], "model": r["label"], "rank": r["rank"],
+                    "lab": model_lab(r["model_key"]),
                     "scores": {k: v.get("score") for k, v in scores.items()},
                     "formulas": {k: v.get("formula", "") for k, v in scores.items()},
                     "status": "Controlled variant" if r["controlled_variant"] else "Replicated",
@@ -249,6 +273,7 @@ class LeaderboardStore:
                 costs = [x.get("api_list_cost_usd") for x in r["required_replications"]]
                 rows.append({
                     "id": job["run_id"] + ":" + r["model"], "model": model_label(r["model"]),
+                    "lab": model_lab(r["model"]),
                     "scores": {k: v.get("score") for k, v in r["scores"].items()},
                     "formulas": {k: v.get("formula", "") for k, v in r["scores"].items()},
                     "status": r["status"].replace("_", " ").capitalize(),
@@ -358,7 +383,9 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091) -> Thread
                 content_type = "application/json"
             elif path == "/healthz":
                 body, content_type = b'{"ok":true}', "application/json"
-            elif path in {"/", "/leaderboard.js", "/leaderboard.css", "/inter-latin.woff2"}:
+            elif path in {"/", "/leaderboard.js", "/leaderboard.css", "/inter-latin.woff2"} | {
+                "/labs/" + lab + ".svg" for lab in (*LABS, "unknown")
+            }:
                 filenames = {"/": "leaderboard.html"}
                 file = STATIC / filenames.get(path, path[1:])
                 try:
@@ -367,7 +394,8 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091) -> Thread
                     self.send_error(404)
                     return
                 content_type = {".html": "text/html; charset=utf-8", ".js": "text/javascript",
-                                ".css": "text/css", ".woff2": "font/woff2"}[file.suffix]
+                                ".css": "text/css", ".woff2": "font/woff2",
+                                ".svg": "image/svg+xml"}[file.suffix]
             else:
                 self.send_error(404)
                 return

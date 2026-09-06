@@ -20,6 +20,7 @@ shutil.copy2(root / "agent_world/leaderboard.py", target / "leaderboard.py")
 shutil.copy2(root / "scripts/serve-leaderboard", target / "serve-leaderboard")
 for name in ["leaderboard.html", "leaderboard.css", "leaderboard.js", "inter-latin.woff2"]:
     shutil.copy2(root / "agent_world/static" / name, target / "static" / name)
+shutil.copytree(root / "agent_world/static/labs", target / "static/labs", dirs_exist_ok=True)
 '@
 & $wsl -d $Distribution --cd $Repository --exec python3 -c $install
 if ($LASTEXITCODE) { throw 'Could not install the leaderboard release.' }
