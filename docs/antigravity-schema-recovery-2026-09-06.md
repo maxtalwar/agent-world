@@ -66,3 +66,24 @@ archives still matched their hashes. Consolidated monitoring retains ownership.
 
 These are explicitly migrated runs. Finalization must require source-migration
 provenance review; this repair does not certify or admit mixed-source evidence.
+
+## Subsequent quota classification correction
+
+At the 21:14 UTC monitor pass, all four Gemini cells had paused after their
+first recovered tick (12/11 and 28/29). Native errors said `Individual quota
+reached ... Resets in 4h15m...`, but the shared quota matcher recognized
+`quota exceeded` rather than `quota reached`, so controllers treated the cap as
+transient unavailability. Commit `a886e7e` recognizes that wording. 37 native
+connector/provider-limit tests pass, including a regression asserting that this
+exact error blocks subsequent calls and parses its relative reset delay.
+
+No additional provider call was made for the correction. Under each job lock,
+existing provider-event timestamps and reset delays were used to restore a
+conservative retry deadline of 2026-09-07 01:22:11 UTC (18:22 PDT), including a
+60-second margin. Original provider errors and recovery records were retained.
+Append-only `run_quota_wait` and controller `quota_deadline_recovered` events
+identify this reconstruction and its evidence digest. Per-cell `seed-N-quota.json`
+records link and hash the previous migration record and identify execution
+commit `a886e7e` for the next managed resume. Worlds and accepted cached decisions
+were not advanced or replaced. Controllers retain ownership of the scheduled
+resume; the source-migration provenance-review requirement remains in force.
