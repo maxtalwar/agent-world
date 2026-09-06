@@ -252,6 +252,36 @@ class ManagedFinalizationTests(unittest.TestCase):
 
 
 class RecipeFinalizationTests(unittest.TestCase):
+    def test_api_cost_is_independent_of_subscription_charge(self):
+        from agent_world.run_finalization import _audit_report
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = Path(directory) / "manifest.json"
+            manifest.write_text(json.dumps({"resolved_models": {"fixture": 1}}))
+            cell = {"seed": 11, "target_ticks": 60, "run_manifest": str(manifest)}
+            job = {"config": {"model": {"id": "fixture"}}}
+            priced = {"available": True, "cost_usd": {"total": 7.25},
+                      "rate_card": {"effective_date": "2026-09-05"}}
+            cases = [
+                ({"total_cost_usd": 0, "attempted_token_cost": priced}, 7.25),
+                ({"total_cost_usd": 5, "estimated_cost": priced}, 7.25),
+                ({"total_cost_usd": 5}, None),
+                ({"total_cost_usd": 0, "estimated_cost": priced,
+                  "attempted_token_cost": {"available": False}}, None),
+                ({"estimated_cost": {"available": True, "cost_usd": {"total": 0}}}, 0),
+            ]
+            for usage, expected in cases:
+                with self.subTest(usage=usage):
+                    report = {"run": {"completed": True, "final_tick": 60},
+                              "reliability": {"benchmark_integrity_status": "clean",
+                                              "usage_record_coverage_pct": 100.0},
+                              "usage": usage}
+                    result = _audit_report(job, cell, report)
+                    self.assertEqual(result["api_list_cost_usd"], expected)
+                    self.assertEqual(result["provider_reported_cost_usd"], usage.get("total_cost_usd"))
+                    self.assertEqual(result["cost_accounting"],
+                                     "api_list_derived" if expected is not None
+                                     else "unavailable_no_matching_api_rate_card")
+
     def test_requested_identity_is_sufficient_without_response_attestation(self):
         from agent_world.run_finalization import _audit_report
         with tempfile.TemporaryDirectory() as directory:

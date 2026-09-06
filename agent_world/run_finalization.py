@@ -298,9 +298,20 @@ def _audit_report(
         )
     usage = report.get("usage") or {}
     provider_cost = usage.get("total_cost_usd")
+    # Comparable cost is derived from token usage, independently of the
+    # subscription's reported charge. Prefer all attempts over accepted calls.
+    token_cost = usage.get("attempted_token_cost")
+    if token_cost is None:
+        token_cost = usage.get("estimated_cost") or {}
+    api_cost = (token_cost.get("cost_usd") or {}).get("total")
+    api_available = (
+        token_cost.get("available") is True
+        and isinstance(api_cost, (int, float))
+        and not isinstance(api_cost, bool)
+        and api_cost >= 0
+    )
     cost_accounting = (
-        "provider_metered_cost_recorded"
-        if isinstance(provider_cost, (int, float)) and provider_cost > 0
+        "api_list_derived" if api_available
         else "unavailable_no_matching_api_rate_card"
     )
     return {
@@ -316,6 +327,8 @@ def _audit_report(
             "basis": "reviewed_native_alias" if alias_verified else provenance_status,
         },
         "cost_accounting": cost_accounting,
+        "api_list_cost_usd": api_cost if api_available else None,
+        "api_list_rate_card": token_cost.get("rate_card") if api_available else None,
         "provider_reported_cost_usd": provider_cost,
         "blockers": blockers,
     }

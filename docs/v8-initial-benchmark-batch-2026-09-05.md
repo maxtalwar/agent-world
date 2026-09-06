@@ -48,3 +48,27 @@ echo the serving model. Conflicting returned identities require review.
 No result is admitted to the source catalog or leaderboard until completed
 evidence passes the reporting workflow. This manifest is a launch plan, not
 a performance claim.
+
+## Completion handoff — 2026-09-06 02:47 UTC
+
+Terra is analysis-ready on both required seeds, each with a terminal
+run_completed event at tick 60. Seeds 11 and 41 contain 476 and 486 decisions,
+respectively, with 100% usage coverage, clean integrity, no provider failures,
+and complete self-declared transfer accounting. Requested gpt-5.6-terra identity
+is recorded as requested_only, consistent with the accepted native CLI policy.
+Both reports are protocol-compliant and share source fingerprint
+77b2c0ac0928173d1a91c77094825a9d5b30ce059efefd7bb95740b2fc7018fa.
+The manifest and evidence paths above contain the analysis-ready handoff.
+
+The completion audit exposed a finalizer metadata bug: it inspected the
+subscription charge rather than the report's token-derived API estimate.
+The corrected audit records API-list estimates of $7.264506 and $7.617036,
+using the report's dated 2026-09-05 rate card, separately from $0 reported
+subscription charges. Simulation source, raw evidence, and scores are unchanged.
+Finalization and v8 integration tests pass (20 tests).
+
+Luna and Muse remain under their original controllers. Their pinned
+orchestrators predate this metadata correction: after automatic completion,
+check the accounting label against attempted_token_cost and recover the
+finalization audit using the corrected source checkout if necessary.
+Do not restart their simulations or modify their pinned cohorts.
