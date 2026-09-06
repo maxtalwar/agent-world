@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -43,6 +45,24 @@ def _config(kind: str = "experiment") -> dict:
 
 
 class ResumeQuotaTests(unittest.TestCase):
+    def test_detached_launcher_preserves_callers_path_with_shell_characters(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            isolated = scripts / "run-isolated-cohort"
+            isolated.write_text('#!/bin/bash\nprintf "%s" "$PATH"\n')
+            isolated.chmod(0o700)
+            log = root / "run.log"
+            job = {"job_dir": temp, "source_root": temp, "launch_commit": "abc"}
+            cell = {"id": "seed-11", "cohort_id": "fixture", "log": str(log),
+                    "command": ["unused"]}
+            intended = "/fake tool's bin:/literal$(false):/usr/bin:/bin"
+            with patch.dict(os.environ, {"PATH": intended}):
+                launcher = _write_launcher(job, cell, resume=False)
+            subprocess.run(["/bin/bash", str(launcher)], env={"PATH": "/usr/bin:/bin"}, check=True)
+            self.assertEqual(log.read_text(), intended)
+
     def test_resume_keeps_benchmark_default_and_explicit_wait(self):
         for kind, runtime, expected in [
             ("benchmark", {}, "12.0"),

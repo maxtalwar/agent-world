@@ -6,6 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 import fcntl
 import json
+import os
 from pathlib import Path
 import re
 import shlex
@@ -426,6 +427,7 @@ def _write_launcher(job: dict[str, Any], cell: dict[str, Any], *, resume: bool) 
     ]
     content = (
         "#!/usr/bin/env bash\nset -uo pipefail\n"
+        f"export PATH={shlex.quote(os.environ.get('PATH', os.defpath))}\n"
         f"exec {shlex.join(isolated)} >> {shlex.quote(cell['log'])} 2>&1\n"
     )
     path.write_text(content, encoding="utf-8")
@@ -498,6 +500,7 @@ def _launch_gate_supervisor(job: dict[str, Any]) -> None:
     script = Path(job["job_dir"]) / "supervise-startup-gate.sh"
     script.write_text(
         "#!/usr/bin/env bash\nset -uo pipefail\n"
+        f"export PATH={shlex.quote(os.environ.get('PATH', os.defpath))}\n"
         f"cd {shlex.quote(job['source_root'])}\n"
         f"exec python3 -m agent_world.managed_runs supervise "
         f"{shlex.quote(str(Path(job['job_dir']) / 'job.json'))} "
@@ -540,6 +543,7 @@ def _launch_job_controller(job: dict[str, Any]) -> None:
     script.write_text(
         "#!/usr/bin/env bash\n"
         "set -uo pipefail\n"
+        f"export PATH={shlex.quote(os.environ.get('PATH', os.defpath))}\n"
         f"cd {shlex.quote(execution_root)}\n"
         "attempt=0\n"
         "while true; do\n"
