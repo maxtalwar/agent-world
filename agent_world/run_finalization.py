@@ -421,6 +421,8 @@ def finalize_job(
                 else {"run": {}, "reliability": {}, "benchmarks": {}}
             )
         audit = _audit_report(job, cell, report)
+        if cell.get("source_recovery_record"):
+            audit["blockers"].append(f"Seed {cell['seed']} requires source migration provenance review.")
         if not transfer_complete:
             audit["blockers"].append(
                 f"Seed {cell['seed']} transfer accounting is not finalized for {protocol}."

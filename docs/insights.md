@@ -23,6 +23,22 @@ masqueraded as model behavior — append an entry.** Rules:
   The bar is: would a researcher who read every leaderboard still be surprised?
 
 
+## 2026-09-06 — Antigravity schema completion can look like forbidden tool use
+
+**Generic Antigravity stream tool events can be internal schema-finish retries,
+not external tool execution.** The four latest paused cells of
+`web-gemini-3-6-flash-medium-8c4e0fb57817` (ticks 11/10) and
+`web-gemini-3-7-flash-medium-1ae63d77303d` (27/28) retained native sessions whose
+non-planner steps were exclusively type 132 `finish`, with no subtrajectories.
+For example session `d463793f-3d2b-461b-b3cd-499646f0d4ce` rejected an oversized
+schema field before completing. The adapter had counted its two generic tool
+updates as external activity. A read-only native-record check now distinguishes
+exact finish calls and rejects missing, malformed, foreign or external evidence.
+Old failed stdout was not retained; native SQLite step payloads are the evidence,
+corroborated by a bounded CLI 1.1.27 structured-output probe. Earlier failed
+sessions without retained records remain unverified. Recovery preserves original
+checkpoints and source, and requires provenance review before certification.
+
 ## 2026-09-06 — Revised runs improve full-horizon health for all three models
 
 **The revised cohort improves health even when old and new runs use the same

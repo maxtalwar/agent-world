@@ -237,6 +237,7 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("--snapshot", type=Path, default=None)
     run_parser.add_argument("--checkpoint", type=Path, default=None, help="Crash-resume checkpoint path. Derived from --out when omitted.")
     run_parser.add_argument("--resume-checkpoint", type=Path, default=None, help="Resume a trusted local checkpoint; --ticks may extend its total target.")
+    run_parser.add_argument("--source-recovery-record", type=Path, default=None, help="Explicit audited connector recovery record; preserves historical source evidence.")
     run_parser.add_argument("--no-agent-io-log", action="store_true", help="Do not log private observations/prompts.")
     run_parser.add_argument("--sequential-decisions", action="store_true", help="Disable same-tick concurrent brain calls.")
     run_parser.add_argument("--max-workers", type=int, default=None, help="Maximum same-tick brain calls. Provider-backed brains default to four workers.")
@@ -798,9 +799,14 @@ def _run(args: argparse.Namespace) -> None:
                 args.brain or saved.get("brain")
             )
             resume_providers = [provider] if provider else []
-        _check_resume_fingerprint(
-            saved_benchmark, args.benchmark_code_fingerprint, resume_providers
-        )
+        if args.source_recovery_record:
+            from agent_world.source_recovery import validate_recovery_record
+            validate_recovery_record(args.source_recovery_record, args.resume_checkpoint,
+                                     saved_benchmark, args.benchmark_code_fingerprint, resume_providers)
+        else:
+            _check_resume_fingerprint(
+                saved_benchmark, args.benchmark_code_fingerprint, resume_providers
+            )
         args.ticks = args.ticks if args.ticks is not None else int(saved.get("target_ticks") or engine.state.tick)
         args.agents = len(engine.state.agents)
         if args.out is None and saved.get("events_path"):

@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import json
+import hashlib
+import sqlite3
+import uuid
 import os
 from pathlib import Path
 import re
@@ -110,10 +113,10 @@ class AntigravityBrain(HeadlessBrain):
                            timeout=self.timeout_seconds, check=False, env=self._environment()), {}
 
     def _parse(self, stdout: str, artifacts: dict[str, Any]) -> dict[str, Any]:
-        return parse_antigravity_result(stdout)
+        return parse_antigravity_result(stdout, trace_root=Path.home() / ".gemini/antigravity-cli/conversations")
 
 
-def parse_antigravity_result(stdout: str) -> dict[str, Any]:
+def parse_antigravity_result(stdout: str, *, trace_root: Path | None = None) -> dict[str, Any]:
     events = [json.loads(line) for line in stdout.splitlines() if line.strip()]
     if not events or any(not isinstance(row, dict) for row in events):
         raise BoundaryError("Antigravity returned no JSON events")
@@ -131,12 +134,99 @@ def parse_antigravity_result(stdout: str) -> dict[str, Any]:
         raise BoundaryError("Antigravity usage is not an object")
     structured = result.get("structured_output")
     response = json.dumps(structured) if isinstance(structured, dict) else result.get("response")
-    tool_calls = sum(row.get("step_update", {}).get("step_type") == "tool" for row in events)
+    tool_steps = [row["step_update"] for row in events
+                  if row.get("step_update", {}).get("step_type") == "tool"]
+    tool_calls = len(tool_steps)
+    trace_hash = None
+    if tool_steps and trace_root is not None:
+        tool_calls, trace_hash = audit_schema_finish_steps(
+            tool_steps, result.get("conversation_id"), trace_root)
+
     return {
         "response": response, "error": None if result["status"] == "SUCCESS" else result.get("error") or result["status"],
         "response_model": result.get("model"), "observed_reasoning_effort": result.get("reasoning_effort"),
         "session_id": result.get("conversation_id"), "tool_calls": tool_calls,
+        "trace_sha256": trace_hash,
         "usage": {"prompt_tokens": usage.get("input_tokens"), "completion_tokens": usage.get("output_tokens"),
                   "reasoning_tokens": usage.get("thinking_tokens"), "cached_tokens": usage.get("cache_read_tokens"),
                   "cache_write_tokens": usage.get("cache_write_tokens")},
     }
+
+
+def _wire_fields(data: bytes) -> dict[int, list[Any]]:
+    """Read only protobuf wire fields; reject malformed native evidence."""
+    fields: dict[int, list[Any]] = {}
+    pos = 0
+    def varint():
+        nonlocal pos
+        value = 0
+        for shift in range(0, 70, 7):
+            if pos >= len(data):
+                raise ValueError("truncated protobuf")
+            byte = data[pos]
+            pos += 1
+            value |= (byte & 127) << shift
+            if byte < 128:
+                return value
+        raise ValueError("oversized protobuf varint")
+    while pos < len(data):
+        tag = varint()
+        field, wire = tag >> 3, tag & 7
+        if not field:
+            raise ValueError("invalid protobuf field")
+        if wire == 0:
+            value = varint()
+        elif wire in (1, 2, 5):
+            size = varint() if wire == 2 else (8 if wire == 1 else 4)
+            if pos + size > len(data):
+                raise ValueError("truncated protobuf field")
+            value = data[pos:pos + size]
+            pos += size
+        else:
+            raise ValueError("unsupported protobuf wire type")
+        fields.setdefault(field, []).append(value)
+    return fields
+
+
+def _one(fields, key):
+    values = fields.get(key, [])
+    if len(values) != 1:
+        raise ValueError("ambiguous native evidence field")
+    return values[0]
+
+
+def audit_schema_finish_steps(steps, session_id, trace_root):
+    """Exempt only native finish calls authenticated by local CLI step records.
+
+    CLI 1.1.27 sometimes emits finish-schema retries as generic `tool` updates.
+    Step.metadata.tool_call.name (5/4/2) identifies the actual native operation;
+    text, toolSummary and model-authored arguments are never allowlist evidence.
+    Missing, foreign, malformed or external records retain the boundary failure.
+    """
+    try:
+        if str(uuid.UUID(session_id)) != session_id:
+            raise ValueError("invalid native session")
+        path = trace_root / (session_id + ".db")
+        digest = hashlib.sha256()
+        external = 0
+        with sqlite3.connect(path.as_uri() + "?mode=ro", uri=True) as conn:
+            for step in steps:
+                idx = step.get("step_index")
+                if step.get("conversation_id") != session_id or type(idx) is not int or idx < 0:
+                    raise ValueError("foreign native step")
+                row = conn.execute(
+                    "SELECT step_type, has_subtrajectory, step_format, step_payload FROM steps WHERE idx=?",
+                    (idx,),
+                ).fetchone()
+                if row is None or row[1] or row[2] != 0 or not isinstance(row[3], bytes):
+                    raise ValueError("missing native step evidence")
+                digest.update(str(idx).encode() + b":" + row[3])
+                fields = _wire_fields(row[3])
+                metadata = _wire_fields(_one(fields, 5))
+                call = _wire_fields(_one(metadata, 4))
+                name = _one(call, 2)
+                if row[0] != 132 or _one(fields, 1) != 132 or name != b"finish":
+                    external += 1
+        return external, digest.hexdigest()
+    except (ValueError, TypeError, AttributeError, OSError, sqlite3.Error):
+        return len(steps), None

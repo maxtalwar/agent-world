@@ -421,9 +421,11 @@ def _write_launcher(job: dict[str, Any], cell: dict[str, Any], *, resume: bool) 
                 BENCHMARK_QUOTA_WAIT_HOURS if config["kind"] == "benchmark" else 0.0
             )
         inner.extend(["--quota-wait-hours", str(quota_wait_hours)])
+    if resume and cell.get("source_recovery_record"):
+        inner.extend(["--source-recovery-record", cell["source_recovery_record"]])
     isolated = [
         str(Path(cell.get("worktree") or job["source_root"]) / "scripts/run-isolated-cohort"),
-        "--cohort", cell["cohort_id"], "--commit", job["launch_commit"], "--", *inner,
+        "--cohort", cell["cohort_id"], "--commit", cell.get("execution_commit", job["launch_commit"]), "--", *inner,
     ]
     content = (
         "#!/usr/bin/env bash\nset -uo pipefail\n"
@@ -442,7 +444,7 @@ def _prepare_cell(job: dict[str, Any], cell: dict[str, Any]) -> None:
     result = subprocess.run(
         [
             str(launcher), "--cohort", cell["cohort_id"], "--commit",
-            job["launch_commit"], "--prepare-only", "--",
+            cell.get("execution_commit", job["launch_commit"]), "--prepare-only", "--",
         ],
         cwd=job["source_root"],
         capture_output=True,

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sqlite3
 from pathlib import Path
 import subprocess
 import tempfile
@@ -57,6 +58,38 @@ class NativeEnvelopeTests(unittest.TestCase):
         self.assertEqual(result["usage"]["cached_tokens"], 50)
         self.assertIsNone(result["response_model"])
         self.assertIsNone(parse_antigravity_result(agy_result(usage={}))["usage"]["prompt_tokens"])
+
+    def test_antigravity_schema_finish_requires_native_evidence(self):
+        def varint(n):
+            out = bytearray()
+            while n > 127:
+                out.append((n & 127) | 128)
+                n >>= 7
+            return bytes(out) + bytes([n])
+        def field(n, value):
+            return varint(n * 8 + 2) + varint(len(value)) + value
+        def payload(name):
+            return b"\x08\x84\x01" + field(5, field(4, field(2, name)))
+        step = {"event": "step_update", "step_update": {
+            "conversation_id": SID, "step_index": 2, "step_type": "tool"}}
+        stream = json.dumps(step) + "\n" + agy_result()
+        with tempfile.TemporaryDirectory() as root:
+            path = Path(root)
+            self.assertEqual(parse_antigravity_result(stream, trace_root=path)["tool_calls"], 1)
+            with sqlite3.connect(path / (SID + ".db")) as conn:
+                conn.execute("CREATE TABLE steps(idx INTEGER, step_type INTEGER, has_subtrajectory INTEGER, step_format INTEGER, step_payload BLOB)")
+                conn.execute("INSERT INTO steps VALUES(2,132,0,0,?)", (payload(b"finish"),))
+            parsed = parse_antigravity_result(stream, trace_root=path)
+            self.assertEqual(parsed["tool_calls"], 0)
+            self.assertEqual(len(parsed["trace_sha256"]), 64)
+            for name, sub, blob in [(b"run_command", 0, None), (b"invoke_subagent", 0, None),
+                                    (b"finish", 1, None), (b"finish", 0, b"broken")]:
+                with self.subTest(name=name, sub=sub, blob=blob):
+                    with sqlite3.connect(path / (SID + ".db")) as conn:
+                        conn.execute("UPDATE steps SET has_subtrajectory=?,step_payload=?", (sub, blob or payload(name)))
+                    self.assertEqual(parse_antigravity_result(stream, trace_root=path)["tool_calls"], 1)
+            step["step_update"]["conversation_id"] = "foreign"
+            self.assertEqual(parse_antigravity_result(json.dumps(step) + "\n" + agy_result(), trace_root=path)["tool_calls"], 1)
 
     def test_antigravity_requires_single_known_terminal(self):
         for text in ("", "[]", agy_result() + "\n" + agy_result(), agy_result(status="NEW_STATUS")):
