@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "id": "participant-v8",
+  "defaults": {
+    "ticks": 60,
+    "agents": 10,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "objective_mode": "neutral",
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "reasoning_effort": "medium",
+    "connector_profile": "connector-v3",
+    "conversation_mode": "fresh-conversation",
+    "session_max_turns": 10,
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "assignment_strategy": "ordered",
+    "assignment_seed": 0,
+    "width": 16,
+    "height": 16,
+    "claude_thinking_budget_tokens": 2048,
+    "startup_health_check_tick": 5,
+    "startup_health_max_failure_rate": 0.2,
+    "transfer_kind_mode": "self_declared",
+    "season_length_ticks": 12,
+    "observation_history_policy": "full-v1",
+    "codex_action_max_items": 4,
+    "town_ledger_seed_mode": "none",
+    "town_ledger_output_mode": "disabled"
+  },
+  "transfer_accounting": "self_declared",
+  "replications": {
+    "required_seeds": [
+      11,
+      41
+    ],
+    "extended_seeds": [
+      73,
+      101,
+      137
+    ],
+    "provisional_seed": 11
+  },
+  "checkpoints": [
+    12,
+    24,
+    36,
+    48,
+    60
+  ],
+  "scoring": {
+    "policy": "outcome-production",
+    "revision": 1,
+    "parameters": {
+      "capability_tail_ticks": 12
+    }
+  }
+}

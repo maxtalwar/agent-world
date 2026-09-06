@@ -1,8 +1,4 @@
-"""Outcome and decision scoring components for the unregistered v8 design.
-
-These functions never relabel a run or modify historical participant scores.
-Enterprise and the final v8 recipe are deliberately not selected here.
-"""
+"""Outcome, execution, and production scoring independent of recipe identity."""
 from __future__ import annotations
 
 import math
@@ -31,21 +27,24 @@ def derive_outcome_counts(
     member_ids: list[str],
     target_ticks: int,
     tail_ticks: int,
+    require_completed: bool = True,
 ) -> dict[str, float]:
     """Derive additive counts from completed, original-population evidence.
 
     Health at observation tick t is the state after t completed world ticks.
     Use observations 1..T-1 and the terminal snapshot at T, excluding the
     unearned initial health at tick zero. Proven deaths contribute zero.
+    Live diagnostic checkpoints may omit run_completed only when explicitly
+    requested; benchmark certification independently requires completed evidence.
     """
     if target_ticks < 1 or not 1 <= tail_ticks <= target_ticks:
         raise ValueError("Require target_ticks >= tail_ticks >= 1")
     if not member_ids or len(set(member_ids)) != len(member_ids):
         raise ValueError("Require a nonempty unique original population")
-    if snapshot.get("tick") != target_ticks or not any(
+    if snapshot.get("tick") != target_ticks or (require_completed and not any(
         e.get("type") == "run_completed" and e.get("tick") == target_ticks
         for e in events
-    ):
+    )):
         raise ScoringEvidenceError("A complete target-horizon run is required")
     members = set(member_ids)
     health: dict[tuple[int, str], float] = {}

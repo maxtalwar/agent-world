@@ -556,3 +556,43 @@ def _nonnegative_int(value: Any) -> int:
     except (TypeError, ValueError):
         return 0
     return max(0, parsed)
+
+
+def summarize_decision_latency(records, attempted_records=None):
+    """Sum recorded retry/call time per resolved decision, excluding idle waits.
+
+    Missing timing is unavailable, never zero. Multiple attempts for the same
+    (tick, agent) belong to one decision. Orphan attempts cannot be assigned to
+    resolved decisions and make this headline estimate incomplete.
+    """
+    import math
+    attempted = records if attempted_records is None else attempted_records
+
+    def key(row):
+        if row.get("tick") is None or row.get("agent_id") is None:
+            return None
+        return (row["tick"], row["agent_id"])
+
+    keys = {key(row) for row in records}
+    valid_keys = keys - {None}
+    durations = []
+    timed_keys = set()
+    per_decision = {}
+    complete = bool(valid_keys) and None not in keys
+    for row in attempted:
+        identity, duration = key(row), row.get("duration_seconds")
+        if (identity not in valid_keys or isinstance(duration, bool)
+                or not isinstance(duration, (int, float))
+                or not math.isfinite(duration) or duration < 0):
+            complete = False
+            continue
+        durations.append(duration)
+        per_decision[identity] = per_decision.get(identity, 0.0) + duration
+        timed_keys.add(identity)
+    complete = complete and timed_keys == valid_keys
+    total = sum(durations)
+    return {"decisions": len(valid_keys), "attempts": len(attempted),
+            "timed_attempts": len(durations), "complete": complete,
+            "total_seconds": total if complete else None,
+            "mean_seconds": total / len(valid_keys) if complete else None,
+            "decision_seconds": list(per_decision.values()) if complete else []}

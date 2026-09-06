@@ -221,3 +221,22 @@ by the catalog model suite; the leaderboard view exposes that suite. Use
 `python3 -m agent_world.benchmark_db leaderboard --suite participant-v7`
 for the current field, or participant-v6 for the historical comparison.
 Unfiltered output renders separate protocol tables.
+
+## V8 production projection (schema 4)
+
+`run_cohorts` and `model_results` add nullable `capability` and `production`
+fields. V8 populates these new fields; its legacy `competence`,
+`entrepreneurship`, and `economic_productivity` fields remain null.
+Historical rows retain their original named scores and numeric values.
+
+The compatibility `leaderboard` view keeps its original columns.
+`production_leaderboard` exposes the new score names and mean decision latency.
+Use `python3 -m agent_world.benchmark_db leaderboard --suite participant-v8`
+for the compact Model / Capability / Execution / Production / Cost/run /
+Mean time/decision projection.
+
+V8 costs include all unique recorded attempts. Latency groups those attempt
+durations by resolved (run, tick, agent) decision, including retries while
+excluding between-call quota waits. Missing or orphan timing makes the mean
+unavailable. `decisions.committed` retains attempt disposition; raw attempt
+durations and tick metrics remain available for diagnosis.

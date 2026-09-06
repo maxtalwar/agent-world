@@ -1,42 +1,21 @@
 # Agent World model leaderboard
 
-Updated 2026-09-05. Participant v7 uses low reasoning, the frontier-generalists
-world, 50 ticks, and seeds 11 and 41. Seven models have completed both seeds.
-Scores pool raw counts before applying the frozen formulas; ranks are by
-sustained competence, independently within each protocol.
+Participant v8 is finalized for new benchmark runs: medium effort, ten agents,
+60 ticks, seeds 11 and 41, no message board, and explicit commerce labels.
+No v8 model results have been admitted yet.
 
-The [v6 leaderboard](model-leaderboard-v6.md) remains available separately.
-Do not compare ranks across protocols. The source catalog and generated
-[database](../data/model-benchmarks.sqlite) retain both fields.
+| Model | Capability | Execution | Production | Cost/run | Mean time/decision |
+|---|---:|---:|---:|---:|---:|
 
-## Participant v7
+Capability and Execution are 0–100 scores. Production is unbounded fixed
+accounting value added per 100 original-population agent-ticks. Cost/run is
+API-list equivalent per world, including recorded retries; it is not a
+subscription charge. Mean time/decision includes recorded attempts per
+resolved decision, excluding between-call quota waits.
 
-| Rank | Model | Execution | Competence | Entrepreneurship | Reasoning/decision | Cost/run |
-|---:|---|---:|---:|---:|---:|---:|
-| 1 | Muse Spark 1.2 | 87.1 | 65.4 | 0.0 | 1,618 tok | $13.04 |
-| 2 | Grok 4.5 | 88.7 | 38.7 | 0.0 | 2,800 tok | $15.35 |
-| 3 | GPT-5.6 Terra | 72.2 | 36.0 | 0.0 | 210 tok | $6.99 |
-| 4 | Grok 4.6 | 86.7 | 32.6 | 0.0 | 738 tok | $10.47 |
-| 5 | GPT-5.6 Luna | 77.7 | 23.3 | 0.0 | 331 tok | $0.63 |
-| 6 | GPT-5.5 | 77.4 | 20.0 | 0.0 | 2 tok | $13.22 |
-| 7 | GPT-5.4 Mini | 68.8 | 0.0 | 0.0 | 401 tok | $1.62 |
-
-Cost/run is the mean token-derived API-list-price equivalent per seed, not the
-subscription charge. Prices use the dated rate card in the database; Muse's
-native injected context is included in its recorded token count. Reported
-reasoning tokens are measurements, not an equal compute budget across providers.
-
-All 14 admitted cells completed with clean benchmark integrity and full usage
-coverage. Model-output quality flags remain recorded for Luna, Muse, and one
-Grok 4.5 seed; these are distinct from invalid evidence. Grok used the corrected
-user-turn rulebook connector. Its cancelled tool attempts and checkpoint
-recoveries remain in the raw evidence; the earlier missing-rulebook trials
-are excluded. Requested-only model identity is accepted for Muse/OpenAI;
-Grok's exact native build response labels were reconciled explicitly.
-
-Muse Spark 1.1 is excluded because provider 429s have prevented any completed
-ticks. GPT-6 Astra, Fable 5.1, Gemini, and Muse Spark 1.3 have no completed v7
-study in this batch.
-
-See [v7 outcomes and evidence](v7-leaderboard-results-2026-09-05.md) for survival,
-latency, seed sensitivity, and limitations.
+See the [v8 specification](model-benchmarks.md) and
+[production formula](v8-production.md).
+Historical [v6](model-leaderboard-v6.md) and [v7](model-leaderboard-v7.md)
+leaderboards remain available. Their results are unchanged and are not v8
+comparison data. The [source catalog](../data/run-sources.json) and generated
+[database](../data/model-benchmarks.sqlite) preserve those original suites.

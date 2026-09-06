@@ -19,10 +19,10 @@ protocol. A general request to run, test, try, smoke-test, or experiment follows
 [agent-world-experiment-runs.md](agent-world-experiment-runs.md) and defaults to
 seed 11 only. It must not silently acquire seed 41 or benchmark status.
 
-Participant v6, v7, and future suite versions are protocol selections inside
+Participant v6, v7, v8, and future suite versions are protocol selections inside
 this one benchmark workflow. Keeping one workflow prevents isolation, quota,
-accounting, and evidence rules from drifting across per-version skills. V6 and
-v7 are both implemented in the current checkout: select `protocol` in the
+accounting, and evidence rules from drifting across per-version skills. V6, v7, and
+v8 are implemented in the current checkout: select `protocol` in the
 managed config. Source pinning preserves a particular execution; it is not
 required merely to choose v6. See [versioned recipes](experiment-recipes.md).
 
@@ -41,7 +41,7 @@ When a user says “run the benchmark on MODEL” without narrowing the request:
 
 Do not ask the user to select a world or preset for a standardized benchmark.
 The named `--benchmark-protocol` must lock the suite's preset and every
-behavior-defining setting. The current Participant v7 suite uses
+behavior-defining setting. The current Participant v8 suite uses
 `frontier-generalists`; the full locked configuration is the Frozen trial table
 in `docs/model-benchmarks.md`. A requested override changes the run into an
 experiment or controlled diagnostic and cannot remain standard evidence.
@@ -193,9 +193,9 @@ subscription figure.
 
 Transfer accounting follows the protocol that generated the ledger.
 
-For Participant v7, agents declare every transfer as `gift`, `payment`, or
+For Participant v7 and v8, agents declare every transfer as `gift`, `payment`, or
 `barter`. Verify that the report deterministically reflects those declarations.
-Record mode `self_declared_v7`. Do not invoke an LLM classifier and do not
+Record mode `self_declared_v7` or `self_declared_v8` for the selected recipe. Do not invoke an LLM classifier and do not
 reinterpret a model's declaration after the fact.
 
 For Participant v6, agents lacked that declaration channel. After the cell
@@ -234,7 +234,7 @@ more cells:
     "status": "ready",
     "checked_at_utc": "2026-08-24T00:00:00Z",
     "launch_commit": "<40-character commit>",
-    "protocol": "participant-v7",
+    "protocol": "participant-v8",
     "completed_seeds": [11, 41],
     "waiting_seeds": [],
     "integrity": "clean",
@@ -242,7 +242,7 @@ more cells:
     "model_provenance": "verified",
     "cost_accounting": "api_list_derived",
     "transfer_accounting": {
-      "mode": "self_declared_v7",
+      "mode": "self_declared_v8",
       "complete": true,
       "artifacts": []
     },

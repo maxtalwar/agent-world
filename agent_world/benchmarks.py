@@ -28,7 +28,7 @@ from agent_world.rules import ACCOUNTING_VALUES, recipes_for_mode
 # while maximum reasoning would make the field needlessly slow and expensive.
 # Provider-native allocation within low remains model behavior and is measured,
 # not equalized. V6 stays frozen as the historical medium-effort suite.
-from agent_world.protocols import DEFAULT_PROTOCOL_ID, RECIPES, get_recipe
+from agent_world.protocols import DEFAULT_PROTOCOL_ID, RECIPES, get_recipe, scoring_columns
 
 BENCHMARK_SUITE_ID = get_recipe().suite_id
 BENCHMARK_PROTOCOL_ID = DEFAULT_PROTOCOL_ID
@@ -588,6 +588,8 @@ def benchmark_code_fingerprint(providers: Iterable[str] | None = None, protocol_
         for provider in providers:
             scoped.update(BENCHMARK_PROVIDER_FINGERPRINT_FILES.get(provider, ()))
         names = tuple(sorted(set(BENCHMARK_CORE_FINGERPRINT_FILES) | scoped))
+    if get_recipe(protocol_id).scoring_policy == "outcome-production":
+        names = tuple(sorted(set(names) | {"outcome_scoring.py", "production_scoring.py"}))
     digest = hashlib.sha256(get_recipe(protocol_id).digest.encode())
     for name in names:
         digest.update(name.encode("utf-8"))
@@ -600,7 +602,7 @@ def benchmark_protocol(protocol_id: str | None = None) -> dict[str, Any]:
 
     recipe = get_recipe(protocol_id)
 
-    return {
+    protocol = {
         "id": recipe.id,
         "scoring_revision": recipe.scoring_revision,
         "recipe_fingerprint_sha256": recipe.digest,
@@ -687,10 +689,10 @@ def benchmark_protocol(protocol_id: str | None = None) -> dict[str, Any]:
             },
         },
         "targets": {
-            "terminal_endowment_multiple": recipe.scoring_parameters()["material_endowment_multiple"],
-            "enterprise_supply_per_100_agent_ticks": recipe.scoring_parameters()["enterprise_supply_per_100_agent_ticks"],
-            "net_value_created_per_100_agent_ticks": recipe.scoring_parameters()["value_creation_per_100_agent_ticks"],
-            "venture_initiatives_per_100_agent_ticks": recipe.scoring_parameters()["initiative_per_100_agent_ticks"],
+            "terminal_endowment_multiple": recipe.scoring_parameters().get("material_endowment_multiple"),
+            "enterprise_supply_per_100_agent_ticks": recipe.scoring_parameters().get("enterprise_supply_per_100_agent_ticks"),
+            "net_value_created_per_100_agent_ticks": recipe.scoring_parameters().get("value_creation_per_100_agent_ticks"),
+            "venture_initiatives_per_100_agent_ticks": recipe.scoring_parameters().get("initiative_per_100_agent_ticks"),
         },
         "accounting_values": {
             "method": (
@@ -715,6 +717,21 @@ def benchmark_protocol(protocol_id: str | None = None) -> dict[str, Any]:
             f"tick {recipe.defaults()['ticks']} is official."
         ),
     }
+
+    if recipe.scoring_policy == "outcome-production":
+        protocol["score_scales"] = {
+            key: {"minimum": 0.0, "maximum": None if key == "production" else 100.0,
+                  "higher_is_better": True}
+            for key, _ in scoring_columns(recipe.scoring_policy)
+        }
+        protocol["targets"] = recipe.scoring_parameters()
+        protocol["score_columns"] = list(scoring_columns(recipe.scoring_policy))
+        protocol["production_accounting"] = (
+            "Gross value added at fixed accounting values per 100 original-population "
+            "agent-ticks. Count extracted goods and net craft output; no trade, gift, "
+            "unused construction, survival-consumption deduction, or terminal-wealth gate."
+        )
+    return protocol
 
 
 def build_benchmark_results(
@@ -763,7 +780,25 @@ def build_benchmark_results(
             transfer_accounting=recipe.transfer_accounting,
         )
         cohort_flags = list(trial_flags)
-        if raw["submitted_actions_excluding_contention"] <= 0:
+        if recipe.scoring_policy == "outcome-production":
+            from agent_world.outcome_scoring import derive_outcome_counts, ScoringEvidenceError
+            from agent_world.production_scoring import derive_production_counts
+            try:
+                horizon = int(run.get("final_tick") or 0)
+                raw.update(derive_outcome_counts(
+                    events, snapshot, member_ids=member_ids, target_ticks=horizon,
+                    tail_ticks=min(recipe.scoring_parameters()["capability_tail_ticks"], horizon),
+                    require_completed=bool(run.get("completed")),
+                ))
+                raw.update(derive_production_counts(
+                    events, member_ids=member_ids, target_ticks=horizon,
+                    economy_mode=config.get("economy_mode", "organic"),
+                    accounting_values=BENCHMARK_ACCOUNTING_VALUES,
+                ))
+            except (ScoringEvidenceError, ValueError) as exc:
+                cohort_flags.append("scoring_evidence_unavailable")
+                raw["scoring_evidence_error"] = str(exc)
+        if recipe.scoring_policy == "participant" and raw["submitted_actions_excluding_contention"] <= 0:
             cohort_flags.append("insufficient_action_sample")
         if raw["possible_agent_ticks"] <= 0:
             cohort_flags.append("insufficient_agent_tick_sample")
@@ -864,6 +899,16 @@ def score_benchmark_counts(raw: dict[str, Any], protocol_id: str | None = None) 
     """Apply the frozen participant-v4 formulas to pooled or per-run counts."""
 
     recipe = get_recipe(protocol_id)
+    if recipe.scoring_policy == "outcome-production":
+        from agent_world.outcome_scoring import ScoringEvidenceError
+        from agent_world.production_scoring import score_outcome_production_counts
+        try:
+            if raw.get("scoring_evidence_error"):
+                raise ScoringEvidenceError(raw["scoring_evidence_error"])
+            return score_outcome_production_counts(raw)
+        except ScoringEvidenceError as exc:
+            return {key: {"score": None, "unavailable_reason": str(exc)}
+                    for key, _ in scoring_columns(recipe.scoring_policy)}
     parameters = recipe.scoring_parameters()
     feasibility_denominator = float(
         raw.get("submitted_actions_excluding_contention") or 0
@@ -1200,6 +1245,11 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
                 )
                 continue
             cohort_raw = cohort.get("raw") or {}
+            if recipe.scoring_policy == "outcome-production" and any(
+                item["score"] is None for item in score_benchmark_counts(cohort_raw, recipe.id).values()
+            ):
+                rejected.append({"source": report.get("source"), "reason": "scoring_evidence_unavailable"})
+                continue
             row = grouped.setdefault(
                 identity,
                 {
@@ -1269,6 +1319,12 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
                     "source": report.get("source"),
                     "raw": cohort_raw,
                     "scores": score_benchmark_counts(cohort_raw, recipe.id),
+                    "efficiency": report_usage.get("decision_latency"),
+                    "api_list_cost_usd": (
+                        ((report_usage.get("attempted_token_cost") or report_usage.get("estimated_cost") or {}).get("cost_usd") or {}).get("total")
+                        if (report_usage.get("attempted_token_cost") or report_usage.get("estimated_cost") or {}).get("available")
+                        else None
+                    ),
                 }
             )
 
@@ -1366,7 +1422,7 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
         )
     results.sort(
         key=lambda row: (
-            -_score_or_negative(row["scores"]["sustained_competence"]["score"]),
+            -_score_or_negative(row["scores"]["capability" if recipe.scoring_policy == "outcome-production" else "sustained_competence"]["score"]),
             row["model"],
         )
     )
@@ -1381,6 +1437,8 @@ def aggregate_benchmark_reports(reports: Iterable[dict[str, Any]], protocol_id: 
 def format_benchmark_leaderboard(aggregate: dict[str, Any]) -> str:
     """Render a compact human-readable leaderboard."""
 
+    if (aggregate.get("protocol") or {}).get("scoring_policy") == "outcome-production":
+        return _format_outcome_leaderboard(aggregate)
     lines = [
         f"# Agent World benchmark: {aggregate.get('suite_id')}",
         "",
@@ -2250,6 +2308,7 @@ def _score_spread(replications: list[dict[str, Any]]) -> dict[str, Any]:
         "sustained_competence",
         "entrepreneurial_agency",
         "economic_productivity",
+        "execution", "capability", "production",
     ):
         values = [
             float(score)
@@ -2286,3 +2345,34 @@ def _merge_numeric_tree(target: dict[str, Any], source: dict[str, Any]) -> None:
             nested = target.setdefault(key, {})
             if isinstance(nested, dict):
                 _merge_numeric_tree(nested, value)
+
+
+def _format_outcome_leaderboard(aggregate: dict[str, Any]) -> str:
+    lines = [f"# Agent World benchmark: {aggregate.get('suite_id')}", "",
+             "| Model | Capability | Execution | Production | Cost/run | Mean time/decision |",
+             "|---|---:|---:|---:|---:|---:|"]
+    for row in aggregate.get("results") or []:
+        reps = row.get("required_replications") or []
+        costs = [rep.get("api_list_cost_usd") for rep in reps]
+        cost = sum(costs) / len(costs) if costs and all(c is not None for c in costs) else None
+        efficiencies = [rep.get("efficiency") or {} for rep in reps]
+        decisions = sum(e.get("decisions", 0) for e in efficiencies)
+        latency = (sum(e["total_seconds"] for e in efficiencies) / decisions
+                   if decisions and all(e.get("complete") for e in efficiencies) else None)
+        scores = row["scores"]
+        lines.append(f"| {row['model']} | {_format_score(scores['capability']['score'])} "
+                     f"| {_format_score(scores['execution']['score'])} | {_format_score(scores['production']['score'])} "
+                     f"| {'n/a' if cost is None else f'${cost:.2f}'} "
+                     f"| {'n/a' if latency is None else f'{latency:.2f}s'} |")
+    lines += ["", "Cost/run is API-list equivalent per world, including recorded retries; subscription charges differ.",
+              "Latency sums recorded call durations per resolved decision, excluding between-call quota sleeps.",
+              "Production is fixed accounting value added per 100 original-population agent-ticks; it is unbounded.",
+              "", "## Replications", ""]
+    for row in aggregate.get("results") or []:
+        lines.append(f"- {row['model']}: {row['status']}; required seeds {row['required_seeds']}.")
+        for rep in row.get("replications") or []:
+            scores = rep["scores"]
+            lines.append(f"  - Seed {rep['seed']}: capability {_format_score(scores['capability']['score'])}, "
+                         f"execution {_format_score(scores['execution']['score'])}, "
+                         f"production {_format_score(scores['production']['score'])}.")
+    return "\n".join(lines) + "\n"

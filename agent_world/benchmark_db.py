@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from agent_world.benchmarks import _merge_numeric_tree, score_benchmark_counts
-from agent_world.protocols import get_recipe
+from agent_world.protocols import get_recipe, RECIPES
 from agent_world.run_report import _normalize_loaded_usage_record
 from agent_world.usage import (
     USD_RATE_CARD_EFFECTIVE_DATE,
@@ -31,7 +31,7 @@ from agent_world.usage import (
 )
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 DEFAULT_CATALOG = Path("data/run-sources.json")
 DEFAULT_DATABASE = Path("data/model-benchmarks.sqlite")
 
@@ -261,6 +261,8 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             deaths INTEGER,
             execution REAL,
             competence REAL,
+            capability REAL,
+            production REAL,
             entrepreneurship REAL,
             economic_productivity REAL,
             living_terminal_economic_value REAL,
@@ -308,6 +310,7 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             cohort_id TEXT,
             decision_time_unix REAL,
             duration_seconds REAL,
+            committed INTEGER NOT NULL DEFAULT 1,
             provider TEXT,
             model TEXT,
             response_model TEXT,
@@ -358,9 +361,11 @@ def _create_schema(connection: sqlite3.Connection) -> None:
             rank INTEGER,
             run_count INTEGER NOT NULL,
             execution REAL NOT NULL,
-            competence REAL NOT NULL,
-            entrepreneurship REAL NOT NULL,
-            economic_productivity REAL NOT NULL,
+            competence REAL,
+            capability REAL,
+            production REAL,
+            entrepreneurship REAL,
+            economic_productivity REAL,
             execution_seed_range REAL,
             competence_seed_range REAL,
             entrepreneurship_seed_range REAL,
@@ -448,6 +453,13 @@ def _create_schema(connection: sqlite3.Connection) -> None:
           )
         ORDER BY r.rank;
 
+        CREATE VIEW production_leaderboard AS
+        SELECT r.rank, m.label AS model, r.capability, r.execution, r.production,
+               r.api_list_cost_per_run_usd, r.latency_mean_seconds, m.suite
+        FROM model_results r JOIN models m USING (model_key)
+        WHERE m.leaderboard_eligible = 1 AND r.capability IS NOT NULL
+        ORDER BY r.rank;
+
         CREATE VIEW evidence AS
         SELECT
             ru.run_id,
@@ -513,6 +525,19 @@ def _run_record(
         for line in usage_path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
+    outcome_policy = _path_get(report, "benchmarks", "protocol", "scoring_policy") == "outcome-production"
+    if outcome_policy:
+        # Match report accounting: replayed record IDs are one physical attempt.
+        seen = set()
+        unique = []
+        for row in usage:
+            identity = row.get("record_id")
+            if identity and identity in seen:
+                continue
+            if identity:
+                seen.add(identity)
+            unique.append(row)
+        usage = unique
     manifest = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {}
     benchmark_cohorts = _benchmark_cohorts(report)
     population_cohorts = _path_get(report, "population", "cohorts", default={}) or {}
@@ -542,6 +567,10 @@ def _run_record(
     trade = economy.get("trades") or {}
     durations = [row.get("duration_seconds") for row in usage]
     latency = _latency_summary(durations)
+    from agent_world.usage import summarize_decision_latency
+    if outcome_policy:
+        timing = summarize_decision_latency([row for row in usage if row.get("committed", True)], usage)
+        latency = _latency_summary(timing["decision_seconds"])
     cost = summarize_usd_cost(usage)
     cost_total = (
         _path_get(cost, "cost_usd", "total") if isinstance(cost, dict) and cost.get("available") else None
@@ -674,6 +703,9 @@ def _run_record(
             agents = sorted(str(agent) for agent, assigned in assignments.items() if assigned == cohort_id)
         cohort_usage = [row for row in usage if row.get("agent_id") in set(agents)] if agents else list(usage)
         cohort_latency = _latency_summary(row.get("duration_seconds") for row in cohort_usage)
+        if outcome_policy:
+            timing = summarize_decision_latency([row for row in cohort_usage if row.get("committed", True)], cohort_usage)
+            cohort_latency = _latency_summary(timing["decision_seconds"])
         cohort_cost = summarize_usd_cost(cohort_usage)
         cohort_cost_total = (
             _path_get(cohort_cost, "cost_usd", "total")
@@ -713,7 +745,9 @@ def _run_record(
                 "agents_json": _json(agents),
                 "living_agents": living,
                 "deaths": deaths,
-                "execution": _score(benchmark_cohort, "effective_execution"),
+                "execution": _score(benchmark_cohort, "execution" if outcome_policy else "effective_execution"),
+                "capability": _score(benchmark_cohort, "capability"),
+                "production": _score(benchmark_cohort, "production"),
                 "competence": _score(benchmark_cohort, "sustained_competence"),
                 "entrepreneurship": _score(benchmark_cohort, "entrepreneurial_agency"),
                 "economic_productivity": _score(benchmark_cohort, "economic_productivity"),
@@ -777,6 +811,8 @@ def _run_record(
             "source_fingerprint": trial.get("code_fingerprint_sha256"),
             "cohort_max_workers": cohort_records[0]["cohort_max_workers"],
             "execution": cohort_records[0]["execution"],
+            "capability": cohort_records[0]["capability"],
+            "production": cohort_records[0]["production"],
             "competence": cohort_records[0]["competence"],
             "entrepreneurship": cohort_records[0]["entrepreneurship"],
             "economic_productivity": cohort_records[0]["economic_productivity"],
@@ -807,6 +843,7 @@ def _decision_record(
         "cohort_id": (agent_to_cohort or {}).get(str(usage.get("agent_id"))),
         "decision_time_unix": usage.get("time"),
         "duration_seconds": usage.get("duration_seconds"),
+        "committed": int(usage.get("committed", True)),
         "provider": usage.get("provider"),
         "model": usage.get("model"),
         "response_model": usage.get("response_model"),
@@ -942,8 +979,18 @@ def _insert_model_results(
         if not records:
             continue
         raw, scores = _pool_recipe_counts(records)
+        outcome_policy = "capability" in scores
         decisions = [decision for record in records for decision in run_decisions[record["run_id"]]]
         latency = _latency_summary(decision.get("duration_seconds") for decision in decisions)
+        if outcome_policy:
+            from agent_world.usage import summarize_decision_latency
+            summaries = [summarize_decision_latency(
+                [d for d in run_decisions[r["run_id"]] if d["committed"]],
+                run_decisions[r["run_id"]]) for r in records]
+            latency = _latency_summary(
+                [value for item in summaries for value in item["decision_seconds"]]
+                if all(item["complete"] for item in summaries) else [])
+
         calls = sum(record["calls"] for record in records)
         reasoning = sum(record["reasoning_tokens"] for record in records)
         prompt = sum(record["prompt_tokens"] for record in records)
@@ -994,20 +1041,22 @@ def _insert_model_results(
             if record["global_max_workers"]
         ]
         execution_scores = [float(record["execution"]) for record in records]
-        competence_scores = [float(record["competence"]) for record in records]
-        entrepreneurship_scores = [float(record["entrepreneurship"]) for record in records]
+        competence_scores = [float(record["competence"]) for record in records if record["competence"] is not None]
+        entrepreneurship_scores = [float(record["entrepreneurship"]) for record in records if record["entrepreneurship"] is not None]
         pending.append(
             {
                 "model_key": model["model_key"],
                 "rank": 0,
                 "run_count": len(records),
-                "execution": scores["effective_execution"]["score"],
-                "competence": scores["sustained_competence"]["score"],
-                "entrepreneurship": scores["entrepreneurial_agency"]["score"],
-                "economic_productivity": scores["economic_productivity"]["score"],
+                "execution": scores["execution" if outcome_policy else "effective_execution"]["score"],
+                "capability": scores.get("capability", {}).get("score"),
+                "production": scores.get("production", {}).get("score"),
+                "competence": scores.get("sustained_competence", {}).get("score"),
+                "entrepreneurship": scores.get("entrepreneurial_agency", {}).get("score"),
+                "economic_productivity": scores.get("economic_productivity", {}).get("score"),
                 "execution_seed_range": max(execution_scores) - min(execution_scores),
-                "competence_seed_range": max(competence_scores) - min(competence_scores),
-                "entrepreneurship_seed_range": max(entrepreneurship_scores) - min(entrepreneurship_scores),
+                "competence_seed_range": max(competence_scores) - min(competence_scores) if competence_scores else None,
+                "entrepreneurship_seed_range": max(entrepreneurship_scores) - min(entrepreneurship_scores) if entrepreneurship_scores else None,
                 "reasoning_tokens_per_decision": reasoning / calls if calls else None,
                 "reasoning_tokens_estimated": int(any(record["reasoning_tokens_estimated"] for record in records)),
                 "prompt_tokens_per_decision": prompt / calls if calls else None,
@@ -1083,7 +1132,7 @@ def _insert_model_results(
     eligible = {model["model_key"] for model in models if model.get("leaderboard_eligible", True)}
     ranked = sorted(
         (row for row in pending if row["model_key"] in eligible),
-        key=lambda row: (-float(row["competence"]), -float(row["execution"]), row["model_key"]),
+        key=lambda row: (-float(row["capability"] if row["capability"] is not None else row["competence"]), -float(row["execution"]), row["model_key"]),
     )
     suites = dict(connection.execute("SELECT model_key, suite FROM models"))
     counters: dict[str, int] = defaultdict(int)
@@ -1246,6 +1295,9 @@ def format_leaderboard(database_path: Path, suite: str | None = None) -> str:
             f"## {item}\n\n" + format_leaderboard(database_path, item)
             for item in suites
         )
+    if suite in {recipe.id for recipe in RECIPES.values()
+                 if recipe.scoring_policy == "outcome-production"}:
+        return _format_production_leaderboard(database_path, suite)
     lines = [
         "| Rank | Model | Execution | Competence | Entrepreneurship | Reasoning/decision | Cost/run |",
         "|---:|---|---:|---:|---:|---:|---:|",
@@ -1313,6 +1365,24 @@ def main(argv: list[str] | None = None) -> None:
         print(format_leaderboard(args.db, args.suite), end="")
     else:
         print(json.dumps(verify_database(args.db), indent=2, sort_keys=True))
+
+
+
+
+
+def _format_production_leaderboard(database_path: Path, suite: str) -> str:
+    with sqlite3.connect(database_path) as connection:
+        rows = connection.execute(
+            "SELECT model, capability, execution, production, api_list_cost_per_run_usd, "
+            "latency_mean_seconds FROM production_leaderboard WHERE suite=? ORDER BY rank", (suite,)
+        ).fetchall()
+    lines = ["| Model | Capability | Execution | Production | Cost/run | Mean time/decision |",
+             "|---|---:|---:|---:|---:|---:|"]
+    for model, capability, execution, production, cost, latency in rows:
+        lines.append(f"| {model} | {capability:.1f} | {execution:.1f} | {production:.1f} "
+                     f"| {'unavailable' if cost is None else f'${cost:.2f}'} "
+                     f"| {'unavailable' if latency is None else f'{latency:.2f}s'} |")
+    return "\n".join(lines) + "\n"
 
 
 if __name__ == "__main__":

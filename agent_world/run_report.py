@@ -205,7 +205,9 @@ def build_report(
     prompt_tokens = sum(record.get("prompt_tokens") or 0 for record in usage_records)
     cached_tokens = sum(record.get("cached_tokens") or 0 for record in usage_records)
     completion_tokens = sum(record.get("completion_tokens") or 0 for record in usage_records)
+    from agent_world.usage import summarize_decision_latency
     usage = {
+        "decision_latency": summarize_decision_latency(usage_records, attempted_records),
         "calls": len(usage_records),
         "phase_timing": {"samples": phase_samples, "total_seconds": dict(phase_totals)},
         "attempted_calls": len(attempted_records),
@@ -1465,6 +1467,8 @@ def render_markdown(report: dict[str, Any]) -> str:
 def _render_benchmark_lines(benchmarks: Any) -> list[str]:
     if not isinstance(benchmarks, dict) or not benchmarks.get("cohorts"):
         return []
+    if (benchmarks.get("protocol") or {}).get("scoring_policy") == "outcome-production":
+        return _render_outcome_benchmark_lines(benchmarks)
     trial = benchmarks.get("trial") or {}
     status = (
         "eligible replication"
@@ -1888,3 +1892,42 @@ def _gini(values: list[int]) -> float:
         cumulative += index * value
     count = len(ordered)
     return round((2 * cumulative) / (count * total) - (count + 1) / count, 4)
+
+
+def _render_outcome_benchmark_lines(benchmarks):
+    trial = benchmarks.get("trial") or {}
+    lines = ["", f"## Model benchmarks ({benchmarks['suite_id']})", "",
+             "Trial status: **" + ("eligible replication" if trial.get("protocol_compliant") else "diagnostic only") + "**.",
+             "", "| Cohort | Capability | Execution | Production |",
+             "|---|---:|---:|---:|"]
+    for cohort_id, cohort in benchmarks["cohorts"].items():
+        scores = cohort["scores"]
+        lines.append(f"| {cohort.get('model') or cohort_id} "
+                     + " ".join(f"| {_render_score(scores[key]['score'])}" for key in ("capability", "execution", "production")) + " |")
+    lines += ["", "Production: fixed accounting value added per 100 original-population agent-ticks.",
+              "", "### Score components", ""]
+    for cohort_id, cohort in benchmarks["cohorts"].items():
+        lines.append(f"- {cohort.get('model') or cohort_id}:")
+        for key in ("capability", "execution", "production"):
+            item = cohort["scores"][key]
+            if item.get("unavailable_reason"):
+                lines.append(f"  - {key}: unavailable — {item['unavailable_reason']}")
+            else:
+                components = ", ".join(f"{name}={value}" for name, value in item.get("components", {}).items())
+                lines.append(f"  - {key}: {components}.")
+        raw = cohort["raw"]
+        lines.append(f"  - Productive-capital extraction value: {raw.get('productive_capital_extraction_value', 'n/a')}; "
+                     f"production by source: {raw.get('production_by_source', {})}.")
+        if cohort.get("quality_flags"):
+            lines.append("  - Evidence flags: " + ", ".join(cohort["quality_flags"]) + ".")
+    if benchmarks.get("trajectory"):
+        lines += ["", "### Benchmark score trajectory", "",
+                  "| Tick | Cohort | Role | Capability | Execution | Production |",
+                  "|---:|---|---|---:|---:|---:|"]
+        for checkpoint in benchmarks["trajectory"]:
+            for cohort_id, cohort in checkpoint["cohorts"].items():
+                lines.append(f"| {checkpoint['tick']} | {cohort_id} | {checkpoint['role']} "
+                             + " ".join(f"| {_render_score(cohort['scores'][key]['score'])}" for key in ("capability", "execution", "production")) + " |")
+    if trial.get("quality_flags"):
+        lines += ["", "Protocol flags: " + ", ".join(trial["quality_flags"]) + "."]
+    return lines

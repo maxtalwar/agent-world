@@ -1,6 +1,6 @@
 # V8 capability and execution scoring components
 
-Implemented for the v8 design; enterprise and the final recipe remain pending.
+Implemented in the registered v8 recipe alongside [Production](v8-production.md).
 No provider calls were made and no historical report or leaderboard was changed.
 The score component version is outcome-execution-v1.
 
@@ -36,8 +36,7 @@ Capability = sqrt(A * L).
 The approved v8 horizon is 60 completed ticks. The final window covers
 completed ticks 49 through 60: the outcomes of one full second spring. The
 implementation accepts an explicit tail length for other recipes; this is a
-scoring parameter,
-not inferred from model behavior. Historical review windows use one recorded
+scoring parameter, not inferred from model behavior. Historical review windows use one recorded
 season and cannot be pooled when horizons/windows differ.
 
 Why these choices:
@@ -53,11 +52,11 @@ season scores zero. A society that dies on the last tick retains credit for
 earlier final-season survival; extinction and endpoint health remain visible
 in the detailed results. Wealth and productive capital are excluded directly:
 they benefit capability only when they actually sustain health during the
-measured horizon. Economic accomplishments will be assessed by enterprise.
+measured horizon. Economic output is assessed by Production.
 
 Limitations: health is narrower than a complete description of agency. Economic
 investment with benefits beyond the measured horizon is not credited here;
-that belongs in enterprise or a longer-horizon recipe. The final-season emphasis is an explicit
+a longer-horizon recipe would be needed to observe those benefits. The final-season emphasis is an explicit
 design preference, not a statistically discovered optimal weight.
 
 ## Execution
@@ -127,5 +126,5 @@ python3 scripts/review-outcome-scores.py --studies configs/analysis/v8-outcome-r
 
 [v8-outcome-scoring-review.json](v8-outcome-scoring-review.json) retains original
 recipe/source identities, source hashes, per-seed counts, and old/new scores.
-The final v8 recipe is not registered until enterprise is designed; these
-implemented components can then be composed without changing old recipes.
+The registered v8 recipe composes these components with Production through
+the outcome-production policy. Historical recipes retain their original formulas.

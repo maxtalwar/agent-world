@@ -18,6 +18,22 @@ SCORING_PARAMETERS = {
     "value_creation_per_100_agent_ticks": 20.0,
     "enterprise_supply_per_100_agent_ticks": 20.0,
 }
+SCORING_POLICY_PARAMETERS = {
+    "participant": SCORING_PARAMETERS,
+    "outcome-production": {"capability_tail_ticks": 12},
+}
+SCORING_COLUMNS = {
+    "participant": (("effective_execution", "Execution"), ("sustained_competence", "Competence"),
+                    ("entrepreneurial_agency", "Entrepreneurship")),
+    "outcome-production": (("capability", "Capability"), ("execution", "Execution"),
+                           ("production", "Production")),
+}
+
+
+def scoring_columns(policy: str):
+    return SCORING_COLUMNS[policy]
+
+
 RUN_SETTINGS = {
     "ticks", "agents", "preset", "reasoning_effort", "connector_profile",
     "conversation_mode", "session_max_turns", "decision_mode", "assignment_strategy",
@@ -56,7 +72,7 @@ class ParticipantRecipe:
         return {**json.loads(self.settings_json), "reasoning_effort": self.reasoning_effort}
 
     def scoring_parameters(self) -> dict[str, float]:
-        return {**SCORING_PARAMETERS, **json.loads(self.scoring_json)}
+        return {**SCORING_POLICY_PARAMETERS[self.scoring_policy], **json.loads(self.scoring_json)}
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -155,13 +171,18 @@ def recipe_from_dict(value: Any) -> ParticipantRecipe:
     if checkpoints[0] < 1 or checkpoints[-1] != settings["ticks"]:
         raise ValueError("Checkpoints must be positive and end at the recipe's target tick")
     scoring = _keys(value["scoring"], {"policy", "revision", "parameters"}, {"policy", "revision", "parameters"}, "scoring")
-    if scoring["policy"] != "participant":
-        raise ValueError("Unsupported scoring policy; currently supported: participant")
+    if not isinstance(scoring["policy"], str) or scoring["policy"] not in SCORING_POLICY_PARAMETERS:
+        raise ValueError("Unsupported scoring policy; supported: " + ", ".join(SCORING_POLICY_PARAMETERS))
     if type(scoring["revision"]) is not int or scoring["revision"] < 1:
         raise ValueError("Scoring revision must be positive")
-    parameters = _keys(scoring["parameters"], set(SCORING_PARAMETERS), set(SCORING_PARAMETERS), "scoring parameters")
+    parameter_names = set(SCORING_POLICY_PARAMETERS[scoring["policy"]])
+    parameters = _keys(scoring["parameters"], parameter_names, parameter_names, "scoring parameters")
     if any(type(x) not in {int, float} or not math.isfinite(x) or x <= 0 for x in parameters.values()):
         raise ValueError("Scoring parameters must be positive finite numbers")
+    if scoring["policy"] == "outcome-production":
+        tail = parameters["capability_tail_ticks"]
+        if type(tail) is not int or not 1 <= tail <= settings["ticks"]:
+            raise ValueError("capability_tail_ticks must be an integer within the run horizon")
     return ParticipantRecipe(value["id"], settings["reasoning_effort"], accounting,
                              scoring["revision"], json.dumps(settings, sort_keys=True),
                              required_seeds, extended, provisional, checkpoints,

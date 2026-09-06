@@ -8,10 +8,12 @@ does not require checking out older code.
 | --- | --- | --- | --- |
 | participant-v6 | medium | Frozen external classifier; agents do not declare transfer kind | 2 |
 | participant-v7 | low | Agent-declared gift, payment, or barter | 1 |
+| participant-v8 | medium | Agent-declared gift, payment, or barter; diagnostic commerce | 1 |
 
-Both recipes use the frontier world, ten generalists, fifty ticks, fresh
-conversations, and connector-v3. Their score formulas are shared; revision
-numbers are local to the protocol. Worker counts are operational settings.
+All three recipes use the frontier world, ten generalists, fresh conversations,
+and connector-v3. V6/v7 retain fifty ticks and their shared historical formulas.
+V8 uses sixty ticks, no board, and outcome-production scoring. Revision numbers
+are local to each protocol. Worker counts are operational settings.
 
 ## Add a benchmark without editing Python
 
@@ -54,9 +56,9 @@ not registered by default and does not change either established benchmark.
 | `replications.provisional_seed` | A required seed that can stand alone provisionally. |
 | `checkpoints` | Positive scoring checkpoints; the last must equal `defaults.ticks`. |
 | `transfer_accounting` | `self_declared` or `frozen_classifier`; selects finalization behavior. |
-| `scoring.policy` | Implemented scoring method; currently `participant`. |
+| `scoring.policy` | Implemented scoring method; `participant` or `outcome-production`. |
 | `scoring.revision` | Positive revision label within this recipe. |
-| `scoring.parameters` | Positive finite targets for material endowment, initiative, net value creation, and enterprise supply. |
+| `scoring.parameters` | Policy-specific parameters: four legacy reference targets for participant, or integer capability_tail_ticks for outcome-production. |
 
 The supplied files spell out every required default. Additional
 `WorldConfig` fields may be included in `defaults`, including reserve,
@@ -94,6 +96,10 @@ catalog entries for separate recipes. Legacy reports without recipe digests
 retain their explicitly declared trial identity even when their old renderer
 printed a different current-protocol header. New recipe-aware reports with
 conflicting identities or digests are rejected.
+
+The outcome-production policy implements independently scored capability,
+execution, and productive value added. See [v8 production](v8-production.md).
+Its tail must be a positive integer no longer than the recipe horizon.
 
 ## Select a benchmark
 
