@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Durable Windows Task Scheduler entrypoint; no model runs are launched here.
+set -euo pipefail
+repo="${1:-$(cd "$(dirname "$0")/.." && pwd)}"
+cd "$repo"
+app="${2:-agent_world/leaderboard.py}"
+mkdir -p .local
+if [[ -f .local/leaderboard.log ]] && (( $(stat -c%s .local/leaderboard.log) > 10485760 )); then
+    mv .local/leaderboard.log .local/leaderboard.previous.log
+fi
+exec /usr/bin/python3 -u "$app" --root "$repo" --host 127.0.0.1 --port 8091 >> .local/leaderboard.log 2>&1

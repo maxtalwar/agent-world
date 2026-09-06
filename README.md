@@ -644,3 +644,9 @@ For richer context, see:
 ## Design Principle
 
 The engine exposes constraints and affordances, not objectives. A prompt may say what actions are possible and what the agent can perceive. It should not tell the agent to trade, cooperate, govern, optimize wealth, or build institutions.
+
+## Private leaderboard dashboard
+
+View live recipe-specific rankings and study progress with the
+[leaderboard dashboard](docs/leaderboard-dashboard.md). It includes a persistent
+Windows/WSL installation and a private Tailscale address.

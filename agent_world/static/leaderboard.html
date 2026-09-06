@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Live Agent World leaderboards, completed replications, and current benchmark progress.">
+<meta name="theme-color" content="#fafbfc">
+<title>Agent World · Leaderboards</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23243248'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/leaderboard.css">
+<script src="/leaderboard.js" defer></script>
+</head>
+<body>
+<main>
+<header class="masthead"><a class="brand" href="/" aria-label="Agent World home"><span class="brand-icon" aria-hidden="true">◉</span> Agent World <span class="brand-divider">/</span> <span class="muted">Laboratory</span></a><span class="connection"><span class="dot"></span> Private workspace</span></header>
+<div class="page-heading"><div><p class="eyebrow">THE OBSERVATORY</p><h1>Leaderboards<span class="title-dot">.</span></h1></div><div class="sync"><span id="sync-status" role="status">Connecting to the laboratory…</span><button id="refresh" class="icon-button" aria-label="Refresh leaderboard" title="Refresh leaderboard">↻</button></div></div>
+<nav id="versions" aria-label="Benchmark version"></nav>
+<div id="error" role="alert" hidden></div>
+<div id="loading" class="card empty">Loading current rankings and studies…</div>
+<div id="dashboard" hidden>
+<section class="summary-grid" aria-label="Leaderboard overview">
+<article class="card leader-card"><div class="card-top"><span id="leader-label">Leading model</span><span class="light-pill" id="board-state"></span></div><div class="leader-info"><div><h2 id="leader-name"></h2><p id="leader-meta"></p></div><span class="leader-mark" aria-hidden="true">↗</span></div><div class="leader-bottom"><div><span class="hero-score" id="leader-score"></span><span class="score-caption" id="leader-metric"></span></div><span class="small" id="leader-seeds"></span></div></article>
+<article class="card field-card"><div class="card-top"><h2>The field</h2><span class="dot"></span></div><div class="field-numbers"><div><span id="ranked-count" class="big-number">0</span><span class="muted">ranked models</span></div><span class="field-separator"></span><div><span id="active-count" class="big-number">0</span><span class="muted">open studies</span></div></div><p class="small muted" id="field-caption"></p></article>
+<article class="card recipe-card"><div class="card-top"><h2 id="recipe-title"></h2><span aria-hidden="true">◎</span></div><p class="recipe-summary" id="recipe-summary"></p><div class="recipe-footer" id="recipe-footer"></div></article>
+</section>
+<div class="content-grid">
+<section class="card rankings"><div class="section-heading"><div><h2>Model rankings</h2><p class="muted" id="ranking-caption"></p></div><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a model" aria-label="Find a model"></label></div><div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div><p id="no-results" class="empty" hidden>No models match your search.</p><div class="table-footer"><span id="table-note"></span><span>Higher scores are better ↗</span></div></section>
+<aside class="card activity"><div class="section-heading"><div><h2>Study activity</h2><p class="muted">From the local run controllers</p></div><span class="activity-icon" aria-hidden="true">◷</span></div><div id="activity-list"></div></aside>
+</div>
+<details class="card methodology"><summary>About these results <span aria-hidden="true">+</span></summary><div id="methodology"></div></details>
+<footer><span>Agent World <span class="muted">/ A living record of agent capabilities</span></span><span id="updated"></span></footer>
+</div>
+</main>
+<dialog id="model-dialog"><button id="close-dialog" class="icon-button close" aria-label="Close model details">×</button><div id="model-details"></div></dialog>
+</body></html>
