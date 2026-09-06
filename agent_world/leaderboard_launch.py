@@ -51,6 +51,13 @@ def git(root, *args):
                                    stderr=subprocess.DEVNULL, timeout=15).strip()
 
 
+def study_model_identity(model):
+    """Tier aliases share duplicate-launch identity, but retain original evidence IDs."""
+    if isinstance(model, str) and re.fullmatch(r"(?:meta/)?muse-spark-[0-9.]+(?:-contributor)?", model):
+        return model.removeprefix("meta/").removesuffix("-contributor")
+    return model
+
+
 def env():
     return {**os.environ, "PATH": str(Path.home() / ".local/bin") + ":" + os.environ.get("PATH", "")}
 
@@ -366,14 +373,14 @@ class LaunchService:
                 raise LaunchError("This review expired. Review the current settings again.")
             for other in db.execute("SELECT payload FROM requests WHERE state IN ('queued','launching','supervising')"):
                 p = json.loads(other["payload"])
-                if (p["recipe_key"], p["brain"], p["model"]) == (request["recipe_key"], request["brain"], request["model"]):
+                if (p["recipe_key"], p["brain"], study_model_identity(p["model"])) == (request["recipe_key"], request["brain"], study_model_identity(request["model"])):
                     raise LaunchError("This model already has an active launch in this recipe: " + p["run_id"])
             for path in (self.root / "runs/jobs").glob("*/job.json"):
                 try:
                     job = read(path)
                     model = job.get("config", {}).get("model", {})
-                    same = (job.get("protocol"), model.get("brain"), model.get("id")) == (
-                        request["recipe_id"], request["brain"], request["model"])
+                    same = (job.get("protocol"), model.get("brain"), study_model_identity(model.get("id"))) == (
+                        request["recipe_id"], request["brain"], study_model_identity(request["model"]))
                     if same and job.get("controller", {}).get("status") not in {
                         "completed", "completed_with_blockers", "failed", "stopped", "cancelled"
                     }:

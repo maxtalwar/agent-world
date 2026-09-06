@@ -22,12 +22,13 @@ function pickerOpen(open) {
   if(open)launchEl('model-search').focus();
 }
 const nativeConnectors={openai:'codex',anthropic:'claude',google:'antigravity',meta:'muse',xai:'grok',zai:'zcode'};
-const catalogIdentity=name=>(name||'').toLowerCase().replace(/^(?:anthropic: ?|claude )/,'').replace(/ (?:low|medium|high|xhigh|max)$/,'').replace(/[^a-z0-9]/g,'');
+const catalogIdentity=name=>(name||'').toLowerCase().replace(/^(?:anthropic: ?|claude )/,'').replace(/ (?:low|medium|high|xhigh|max)$/,'').replace(/[^a-z0-9]/g,'').replace(/^(?:meta)?(musespark[0-9]+)contributor$/,'$1');
 function browseModels(models,recipe,boards,{query='',lab='',mode='next'}={}) {
   const study=boards.find(b=>b.recipe===recipe);
   const seen=new Set([...(study?.rows||[]),...(study?.runs||[])].map(r=>catalogIdentity(r.model)));
+  const activeMuse=new Set((study?.runs||[]).filter(r=>!r.ranked&&r.cells?.some(c=>!['completed','failed','stopped','invalid','cancelled'].includes(c.operational_state||c.state))).map(r=>catalogIdentity(r.model)).filter(id=>id.startsWith('musespark')));
   const native=m=>nativeConnectors[m.lab]===m.brain;
-  return models.filter(m=>(!lab||m.lab===lab)&&(!query||(m.name+' '+m.lab+' '+m.connector).toLowerCase().includes(query))&&
+  return models.filter(m=>!activeMuse.has(catalogIdentity(m.name))&&(!lab||m.lab===lab)&&(!query||(m.name+' '+m.lab+' '+m.connector).toLowerCase().includes(query))&&
     (query||mode==='all'||(native(m)&&!seen.has(catalogIdentity(m.name)))))
     .sort((a,b)=>Number(native(b))-Number(native(a))||Number(seen.has(catalogIdentity(a.name)))-Number(seen.has(catalogIdentity(b.name)))||a.name.localeCompare(b.name,undefined,{numeric:true}));
 }

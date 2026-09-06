@@ -27,3 +27,17 @@ is excluded rather than assumed compatible. Across all connectors, explicitly
 named image generators, speech generators/transcribers, embedding and reranking
 endpoints are excluded, including when a connector supplies no modality metadata.
 This filters the benchmark picker; it does not restrict general laboratory runs.
+
+## Muse tiers and study identity
+
+Standard and Contributor use the same version identity for shortlist history and
+active-launch duplicate checks. Their exact execution IDs remain unchanged in
+requests and run evidence. Active Muse versions are omitted from all picker views,
+including searches, and the server rejects duplicate tier launches from stale pages.
+
+As checked on 2026-09-06, Meta's authenticated Muse Code subscription documentation
+(<https://dev.meta.ai/docs/muse-code/subscriptions>) describes plan usage separately
+from per-token API pricing. It does not establish a Contributor multiplier for
+subscription allowance. Lower API pricing alone is insufficient to switch the
+benchmark default or hide the tier's distinct data-use terms. Standard remains
+unchanged pending documented subscription savings.

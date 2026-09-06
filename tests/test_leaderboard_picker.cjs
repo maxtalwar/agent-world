@@ -22,6 +22,16 @@ assert.equal(browse(choices,'v6',history).length,2);
 assert.equal(browse(choices,'v8',history,{mode:'all'}).length,3);
 assert.equal(browse(choices,'v8',history,{query:'hosted'}).length,1);
 assert.equal(browse(choices,'v8',history,{mode:'all',lab:'anthropic'}).length,1);
+
+const muse=[{name:'Muse Spark 1.2',brain:'muse',lab:'meta',connector:'Muse'},
+ {name:'Muse Spark 1.2 Contributor',brain:'muse',lab:'meta',connector:'Muse'},
+ {name:'Muse Spark 1.3',brain:'muse',lab:'meta',connector:'Muse'}];
+const museHistory=[{recipe:'v8',rows:[],runs:[{model:'Muse Spark 1.2',ranked:false,cells:[{operational_state:'waiting_quota'}]}]}];
+for(const options of [{},{mode:'all'},{query:'muse'}])
+ assert.deepEqual(Array.from(browse(muse,'v8',museHistory,options),m=>m.name),['Muse Spark 1.3']);
+assert.equal(browse(muse,'v6',museHistory).length,3);
+museHistory[0].runs[0].model='Muse Spark 1.2 Contributor';
+assert.equal(browse(muse,'v8',museHistory).length,1);
 (async()=>{
   await vm.runInContext(`(async()=>{
     launchState.preview=[{id:'first'},{id:'second'}];

@@ -55,6 +55,26 @@ class LaunchTests(unittest.TestCase):
         with self.assertRaisesRegex(LaunchError, "already has an active"):
             self.service.start({"request_id": self.identifier})
 
+    def test_muse_tiers_share_active_launch_and_job_identity(self):
+        self.service.update(self.identifier, brain="muse", model="muse-spark-1.2-contributor")
+        other = "b" * 32
+        with self.service.connection() as db:
+            db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
+                other, "standard-run", "supervising", time.time(), time.time(), json.dumps({
+                    **self.request, "run_id": "standard-run", "brain": "muse", "model": "muse-spark-1.2"})))
+        with self.assertRaisesRegex(LaunchError, "already has an active"):
+            self.service.start({"request_id": self.identifier})
+        with self.service.connection() as db:
+            db.execute("DELETE FROM requests WHERE id=?", (other,))
+        path = self.root / "runs/jobs/standard-run/job.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({"run_id": "standard-run", "protocol": "participant-test",
+            "config": {"model": {"brain": "muse", "id": "muse-spark-1.2"}},
+            "controller": {"status": "running"}}))
+        with self.assertRaisesRegex(LaunchError, "unfinished study"):
+            self.service.start({"request_id": self.identifier})
+        self.assertEqual(self.service.get(self.identifier)["model"], "muse-spark-1.2-contributor")
+
     def test_review_expiry_and_extra_parameters(self):
         with self.service.connection() as db:
             db.execute("UPDATE requests SET created=?", (time.time() - 601,))
