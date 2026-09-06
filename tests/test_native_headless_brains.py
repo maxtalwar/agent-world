@@ -183,6 +183,18 @@ class NativeDecisionTests(unittest.TestCase):
             self.assertEqual(brain.decide({}).failure_kind, "quota")
             execute.assert_not_called()
 
+    def test_antigravity_individual_quota_reached_blocks_calls(self):
+        from agent_world.provider_limits import quota_reset_at
+        from datetime import datetime, timezone, timedelta
+        detail = "Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 4h15m36s."
+        brain, decision = self.decide(agy_result(status="ERROR", error=detail))
+        self.assertEqual(decision.failure_kind, "quota")
+        now = datetime(2026, 9, 6, 21, 5, tzinfo=timezone.utc)
+        self.assertEqual(quota_reset_at(detail, now=now), now + timedelta(hours=4, minutes=15, seconds=36))
+        with patch.object(brain, "_execute") as execute:
+            self.assertEqual(brain.decide({}).failure_kind, "quota")
+            execute.assert_not_called()
+
     def test_auth_failure_blocks(self):
         brain, decision = self.decide("", 1, "Please sign in")
         self.assertEqual(decision.failure_kind, "authentication")
