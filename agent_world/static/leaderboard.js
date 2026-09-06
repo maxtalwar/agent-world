@@ -59,12 +59,19 @@ function renderTable() {
   $('table-body').querySelectorAll('button').forEach(el=>el.onclick=()=>showModel(el.dataset.model));
 }
 const stateLabel = state => ({running:'Running',completed:'Completed',status_stale:'Status out of date',waiting_quota:'Quota paused',paused_provider:'Provider paused',waiting_startup_gate:'Waiting for startup',blocked_startup_gate:'Startup blocked',needs_attention:'Needs attention',not_started:'Queued',unknown:'Status unavailable'})[state] || state.replaceAll('_',' ');
+function quotaTiming(cell) {
+  const time=value=>value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}) : null;
+  const reset=time(cell.reset_at),retry=time(cell.retry_at);
+  return [reset?'Quota resets '+reset:'',retry?'Next retry '+retry:''].filter(Boolean).join(' · ') || 'Waiting for quota; retry time has not been reported.';
+}
 function studyMarkup(run) {
   const request=(data?.launches||[]).find(r=>r.run_id===run.id);
   const cellState=c=>c.operational_state||c.state;
   const issue=c=>!['completed','waiting_quota'].includes(cellState(c)) &&
     (Boolean(c.attention)||['needs_attention','paused_provider','paused','failed','invalid'].includes(cellState(c)));
   const affected=run.cells.some(issue),quota=run.cells.some(c=>cellState(c)==='waiting_quota');
+  const allQuota=run.cells.length>0&&run.cells.every(c=>cellState(c)==='waiting_quota');
+  const sharedTiming=allQuota&&new Set(run.cells.map(quotaTiming)).size===1;
   const repairing=affected&&request?.supervisor_thread_id&&!request.monitor_reviewed;
   const status=run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':quota?'Quota paused':'In study';
   const message=repairing?'Run paused after an issue. The monitoring agent is working on a fix.':
@@ -74,7 +81,8 @@ function studyMarkup(run) {
   if(affected&&run.cells.some(c=>c.state==='status_stale'))diagnostics.push('Controller updates are paused while the run is stopped.');
   return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+status+'</span></div>'+
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
-    run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+' · '+esc(issue(c)?'Paused after an issue':stateLabel(c.state))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(c.retry_at?'<p class="study-note">Next retry '+esc(new Date(c.retry_at).toLocaleString())+'</p>':'')).join('')+
+    run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(cellState(c)==='waiting_quota'&&!sharedTiming?'<p class="study-note">'+esc(quotaTiming(c))+'</p>':'')).join('')+
+    (sharedTiming?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
     run.warnings.map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
     (diagnostics.length?'<details class="study-diagnostics"><summary>Technical details</summary>'+diagnostics.map(d=>'<p>'+esc(d)+'</p>').join('')+'</details>':'')+
     '<p class="study-note">'+(affected?'Last run update ':'Controller updated ')+esc(relative(run.checked_at))+'</p></article>';

@@ -45,6 +45,38 @@ LABS = {
 }
 
 
+def quota_schedule(path: Path) -> dict:
+    """Read recent quota timing without loading a simulation's entire event log."""
+    try:
+        with path.open("rb") as handle:
+            start = max(0, path.stat().st_size - 256 * 1024)
+            handle.seek(start)
+            if start:
+                handle.readline()
+            lines = handle.read().splitlines()
+        for line in reversed(lines):
+            try:
+                event = json.loads(line)
+            except (ValueError, UnicodeDecodeError):
+                continue
+            if event.get("type") in {"run_quota_retry", "run_completed", "run_failed", "run_stopped"}:
+                return {}
+            if event.get("type") != "run_quota_wait":
+                continue
+            data = event.get("data") or {}
+            retry = data.get("resume_at_unix")
+            retry_at = None
+            if isinstance(retry, (int, float)) and not isinstance(retry, bool):
+                try:
+                    retry_at = datetime.fromtimestamp(retry, timezone.utc).isoformat()
+                except (ValueError, OverflowError, OSError):
+                    pass
+            return {"retry_at": retry_at, "reset_at": data.get("provider_reset_at_utc")}
+    except OSError:
+        pass
+    return {}
+
+
 def model_lab(model: str) -> dict:
     for key, (name, pattern) in LABS.items():
         if re.search(r"(?:^|[/ :_-])(?:" + pattern + r")", model.lower()):
@@ -231,18 +263,27 @@ class LeaderboardStore:
             tick = latest.get("tick", cell.get("controller_last_tick"))
             try:
                 manifest = read_json(within(self.root, cell["run_manifest"]))
-                if manifest.get("status") not in (None, "running"):
+                if (manifest.get("status") in {"completed", "failed", "stopped", "invalid", "cancelled"}
+                        or (state != "waiting_quota" and manifest.get("status") not in (None, "running"))):
                     state = manifest["status"]
                     tick = manifest.get("final_tick", tick)
             except (OSError, ValueError, KeyError):
                 pass
             terminal = state in {"completed", "failed", "stopped", "invalid", "cancelled"}
             display_state = "status_stale" if stale and not terminal else state
+            schedule = {}
+            if state == "waiting_quota" and cell.get("events"):
+                try:
+                    schedule = quota_schedule(within(self.root, cell["events"]))
+                except ValueError:
+                    pass
             run["cells"].append({
                 "seed": cell["seed"], "tick": tick, "target": cell.get("target_ticks"),
                 "state": display_state, "operational_state": state,
                 "attention": latest.get("attention") or cell.get("controller_attention"),
-                "retry_at": latest.get("next_auto_resume_at_utc"),
+                "retry_at": ((latest.get("next_auto_resume_at_utc") or cell.get("next_auto_resume_at_utc")
+                              or schedule.get("retry_at")) if state == "waiting_quota" else None),
+                "reset_at": schedule.get("reset_at"),
             })
             report_path = within(self.root, cell["output_dir"]) / "run-report.json"
             if not report_path.is_file():

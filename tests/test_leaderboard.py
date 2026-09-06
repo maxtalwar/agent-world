@@ -39,6 +39,24 @@ class LeaderboardTests(unittest.TestCase):
         path.write_text(json.dumps(job))
         return job, path
 
+    def test_quota_checkpoint_preserves_controller_state_and_event_timing(self):
+        job, path = self.fixture(complete=False)
+        cell = job["cells"][0]
+        Path(cell["run_manifest"]).write_text('{"status":"paused_checkpoint"}')
+        cell["events"] = str(Path(cell["output_dir"]) / "run.jsonl")
+        Path(cell["events"]).write_text(json.dumps({"type": "run_quota_wait", "data": {
+            "resume_at_unix": 1788739260, "provider_reset_at_utc": "2026-09-07T00:00:00Z"}}) + "\n")
+        path.with_name("controller-heartbeat.json").write_text(json.dumps({"cells": [{
+            "id": "seed-11", "state": "paused_checkpoint", "controller_state": "waiting_quota"}]}))
+        run, _, _ = self.store.managed_run(job, path)
+        self.assertEqual(run["cells"][0]["operational_state"], "waiting_quota")
+        self.assertEqual(run["cells"][0]["retry_at"], "2026-09-07T00:01:00+00:00")
+        self.assertEqual(run["cells"][0]["reset_at"], "2026-09-07T00:00:00Z")
+        Path(cell["run_manifest"]).write_text('{"status":"completed"}')
+        run, _, _ = self.store.managed_run(job, path)
+        self.assertEqual(run["cells"][0]["operational_state"], "completed")
+        self.assertIsNone(run["cells"][0]["retry_at"])
+
     def test_canonical_rankings_match_database_and_variant_is_labeled(self):
         root = Path(__file__).resolve().parents[1]
         boards = LeaderboardStore(root).canonical_boards()

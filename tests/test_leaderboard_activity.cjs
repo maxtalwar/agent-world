@@ -17,3 +17,20 @@ context.run.cells[0]={seed:11,tick:60,target:60,state:'completed',operational_st
 html=vm.runInContext('studyMarkup(run)',context);
 assert.doesNotMatch(html,/Repair in progress|internal error/);
 console.log('Repair copy, diagnostic disclosure and resolved-state checks passed');
+
+context.run.cells=[11,41].map(seed=>({seed,tick:12,target:60,state:'status_stale',operational_state:'waiting_quota',retry_at:'2026-09-07T01:22:11Z',reset_at:'2026-09-07T01:21:11Z'}));
+html=vm.runInContext('studyMarkup(run)',context);
+assert.equal((html.match(/Quota paused/g)||[]).length,1);
+assert.equal((html.match(/Next retry/g)||[]).length,1);
+assert.equal((html.match(/Quota resets/g)||[]).length,1);
+assert.doesNotMatch(html,/Status out of date|paused checkpoint|working on a fix/);
+context.run.cells[1].retry_at='2026-09-07T02:22:11Z';
+html=vm.runInContext('studyMarkup(run)',context);
+assert.equal((html.match(/Next retry/g)||[]).length,2);
+context.run.cells[1].operational_state='running';context.run.cells[1].state='running';
+html=vm.runInContext('studyMarkup(run)',context);
+assert.match(html,/Seed 11 · Quota paused/);assert.match(html,/Seed 41 · Running/);
+context.run.cells[0].retry_at=null;context.run.cells[0].reset_at=null;
+html=vm.runInContext('studyMarkup(run)',context);
+assert.match(html,/retry time has not been reported/);
+console.log('Shared, mixed, separate and unknown quota timing checks passed');
