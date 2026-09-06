@@ -19,15 +19,7 @@ function render() {
   selected=b.id;$('loading').hidden=true;$('dashboard').hidden=false;
   $('versions').innerHTML=data.boards.map(item => '<button class="version-button" aria-current="'+(item.id===b.id)+'" data-board="'+esc(item.id)+'">'+esc(item.title)+(item.source==='Canonical metrics database'?' <span class="version-count">Established</span>':' <span class="version-count">'+item.rows.length+' models</span>')+'</button>').join('');
   $('versions').querySelectorAll('button').forEach(el => el.onclick=()=>changeBoard(el.dataset.board));
-  const top=b.rows[0], primary=b.columns[0];
-  $('board-state').textContent=b.state;
-  $('leader-name').textContent=top?.model || 'The field is taking shape';
-  $('leader-meta').textContent=top ? top.status : 'Results appear after completed replications';
-  $('leader-score').textContent=number(top?.scores[primary[0]]);
-  $('leader-metric').textContent=primary[1];
-  $('leader-seeds').textContent=top ? top.seeds.length+' seeds · #1' : 'Awaiting results';
-  $('ranked-count').textContent=b.rows.length;$('active-count').textContent=b.active_count;
-  $('field-caption').textContent=b.source==='Canonical metrics database'?'Includes labeled controlled variants.':'Completed, replicated results in this recipe.';
+  const primary=b.columns[0];
   $('ranking-caption').textContent='Ranked by '+primary[1].toLowerCase()+' · '+b.source.toLowerCase();
   $('table-note').textContent='Select a model for evidence and seed details.';
   $('updated').textContent='Evidence updated '+relative(b.updated_at);
@@ -60,11 +52,12 @@ function renderTable() {
 }
 const stateLabel = state => ({running:'Running',completed:'Completed',status_stale:'Status out of date',waiting_quota:'Quota paused',paused_provider:'Provider paused',waiting_startup_gate:'Waiting for startup',blocked_startup_gate:'Startup blocked',needs_attention:'Needs attention',not_started:'Queued',unknown:'Status unavailable'})[state] || state.replaceAll('_',' ');
 function quotaTiming(cell) {
-  const time=value=>value && Number.isFinite(Date.parse(value)) ? new Date(value).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}) : null;
-  const reset=time(cell.reset_at),retry=time(cell.retry_at);
-  return [reset?'Quota resets '+reset:'',retry?'Next retry '+retry:''].filter(Boolean).join(' · ') || 'Waiting for quota; retry time has not been reported.';
+  const date=new Date(cell.retry_at);
+  if(!cell.retry_at||!Number.isFinite(date.getTime()))return 'Continuation time not yet reported.';
+  const today=new Date().toDateString()===date.toDateString();
+  return 'Continues '+date.toLocaleString(undefined,{...(today?{}:{month:'short',day:'numeric'}),hour:'numeric',minute:'2-digit',timeZoneName:'short'});
 }
-function studyMarkup(run) {
+function studyMarkup(run, grouped=false) {
   const request=(data?.launches||[]).find(r=>r.run_id===run.id);
   const cellState=c=>c.operational_state||c.state;
   const issue=c=>!['completed','waiting_quota'].includes(cellState(c)) &&
@@ -79,18 +72,31 @@ function studyMarkup(run) {
   const diagnostics=run.cells.filter(c=>c.attention).map(c=>'Seed '+c.seed+': '+c.attention);
   if(affected&&request?.error)diagnostics.push(request.error);
   if(affected&&run.cells.some(c=>c.state==='status_stale'))diagnostics.push('Controller updates are paused while the run is stopped.');
-  return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+status+'</span></div>'+
+  return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+(grouped?'':status)+'</span></div>'+
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
     run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(cellState(c)==='waiting_quota'&&!sharedTiming?'<p class="study-note">'+esc(quotaTiming(c))+'</p>':'')).join('')+
-    (sharedTiming?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
+    (sharedTiming&&!grouped?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
     run.warnings.map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
     (diagnostics.length?'<details class="study-diagnostics"><summary>Technical details</summary>'+diagnostics.map(d=>'<p>'+esc(d)+'</p>').join('')+'</details>':'')+
     '<p class="study-note">'+(affected?'Last run update ':'Controller updated ')+esc(relative(run.checked_at))+'</p></article>';
 }
 
+function activityMarkup(runs) {
+  const groups=new Map();
+  for(const run of runs){
+    const times=run.cells.map(quotaTiming);
+    const shared=run.connector&&run.cells.length&&run.cells.every(c=>(c.operational_state||c.state)==='waiting_quota')&&new Set(times).size===1&&run.cells.every(c=>c.retry_at);
+    const key=shared?run.connector+'|'+times[0]:run.id;
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(run);
+  }
+  return [...groups.values()].map(group=>group.length<2?studyMarkup(group[0]):
+    '<section class="quota-group"><div class="study-head"><strong>'+esc(group[0].connector_label||group[0].connector)+'</strong><span class="study-status">Quota paused</span></div>'+
+    group.map(r=>studyMarkup(r,true)).join('')+'<p class="study-note">'+esc(quotaTiming(group[0].cells[0]))+'</p></section>').join('');
+}
 function renderActivity(){
   const runs=board().runs, open=runs.filter(r=>!r.ranked), complete=runs.filter(r=>r.ranked);
-  $('activity-list').innerHTML=(open.length?open.map(studyMarkup).join(''):'<div><p class="activity-empty">All quiet in<br>the laboratory.</p><p class="small muted">No pending studies in this leaderboard.</p></div>')+(complete.length?'<details class="completed-studies"><summary>'+complete.length+' completed studies</summary>'+complete.map(studyMarkup).join('')+'</details>':'');
+  $('activity-list').innerHTML=(open.length?activityMarkup(open):'<div><p class="activity-empty">All quiet in<br>the laboratory.</p><p class="small muted">No pending studies in this leaderboard.</p></div>')+(complete.length?'<details class="completed-studies"><summary>'+complete.length+' completed studies</summary>'+complete.map(r=>studyMarkup(r)).join('')+'</details>':'');
 }
 function showModel(id) {
   const b=board(),r=b.rows.find(row=>row.id===id);if(!r)return;

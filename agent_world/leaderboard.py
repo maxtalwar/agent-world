@@ -126,11 +126,8 @@ def within(root: Path, value: str) -> Path:
 
 
 def model_label(model: str) -> str:
-    name = model.removeprefix("claude-")
-    if name.startswith("gpt-"):
-        name = "GPT-" + name[4:]
-    return re.sub(r"\b(luna|terra|sol|mini|nano|spark|muse|opus|sonnet|fable|haiku|grok|glm)\b",
-                  lambda m: m[0].title(), name.replace("-", " ").replace("GPT ", "GPT-"))
+    name = re.sub(r"(?<=\d)-(?=\d)", ".", model.removeprefix("claude-"))
+    return name.replace("-", " ").title().replace("Gpt ", "GPT-").replace("Glm", "GLM")
 
 
 def stamp() -> str:
@@ -253,6 +250,9 @@ class LeaderboardStore:
             "id": job["run_id"], "model": model_label(job["config"]["model"]["id"]),
             "effort": job["config"]["model"].get("reasoning_effort"),
             "created_at": job.get("created_at_utc"), "commit": job.get("launch_commit"),
+            "connector": job["config"]["model"].get("brain"),
+            "connector_label": {"antigravity": "Antigravity", "muse": "Muse Code", "claude": "Claude Code",
+                                "codex": "Codex"}.get(job["config"]["model"].get("brain"), job["config"]["model"].get("brain")),
             "checked_at": checked, "cells": [], "warnings": [],
         }
         reports, signatures = [], []
