@@ -240,7 +240,7 @@ class LeaderboardStore:
             display_state = "status_stale" if stale and not terminal else state
             run["cells"].append({
                 "seed": cell["seed"], "tick": tick, "target": cell.get("target_ticks"),
-                "state": display_state,
+                "state": display_state, "operational_state": state,
                 "attention": latest.get("attention") or cell.get("controller_attention"),
                 "retry_at": latest.get("next_auto_resume_at_utc"),
             })

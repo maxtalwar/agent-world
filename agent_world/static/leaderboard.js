@@ -61,11 +61,25 @@ function renderTable() {
 const stateLabel = state => ({running:'Running',completed:'Completed',status_stale:'Status out of date',waiting_quota:'Quota paused',paused_provider:'Provider paused',waiting_startup_gate:'Waiting for startup',blocked_startup_gate:'Startup blocked',needs_attention:'Needs attention',not_started:'Queued',unknown:'Status unavailable'})[state] || state.replaceAll('_',' ');
 function studyMarkup(run) {
   const request=(data?.launches||[]).find(r=>r.run_id===run.id);
-  const quota=run.cells.filter(c=>c.state==='waiting_quota').length;
-  const status=run.ranked?'Ranked':quota?'Quota paused':'In study';
-  const supervisor=request?.error?'<p class="attention">Monitoring: '+esc(request.error)+'</p>':'';
-  return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+status+'</span></div>'+run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+' · '+esc(stateLabel(c.state))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(c.attention?'<p class="attention">'+esc(c.attention)+'</p>':'')+(c.retry_at?'<p class="study-note">Next retry '+esc(new Date(c.retry_at).toLocaleString())+'</p>':'')).join('')+run.warnings.map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+supervisor+'<p class="study-note">Controller updated '+esc(relative(run.checked_at))+'</p></article>';
+  const cellState=c=>c.operational_state||c.state;
+  const issue=c=>!['completed','waiting_quota'].includes(cellState(c)) &&
+    (Boolean(c.attention)||['needs_attention','paused_provider','paused','failed','invalid'].includes(cellState(c)));
+  const affected=run.cells.some(issue),quota=run.cells.some(c=>cellState(c)==='waiting_quota');
+  const repairing=affected&&request?.supervisor_thread_id&&!request.monitor_reviewed;
+  const status=run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':quota?'Quota paused':'In study';
+  const message=repairing?'Run paused after an issue. The monitoring agent is working on a fix.':
+    affected?(request?.monitor_resolution_reason||'Run paused after an issue. Monitoring attention is needed.') : '';
+  const diagnostics=run.cells.filter(c=>c.attention).map(c=>'Seed '+c.seed+': '+c.attention);
+  if(affected&&request?.error)diagnostics.push(request.error);
+  if(affected&&run.cells.some(c=>c.state==='status_stale'))diagnostics.push('Controller updates are paused while the run is stopped.');
+  return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+status+'</span></div>'+
+    (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
+    run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+' · '+esc(issue(c)?'Paused after an issue':stateLabel(c.state))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(c.retry_at?'<p class="study-note">Next retry '+esc(new Date(c.retry_at).toLocaleString())+'</p>':'')).join('')+
+    run.warnings.map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
+    (diagnostics.length?'<details class="study-diagnostics"><summary>Technical details</summary>'+diagnostics.map(d=>'<p>'+esc(d)+'</p>').join('')+'</details>':'')+
+    '<p class="study-note">'+(affected?'Last run update ':'Controller updated ')+esc(relative(run.checked_at))+'</p></article>';
 }
+
 function renderActivity(){
   const runs=board().runs, open=runs.filter(r=>!r.ranked), complete=runs.filter(r=>r.ranked);
   $('activity-list').innerHTML=(open.length?open.map(studyMarkup).join(''):'<div><p class="activity-empty">All quiet in<br>the laboratory.</p><p class="small muted">No pending studies in this leaderboard.</p></div>')+(complete.length?'<details class="completed-studies"><summary>'+complete.length+' completed studies</summary>'+complete.map(studyMarkup).join('')+'</details>':'');

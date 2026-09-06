@@ -224,6 +224,7 @@ class LaunchService:
             "id", "run_id", "state", "recipe_id", "recipe_title", "model", "model_name", "lab", "brain", "seeds", "defaults",
             "commit", "created_at", "updated_at", "error", "supervisor_thread_id",
             "supervisor_state", "supervisor_message", "supervisor_model", "supervisor_effort", "can_reconnect",
+            "monitor_reviewed", "monitor_resolution", "monitor_resolution_reason",
         }}
 
     def monitoring_worklist(self):
