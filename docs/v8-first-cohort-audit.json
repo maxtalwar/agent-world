@@ -1,0 +1,4758 @@
+{
+  "evidence_class": "offline_scoring_audit",
+  "studies": {
+    "gpt-5.4-mini participant-v6": {
+      "cells": [
+        {
+          "misleading_capacity_errors": 66,
+          "report": "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-11/run-report.json",
+          "seed": 11,
+          "horizon": 50,
+          "hashes": {
+            "run-report.json": "e264e41041aba8643885ecb904e08ef170c2f0a11335107d999d07f4386d33f5",
+            "run.jsonl": "85db6fa8beb30ef018f3032fa5bbeff6ef2b8d55677d48b15f3c3b000eb65851",
+            "run-snapshot.json": "028ccc0ac6acbc6fe55e3569793db6f82271d4755b53040b460ad5d16320433d",
+            "run-manifest.json": "90ff7d3a8f3d21d98363f197a1f9014e35588074bf8cf72bf8848a658ad1c604"
+          },
+          "source": "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 11,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "stateless-v3",
+            "conversation_mode": "stateless",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "effective_execution": 73.88,
+            "sustained_competence": 27.46,
+            "entrepreneurial_agency": 0.0,
+            "economic_productivity": 0.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 252.0,
+            "execution_decisions": 368.0,
+            "health_point_ticks": 28447.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 1832.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 115.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 68.48,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 252.0,
+                "decisions": 368.0
+              }
+            },
+            "capability": {
+              "score": 29.47,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 56.894,
+                "final_window_health_pct": 15.2667
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 99.5,
+            "6": 99.5,
+            "7": 99.5,
+            "8": 99.5,
+            "9": 99.5,
+            "10": 98.7,
+            "11": 98.2,
+            "12": 97.9,
+            "13": 97.1,
+            "14": 95.8,
+            "15": 92.6,
+            "16": 89.7,
+            "17": 86.8,
+            "18": 83.9,
+            "19": 81.0,
+            "20": 76.8,
+            "21": 72.6,
+            "22": 68.4,
+            "23": 63.7,
+            "24": 58.8,
+            "25": 51.0,
+            "26": 48.1,
+            "27": 45.8,
+            "28": 43.5,
+            "29": 41.3,
+            "30": 39.3,
+            "31": 36.8,
+            "32": 34.5,
+            "33": 31.9,
+            "34": 29.7,
+            "35": 27.7,
+            "36": 26.3,
+            "37": 24.3,
+            "38": 21.8,
+            "39": 20.3,
+            "40": 19.4,
+            "41": 18.5,
+            "42": 17.6,
+            "43": 16.7,
+            "44": 15.3,
+            "45": 14.4,
+            "46": 13.5,
+            "47": 12.6,
+            "48": 11.7,
+            "49": 11.7,
+            "50": 11.5
+          },
+          "health_at_48": 11.7,
+          "capability_at_48": 31.773699324283914,
+          "capability_at_50": 29.471710729669788,
+          "living": 2,
+          "structures": {},
+          "actions": {
+            "move": 152,
+            "gather": 165,
+            "wait": 105,
+            "chop": 26,
+            "mine": 16,
+            "consume": 103,
+            "offer_trade": 14,
+            "accept_trade": 13,
+            "pick_up": 4,
+            "drop": 3,
+            "say": 1,
+            "fish": 11,
+            "whisper": 2,
+            "inspect": 9,
+            "broadcast": 1
+          },
+          "plans_by_action_count": {
+            "4": [
+              36,
+              8
+            ],
+            "3": [
+              44,
+              17
+            ],
+            "2": [
+              67,
+              30
+            ],
+            "1": [
+              215,
+              61
+            ],
+            "0": [
+              6,
+              0
+            ]
+          },
+          "invalid_by_action": {
+            "mine": 11,
+            "gather": 60,
+            "chop": 16,
+            "whisper": 6,
+            "accept_trade": 13,
+            "pick_up": 2,
+            "consume": 9,
+            "inspect": 6,
+            "move": 2,
+            "fish": 3
+          },
+          "invalid_messages": {
+            "No water is available.": 28,
+            "No wood is available.": 15,
+            "No food is available on this tile.": 8,
+            "No food is available.": 8,
+            "Recipient lacks requested goods.": 7,
+            "Whisper target must be adjacent or on the same tile.": 6,
+            "Cannot inspect beyond visibility radius.": 6,
+            "No food available to consume.": 6,
+            "No ore is available.": 5,
+            "No stone is available.": 5
+          },
+          "diagnostic_raw": {
+            "initial_agents": 10,
+            "possible_agent_ticks": 500,
+            "observed_agent_ticks": 500,
+            "decisions": 368,
+            "decision_failures": 0,
+            "model_output_failures": 0,
+            "external_decision_failures": 0,
+            "submitted_actions": 625,
+            "contention_failures": 4,
+            "submitted_actions_excluding_contention": 621,
+            "engine_invalid_proposals": 128,
+            "invalid_proposals": 128,
+            "action_point_overruns": 1,
+            "initial_endowment_value": 135.0,
+            "terminal_economic_value": 218.125,
+            "living_agents": 2,
+            "endpoint_health_points": 115.0,
+            "endpoint_health_capacity": 1000,
+            "living_terminal_economic_value": 39.0,
+            "purposeful_agent_ticks": 253,
+            "venture_initiatives": 14,
+            "venture_initiatives_by_type": {
+              "offer_trade": 14
+            },
+            "enterprise_supply_value": 0.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "own_capital_output_value": 0.0,
+            "informal_transfer_value": 0.0
+          },
+          "reasoning_tokens_per_call": 1350.2,
+          "static_prompt_hashes": [
+            "266c1543b4cf2c331499fa62f3b2e9f324f73a6a4714edb7a164299bece73e6d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        },
+        {
+          "misleading_capacity_errors": 106,
+          "report": "runs/benchmarks/gpt-5-3-codex-spark-gpt-5-4-mini-participant-v6-certified-seeds11-41-20260728-200141/mini-seed-41/run-report.json",
+          "seed": 41,
+          "horizon": 50,
+          "hashes": {
+            "run-report.json": "9c821af0b6f5bfc0306df659ac31e12288693f39afdc186309768efdc32bd569",
+            "run.jsonl": "f713d5ea5020a98f45dfe97e82fbef79f141910854ad1abf6ccf8f377e380ae0",
+            "run-snapshot.json": "220a206f2e3c243c8d01c6ac2a0260b7f8988ed8390839e7ab0b80064c1fab1f",
+            "run-manifest.json": "0cc0878095ce7fdc83754a19575717c6ebfaaf1edb3c62b965ef5bc34b4e8652"
+          },
+          "source": "7bbff8db635a0ea32a40c9bc812ca93c7ab34d65",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 41,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "stateless-v3",
+            "conversation_mode": "stateless",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "effective_execution": 73.24,
+            "sustained_competence": 24.35,
+            "entrepreneurial_agency": 0.0,
+            "economic_productivity": 0.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 248.0,
+            "execution_decisions": 384.0,
+            "health_point_ticks": 29214.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 1304.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 36.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 64.58,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 248.0,
+                "decisions": 384.0
+              }
+            },
+            "capability": {
+              "score": 25.2,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 58.428,
+                "final_window_health_pct": 10.8667
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 99.5,
+            "6": 99.5,
+            "7": 99.5,
+            "8": 99.5,
+            "9": 99.5,
+            "10": 97.7,
+            "11": 97.7,
+            "12": 97.7,
+            "13": 97.7,
+            "14": 97.7,
+            "15": 93.7,
+            "16": 89.7,
+            "17": 86.0,
+            "18": 82.8,
+            "19": 79.6,
+            "20": 75.1,
+            "21": 71.4,
+            "22": 68.2,
+            "23": 65.1,
+            "24": 62.3,
+            "25": 59.7,
+            "26": 57.7,
+            "27": 56.1,
+            "28": 54.8,
+            "29": 51.0,
+            "30": 49.3,
+            "31": 47.3,
+            "32": 45.2,
+            "33": 43.4,
+            "34": 41.6,
+            "35": 37.1,
+            "36": 32.9,
+            "37": 29.3,
+            "38": 25.7,
+            "39": 22.1,
+            "40": 18.5,
+            "41": 15.7,
+            "42": 14.5,
+            "43": 13.6,
+            "44": 11.5,
+            "45": 9.1,
+            "46": 7.4,
+            "47": 5.7,
+            "48": 4.6,
+            "49": 4.1,
+            "50": 3.6
+          },
+          "health_at_48": 4.6,
+          "capability_at_48": 29.981605761329355,
+          "capability_at_50": 25.197571311537153,
+          "living": 2,
+          "structures": {},
+          "actions": {
+            "chop": 29,
+            "gather": 181,
+            "move": 143,
+            "mine": 33,
+            "wait": 109,
+            "consume": 124,
+            "drop": 16,
+            "pick_up": 9,
+            "fish": 23,
+            "offer_trade": 9,
+            "accept_trade": 3,
+            "whisper": 2,
+            "inspect": 2,
+            "claim_item": 1
+          },
+          "plans_by_action_count": {
+            "2": [
+              85,
+              40
+            ],
+            "1": [
+              211,
+              70
+            ],
+            "3": [
+              45,
+              20
+            ],
+            "4": [
+              42,
+              6
+            ],
+            "0": [
+              1,
+              0
+            ]
+          },
+          "invalid_by_action": {
+            "chop": 15,
+            "gather": 72,
+            "mine": 26,
+            "consume": 21,
+            "fish": 11,
+            "whisper": 4,
+            "accept_trade": 3,
+            "wait": 2,
+            "move": 3,
+            "pick_up": 3
+          },
+          "invalid_messages": {
+            "No water is available.": 52,
+            "No ore is available.": 14,
+            "No wood is available.": 14,
+            "No water available to consume.": 14,
+            "No stone is available.": 12,
+            "No food is available.": 11,
+            "No food available to consume.": 7,
+            "gather cannot produce wood.": 5,
+            "Fishing requires fishable food in current or adjacent water.": 5,
+            "No food is available on this tile.": 4
+          },
+          "diagnostic_raw": {
+            "initial_agents": 10,
+            "possible_agent_ticks": 500,
+            "observed_agent_ticks": 500,
+            "decisions": 384,
+            "decision_failures": 0,
+            "model_output_failures": 0,
+            "external_decision_failures": 0,
+            "submitted_actions": 684,
+            "contention_failures": 1,
+            "submitted_actions_excluding_contention": 683,
+            "engine_invalid_proposals": 160,
+            "invalid_proposals": 160,
+            "action_point_overruns": 3,
+            "initial_endowment_value": 135.0,
+            "terminal_economic_value": 220.5,
+            "living_agents": 2,
+            "endpoint_health_points": 36.0,
+            "endpoint_health_capacity": 1000,
+            "living_terminal_economic_value": 48.0,
+            "purposeful_agent_ticks": 269,
+            "venture_initiatives": 9,
+            "venture_initiatives_by_type": {
+              "offer_trade": 9
+            },
+            "enterprise_supply_value": 0.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "own_capital_output_value": 0.0,
+            "informal_transfer_value": 0.0
+          },
+          "reasoning_tokens_per_call": 1373.5,
+          "static_prompt_hashes": [
+            "266c1543b4cf2c331499fa62f3b2e9f324f73a6a4714edb7a164299bece73e6d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "pooled_outcome_scores": {
+        "execution": {
+          "score": 66.49,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 500.0,
+            "decisions": 752.0
+          }
+        },
+        "capability": {
+          "score": 27.45,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 57.661,
+            "final_window_health_pct": 13.0667
+          }
+        }
+      }
+    },
+    "gpt-5.4-mini participant-v8": {
+      "cells": [
+        {
+          "misleading_capacity_errors": 113,
+          "report": "runs/managed/gpt-5-4-mini-v8-20260905/seed-11/run-report.json",
+          "seed": 11,
+          "horizon": 60,
+          "hashes": {
+            "run-report.json": "1089fa9b705f35e9ac19a001ee44e559144e87236ea44c7b06a5f0e38f209453",
+            "run.jsonl": "80c3cb81d31dbeb082d6ab9e93125dbd6c6921c9563f35da7f647fb26ab64c17",
+            "run-snapshot.json": "d26d5ba2f8a3d304aa6f7e7ab6d2a656c18703f95e1948a6276fe2b1fdddcdf7",
+            "run-manifest.json": "68833d1c3cbc9d6dcbf5c76b5e7521764ee7c289427b86a4ae07bc98eff20005"
+          },
+          "source": "75bd330bfc4027a993ba007aa16ac2effe00fccb",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 11,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "transfer_kind_mode": "self_declared",
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "capability": 20.83,
+            "execution": 66.37,
+            "production": 66.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 300.0,
+            "execution_decisions": 452.0,
+            "health_point_ticks": 30434.0,
+            "health_point_tick_capacity": 60000.0,
+            "tail_health_point_ticks": 1026.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 84.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 66.37,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 300.0,
+                "decisions": 452.0
+              }
+            },
+            "capability": {
+              "score": 20.83,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 50.7233,
+                "final_window_health_pct": 8.55
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 99.5,
+            "6": 99.5,
+            "7": 99.5,
+            "8": 99.5,
+            "9": 99.5,
+            "10": 97.9,
+            "11": 96.8,
+            "12": 95.7,
+            "13": 95.1,
+            "14": 94.5,
+            "15": 89.4,
+            "16": 85.4,
+            "17": 81.6,
+            "18": 78.1,
+            "19": 75.2,
+            "20": 71.5,
+            "21": 68.8,
+            "22": 65.9,
+            "23": 63.3,
+            "24": 60.6,
+            "25": 53.2,
+            "26": 50.5,
+            "27": 48.2,
+            "28": 46.8,
+            "29": 46.2,
+            "30": 44.3,
+            "31": 43.1,
+            "32": 42.5,
+            "33": 41.9,
+            "34": 41.3,
+            "35": 41.0,
+            "36": 41.0,
+            "37": 38.9,
+            "38": 36.3,
+            "39": 33.9,
+            "40": 30.7,
+            "41": 27.5,
+            "42": 24.6,
+            "43": 21.7,
+            "44": 18.8,
+            "45": 16.0,
+            "46": 13.7,
+            "47": 11.6,
+            "48": 9.8,
+            "49": 9.5,
+            "50": 9.0,
+            "51": 8.5,
+            "52": 8.4,
+            "53": 8.4,
+            "54": 8.4,
+            "55": 8.4,
+            "56": 8.4,
+            "57": 8.4,
+            "58": 8.4,
+            "59": 8.4,
+            "60": 8.4
+          },
+          "health_at_48": 9.8,
+          "capability_at_48": 38.04503909841598,
+          "capability_at_50": 33.445708244855574,
+          "living": 3,
+          "structures": {},
+          "actions": {
+            "move": 144,
+            "gather": 229,
+            "chop": 31,
+            "mine": 19,
+            "gift": 1,
+            "consume": 183,
+            "wait": 113,
+            "fish": 45,
+            "drop": 5,
+            "offer_trade": 11,
+            "broadcast": 1,
+            "accept_trade": 10,
+            "whisper": 1
+          },
+          "plans_by_action_count": {
+            "2": [
+              109,
+              49
+            ],
+            "3": [
+              61,
+              21
+            ],
+            "1": [
+              244,
+              75
+            ],
+            "4": [
+              37,
+              7
+            ],
+            "0": [
+              1,
+              0
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 86,
+            "mine": 15,
+            "chop": 13,
+            "consume": 35,
+            "fish": 30,
+            "accept_trade": 7,
+            "whisper": 3
+          },
+          "invalid_messages": {
+            "No food is available.": 46,
+            "No water is available.": 36,
+            "No food available to consume.": 31,
+            "Fishing requires fishable food in current or adjacent water.": 17,
+            "No wood is available.": 13,
+            "No ore is available.": 12,
+            "No food is available on this tile.": 6,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 5,
+            "No water available to consume.": 4,
+            "No stone is available.": 3
+          },
+          "diagnostic_raw": {
+            "action_point_overruns": 1,
+            "contention_failures": 4,
+            "decision_failures": 0,
+            "decisions": 452,
+            "endpoint_health_capacity": 1000.0,
+            "endpoint_health_points": 84.0,
+            "engine_invalid_proposals": 189,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 1.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 1.0,
+            "execution_decisions": 452.0,
+            "execution_valid_decisions": 300.0,
+            "external_decision_failures": 0,
+            "health_point_tick_capacity": 60000.0,
+            "health_point_ticks": 30434.0,
+            "informal_transfer_value": 2.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 189,
+            "living_agents": 3,
+            "living_terminal_economic_value": 75.875,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 600,
+            "own_capital_output_value": 0.0,
+            "possible_agent_ticks": 600,
+            "production_by_source": {
+              "chop": 57.0,
+              "fish": 32.0,
+              "gather": 275.0,
+              "mine": 32.0
+            },
+            "production_intermediate_input_value": 0.0,
+            "production_output_value": 396.0,
+            "production_possible_agent_ticks": 600,
+            "production_value_added": 396.0,
+            "productive_capital_extraction_value": 0.0,
+            "purposeful_agent_ticks": 302,
+            "submitted_actions": 793,
+            "submitted_actions_excluding_contention": 789,
+            "tail_health_point_tick_capacity": 12000.0,
+            "tail_health_point_ticks": 1026.0,
+            "terminal_economic_value": 226.5,
+            "venture_initiatives": 11,
+            "venture_initiatives_by_type": {
+              "offer_trade": 11
+            }
+          },
+          "reasoning_tokens_per_call": 1195.0,
+          "static_prompt_hashes": [
+            "b0bd9f0d40224a72f93e4be099e65f75a2b44298106121c7f417ab84dabe0a4d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        },
+        {
+          "misleading_capacity_errors": 98,
+          "report": "runs/managed/gpt-5-4-mini-v8-20260905/seed-41/run-report.json",
+          "seed": 41,
+          "horizon": 60,
+          "hashes": {
+            "run-report.json": "03e1596fe1e34b0840a0da5c60d73da73b5af7492857ea5a0445e241a2e7cea7",
+            "run.jsonl": "fccc6c35b979b88ff3816f759f5f3e55edff5f1d66f391124580aa8a0a4cdddb",
+            "run-snapshot.json": "a6e23e78b0bb2d4ce2564b4bf8c5b7824494137b57da2ff570086572b33f6eff",
+            "run-manifest.json": "42bd05ae0313841cdd843922cc0c7c96168b3ea3f8c423649983c34dc5b69f05"
+          },
+          "source": "75bd330bfc4027a993ba007aa16ac2effe00fccb",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 41,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "transfer_kind_mode": "self_declared",
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "capability": 18.08,
+            "execution": 64.17,
+            "production": 49.5
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 274.0,
+            "execution_decisions": 427.0,
+            "health_point_ticks": 29900.0,
+            "health_point_tick_capacity": 60000.0,
+            "tail_health_point_ticks": 787.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 31.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 64.17,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 274.0,
+                "decisions": 427.0
+              }
+            },
+            "capability": {
+              "score": 18.08,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 49.8333,
+                "final_window_health_pct": 6.5583
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 99.0,
+            "6": 98.8,
+            "7": 98.8,
+            "8": 98.8,
+            "9": 98.8,
+            "10": 98.3,
+            "11": 98.1,
+            "12": 98.1,
+            "13": 98.1,
+            "14": 98.1,
+            "15": 93.5,
+            "16": 90.0,
+            "17": 86.6,
+            "18": 83.7,
+            "19": 80.6,
+            "20": 76.7,
+            "21": 72.5,
+            "22": 68.2,
+            "23": 64.3,
+            "24": 60.7,
+            "25": 56.3,
+            "26": 52.2,
+            "27": 49.6,
+            "28": 47.8,
+            "29": 44.0,
+            "30": 42.6,
+            "31": 41.8,
+            "32": 41.1,
+            "33": 40.6,
+            "34": 39.8,
+            "35": 36.4,
+            "36": 32.7,
+            "37": 29.3,
+            "38": 26.7,
+            "39": 24.0,
+            "40": 22.7,
+            "41": 21.5,
+            "42": 20.3,
+            "43": 19.1,
+            "44": 16.3,
+            "45": 13.0,
+            "46": 11.8,
+            "47": 10.6,
+            "48": 9.4,
+            "49": 9.4,
+            "50": 8.8,
+            "51": 8.5,
+            "52": 8.5,
+            "53": 8.2,
+            "54": 7.6,
+            "55": 6.5,
+            "56": 5.4,
+            "57": 4.8,
+            "58": 4.2,
+            "59": 3.7,
+            "60": 3.1
+          },
+          "health_at_48": 9.4,
+          "capability_at_48": 33.70030059831316,
+          "capability_at_50": 30.20826459762295,
+          "living": 2,
+          "structures": {},
+          "actions": {
+            "gather": 189,
+            "chop": 23,
+            "mine": 25,
+            "move": 125,
+            "wait": 106,
+            "consume": 140,
+            "fish": 45,
+            "drop": 5,
+            "whisper": 6,
+            "offer_trade": 10,
+            "accept_trade": 5,
+            "inspect": 3,
+            "pick_up": 1
+          },
+          "plans_by_action_count": {
+            "1": [
+              271,
+              94
+            ],
+            "2": [
+              73,
+              34
+            ],
+            "4": [
+              32,
+              5
+            ],
+            "3": [
+              46,
+              19
+            ],
+            "0": [
+              5,
+              1
+            ]
+          },
+          "invalid_by_action": {
+            "chop": 10,
+            "mine": 18,
+            "gather": 83,
+            "fish": 28,
+            "consume": 19,
+            "whisper": 5,
+            "move": 4,
+            "accept_trade": 3
+          },
+          "invalid_messages": {
+            "No water is available.": 59,
+            "Fishing requires fishable food in current or adjacent water.": 25,
+            "No food available to consume.": 15,
+            "No ore is available.": 13,
+            "No food is available.": 11,
+            "No wood is available.": 9,
+            "No food is available on this tile.": 8,
+            "No stone is available.": 5,
+            "Whisper target must be adjacent or on the same tile.": 5,
+            "gather cannot produce wood.": 3
+          },
+          "diagnostic_raw": {
+            "action_point_overruns": 3,
+            "contention_failures": 1,
+            "decision_failures": 0,
+            "decisions": 427,
+            "endpoint_health_capacity": 1000.0,
+            "endpoint_health_points": 31.0,
+            "engine_invalid_proposals": 170,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 2.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 2.0,
+            "execution_decisions": 427.0,
+            "execution_valid_decisions": 274.0,
+            "external_decision_failures": 0,
+            "health_point_tick_capacity": 60000.0,
+            "health_point_ticks": 29900.0,
+            "informal_transfer_value": 0.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 170,
+            "living_agents": 2,
+            "living_terminal_economic_value": 36.75,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 600,
+            "own_capital_output_value": 0.0,
+            "possible_agent_ticks": 600,
+            "production_by_source": {
+              "chop": 39.0,
+              "fish": 32.0,
+              "gather": 194.0,
+              "mine": 32.0
+            },
+            "production_intermediate_input_value": 0.0,
+            "production_output_value": 297.0,
+            "production_possible_agent_ticks": 600,
+            "production_value_added": 297.0,
+            "productive_capital_extraction_value": 0.0,
+            "purposeful_agent_ticks": 272,
+            "submitted_actions": 683,
+            "submitted_actions_excluding_contention": 682,
+            "tail_health_point_tick_capacity": 12000.0,
+            "tail_health_point_ticks": 787.0,
+            "terminal_economic_value": 181.0,
+            "venture_initiatives": 10,
+            "venture_initiatives_by_type": {
+              "offer_trade": 10
+            }
+          },
+          "reasoning_tokens_per_call": 1115.3,
+          "static_prompt_hashes": [
+            "b0bd9f0d40224a72f93e4be099e65f75a2b44298106121c7f417ab84dabe0a4d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "pooled_outcome_scores": {
+        "execution": {
+          "score": 65.3,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 574.0,
+            "decisions": 879.0
+          }
+        },
+        "capability": {
+          "score": 19.49,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 50.2783,
+            "final_window_health_pct": 7.5542
+          }
+        }
+      }
+    },
+    "gpt-5.5 participant-v6": {
+      "cells": [
+        {
+          "misleading_capacity_errors": 32,
+          "report": "runs/benchmarks/gpt-5-5-participant-v6-certified-seeds11-41-20260729-005319/seed-11/run-report.json",
+          "seed": 11,
+          "horizon": 50,
+          "hashes": {
+            "run-report.json": "9acaeccda377e9cc2edcdb077e6a63ae85c6ae463485cc1b555d1d24589ba981",
+            "run.jsonl": "a988b52cf95d61d9bee56af863b047cce1f69156c2891f953e6feeb32b4ff32c",
+            "run-snapshot.json": "c4ed8ad1a3bcf5a951153d3269cfcc00010b53d806ae2d5324a1d4f26ac5185c",
+            "run-manifest.json": "8b15c14a6158b11a76fdb360a43b8f905a78c01de78f1d62cdbe53db6fd4520d"
+          },
+          "source": "0af16493855cc711497c99ecc54f43a10f7a40c2",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 11,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "stateless-v3",
+            "conversation_mode": "stateless",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "effective_execution": 83.83,
+            "sustained_competence": 34.37,
+            "entrepreneurial_agency": 0.0,
+            "economic_productivity": 0.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 210.0,
+            "execution_decisions": 369.0,
+            "health_point_ticks": 26874.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 1712.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 73.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 56.91,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 210.0,
+                "decisions": 369.0
+              }
+            },
+            "capability": {
+              "score": 27.69,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 53.748,
+                "final_window_health_pct": 14.2667
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 98.0,
+            "6": 98.0,
+            "7": 98.0,
+            "8": 98.0,
+            "9": 98.0,
+            "10": 94.4,
+            "11": 94.4,
+            "12": 94.4,
+            "13": 94.4,
+            "14": 94.4,
+            "15": 89.7,
+            "16": 85.6,
+            "17": 82.3,
+            "18": 79.0,
+            "19": 75.7,
+            "20": 70.7,
+            "21": 65.9,
+            "22": 61.1,
+            "23": 56.9,
+            "24": 53.0,
+            "25": 44.5,
+            "26": 40.5,
+            "27": 37.7,
+            "28": 35.6,
+            "29": 33.6,
+            "30": 31.3,
+            "31": 28.5,
+            "32": 27.1,
+            "33": 27.1,
+            "34": 27.1,
+            "35": 26.6,
+            "36": 26.1,
+            "37": 24.9,
+            "38": 23.7,
+            "39": 22.5,
+            "40": 21.3,
+            "41": 19.3,
+            "42": 17.8,
+            "43": 16.3,
+            "44": 14.8,
+            "45": 13.3,
+            "46": 11.9,
+            "47": 10.0,
+            "48": 8.6,
+            "49": 8.1,
+            "50": 7.3
+          },
+          "health_at_48": 8.6,
+          "capability_at_48": 30.792675896857176,
+          "capability_at_50": 27.691240492256757,
+          "living": 3,
+          "structures": {
+            "farm_plot": 1
+          },
+          "actions": {
+            "gather": 273,
+            "wait": 523,
+            "move": 231,
+            "mine": 12,
+            "consume": 134,
+            "chop": 10,
+            "drop": 25,
+            "craft": 1,
+            "contribute": 2,
+            "farm": 2,
+            "harvest": 28,
+            "inspect": 5,
+            "offer_trade": 2,
+            "say": 2,
+            "pick_up": 2,
+            "maintain_structure": 3,
+            "fish": 8,
+            "broadcast": 5
+          },
+          "plans_by_action_count": {
+            "4": [
+              198,
+              101
+            ],
+            "3": [
+              136,
+              50
+            ],
+            "2": [
+              33,
+              8
+            ],
+            "1": [
+              2,
+              0
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 131,
+            "mine": 8,
+            "wait": 19,
+            "move": 14,
+            "chop": 5,
+            "consume": 27,
+            "contribute": 1,
+            "harvest": 6,
+            "offer_trade": 1,
+            "fish": 5
+          },
+          "invalid_messages": {
+            "No food is available on this tile.": 58,
+            "No fiber is available on this tile.": 26,
+            "No action points remain this tick.": 22,
+            "No water is available.": 22,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 20,
+            "No water available to consume.": 19,
+            "Destination occupancy limit is full or terrain is impassable.": 8,
+            "No food available to consume.": 8,
+            "harvest requires 2 action points.": 4,
+            "mine requires 2 action points.": 3
+          },
+          "diagnostic_raw": {
+            "initial_agents": 10,
+            "possible_agent_ticks": 500,
+            "observed_agent_ticks": 500,
+            "decisions": 369,
+            "decision_failures": 0,
+            "model_output_failures": 0,
+            "external_decision_failures": 0,
+            "submitted_actions": 1268,
+            "contention_failures": 3,
+            "submitted_actions_excluding_contention": 1265,
+            "engine_invalid_proposals": 217,
+            "invalid_proposals": 217,
+            "action_point_overruns": 37,
+            "initial_endowment_value": 135.0,
+            "terminal_economic_value": 252.0,
+            "living_agents": 3,
+            "endpoint_health_points": 73.0,
+            "endpoint_health_capacity": 1000,
+            "living_terminal_economic_value": 84.5,
+            "purposeful_agent_ticks": 313,
+            "venture_initiatives": 2,
+            "venture_initiatives_by_type": {
+              "build_started": 1,
+              "offer_trade": 1
+            },
+            "enterprise_supply_value": 0.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "own_capital_output_value": 112.0,
+            "informal_transfer_value": 0.0
+          },
+          "reasoning_tokens_per_call": 22.6,
+          "static_prompt_hashes": [
+            "266c1543b4cf2c331499fa62f3b2e9f324f73a6a4714edb7a164299bece73e6d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        },
+        {
+          "misleading_capacity_errors": 45,
+          "report": "runs/benchmarks/gpt-5-5-participant-v6-certified-seeds11-41-20260729-005319/seed-41/run-report.json",
+          "seed": 41,
+          "horizon": 50,
+          "hashes": {
+            "run-report.json": "2b718135851691553cb48c2a4bf1a1f6ab532b393b2fd51fff7cd3939e9a0d69",
+            "run.jsonl": "fd5fe8990e2f7fc6663fc5c28de76e9ced32c0540dba2e9bd71912ca29c3c44d",
+            "run-snapshot.json": "68cf05a218576c9042663cdb38437bd45bee74632f9534ad0944b4097cbd04d1",
+            "run-manifest.json": "6ec158e3b5c16bc30130058354d12fb044f6ad0f2adb907df2cf1e1104382597"
+          },
+          "source": "0af16493855cc711497c99ecc54f43a10f7a40c2",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 41,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "stateless-v3",
+            "conversation_mode": "stateless",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "effective_execution": 85.31,
+            "sustained_competence": 35.06,
+            "entrepreneurial_agency": 0.0,
+            "economic_productivity": 0.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 239.0,
+            "execution_decisions": 412.0,
+            "health_point_ticks": 28914.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 1814.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 72.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 58.01,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 239.0,
+                "decisions": 412.0
+              }
+            },
+            "capability": {
+              "score": 29.57,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 57.828,
+                "final_window_health_pct": 15.1167
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 97.5,
+            "6": 97.0,
+            "7": 97.0,
+            "8": 97.0,
+            "9": 97.0,
+            "10": 95.2,
+            "11": 95.2,
+            "12": 95.2,
+            "13": 95.2,
+            "14": 95.2,
+            "15": 91.9,
+            "16": 88.4,
+            "17": 84.9,
+            "18": 81.9,
+            "19": 78.4,
+            "20": 73.3,
+            "21": 69.7,
+            "22": 66.4,
+            "23": 63.6,
+            "24": 61.1,
+            "25": 57.7,
+            "26": 54.3,
+            "27": 52.3,
+            "28": 50.0,
+            "29": 43.9,
+            "30": 42.1,
+            "31": 40.8,
+            "32": 40.3,
+            "33": 39.7,
+            "34": 39.2,
+            "35": 36.3,
+            "36": 33.4,
+            "37": 30.6,
+            "38": 28.3,
+            "39": 26.0,
+            "40": 23.7,
+            "41": 22.1,
+            "42": 20.6,
+            "43": 19.1,
+            "44": 15.6,
+            "45": 12.1,
+            "46": 10.6,
+            "47": 9.1,
+            "48": 7.8,
+            "49": 7.5,
+            "50": 7.2
+          },
+          "health_at_48": 7.8,
+          "capability_at_48": 33.56646391861973,
+          "capability_at_50": 29.56630852845854,
+          "living": 4,
+          "structures": {
+            "farm_plot": 2
+          },
+          "actions": {
+            "gather": 341,
+            "move": 235,
+            "wait": 604,
+            "chop": 4,
+            "mine": 6,
+            "consume": 196,
+            "drop": 20,
+            "build": 1,
+            "craft": 1,
+            "harvest": 25,
+            "contribute": 2,
+            "inspect": 1,
+            "farm": 2,
+            "maintain_structure": 5,
+            "broadcast": 8,
+            "fish": 10,
+            "say": 5,
+            "claim_item": 2,
+            "pick_up": 1
+          },
+          "plans_by_action_count": {
+            "3": [
+              144,
+              55
+            ],
+            "4": [
+              252,
+              116
+            ],
+            "2": [
+              13,
+              2
+            ],
+            "1": [
+              3,
+              0
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 157,
+            "mine": 4,
+            "wait": 14,
+            "move": 13,
+            "contribute": 1,
+            "consume": 33,
+            "farm": 2,
+            "maintain_structure": 3,
+            "fish": 3,
+            "harvest": 4,
+            "whisper": 1
+          },
+          "invalid_messages": {
+            "No food is available on this tile.": 59,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 32,
+            "No water available to consume.": 30,
+            "No water is available.": 29,
+            "No fiber is available on this tile.": 24,
+            "No action points remain this tick.": 17,
+            "Destination occupancy limit is full or terrain is impassable.": 8,
+            "No fiber is available.": 6,
+            "No food is available.": 6,
+            "No stone is available.": 4
+          },
+          "diagnostic_raw": {
+            "initial_agents": 10,
+            "possible_agent_ticks": 500,
+            "observed_agent_ticks": 500,
+            "decisions": 412,
+            "decision_failures": 0,
+            "model_output_failures": 0,
+            "external_decision_failures": 0,
+            "submitted_actions": 1469,
+            "contention_failures": 1,
+            "submitted_actions_excluding_contention": 1468,
+            "engine_invalid_proposals": 235,
+            "invalid_proposals": 235,
+            "action_point_overruns": 21,
+            "initial_endowment_value": 135.0,
+            "terminal_economic_value": 230.0,
+            "living_agents": 4,
+            "endpoint_health_points": 72.0,
+            "endpoint_health_capacity": 1000,
+            "living_terminal_economic_value": 84.0,
+            "purposeful_agent_ticks": 357,
+            "venture_initiatives": 2,
+            "venture_initiatives_by_type": {
+              "build": 1,
+              "build_started": 1
+            },
+            "enterprise_supply_value": 0.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "own_capital_output_value": 76.0,
+            "informal_transfer_value": 0.0
+          },
+          "reasoning_tokens_per_call": 16.1,
+          "static_prompt_hashes": [
+            "266c1543b4cf2c331499fa62f3b2e9f324f73a6a4714edb7a164299bece73e6d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "pooled_outcome_scores": {
+        "execution": {
+          "score": 57.49,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 449.0,
+            "decisions": 781.0
+          }
+        },
+        "capability": {
+          "score": 28.63,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 55.788,
+            "final_window_health_pct": 14.6917
+          }
+        }
+      }
+    },
+    "gpt-5.5 participant-v8": {
+      "cells": [
+        {
+          "misleading_capacity_errors": 104,
+          "report": "runs/managed/gpt-5-5-v8-20260905/seed-11/run-report.json",
+          "seed": 11,
+          "horizon": 60,
+          "hashes": {
+            "run-report.json": "735131fbee9547975c27c4c2a8bb60b24fe8ab2d833665f246d96e7438a85107",
+            "run.jsonl": "b7e014849b3b3a90eab0bb537121c9da47bd4b8fc8a85f5b9f559826ec115ab0",
+            "run-snapshot.json": "cd024f2a6dc627d8a3db9074616a53fe8426564ab83e406a244c4b8a049391c8",
+            "run-manifest.json": "0cb5e4be2f123a33be149bc8030da09bd47008844dc8813f48e69aefa951b01b"
+          },
+          "source": "75bd330bfc4027a993ba007aa16ac2effe00fccb",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 11,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "transfer_kind_mode": "self_declared",
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "capability": 18.81,
+            "execution": 48.93,
+            "production": 100.83
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 228.0,
+            "execution_decisions": 466.0,
+            "health_point_ticks": 32078.0,
+            "health_point_tick_capacity": 60000.0,
+            "tail_health_point_ticks": 794.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 57.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 48.93,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 228.0,
+                "decisions": 466.0
+              }
+            },
+            "capability": {
+              "score": 18.81,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 53.4633,
+                "final_window_health_pct": 6.6167
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 98.5,
+            "6": 98.5,
+            "7": 98.5,
+            "8": 98.5,
+            "9": 98.5,
+            "10": 96.9,
+            "11": 96.6,
+            "12": 96.6,
+            "13": 96.6,
+            "14": 96.6,
+            "15": 92.8,
+            "16": 90.3,
+            "17": 87.8,
+            "18": 85.3,
+            "19": 83.8,
+            "20": 80.4,
+            "21": 77.5,
+            "22": 74.6,
+            "23": 71.7,
+            "24": 69.6,
+            "25": 62.7,
+            "26": 60.3,
+            "27": 58.2,
+            "28": 55.3,
+            "29": 52.9,
+            "30": 51.2,
+            "31": 49.8,
+            "32": 48.7,
+            "33": 47.9,
+            "34": 46.6,
+            "35": 45.3,
+            "36": 44.6,
+            "37": 41.7,
+            "38": 38.8,
+            "39": 35.9,
+            "40": 33.0,
+            "41": 30.3,
+            "42": 27.9,
+            "43": 25.5,
+            "44": 22.6,
+            "45": 19.7,
+            "46": 16.3,
+            "47": 13.2,
+            "48": 10.4,
+            "49": 9.2,
+            "50": 8.2,
+            "51": 7.7,
+            "52": 7.2,
+            "53": 6.7,
+            "54": 6.2,
+            "55": 5.7,
+            "56": 5.7,
+            "57": 5.7,
+            "58": 5.7,
+            "59": 5.7,
+            "60": 5.7
+          },
+          "health_at_48": 10.4,
+          "capability_at_48": 41.382038676217974,
+          "capability_at_50": 36.36323142956357,
+          "living": 2,
+          "structures": {
+            "farm_plot": 1
+          },
+          "actions": {
+            "gather": 422,
+            "wait": 562,
+            "mine": 13,
+            "move": 277,
+            "chop": 20,
+            "whisper": 1,
+            "consume": 247,
+            "drop": 41,
+            "inspect": 1,
+            "build": 1,
+            "farm": 1,
+            "harvest": 39,
+            "pick_up": 2,
+            "offer_trade": 4,
+            "maintain_structure": 4,
+            "fish": 14,
+            "gift": 3,
+            "say": 2,
+            "accept_trade": 4
+          },
+          "plans_by_action_count": {
+            "4": [
+              277,
+              145
+            ],
+            "2": [
+              17,
+              7
+            ],
+            "3": [
+              172,
+              86
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 203,
+            "mine": 10,
+            "wait": 17,
+            "move": 24,
+            "consume": 57,
+            "chop": 10,
+            "harvest": 7,
+            "pick_up": 1,
+            "drop": 1,
+            "whisper": 3,
+            "fish": 5,
+            "accept_trade": 4,
+            "gift": 2
+          },
+          "invalid_messages": {
+            "No food is available on this tile.": 73,
+            "No water is available.": 70,
+            "No water available to consume.": 40,
+            "No action points remain this tick.": 25,
+            "No fiber is available on this tile.": 22,
+            "Destination occupancy limit is full or terrain is impassable.": 19,
+            "No food is available.": 17,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 16,
+            "No food available to consume.": 15,
+            "No fiber is available.": 7
+          },
+          "diagnostic_raw": {
+            "action_point_overruns": 34,
+            "contention_failures": 8,
+            "decision_failures": 0,
+            "decisions": 466,
+            "endpoint_health_capacity": 1000.0,
+            "endpoint_health_points": 57.0,
+            "engine_invalid_proposals": 344,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 0.0,
+            "execution_decisions": 466.0,
+            "execution_valid_decisions": 228.0,
+            "external_decision_failures": 0,
+            "health_point_tick_capacity": 60000.0,
+            "health_point_ticks": 32078.0,
+            "informal_transfer_value": 1.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 344,
+            "living_agents": 2,
+            "living_terminal_economic_value": 55.0,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 600,
+            "own_capital_output_value": 112.0,
+            "possible_agent_ticks": 600,
+            "production_by_source": {
+              "chop": 30.0,
+              "fish": 16.0,
+              "gather": 435.0,
+              "harvest": 112.0,
+              "mine": 12.0
+            },
+            "production_intermediate_input_value": 0.0,
+            "production_output_value": 605.0,
+            "production_possible_agent_ticks": 600,
+            "production_value_added": 605.0,
+            "productive_capital_extraction_value": 112.0,
+            "purposeful_agent_ticks": 407,
+            "submitted_actions": 1658,
+            "submitted_actions_excluding_contention": 1650,
+            "tail_health_point_tick_capacity": 12000.0,
+            "tail_health_point_ticks": 794.0,
+            "terminal_economic_value": 233.75,
+            "venture_initiatives": 5,
+            "venture_initiatives_by_type": {
+              "build": 1,
+              "offer_trade": 4
+            }
+          },
+          "reasoning_tokens_per_call": 47.5,
+          "static_prompt_hashes": [
+            "b0bd9f0d40224a72f93e4be099e65f75a2b44298106121c7f417ab84dabe0a4d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        },
+        {
+          "misleading_capacity_errors": 49,
+          "report": "runs/managed/gpt-5-5-v8-20260905/seed-41/run-report.json",
+          "seed": 41,
+          "horizon": 60,
+          "hashes": {
+            "run-report.json": "64da9817790a525520ba5ef2be14d391c1c7441a693875dc2af70867e3180478",
+            "run.jsonl": "34ae2747c134d3938da1678e06439e22be8c98e9838077fa0a58eb9cc1caa689",
+            "run-snapshot.json": "56709744173e93f060641ff7764c3dd8dee3e2b213a8c21c39c2467ee0a690fb",
+            "run-manifest.json": "e99d7056bd879a66c311aa2c5369d1be2a55feb35f4b38662720fd77ee9c2a19"
+          },
+          "source": "75bd330bfc4027a993ba007aa16ac2effe00fccb",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 41,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "transfer_kind_mode": "self_declared",
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "capability": 11.04,
+            "execution": 55.12,
+            "production": 98.33
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 253.0,
+            "execution_decisions": 459.0,
+            "health_point_ticks": 29969.0,
+            "health_point_tick_capacity": 60000.0,
+            "tail_health_point_ticks": 293.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 14.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 55.12,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 253.0,
+                "decisions": 459.0
+              }
+            },
+            "capability": {
+              "score": 11.04,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 49.9483,
+                "final_window_health_pct": 2.4417
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 98.5,
+            "6": 98.5,
+            "7": 98.5,
+            "8": 98.5,
+            "9": 98.5,
+            "10": 96.4,
+            "11": 95.3,
+            "12": 95.0,
+            "13": 94.7,
+            "14": 94.7,
+            "15": 92.1,
+            "16": 89.3,
+            "17": 86.5,
+            "18": 83.7,
+            "19": 80.7,
+            "20": 77.1,
+            "21": 74.3,
+            "22": 71.5,
+            "23": 68.7,
+            "24": 65.9,
+            "25": 61.8,
+            "26": 59.0,
+            "27": 56.5,
+            "28": 55.0,
+            "29": 49.7,
+            "30": 48.2,
+            "31": 47.4,
+            "32": 47.1,
+            "33": 46.3,
+            "34": 45.8,
+            "35": 42.1,
+            "36": 38.4,
+            "37": 35.2,
+            "38": 32.0,
+            "39": 28.3,
+            "40": 24.9,
+            "41": 21.6,
+            "42": 19.0,
+            "43": 16.1,
+            "44": 11.5,
+            "45": 7.4,
+            "46": 6.2,
+            "47": 5.3,
+            "48": 4.4,
+            "49": 4.4,
+            "50": 3.9,
+            "51": 3.9,
+            "52": 3.4,
+            "53": 2.9,
+            "54": 2.4,
+            "55": 1.4,
+            "56": 1.4,
+            "57": 1.4,
+            "58": 1.4,
+            "59": 1.4,
+            "60": 1.4
+          },
+          "health_at_48": 4.4,
+          "capability_at_48": 33.04128415079131,
+          "capability_at_50": 27.54731384364,
+          "living": 3,
+          "structures": {
+            "farm_plot": 3
+          },
+          "actions": {
+            "gather": 380,
+            "wait": 622,
+            "move": 280,
+            "mine": 8,
+            "chop": 12,
+            "consume": 201,
+            "build": 3,
+            "farm": 10,
+            "drop": 17,
+            "say": 14,
+            "pick_up": 3,
+            "harvest": 35,
+            "contribute": 4,
+            "claim_tile": 1,
+            "maintain_structure": 8,
+            "inspect": 12,
+            "offer_trade": 1,
+            "gift": 2,
+            "fish": 7
+          },
+          "plans_by_action_count": {
+            "4": [
+              260,
+              120
+            ],
+            "3": [
+              183,
+              83
+            ],
+            "2": [
+              15,
+              3
+            ],
+            "1": [
+              1,
+              0
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 177,
+            "mine": 6,
+            "wait": 19,
+            "move": 12,
+            "farm": 5,
+            "chop": 6,
+            "contribute": 2,
+            "harvest": 5,
+            "pick_up": 1,
+            "consume": 27,
+            "drop": 1,
+            "gift": 1,
+            "maintain_structure": 2,
+            "fish": 3
+          },
+          "invalid_messages": {
+            "No food is available on this tile.": 76,
+            "No water is available.": 35,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 29,
+            "No action points remain this tick.": 25,
+            "No fiber is available on this tile.": 24,
+            "No water available to consume.": 14,
+            "No food available to consume.": 12,
+            "Destination occupancy limit is full or terrain is impassable.": 10,
+            "Not enough source material or carrying capacity for the requested quantity.": 7,
+            "No food is available.": 5
+          },
+          "diagnostic_raw": {
+            "action_point_overruns": 28,
+            "contention_failures": 6,
+            "decision_failures": 0,
+            "decisions": 459,
+            "endpoint_health_capacity": 1000.0,
+            "endpoint_health_points": 14.0,
+            "engine_invalid_proposals": 267,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 0.0,
+            "execution_decisions": 459.0,
+            "execution_valid_decisions": 253.0,
+            "external_decision_failures": 0,
+            "health_point_tick_capacity": 60000.0,
+            "health_point_ticks": 29969.0,
+            "informal_transfer_value": 2.375,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 267,
+            "living_agents": 3,
+            "living_terminal_economic_value": 101.5,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 600,
+            "own_capital_output_value": 124.0,
+            "possible_agent_ticks": 600,
+            "production_by_source": {
+              "chop": 24.0,
+              "fish": 8.0,
+              "gather": 426.0,
+              "harvest": 124.0,
+              "mine": 8.0
+            },
+            "production_intermediate_input_value": 0.0,
+            "production_output_value": 590.0,
+            "production_possible_agent_ticks": 600,
+            "production_value_added": 590.0,
+            "productive_capital_extraction_value": 130.0,
+            "purposeful_agent_ticks": 386,
+            "submitted_actions": 1620,
+            "submitted_actions_excluding_contention": 1614,
+            "tail_health_point_tick_capacity": 12000.0,
+            "tail_health_point_ticks": 293.0,
+            "terminal_economic_value": 277.25,
+            "venture_initiatives": 4,
+            "venture_initiatives_by_type": {
+              "build": 1,
+              "build_started": 2,
+              "offer_trade": 1
+            }
+          },
+          "reasoning_tokens_per_call": 48.0,
+          "static_prompt_hashes": [
+            "b0bd9f0d40224a72f93e4be099e65f75a2b44298106121c7f417ab84dabe0a4d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "pooled_outcome_scores": {
+        "execution": {
+          "score": 52.0,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 481.0,
+            "decisions": 925.0
+          }
+        },
+        "capability": {
+          "score": 15.3,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 51.7058,
+            "final_window_health_pct": 4.5292
+          }
+        }
+      }
+    },
+    "gpt-5.6-luna participant-v6": {
+      "cells": [
+        {
+          "misleading_capacity_errors": 122,
+          "report": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-11/run-report.json",
+          "seed": 11,
+          "horizon": 50,
+          "hashes": {
+            "run-report.json": "2c8ad95a0c8182cb6fd20e1fcd63da498c8e64657f701a639d65ce0c059f5ecf",
+            "run.jsonl": "55546aa429d11fe8008b65ca75ee18efb380035f11e1d7577bc3afc579137b53",
+            "run-snapshot.json": "133549a7fc5cb92443a77cfa3e690e0f331e53c075a52a68df5e451d320e30b2",
+            "run-manifest.json": "161155de77805b1f0354a22f6fd1305ae13e1e86de46026096c3a722a8e1a8c4"
+          },
+          "source": "0af16493855cc711497c99ecc54f43a10f7a40c2",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 11,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "stateless-v3",
+            "conversation_mode": "stateless",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "effective_execution": 80.23,
+            "sustained_competence": 29.55,
+            "entrepreneurial_agency": 0.0,
+            "economic_productivity": 0.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 241.0,
+            "execution_decisions": 421.0,
+            "health_point_ticks": 30667.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 1944.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 49.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 57.24,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 241.0,
+                "decisions": 421.0
+              }
+            },
+            "capability": {
+              "score": 31.52,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 61.334,
+                "final_window_health_pct": 16.2
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 99.5,
+            "6": 99.5,
+            "7": 99.5,
+            "8": 99.5,
+            "9": 99.5,
+            "10": 97.4,
+            "11": 96.8,
+            "12": 96.2,
+            "13": 95.1,
+            "14": 94.0,
+            "15": 91.2,
+            "16": 88.7,
+            "17": 86.7,
+            "18": 84.7,
+            "19": 82.3,
+            "20": 78.7,
+            "21": 75.2,
+            "22": 73.2,
+            "23": 71.2,
+            "24": 69.2,
+            "25": 62.2,
+            "26": 59.4,
+            "27": 56.7,
+            "28": 54.2,
+            "29": 52.3,
+            "30": 51.0,
+            "31": 49.2,
+            "32": 48.1,
+            "33": 47.6,
+            "34": 46.8,
+            "35": 45.2,
+            "36": 43.9,
+            "37": 40.5,
+            "38": 37.1,
+            "39": 33.7,
+            "40": 29.7,
+            "41": 25.7,
+            "42": 21.9,
+            "43": 19.0,
+            "44": 16.1,
+            "45": 13.4,
+            "46": 10.8,
+            "47": 8.2,
+            "48": 5.8,
+            "49": 5.2,
+            "50": 4.9
+          },
+          "health_at_48": 5.8,
+          "capability_at_48": 37.27999212043908,
+          "capability_at_50": 31.52159259935957,
+          "living": 3,
+          "structures": {},
+          "actions": {
+            "gather": 295,
+            "move": 347,
+            "wait": 178,
+            "chop": 15,
+            "mine": 5,
+            "gift": 15,
+            "say": 51,
+            "whisper": 21,
+            "offer_trade": 11,
+            "consume": 174,
+            "accept_trade": 17,
+            "inspect": 12,
+            "broadcast": 37,
+            "drop": 6,
+            "fish": 25
+          },
+          "plans_by_action_count": {
+            "4": [
+              130,
+              62
+            ],
+            "2": [
+              134,
+              51
+            ],
+            "1": [
+              25,
+              6
+            ],
+            "3": [
+              132,
+              61
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 125,
+            "gift": 12,
+            "mine": 2,
+            "whisper": 14,
+            "accept_trade": 14,
+            "consume": 52,
+            "move": 12,
+            "chop": 9,
+            "fish": 17,
+            "inspect": 1
+          },
+          "invalid_messages": {
+            "No water is available.": 89,
+            "No water available to consume.": 33,
+            "No food available to consume.": 18,
+            "No food is available.": 17,
+            "Fishing requires fishable food in current or adjacent water.": 14,
+            "No fiber is available.": 10,
+            "Whisper target does not exist or is not alive.": 8,
+            "Recipient lacks requested goods.": 7,
+            "Target carrying capacity would be exceeded.": 7,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 6
+          },
+          "diagnostic_raw": {
+            "initial_agents": 10,
+            "possible_agent_ticks": 500,
+            "observed_agent_ticks": 500,
+            "decisions": 421,
+            "decision_failures": 0,
+            "model_output_failures": 0,
+            "external_decision_failures": 0,
+            "submitted_actions": 1209,
+            "contention_failures": 7,
+            "submitted_actions_excluding_contention": 1202,
+            "engine_invalid_proposals": 258,
+            "invalid_proposals": 258,
+            "action_point_overruns": 6,
+            "initial_endowment_value": 135.0,
+            "terminal_economic_value": 205.75,
+            "living_agents": 3,
+            "endpoint_health_points": 49.0,
+            "endpoint_health_capacity": 1000,
+            "living_terminal_economic_value": 64.125,
+            "purposeful_agent_ticks": 345,
+            "venture_initiatives": 11,
+            "venture_initiatives_by_type": {
+              "offer_trade": 11
+            },
+            "enterprise_supply_value": 0.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "own_capital_output_value": 0.0,
+            "informal_transfer_value": 5.0
+          },
+          "reasoning_tokens_per_call": 482.1,
+          "static_prompt_hashes": [
+            "266c1543b4cf2c331499fa62f3b2e9f324f73a6a4714edb7a164299bece73e6d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        },
+        {
+          "misleading_capacity_errors": 111,
+          "report": "runs/benchmarks/claude-opus-4-6-gpt-5-6-luna-participant-v6-certified-seeds11-41-20260729-033735/luna-seed-41/run-report.json",
+          "seed": 41,
+          "horizon": 50,
+          "hashes": {
+            "run-report.json": "ca2cf20754e141f08efc2f4cae652aed5bd3ff768661cca340c53d45b4c3e9dc",
+            "run.jsonl": "dc81be01f661a3b22a0cb3bf9651cd3c2961c7ec063022b99f6e1d8240986ca4",
+            "run-snapshot.json": "9d9174e98babb2f72f9e04ac7a9746729368a88b16fa24ef561ae10230b2a4a1",
+            "run-manifest.json": "3e24dd70d5a283cfb7ac1f5b43a42cc013b7ee774c6ed4950cb78a613215dd29"
+          },
+          "source": "0af16493855cc711497c99ecc54f43a10f7a40c2",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 41,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "stateless-v3",
+            "conversation_mode": "stateless",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "effective_execution": 82.86,
+            "sustained_competence": 40.67,
+            "entrepreneurial_agency": 0.0,
+            "economic_productivity": 0.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 281.0,
+            "execution_decisions": 448.0,
+            "health_point_ticks": 34300.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 2933.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 96.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 62.72,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 281.0,
+                "decisions": 448.0
+              }
+            },
+            "capability": {
+              "score": 40.95,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 68.6,
+                "final_window_health_pct": 24.4417
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 99.5,
+            "6": 99.5,
+            "7": 99.5,
+            "8": 99.5,
+            "9": 99.5,
+            "10": 98.4,
+            "11": 97.6,
+            "12": 96.8,
+            "13": 96.0,
+            "14": 95.2,
+            "15": 92.4,
+            "16": 90.9,
+            "17": 89.2,
+            "18": 87.5,
+            "19": 86.0,
+            "20": 83.4,
+            "21": 81.1,
+            "22": 79.6,
+            "23": 78.1,
+            "24": 77.1,
+            "25": 76.0,
+            "26": 75.5,
+            "27": 75.0,
+            "28": 74.0,
+            "29": 68.5,
+            "30": 68.0,
+            "31": 66.7,
+            "32": 65.9,
+            "33": 65.1,
+            "34": 64.3,
+            "35": 59.4,
+            "36": 54.7,
+            "37": 50.4,
+            "38": 46.4,
+            "39": 42.9,
+            "40": 38.6,
+            "41": 34.9,
+            "42": 32.2,
+            "43": 29.9,
+            "44": 25.7,
+            "45": 21.1,
+            "46": 18.8,
+            "47": 16.0,
+            "48": 12.7,
+            "49": 10.9,
+            "50": 9.6
+          },
+          "health_at_48": 12.7,
+          "capability_at_48": 46.77352349353211,
+          "capability_at_50": 40.94750704662413,
+          "living": 5,
+          "structures": {
+            "farm_plot": 1
+          },
+          "actions": {
+            "move": 310,
+            "gift": 23,
+            "gather": 307,
+            "say": 41,
+            "mine": 9,
+            "consume": 163,
+            "chop": 12,
+            "offer_trade": 10,
+            "wait": 240,
+            "accept_trade": 12,
+            "fish": 14,
+            "pick_up": 3,
+            "craft": 1,
+            "whisper": 26,
+            "inspect": 11,
+            "broadcast": 23,
+            "harvest": 10,
+            "drop": 13,
+            "farm": 5,
+            "maintain_structure": 7,
+            "claim_item": 1,
+            "grant_access": 1,
+            "build": 2
+          },
+          "plans_by_action_count": {
+            "3": [
+              136,
+              57
+            ],
+            "2": [
+              146,
+              51
+            ],
+            "4": [
+              126,
+              47
+            ],
+            "1": [
+              40,
+              11
+            ]
+          },
+          "invalid_by_action": {
+            "gift": 12,
+            "gather": 114,
+            "mine": 4,
+            "accept_trade": 12,
+            "fish": 9,
+            "chop": 3,
+            "consume": 28,
+            "whisper": 14,
+            "harvest": 3,
+            "move": 8,
+            "maintain_structure": 2,
+            "farm": 2,
+            "claim_item": 1,
+            "pick_up": 1,
+            "wait": 1
+          },
+          "invalid_messages": {
+            "No water is available.": 57,
+            "No food is available.": 37,
+            "No water available to consume.": 15,
+            "No food available to consume.": 13,
+            "No fiber is available.": 11,
+            "Target carrying capacity would be exceeded.": 10,
+            "Whisper target does not exist or is not alive.": 8,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 7,
+            "Destination occupancy limit is full or terrain is impassable.": 7,
+            "No food is available on this tile.": 6
+          },
+          "diagnostic_raw": {
+            "initial_agents": 10,
+            "possible_agent_ticks": 500,
+            "observed_agent_ticks": 500,
+            "decisions": 448,
+            "decision_failures": 1,
+            "model_output_failures": 1,
+            "external_decision_failures": 0,
+            "submitted_actions": 1244,
+            "contention_failures": 2,
+            "submitted_actions_excluding_contention": 1242,
+            "engine_invalid_proposals": 214,
+            "invalid_proposals": 215,
+            "action_point_overruns": 3,
+            "initial_endowment_value": 135.0,
+            "terminal_economic_value": 220.25,
+            "living_agents": 5,
+            "endpoint_health_points": 96.0,
+            "endpoint_health_capacity": 1000,
+            "living_terminal_economic_value": 112.125,
+            "purposeful_agent_ticks": 372,
+            "venture_initiatives": 13,
+            "venture_initiatives_by_type": {
+              "build": 1,
+              "build_started": 2,
+              "offer_trade": 10
+            },
+            "enterprise_supply_value": 1.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 1.0,
+              "net_service_income": 0.0
+            },
+            "own_capital_output_value": 18.0,
+            "informal_transfer_value": 16.0
+          },
+          "reasoning_tokens_per_call": 467.0,
+          "static_prompt_hashes": [
+            "266c1543b4cf2c331499fa62f3b2e9f324f73a6a4714edb7a164299bece73e6d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "pooled_outcome_scores": {
+        "execution": {
+          "score": 60.07,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 522.0,
+            "decisions": 869.0
+          }
+        },
+        "capability": {
+          "score": 36.33,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 64.967,
+            "final_window_health_pct": 20.3208
+          }
+        }
+      }
+    },
+    "gpt-5.6-luna participant-v8": {
+      "cells": [
+        {
+          "misleading_capacity_errors": 73,
+          "report": "runs/managed/gpt-5-6-luna-v8-20260905/seed-11/run-report.json",
+          "seed": 11,
+          "horizon": 60,
+          "hashes": {
+            "run-report.json": "ae51c0adb905e843570044035c17bc2d128a1633f551cf32e46796a5928aef34",
+            "run.jsonl": "dceb88d30e3d5f3b51b3cc1725749bd4a8a9fbeb9358c30f1f1a43c9c6d89390",
+            "run-snapshot.json": "4973e4b7493d18d1f720b37e44415e385340e0225648a0660fdac86122b191a2",
+            "run-manifest.json": "7108e584a2b7c6a6df38fcb347c1ba7294fb582d0114d7cb3e51d9133f243803"
+          },
+          "source": "75bd330bfc4027a993ba007aa16ac2effe00fccb",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 11,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "transfer_kind_mode": "self_declared",
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "capability": 9.68,
+            "execution": 65.24,
+            "production": 79.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 304.0,
+            "execution_decisions": 466.0,
+            "health_point_ticks": 32762.0,
+            "health_point_tick_capacity": 60000.0,
+            "tail_health_point_ticks": 206.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 0.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 65.24,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 304.0,
+                "decisions": 466.0
+              }
+            },
+            "capability": {
+              "score": 9.68,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 54.6033,
+                "final_window_health_pct": 1.7167
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 98.5,
+            "6": 98.5,
+            "7": 98.5,
+            "8": 98.5,
+            "9": 98.5,
+            "10": 98.0,
+            "11": 98.0,
+            "12": 98.0,
+            "13": 98.0,
+            "14": 97.5,
+            "15": 94.4,
+            "16": 91.3,
+            "17": 88.2,
+            "18": 85.6,
+            "19": 82.8,
+            "20": 80.5,
+            "21": 78.7,
+            "22": 77.5,
+            "23": 76.8,
+            "24": 76.0,
+            "25": 71.2,
+            "26": 69.4,
+            "27": 67.1,
+            "28": 65.6,
+            "29": 64.1,
+            "30": 62.6,
+            "31": 61.3,
+            "32": 60.0,
+            "33": 58.7,
+            "34": 57.4,
+            "35": 55.0,
+            "36": 53.2,
+            "37": 49.1,
+            "38": 44.5,
+            "39": 40.0,
+            "40": 35.2,
+            "41": 30.3,
+            "42": 25.5,
+            "43": 20.9,
+            "44": 16.1,
+            "45": 11.9,
+            "46": 9.2,
+            "47": 7.5,
+            "48": 6.0,
+            "49": 5.7,
+            "50": 4.6,
+            "51": 3.8,
+            "52": 3.2,
+            "53": 1.9,
+            "54": 1.1,
+            "55": 0.3,
+            "56": 0.0,
+            "57": 0.0,
+            "58": 0.0,
+            "59": 0.0,
+            "60": 0.0
+          },
+          "health_at_48": 6.0,
+          "capability_at_48": 40.91634249701864,
+          "capability_at_50": 34.041888656966925,
+          "living": 0,
+          "structures": {
+            "farm_plot": 1
+          },
+          "actions": {
+            "move": 355,
+            "gift": 18,
+            "gather": 271,
+            "chop": 9,
+            "mine": 9,
+            "wait": 204,
+            "consume": 179,
+            "whisper": 27,
+            "offer_trade": 33,
+            "accept_trade": 38,
+            "say": 74,
+            "craft": 1,
+            "harvest": 4,
+            "inspect": 8,
+            "drop": 11,
+            "broadcast": 25,
+            "fish": 36,
+            "maintain_structure": 2,
+            "pick_up": 2
+          },
+          "plans_by_action_count": {
+            "4": [
+              148,
+              50
+            ],
+            "2": [
+              143,
+              47
+            ],
+            "1": [
+              47,
+              14
+            ],
+            "3": [
+              127,
+              51
+            ],
+            "0": [
+              1,
+              0
+            ]
+          },
+          "invalid_by_action": {
+            "mine": 4,
+            "gather": 78,
+            "whisper": 12,
+            "accept_trade": 28,
+            "gift": 11,
+            "chop": 5,
+            "move": 14,
+            "consume": 50,
+            "inspect": 2,
+            "maintain_structure": 1,
+            "fish": 25,
+            "offer_trade": 3
+          },
+          "invalid_messages": {
+            "No water is available.": 38,
+            "No food available to consume.": 34,
+            "Fishing requires fishable food in current or adjacent water.": 21,
+            "No food is available.": 19,
+            "Recipient lacks requested goods.": 19,
+            "No water available to consume.": 16,
+            "No fiber is available.": 10,
+            "Destination occupancy limit is full or terrain is impassable.": 10,
+            "Target carrying capacity would be exceeded.": 7,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 7
+          },
+          "diagnostic_raw": {
+            "action_point_overruns": 6,
+            "contention_failures": 9,
+            "decision_failures": 0,
+            "decisions": 466,
+            "endpoint_health_capacity": 1000.0,
+            "endpoint_health_points": 0.0,
+            "engine_invalid_proposals": 233,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 10.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 10.0,
+            "execution_decisions": 466.0,
+            "execution_valid_decisions": 304.0,
+            "external_decision_failures": 0,
+            "health_point_tick_capacity": 60000.0,
+            "health_point_ticks": 32762.0,
+            "informal_transfer_value": 9.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 233,
+            "living_agents": 0,
+            "living_terminal_economic_value": 0.0,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 600,
+            "own_capital_output_value": 10.0,
+            "possible_agent_ticks": 600,
+            "production_by_source": {
+              "chop": 15.0,
+              "fish": 20.0,
+              "gather": 401.0,
+              "harvest": 10.0,
+              "mine": 28.0
+            },
+            "production_intermediate_input_value": 0.0,
+            "production_output_value": 474.0,
+            "production_possible_agent_ticks": 600,
+            "production_value_added": 474.0,
+            "productive_capital_extraction_value": 10.0,
+            "purposeful_agent_ticks": 364,
+            "submitted_actions": 1306,
+            "submitted_actions_excluding_contention": 1297,
+            "tail_health_point_tick_capacity": 12000.0,
+            "tail_health_point_ticks": 206.0,
+            "terminal_economic_value": 235.25,
+            "venture_initiatives": 31,
+            "venture_initiatives_by_type": {
+              "build": 1,
+              "offer_trade": 30
+            }
+          },
+          "reasoning_tokens_per_call": 518.2,
+          "static_prompt_hashes": [
+            "b0bd9f0d40224a72f93e4be099e65f75a2b44298106121c7f417ab84dabe0a4d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        },
+        {
+          "misleading_capacity_errors": 111,
+          "report": "runs/managed/gpt-5-6-luna-v8-20260905/seed-41/run-report.json",
+          "seed": 41,
+          "horizon": 60,
+          "hashes": {
+            "run-report.json": "b58ccb4384239c5924b16febe1f3e050901dbb8bb2a9eba5fd3f64ce8bc78b97",
+            "run.jsonl": "690b5ef1b1afb18a2e5788685db50954bc14eba408d7057b238d7c638bbba96a",
+            "run-snapshot.json": "3bea5e9b10eecff810c55f6703ba0f3e1fb158db681534632882a6b95a08de28",
+            "run-manifest.json": "5e63c5d84f4323a4601ae08b7715584ae297d77c1abc39c27a1671af9a03729f"
+          },
+          "source": "75bd330bfc4027a993ba007aa16ac2effe00fccb",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 41,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "transfer_kind_mode": "self_declared",
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "capability": 7.85,
+            "execution": 60.94,
+            "production": 79.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 284.0,
+            "execution_decisions": 466.0,
+            "health_point_ticks": 35496.0,
+            "health_point_tick_capacity": 60000.0,
+            "tail_health_point_ticks": 125.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 1.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 60.94,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 284.0,
+                "decisions": 466.0
+              }
+            },
+            "capability": {
+              "score": 7.85,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 59.16,
+                "final_window_health_pct": 1.0417
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 98.5,
+            "6": 98.0,
+            "7": 98.0,
+            "8": 98.0,
+            "9": 98.0,
+            "10": 97.5,
+            "11": 97.0,
+            "12": 97.0,
+            "13": 96.5,
+            "14": 96.5,
+            "15": 95.7,
+            "16": 95.2,
+            "17": 95.2,
+            "18": 95.2,
+            "19": 95.2,
+            "20": 93.9,
+            "21": 92.9,
+            "22": 92.4,
+            "23": 91.9,
+            "24": 91.9,
+            "25": 91.1,
+            "26": 89.8,
+            "27": 88.5,
+            "28": 88.0,
+            "29": 83.0,
+            "30": 80.4,
+            "31": 77.1,
+            "32": 73.6,
+            "33": 70.1,
+            "34": 67.1,
+            "35": 59.5,
+            "36": 53.0,
+            "37": 48.2,
+            "38": 44.3,
+            "39": 40.8,
+            "40": 35.9,
+            "41": 32.4,
+            "42": 29.2,
+            "43": 26.0,
+            "44": 19.3,
+            "45": 11.3,
+            "46": 7.2,
+            "47": 4.2,
+            "48": 2.6,
+            "49": 2.4,
+            "50": 2.1,
+            "51": 2.1,
+            "52": 2.1,
+            "53": 1.6,
+            "54": 1.1,
+            "55": 0.6,
+            "56": 0.1,
+            "57": 0.1,
+            "58": 0.1,
+            "59": 0.1,
+            "60": 0.1
+          },
+          "health_at_48": 2.6,
+          "capability_at_48": 43.0213516917924,
+          "capability_at_50": 35.4912533825824,
+          "living": 1,
+          "structures": {},
+          "actions": {
+            "move": 376,
+            "gather": 316,
+            "consume": 188,
+            "wait": 198,
+            "say": 69,
+            "gift": 15,
+            "mine": 3,
+            "chop": 18,
+            "fish": 28,
+            "broadcast": 31,
+            "drop": 11,
+            "inspect": 6,
+            "offer_trade": 9,
+            "accept_trade": 7,
+            "whisper": 12,
+            "pick_up": 1,
+            "contribute": 9
+          },
+          "plans_by_action_count": {
+            "3": [
+              127,
+              58
+            ],
+            "4": [
+              145,
+              47
+            ],
+            "1": [
+              52,
+              22
+            ],
+            "2": [
+              142,
+              54
+            ]
+          },
+          "invalid_by_action": {
+            "mine": 2,
+            "gather": 114,
+            "chop": 14,
+            "gift": 12,
+            "move": 17,
+            "consume": 45,
+            "fish": 12,
+            "accept_trade": 7,
+            "whisper": 5,
+            "offer_trade": 1,
+            "contribute": 9
+          },
+          "invalid_messages": {
+            "No water is available.": 80,
+            "No water available to consume.": 34,
+            "No food is available.": 12,
+            "Fishing requires fishable food in current or adjacent water.": 12,
+            "No food available to consume.": 11,
+            "No wood is available.": 10,
+            "No fiber is available.": 9,
+            "Target carrying capacity would be exceeded.": 8,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 8,
+            "No action points remain this tick.": 7
+          },
+          "diagnostic_raw": {
+            "action_point_overruns": 14,
+            "contention_failures": 6,
+            "decision_failures": 1,
+            "decisions": 466,
+            "endpoint_health_capacity": 1000.0,
+            "endpoint_health_points": 1.0,
+            "engine_invalid_proposals": 238,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 0.0,
+            "execution_decisions": 466.0,
+            "execution_valid_decisions": 284.0,
+            "external_decision_failures": 0,
+            "health_point_tick_capacity": 60000.0,
+            "health_point_ticks": 35496.0,
+            "informal_transfer_value": 5.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 239,
+            "living_agents": 1,
+            "living_terminal_economic_value": 24.5,
+            "model_output_failures": 1,
+            "observed_agent_ticks": 600,
+            "own_capital_output_value": 0.0,
+            "possible_agent_ticks": 600,
+            "production_by_source": {
+              "chop": 15.0,
+              "fish": 32.0,
+              "gather": 423.0,
+              "mine": 4.0
+            },
+            "production_intermediate_input_value": 0.0,
+            "production_output_value": 474.0,
+            "production_possible_agent_ticks": 600,
+            "production_value_added": 474.0,
+            "productive_capital_extraction_value": 0.0,
+            "purposeful_agent_ticks": 376,
+            "submitted_actions": 1297,
+            "submitted_actions_excluding_contention": 1291,
+            "tail_health_point_tick_capacity": 12000.0,
+            "tail_health_point_ticks": 125.0,
+            "terminal_economic_value": 260.0,
+            "venture_initiatives": 8,
+            "venture_initiatives_by_type": {
+              "offer_trade": 8
+            }
+          },
+          "reasoning_tokens_per_call": 502.3,
+          "static_prompt_hashes": [
+            "b0bd9f0d40224a72f93e4be099e65f75a2b44298106121c7f417ab84dabe0a4d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "pooled_outcome_scores": {
+        "execution": {
+          "score": 63.09,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 588.0,
+            "decisions": 932.0
+          }
+        },
+        "capability": {
+          "score": 8.86,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 56.8817,
+            "final_window_health_pct": 1.3792
+          }
+        }
+      }
+    },
+    "gpt-5.6-terra participant-v6": {
+      "cells": [
+        {
+          "misleading_capacity_errors": 112,
+          "report": "runs/benchmarks/gpt-5-6-terra-gpt-5-6-sol-participant-v6-seeds11-41-20260729-155943/terra-v6-seed11/run-report.json",
+          "seed": 11,
+          "horizon": 50,
+          "hashes": {
+            "run-report.json": "28de6e0a91f2f0c28b906c36bcdb5a20190ee815d39548eed5342fe8608a6ada",
+            "run.jsonl": "47a28f6263624ced62159136574808d4dcbbf3523467a3846d4331036ecd0656",
+            "run-snapshot.json": "49984fa379bf674242d9e63f97caf9d896d69b627af4c5360e3e3c30b251a865",
+            "run-manifest.json": "363ca2d6f1aab36f2ffd391340fa5d46e8540cd604ed442fc6d0497811cf281f"
+          },
+          "source": "d7aa73f821079d87276b93914b556371c7284328",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 11,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "stateless-v3",
+            "conversation_mode": "stateless",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "effective_execution": 82.04,
+            "sustained_competence": 37.78,
+            "entrepreneurial_agency": 0.0,
+            "economic_productivity": 0.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 270.0,
+            "execution_decisions": 440.0,
+            "health_point_ticks": 33511.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 2444.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 129.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 61.36,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 270.0,
+                "decisions": 440.0
+              }
+            },
+            "capability": {
+              "score": 36.95,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 67.022,
+                "final_window_health_pct": 20.3667
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 100.0,
+            "6": 100.0,
+            "7": 100.0,
+            "8": 100.0,
+            "9": 100.0,
+            "10": 100.0,
+            "11": 100.0,
+            "12": 100.0,
+            "13": 100.0,
+            "14": 100.0,
+            "15": 97.4,
+            "16": 95.3,
+            "17": 93.2,
+            "18": 91.6,
+            "19": 90.3,
+            "20": 88.0,
+            "21": 86.5,
+            "22": 84.5,
+            "23": 83.0,
+            "24": 81.5,
+            "25": 75.7,
+            "26": 73.4,
+            "27": 71.1,
+            "28": 68.3,
+            "29": 65.5,
+            "30": 62.4,
+            "31": 60.1,
+            "32": 57.6,
+            "33": 55.1,
+            "34": 52.6,
+            "35": 49.3,
+            "36": 46.8,
+            "37": 41.1,
+            "38": 36.4,
+            "39": 32.6,
+            "40": 30.0,
+            "41": 27.4,
+            "42": 24.3,
+            "43": 22.2,
+            "44": 20.2,
+            "45": 18.0,
+            "46": 16.5,
+            "47": 14.5,
+            "48": 12.9,
+            "49": 12.9,
+            "50": 12.9
+          },
+          "health_at_48": 12.9,
+          "capability_at_48": 41.34503635564976,
+          "capability_at_50": 36.94610579389028,
+          "living": 3,
+          "structures": {
+            "farm_plot": 1,
+            "storage": 1
+          },
+          "actions": {
+            "gather": 332,
+            "move": 329,
+            "consume": 199,
+            "mine": 25,
+            "wait": 441,
+            "chop": 44,
+            "drop": 41,
+            "inspect": 1,
+            "craft": 3,
+            "equip": 1,
+            "offer_trade": 2,
+            "accept_trade": 2,
+            "fish": 18,
+            "say": 1,
+            "pick_up": 4,
+            "store": 2,
+            "build": 1,
+            "contribute": 2,
+            "gift": 1,
+            "farm": 2
+          },
+          "plans_by_action_count": {
+            "3": [
+              166,
+              73
+            ],
+            "2": [
+              61,
+              13
+            ],
+            "1": [
+              7,
+              3
+            ],
+            "4": [
+              206,
+              81
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 137,
+            "mine": 13,
+            "chop": 22,
+            "consume": 56,
+            "move": 8,
+            "wait": 3,
+            "fish": 7,
+            "accept_trade": 1,
+            "whisper": 3,
+            "pick_up": 2,
+            "contribute": 1,
+            "gift": 1
+          },
+          "invalid_messages": {
+            "No water is available.": 64,
+            "No water available to consume.": 46,
+            "No food is available on this tile.": 27,
+            "No fiber is available on this tile.": 17,
+            "No wood is available.": 17,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 11,
+            "No fiber is available.": 11,
+            "No food is available.": 11,
+            "No food available to consume.": 10,
+            "Not enough source material or carrying capacity for the requested quantity.": 6
+          },
+          "diagnostic_raw": {
+            "initial_agents": 10,
+            "possible_agent_ticks": 500,
+            "observed_agent_ticks": 500,
+            "decisions": 440,
+            "decision_failures": 0,
+            "model_output_failures": 0,
+            "external_decision_failures": 0,
+            "submitted_actions": 1451,
+            "contention_failures": 0,
+            "submitted_actions_excluding_contention": 1451,
+            "engine_invalid_proposals": 254,
+            "invalid_proposals": 254,
+            "action_point_overruns": 11,
+            "initial_endowment_value": 135.0,
+            "terminal_economic_value": 257.0,
+            "living_agents": 3,
+            "endpoint_health_points": 129.0,
+            "endpoint_health_capacity": 1000,
+            "living_terminal_economic_value": 79.0,
+            "purposeful_agent_ticks": 359,
+            "venture_initiatives": 5,
+            "venture_initiatives_by_type": {
+              "build": 2,
+              "build_started": 1,
+              "offer_trade": 2
+            },
+            "enterprise_supply_value": 1.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 1.0,
+              "net_service_income": 0.0
+            },
+            "own_capital_output_value": 0.0,
+            "informal_transfer_value": 0.0
+          },
+          "reasoning_tokens_per_call": 224.2,
+          "static_prompt_hashes": [
+            "266c1543b4cf2c331499fa62f3b2e9f324f73a6a4714edb7a164299bece73e6d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        },
+        {
+          "misleading_capacity_errors": 94,
+          "report": "runs/benchmarks/gpt-5-6-terra-gpt-5-6-sol-participant-v6-seeds11-41-20260729-155943/terra-v6-seed41/run-report.json",
+          "seed": 41,
+          "horizon": 50,
+          "hashes": {
+            "run-report.json": "eee40c4829c2e51e99f981cc643f9be1a86132c730f630f80a4212f2b94bf245",
+            "run.jsonl": "3e465256403b35ce80e34684b52cc5160e93bc150ed57a1dd4a54f810fd5b8ce",
+            "run-snapshot.json": "b35a1b6ceb082baf63b873ab0f0765dd7ce71fc432fc3fdb9d8958214326b45b",
+            "run-manifest.json": "a75b46d0339290fa9b0c28088220bf893b5090fe17ceef5879b38ea74ca13216"
+          },
+          "source": "d7aa73f821079d87276b93914b556371c7284328",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 41,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "stateless-v3",
+            "conversation_mode": "stateless",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "effective_execution": 81.88,
+            "sustained_competence": 47.18,
+            "entrepreneurial_agency": 0.0,
+            "economic_productivity": 48.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 289.0,
+            "execution_decisions": 463.0,
+            "health_point_ticks": 34407.0,
+            "health_point_tick_capacity": 50000.0,
+            "tail_health_point_ticks": 2548.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 87.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 62.42,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 289.0,
+                "decisions": 463.0
+              }
+            },
+            "capability": {
+              "score": 38.22,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 68.814,
+                "final_window_health_pct": 21.2333
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 100.0,
+            "6": 100.0,
+            "7": 100.0,
+            "8": 100.0,
+            "9": 100.0,
+            "10": 100.0,
+            "11": 100.0,
+            "12": 100.0,
+            "13": 100.0,
+            "14": 100.0,
+            "15": 96.4,
+            "16": 92.8,
+            "17": 90.0,
+            "18": 87.7,
+            "19": 85.4,
+            "20": 83.6,
+            "21": 82.6,
+            "22": 81.1,
+            "23": 80.1,
+            "24": 79.1,
+            "25": 78.1,
+            "26": 77.3,
+            "27": 76.8,
+            "28": 75.8,
+            "29": 70.8,
+            "30": 69.3,
+            "31": 67.6,
+            "32": 66.6,
+            "33": 65.6,
+            "34": 65.1,
+            "35": 61.0,
+            "36": 55.9,
+            "37": 50.7,
+            "38": 46.5,
+            "39": 42.3,
+            "40": 37.8,
+            "41": 33.3,
+            "42": 29.9,
+            "43": 26.5,
+            "44": 20.4,
+            "45": 14.3,
+            "46": 12.5,
+            "47": 10.7,
+            "48": 9.2,
+            "49": 9.2,
+            "50": 8.7
+          },
+          "health_at_48": 9.2,
+          "capability_at_48": 44.557186257911546,
+          "capability_at_50": 38.22499967298888,
+          "living": 6,
+          "structures": {
+            "farm_plot": 2,
+            "shelter": 1
+          },
+          "actions": {
+            "gather": 383,
+            "wait": 524,
+            "mine": 21,
+            "consume": 224,
+            "move": 277,
+            "chop": 38,
+            "drop": 34,
+            "fish": 18,
+            "offer_trade": 4,
+            "accept_trade": 4,
+            "whisper": 3,
+            "broadcast": 7,
+            "build": 3,
+            "maintain_structure": 1,
+            "farm": 2,
+            "say": 5,
+            "gift": 2,
+            "pick_up": 1,
+            "contribute": 3
+          },
+          "plans_by_action_count": {
+            "4": [
+              228,
+              89
+            ],
+            "3": [
+              180,
+              77
+            ],
+            "2": [
+              47,
+              7
+            ],
+            "1": [
+              8,
+              1
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 146,
+            "mine": 14,
+            "chop": 13,
+            "fish": 7,
+            "whisper": 2,
+            "accept_trade": 4,
+            "consume": 51,
+            "move": 9,
+            "gift": 2,
+            "wait": 2
+          },
+          "invalid_messages": {
+            "No water is available.": 55,
+            "No food is available on this tile.": 44,
+            "No water available to consume.": 38,
+            "No fiber is available on this tile.": 17,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 14,
+            "No food available to consume.": 13,
+            "No stone is available.": 10,
+            "No food is available.": 10,
+            "No wood is available.": 9,
+            "No fiber is available.": 7
+          },
+          "diagnostic_raw": {
+            "initial_agents": 10,
+            "possible_agent_ticks": 500,
+            "observed_agent_ticks": 500,
+            "decisions": 463,
+            "decision_failures": 0,
+            "model_output_failures": 0,
+            "external_decision_failures": 0,
+            "submitted_actions": 1554,
+            "contention_failures": 2,
+            "submitted_actions_excluding_contention": 1552,
+            "engine_invalid_proposals": 250,
+            "invalid_proposals": 250,
+            "action_point_overruns": 13,
+            "initial_endowment_value": 135.0,
+            "terminal_economic_value": 266.875,
+            "living_agents": 6,
+            "endpoint_health_points": 87.0,
+            "endpoint_health_capacity": 1000,
+            "living_terminal_economic_value": 183.0,
+            "purposeful_agent_ticks": 370,
+            "venture_initiatives": 7,
+            "venture_initiatives_by_type": {
+              "build": 2,
+              "build_started": 1,
+              "offer_trade": 4
+            },
+            "enterprise_supply_value": 0.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "own_capital_output_value": 0.0,
+            "informal_transfer_value": 0.0
+          },
+          "reasoning_tokens_per_call": 227.2,
+          "static_prompt_hashes": [
+            "266c1543b4cf2c331499fa62f3b2e9f324f73a6a4714edb7a164299bece73e6d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "pooled_outcome_scores": {
+        "execution": {
+          "score": 61.9,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 559.0,
+            "decisions": 903.0
+          }
+        },
+        "capability": {
+          "score": 37.59,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 67.918,
+            "final_window_health_pct": 20.8
+          }
+        }
+      }
+    },
+    "gpt-5.6-terra participant-v8": {
+      "cells": [
+        {
+          "misleading_capacity_errors": 131,
+          "report": "runs/managed/gpt-5-6-terra-v8-20260905/seed-11/run-report.json",
+          "seed": 11,
+          "horizon": 60,
+          "hashes": {
+            "run-report.json": "4ff5327b6a6d67b9e26a6ef6202d57e90b5bbd3918384c23572cc2d9084b88e7",
+            "run.jsonl": "b37bdda40afc37f9a472b19ffdecab3a419b4802456d57a6c7085eaf6f8dfb65",
+            "run-snapshot.json": "efc07c9fbea843e3c269097cd427a5abddd01770c8e686cc3b90461be65bba01",
+            "run-manifest.json": "9cbc23d04f5a2bc52d341e5a2fdc0ba9156130e754ed3a0ee581a7a51f77cf16"
+          },
+          "source": "75bd330bfc4027a993ba007aa16ac2effe00fccb",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 11,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "transfer_kind_mode": "self_declared",
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "capability": 35.21,
+            "execution": 59.66,
+            "production": 100.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 284.0,
+            "execution_decisions": 476.0,
+            "health_point_ticks": 36730.0,
+            "health_point_tick_capacity": 60000.0,
+            "tail_health_point_ticks": 2430.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 170.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 59.66,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 284.0,
+                "decisions": 476.0
+              }
+            },
+            "capability": {
+              "score": 35.21,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 61.2167,
+                "final_window_health_pct": 20.25
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 100.0,
+            "6": 100.0,
+            "7": 100.0,
+            "8": 100.0,
+            "9": 100.0,
+            "10": 100.0,
+            "11": 100.0,
+            "12": 100.0,
+            "13": 100.0,
+            "14": 100.0,
+            "15": 97.7,
+            "16": 95.4,
+            "17": 93.4,
+            "18": 91.4,
+            "19": 89.4,
+            "20": 87.4,
+            "21": 85.1,
+            "22": 82.8,
+            "23": 80.8,
+            "24": 78.1,
+            "25": 71.6,
+            "26": 69.1,
+            "27": 66.6,
+            "28": 64.1,
+            "29": 61.6,
+            "30": 58.5,
+            "31": 55.8,
+            "32": 54.0,
+            "33": 52.5,
+            "34": 51.9,
+            "35": 51.4,
+            "36": 50.9,
+            "37": 48.3,
+            "38": 45.7,
+            "39": 43.1,
+            "40": 40.6,
+            "41": 38.8,
+            "42": 37.0,
+            "43": 35.5,
+            "44": 34.0,
+            "45": 32.5,
+            "46": 30.5,
+            "47": 28.5,
+            "48": 26.0,
+            "49": 25.0,
+            "50": 24.0,
+            "51": 23.0,
+            "52": 22.0,
+            "53": 21.0,
+            "54": 20.0,
+            "55": 19.0,
+            "56": 18.5,
+            "57": 18.0,
+            "58": 18.0,
+            "59": 17.5,
+            "60": 17.0
+          },
+          "health_at_48": 26.0,
+          "capability_at_48": 51.21636769085098,
+          "capability_at_50": 47.88779419991417,
+          "living": 4,
+          "structures": {
+            "farm_plot": 1
+          },
+          "actions": {
+            "gather": 363,
+            "move": 335,
+            "wait": 492,
+            "mine": 17,
+            "consume": 244,
+            "gift": 6,
+            "chop": 30,
+            "drop": 18,
+            "inspect": 1,
+            "craft": 1,
+            "fish": 23,
+            "build": 1,
+            "farm": 9,
+            "say": 8,
+            "offer_trade": 4,
+            "accept_trade": 11,
+            "harvest": 8,
+            "maintain_structure": 4,
+            "whisper": 6,
+            "pick_up": 2
+          },
+          "plans_by_action_count": {
+            "3": [
+              168,
+              78
+            ],
+            "4": [
+              237,
+              90
+            ],
+            "2": [
+              60,
+              20
+            ],
+            "1": [
+              11,
+              4
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 150,
+            "mine": 12,
+            "chop": 18,
+            "craft": 1,
+            "consume": 71,
+            "move": 6,
+            "fish": 8,
+            "gift": 5,
+            "accept_trade": 11,
+            "whisper": 3,
+            "harvest": 1,
+            "farm": 4,
+            "wait": 2,
+            "pick_up": 1
+          },
+          "invalid_messages": {
+            "No water is available.": 84,
+            "No water available to consume.": 60,
+            "No food is available on this tile.": 23,
+            "No wood is available.": 15,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 14,
+            "No fiber is available on this tile.": 11,
+            "No fiber is available.": 10,
+            "No food is available.": 10,
+            "No food available to consume.": 10,
+            "No ore is available.": 8
+          },
+          "diagnostic_raw": {
+            "action_point_overruns": 9,
+            "contention_failures": 2,
+            "decision_failures": 0,
+            "decisions": 476,
+            "endpoint_health_capacity": 1000.0,
+            "endpoint_health_points": 170.0,
+            "engine_invalid_proposals": 293,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 0.0,
+            "execution_decisions": 476.0,
+            "execution_valid_decisions": 284.0,
+            "external_decision_failures": 0,
+            "health_point_tick_capacity": 60000.0,
+            "health_point_ticks": 36730.0,
+            "informal_transfer_value": 3.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 293,
+            "living_agents": 4,
+            "living_terminal_economic_value": 97.0,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 600,
+            "own_capital_output_value": 30.0,
+            "possible_agent_ticks": 600,
+            "production_by_source": {
+              "chop": 39.0,
+              "fish": 32.0,
+              "gather": 471.0,
+              "harvest": 30.0,
+              "mine": 28.0
+            },
+            "production_intermediate_input_value": 0.0,
+            "production_output_value": 600.0,
+            "production_possible_agent_ticks": 600,
+            "production_value_added": 600.0,
+            "productive_capital_extraction_value": 54.0,
+            "purposeful_agent_ticks": 377,
+            "submitted_actions": 1583,
+            "submitted_actions_excluding_contention": 1581,
+            "tail_health_point_tick_capacity": 12000.0,
+            "tail_health_point_ticks": 2430.0,
+            "terminal_economic_value": 248.625,
+            "venture_initiatives": 5,
+            "venture_initiatives_by_type": {
+              "build": 1,
+              "offer_trade": 4
+            }
+          },
+          "reasoning_tokens_per_call": 268.8,
+          "static_prompt_hashes": [
+            "b0bd9f0d40224a72f93e4be099e65f75a2b44298106121c7f417ab84dabe0a4d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        },
+        {
+          "misleading_capacity_errors": 99,
+          "report": "runs/managed/gpt-5-6-terra-v8-20260905/seed-41/run-report.json",
+          "seed": 41,
+          "horizon": 60,
+          "hashes": {
+            "run-report.json": "f2cac14f347ac4082b37e7cb365a6e8390cb0e6bac81a727efaf486f4700520d",
+            "run.jsonl": "283c5fd583232697462adc917d82067951c73d1447e824279cfd1f32ced593e8",
+            "run-snapshot.json": "9fc341f4dcef2eb042200d248f34dcf367bfb65020f5db8eca83eb4a1ac7bb1b",
+            "run-manifest.json": "202c133e1688dc06688ca53600e2d84d910f08220de0d6bbccb8e937286c1ac6"
+          },
+          "source": "75bd330bfc4027a993ba007aa16ac2effe00fccb",
+          "config": {
+            "action_feedback_mode": "baseline",
+            "action_points_per_tick": 4,
+            "carried_food_spoil_interval": 6,
+            "carried_food_spoil_quantity": 1,
+            "communication_action_cost": null,
+            "default_carry_capacity": 10,
+            "economy_mode": "organic",
+            "energy_reserve_max": 30,
+            "energy_reserve_start": 25,
+            "exhaustion_damage": 2,
+            "farm_food_added": 5,
+            "farm_food_capacity": 24,
+            "farm_passive_food_growth": 2,
+            "food_reserve_max": 20,
+            "food_reserve_start": 10,
+            "forest_fiber_regen": 0.03,
+            "forest_food_regen": 0.02,
+            "forest_wood_regen": 0.14,
+            "geography_mode": "dispersed",
+            "group_admin_action_cost": null,
+            "height": 16,
+            "max_memory": 50,
+            "memory_char_budget": 2400,
+            "memory_update_max_chars": 240,
+            "mountain_ore_regen": 0.01,
+            "mountain_stone_regen": 0.04,
+            "objective_mode": "neutral",
+            "plains_fiber_regen": 0.03,
+            "plains_food_regen": 0.01,
+            "recent_event_limit": 20,
+            "resource_base_multiplier": 1.0,
+            "season_length_ticks": 12,
+            "seed": 41,
+            "skill_bonus_cap": 2,
+            "skill_energy_interval": 4,
+            "skill_yield_interval": 3,
+            "specialization_mode": "generalists",
+            "starter_resource_radius": 1,
+            "storage_capacity": 120,
+            "storm_exposure_damage": 4,
+            "survival_energy_decay": 1,
+            "survival_food_decay": 1,
+            "survival_water_decay": 2,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "transfer_kind_mode": "self_declared",
+            "visible_radius": 2,
+            "water_food_regen": 0.02,
+            "water_reserve_max": 20,
+            "water_reserve_start": 10,
+            "water_water_regen": 0.7,
+            "width": 16,
+            "wild_fiber_density": 0.85,
+            "wild_food_density": 0.35,
+            "winter_exposure_damage": 3,
+            "world_variant": "frontier"
+          },
+          "agent_boundary": {
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "session_max_turns": 10
+          },
+          "original_scores": {
+            "capability": 27.17,
+            "execution": 66.87,
+            "production": 125.0
+          },
+          "outcome_raw": {
+            "execution_valid_decisions": 325.0,
+            "execution_decisions": 486.0,
+            "health_point_ticks": 36624.0,
+            "health_point_tick_capacity": 60000.0,
+            "tail_health_point_ticks": 1451.0,
+            "tail_health_point_tick_capacity": 12000.0,
+            "endpoint_health_points": 113.0,
+            "endpoint_health_capacity": 1000.0
+          },
+          "outcome_scores": {
+            "execution": {
+              "score": 66.87,
+              "formula": "100 * fully executable decisions / resolved decisions",
+              "components": {
+                "valid_decisions": 325.0,
+                "decisions": 486.0
+              }
+            },
+            "capability": {
+              "score": 27.17,
+              "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+              "components": {
+                "full_horizon_health_pct": 61.04,
+                "final_window_health_pct": 12.0917
+              }
+            }
+          },
+          "health_by_tick": {
+            "1": 100.0,
+            "2": 100.0,
+            "3": 100.0,
+            "4": 100.0,
+            "5": 100.0,
+            "6": 100.0,
+            "7": 100.0,
+            "8": 100.0,
+            "9": 100.0,
+            "10": 100.0,
+            "11": 99.5,
+            "12": 98.5,
+            "13": 97.5,
+            "14": 96.5,
+            "15": 94.2,
+            "16": 92.2,
+            "17": 90.2,
+            "18": 88.7,
+            "19": 87.2,
+            "20": 85.7,
+            "21": 84.7,
+            "22": 83.7,
+            "23": 82.7,
+            "24": 81.7,
+            "25": 80.4,
+            "26": 79.9,
+            "27": 79.4,
+            "28": 78.9,
+            "29": 74.4,
+            "30": 73.6,
+            "31": 72.6,
+            "32": 71.6,
+            "33": 71.1,
+            "34": 70.6,
+            "35": 65.5,
+            "36": 59.4,
+            "37": 54.2,
+            "38": 48.8,
+            "39": 44.4,
+            "40": 40.5,
+            "41": 36.8,
+            "42": 33.2,
+            "43": 29.6,
+            "44": 24.0,
+            "45": 19.0,
+            "46": 17.0,
+            "47": 15.3,
+            "48": 14.1,
+            "49": 13.3,
+            "50": 12.8,
+            "51": 12.8,
+            "52": 12.8,
+            "53": 12.8,
+            "54": 12.3,
+            "55": 11.8,
+            "56": 11.3,
+            "57": 11.3,
+            "58": 11.3,
+            "59": 11.3,
+            "60": 11.3
+          },
+          "health_at_48": 14.1,
+          "capability_at_48": 47.974066525861424,
+          "capability_at_50": 42.09156685133021,
+          "living": 4,
+          "structures": {
+            "farm_plot": 4,
+            "shelter": 1
+          },
+          "actions": {
+            "gather": 326,
+            "move": 347,
+            "wait": 487,
+            "chop": 47,
+            "mine": 20,
+            "consume": 256,
+            "fish": 12,
+            "drop": 33,
+            "build": 4,
+            "farm": 19,
+            "craft": 1,
+            "harvest": 34,
+            "contribute": 9,
+            "whisper": 3,
+            "pick_up": 1,
+            "maintain_structure": 10,
+            "offer_trade": 2,
+            "say": 2,
+            "broadcast": 4
+          },
+          "plans_by_action_count": {
+            "3": [
+              164,
+              58
+            ],
+            "4": [
+              244,
+              78
+            ],
+            "2": [
+              71,
+              24
+            ],
+            "1": [
+              7,
+              1
+            ]
+          },
+          "invalid_by_action": {
+            "gather": 116,
+            "mine": 9,
+            "chop": 26,
+            "fish": 3,
+            "consume": 56,
+            "wait": 4,
+            "move": 10,
+            "farm": 6,
+            "whisper": 7,
+            "maintain_structure": 1,
+            "offer_trade": 1,
+            "harvest": 6,
+            "contribute": 3
+          },
+          "invalid_messages": {
+            "No water is available.": 60,
+            "No water available to consume.": 46,
+            "No water is available on this tile, from an accessible well, or adjacent water.": 17,
+            "No food is available on this tile.": 16,
+            "No wood is available.": 16,
+            "No food is available.": 13,
+            "No food available to consume.": 10,
+            "Not enough source material or carrying capacity for the requested quantity.": 8,
+            "No action points remain this tick.": 8,
+            "No fiber is available on this tile.": 7
+          },
+          "diagnostic_raw": {
+            "action_point_overruns": 17,
+            "contention_failures": 1,
+            "decision_failures": 0,
+            "decisions": 486,
+            "endpoint_health_capacity": 1000.0,
+            "endpoint_health_points": 113.0,
+            "engine_invalid_proposals": 248,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 0.0,
+            "execution_decisions": 486.0,
+            "execution_valid_decisions": 325.0,
+            "external_decision_failures": 0,
+            "health_point_tick_capacity": 60000.0,
+            "health_point_ticks": 36624.0,
+            "informal_transfer_value": 0.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 248,
+            "living_agents": 4,
+            "living_terminal_economic_value": 109.0,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 600,
+            "own_capital_output_value": 120.0,
+            "possible_agent_ticks": 600,
+            "production_by_source": {
+              "chop": 93.0,
+              "fish": 18.0,
+              "gather": 475.0,
+              "harvest": 120.0,
+              "mine": 44.0
+            },
+            "production_intermediate_input_value": 0.0,
+            "production_output_value": 750.0,
+            "production_possible_agent_ticks": 600,
+            "production_value_added": 750.0,
+            "productive_capital_extraction_value": 162.0,
+            "purposeful_agent_ticks": 409,
+            "submitted_actions": 1617,
+            "submitted_actions_excluding_contention": 1616,
+            "tail_health_point_tick_capacity": 12000.0,
+            "tail_health_point_ticks": 1451.0,
+            "terminal_economic_value": 300.5,
+            "venture_initiatives": 6,
+            "venture_initiatives_by_type": {
+              "build": 4,
+              "build_started": 1,
+              "offer_trade": 1
+            }
+          },
+          "reasoning_tokens_per_call": 299.5,
+          "static_prompt_hashes": [
+            "b0bd9f0d40224a72f93e4be099e65f75a2b44298106121c7f417ab84dabe0a4d"
+          ],
+          "requested_efforts": [
+            "medium"
+          ]
+        }
+      ],
+      "pooled_outcome_scores": {
+        "execution": {
+          "score": 63.31,
+          "formula": "100 * fully executable decisions / resolved decisions",
+          "components": {
+            "valid_decisions": 609.0,
+            "decisions": 962.0
+          }
+        },
+        "capability": {
+          "score": 31.44,
+          "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+          "components": {
+            "full_horizon_health_pct": 61.1283,
+            "final_window_health_pct": 16.1708
+          }
+        }
+      }
+    }
+  }
+}

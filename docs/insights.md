@@ -22,6 +22,21 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+
+## 2026-09-05 — Whole-plan execution reverses the ranking on unchanged v6 decisions
+
+**Mini's execution lead can be created by changing the score alone, while
+v8's capability inversion depends strongly on the late survival window.**
+Applying the new whole-plan rule to old v6 evidence yields Mini 66.49,
+Terra 61.90, Luna 60.07, and 5.5 57.49. In actual v8 runs, Mini submits
+1.68 actions per decision versus 5.5's 3.54, while legacy action feasibility
+favors 5.5 (81.28 versus 75.59). On the first 50 ticks of the new runs,
+health-based capability ranks Luna 34.77, 5.5 32.15, Mini 31.86; at tick 60
+it ranks Mini 19.49, 5.5 15.30, Luna 8.86. These are score and horizon
+effects, not proof that general model ability reversed. The audit also found
+shared capacity failures mislabeled as resource absence; their causal effect
+on performance remains untested. [Audit and hashed evidence](v8-first-cohort-audit.md).
+
 ## 2026-09-05 — Separating sustained health from wealth changes the Luna board interpretation
 
 **A health-only capability review nearly ties Luna high with and without the
