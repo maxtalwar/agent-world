@@ -24,7 +24,7 @@ except ImportError:
     from leaderboard_supervisor import AstraClient, SupervisorError, MODEL, EFFORT
 
 ACTIVE = {"queued", "launching", "supervising"}
-MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/+\-]{0,127}\Z")
+MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/+\[\]\-]{0,127}\Z")
 INFO = """
 import json,sys
 from agent_world.protocols import get_recipe
@@ -87,15 +87,9 @@ class LaunchService:
     def sources(self):
         candidates = []
         jobs = []
-        known_models = []
         for path in (self.root / "runs/jobs").glob("*/job.json"):
             try:
                 job = read(path)
-                model = job.get("config", {}).get("model", {})
-                if model.get("brain") and model.get("id"):
-                    entry = {"brain": model["brain"], "id": model["id"]}
-                    if entry not in known_models:
-                        known_models.append(entry)
                 if job.get("kind") == "benchmark" and job.get("protocol"):
                     jobs.append(job)
             except (OSError, ValueError):
@@ -130,23 +124,10 @@ class LaunchService:
                     checked.add((recipe, expected_digest))
                     continue
                 defaults = info["recipe"]["defaults"]
-                # Use known exact identities as suggestions; never infer a lab
-                # from the connector or silently substitute a model.
-                models = []
-                for m in known_models:
-                    if m.get("brain") in info["brains"]:
-                        entry = {"brain": m["brain"], "id": m["id"]}
-                        if entry not in models:
-                            models.append(entry)
-                with sqlite3.connect(self.root / "data/model-benchmarks.sqlite") as db:
-                    for brain, model in db.execute("SELECT DISTINCT brain,model FROM run_cohorts"):
-                        entry = {"brain": brain, "id": model}
-                        if brain in info["brains"] and entry not in models:
-                            models.append(entry)
                 result[identifier] = {
                     "id": identifier, "recipe_id": recipe, "digest": info["digest"],
                     "source": str(source), "commit": commit, "brains": info["brains"],
-                    "models": models, "defaults": defaults,
+                    "defaults": defaults,
                     "seeds": info["recipe"]["replications"]["required_seeds"],
                 }
                 checked.add((recipe, expected_digest))

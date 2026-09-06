@@ -169,9 +169,12 @@ Codex integration follows the [official App Server interface](https://developers
 ## Catalog and multiple launches
 
 The launcher uses a searchable model catalog with provider logos and automatic
-connectors. Codex and Antigravity advertisements refresh with launch options;
-other exact identities come from retained benchmark AND experiment jobs and benchmark evidence, excluding
-diagnostic cohort labels. Availability still depends on the managed startup gate.
+connectors. Catalogs refresh from the current installed connector interfaces:
+Codex App Server, Claude Code initialization, Muse MSP, Antigravity, Grok,
+Cursor, Devin, ZCode App Server and OpenRouter's model endpoint. Retained runs
+and the v6 metrics database never supply model identities. A failed discovery
+is reported explicitly instead of falling back to old models. Advertised models
+still pass the managed account/startup gate before a benchmark proceeds.
 Gemini reasoning variants resolve on the server to the recipe's fixed effort;
 models lacking that effort or connector in the retained source are omitted.
 

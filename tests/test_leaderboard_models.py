@@ -10,20 +10,23 @@ from tests import test_leaderboard_launch
 
 class CatalogTests(unittest.TestCase):
     def test_live_catalog_defaults_and_recipe_effort(self):
-        sources = {"x": {"models": [{"brain": "codex", "id": "gpt-5.6-luna-max"},
-            {"brain": "claude", "id": "claude-opus-4-6"},
-            {"brain": "grok", "id": "grok-4.6"},
-            {"brain": "cursor", "id": "gpt-diagnostic"}]}}
+        sources = {"x": {"brains": ["codex", "claude", "antigravity", "muse"],
+            "models": [{"brain": "codex", "id": "gpt-5.6-luna-max"},
+                       {"brain": "claude", "id": "claude-retired"}]}}
         client = Mock()
         client.rpc.return_value = {"data": [{"model": "gpt-6-astra",
             "supportedReasoningEfforts": [{"reasoningEffort": "medium"}]}]}
-        response = Mock(stdout="gemini-3.7-flash-low\tGemini 3.7 Flash (Low)\n"
-                        "gemini-3.7-flash-medium\tGemini 3.7 Flash (Medium)\n"
-                        "gemini-3.1-pro-low\tGemini 3.1 Pro (Low)\n"
-                        "claude-opus-4-6-thinking\tClaude Opus 4.6 (Thinking)\n")
-        with patch("agent_world.leaderboard_models.shutil.which", return_value="/agy"), \
-             patch("agent_world.leaderboard_models.subprocess.run", return_value=response):
+        def current(brain, environment):
+            return {
+                "claude": [("claude-opus-4-6", "Claude Opus 4.6", None),
+                           ("claude-fable-5-1", "Claude Fable 5.1", ["medium"])],
+                "muse": [("muse-spark-1.3", "Muse Spark 1.3", None)],
+                "antigravity": [("gemini-3.7-flash-low", "Gemini 3.7 Flash (Low)", None),
+                    ("gemini-3.7-flash-medium", "Gemini 3.7 Flash (Medium)", None),
+                    ("gemini-3.1-pro-low", "Gemini 3.1 Pro (Low)", None)]}[brain]
+        with patch("agent_world.leaderboard_models.command_models", side_effect=current):
             entries, warnings = model_catalog(sources, client)
+        self.assertFalse(any(m["model"] == "claude-retired" for m in entries))
         self.assertFalse(warnings)
         recipe = {"brains": ["codex", "claude", "antigravity", "grok"],
                   "defaults": {"reasoning_effort": "medium"}}
@@ -32,10 +35,18 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(models["Gemini 3.7 Flash"]["model"], "gemini-3.7-flash-medium")
         self.assertEqual(models["Gemini 3.7 Flash"]["lab"], "google")
         self.assertEqual(models["Claude Opus 4.6"]["brain"], "claude")
+        self.assertEqual(models["Claude Fable 5.1"]["brain"], "claude")
         self.assertNotIn("Gemini 3.1 Pro", models)
         self.assertFalse(any("diagnostic" in m["model"] or "luna-max" in m["model"] for m in entries))
         recipe["brains"] = ["codex"]
         self.assertEqual([m["name"] for m in for_recipe(entries, recipe)], ["GPT-6 Astra"])
+
+    def test_failed_connector_does_not_fall_back_to_run_history(self):
+        sources = {"x": {"brains": ["claude"], "models": [{"brain": "claude", "id": "claude-fable-5"}]}}
+        with patch("agent_world.leaderboard_models.command_models", side_effect=RuntimeError("offline")):
+            entries, warnings = model_catalog(sources)
+        self.assertEqual(entries, [])
+        self.assertIn("catalog unavailable", warnings[0])
 
     def test_display_alias_preserves_recipe_identity(self):
         self.assertEqual(board_title("participant-v8-revised"), "v8.1")
