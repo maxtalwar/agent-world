@@ -159,3 +159,32 @@ class ActionExecutionTests(unittest.TestCase):
         value["scoring"]["parameters"]["execution_unit"]="tick"
         with self.assertRaises(ValueError):
             recipe_from_dict(value)
+
+    def test_revised_recipe_pools_full_health_and_preserves_old_recipes(self):
+        self.assertEqual(get_recipe("participant-v8-action-review").digest,
+                         "f6f0234dd3dd3489481b97aee600aee0bcacde5812a9bb0ee50fc9ea028b130b")
+        reports = []
+        for seed, early in ((11, 100), (41, 60)):
+            r, events, snapshot, _ = fixture(seed, protocol="participant-v8-revised")
+            for e in events:
+                if e["type"] == "agent_observation":
+                    e["data"]["observation"]["self"]["health"] = early if e["tick"] <= 48 else 20
+                if e["type"] == "agent_response":
+                    e["data"]["execution"] = {"schema_version": 1, "actions": ["success"], "messages": []}
+            for a in snapshot["agents"].values():
+                a["health"] = 20
+            r["benchmarks"] = build_benchmark_results(events, snapshot, r)
+            reports.append(r)
+        row = aggregate_benchmark_reports(reports, "participant-v8-revised")["results"][0]
+        self.assertTrue(row["certified"])
+        self.assertEqual(row["scores"]["capability"]["score"], 68)
+        self.assertEqual(row["scores"]["execution"]["score"], 100)
+        self.assertEqual(row["scores"]["capability"]["components"]["final_window_health_pct"], 20)
+
+    def test_invalid_capability_recipe_parameter_is_rejected(self):
+        for bad in ("endpoint", 1, [], None):
+            value = get_recipe("participant-v8-revised").to_dict()
+            value.pop("digest", None)
+            value["scoring"]["parameters"]["capability_aggregation"] = bad
+            with self.assertRaises(ValueError):
+                recipe_from_dict(value)

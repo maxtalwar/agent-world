@@ -37,6 +37,28 @@ def counts(events, snapshot):
 
 
 class OutcomeScoringTests(unittest.TestCase):
+    def test_full_mean_weights_early_and_late_health_equally(self):
+        def score(health):
+            return score_outcome_counts(counts(*world(health)),
+                capability_aggregation="full_horizon_mean")["capability"]["score"]
+        self.assertEqual(score((100, 80, 60, 40)), 70)
+        self.assertEqual(score((40, 60, 80, 100)), 70)
+        self.assertEqual(score((90, 80, 60, 40)), 67.5)
+        self.assertEqual(score((100, 80, 60, 30)), 67.5)
+
+    def test_full_mean_retains_deaths_and_excludes_initial_endowment(self):
+        c = counts(*world((50, 0, 0, 0)))
+        result = score_outcome_counts(c, capability_aggregation="full_horizon_mean")
+        self.assertEqual(result["capability"]["score"], 12.5)
+        doubled = {k: v * 2 for k, v in c.items()}
+        self.assertEqual(score_outcome_counts(doubled, capability_aggregation="full_horizon_mean")["capability"],
+                         result["capability"])
+        self.assertEqual(score_outcome_counts(c)["capability"]["score"], 0)
+
+    def test_unknown_capability_aggregation_is_rejected(self):
+        with self.assertRaises(ValueError):
+            score_outcome_counts(counts(*world()), capability_aggregation="endpoint")
+
     def test_perfect_health_and_valid_rest_are_perfect(self):
         result = score_outcome_counts(counts(*world()))
         self.assertEqual(result["execution"]["score"], 100)

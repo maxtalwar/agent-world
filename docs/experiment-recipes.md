@@ -8,9 +8,11 @@ does not require checking out older code.
 | --- | --- | --- | --- |
 | participant-v6 | medium | Frozen external classifier; agents do not declare transfer kind | 2 |
 | participant-v7 | low | Agent-declared gift, payment, or barter | 1 |
-| participant-v8 | medium | Agent-declared gift, payment, or barter; diagnostic commerce | 1 |\n| participant-v8-action-review | medium | Same as v8; review recipe with per-action Execution | 1 |
+| participant-v8 | medium | Agent-declared gift, payment, or barter; diagnostic commerce | 1 |
+| participant-v8-action-review | medium | Same as v8; review recipe with per-action Execution | 1 |
+| participant-v8-revised | medium | Same as v8; per-action Execution and equal-weight Capability | 1 |
 
-All four recipes use the frontier world, ten generalists, fresh conversations,
+All five recipes use the frontier world, ten generalists, fresh conversations,
 and connector-v3. V6/v7 retain fifty ticks and their shared historical formulas.
 V8 uses sixty ticks, no board, and outcome-production scoring. Revision numbers
 are local to each protocol. Worker counts are operational settings.
@@ -103,8 +105,14 @@ Its tail must be a positive integer no longer than the recipe horizon.
 The optional execution_unit defaults to decision, preserving published v8.
 The action setting requires per-proposal outcome telemetry and scores each
 submitted action or message independently. See [the action review](v8-action-review.md).
-The review recipe is not a replacement for the published leaderboard, and its
-Capability formula remains unchanged while that design is under discussion.
+The optional capability_aggregation defaults to full_tail_geometric, preserving
+published v8. The full_horizon_mean setting gives every original-population
+agent and completed tick equal weight; final-window counts remain diagnostic.
+The participant-v8-revised recipe combines full_horizon_mean with action
+Execution for the next leaderboard rebuild. It retains 60 ticks, medium effort,
+two seeds, and no board. The earlier action-only review and published v8 keep
+their original identities. Existing runs must not be relabelled as revised.
+See [the agreed revision](v8-revised.md).
 
 ## Select a benchmark
 

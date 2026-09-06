@@ -906,7 +906,11 @@ def score_benchmark_counts(raw: dict[str, Any], protocol_id: str | None = None) 
         try:
             if raw.get("scoring_evidence_error"):
                 raise ScoringEvidenceError(raw["scoring_evidence_error"])
-            return score_outcome_production_counts(raw, execution_unit=recipe.scoring_parameters().get("execution_unit", "decision"))
+            return score_outcome_production_counts(
+                raw,
+                execution_unit=recipe.scoring_parameters().get("execution_unit", "decision"),
+                capability_aggregation=recipe.scoring_parameters().get("capability_aggregation", "full_tail_geometric"),
+            )
         except ScoringEvidenceError as exc:
             return {key: {"score": None, "unavailable_reason": str(exc)}
                     for key, _ in scoring_columns(recipe.scoring_policy)}

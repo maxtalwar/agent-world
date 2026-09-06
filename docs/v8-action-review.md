@@ -49,7 +49,11 @@ as successes. These records are excluded from agent observations alongside
 the existing response transcript. Existing ledgers without the telemetry cannot
 claim this scoring recipe; they are not silently reconstructed or relabelled.
 
-## Capability recommendation, not yet adopted
+## Capability recommendation at the time of this review
+
+**Subsequently adopted:** [participant-v8-revised](v8-revised.md) implements the
+equal-weight mean following user approval. This action-only recipe remains
+frozen; the paragraphs below record the original recommendation.
 
 Current v8 Capability remains the geometric mean of full-run health and
 final-season health. The review recipe deliberately retains that formula so

@@ -176,7 +176,7 @@ def recipe_from_dict(value: Any) -> ParticipantRecipe:
     if type(scoring["revision"]) is not int or scoring["revision"] < 1:
         raise ValueError("Scoring revision must be positive")
     parameter_names = set(SCORING_POLICY_PARAMETERS[scoring["policy"]])
-    optional_names = {"execution_unit"} if scoring["policy"] == "outcome-production" else set()
+    optional_names = {"execution_unit", "capability_aggregation"} if scoring["policy"] == "outcome-production" else set()
     parameters = _keys(scoring["parameters"], parameter_names | optional_names, parameter_names, "scoring parameters")
     if any(type(x) not in {int, float} or not math.isfinite(x) or x <= 0
            for key, x in parameters.items() if key not in optional_names):
@@ -185,6 +185,9 @@ def recipe_from_dict(value: Any) -> ParticipantRecipe:
         unit = parameters.get("execution_unit", "decision")
         if not isinstance(unit, str) or unit not in {"decision", "action"}:
             raise ValueError("execution_unit must be decision or action")
+        aggregation = parameters.get("capability_aggregation", "full_tail_geometric")
+        if not isinstance(aggregation, str) or aggregation not in {"full_tail_geometric", "full_horizon_mean"}:
+            raise ValueError("capability_aggregation must be full_tail_geometric or full_horizon_mean")
         tail = parameters["capability_tail_ticks"]
         if type(tail) is not int or not 1 <= tail <= settings["ticks"]:
             raise ValueError("capability_tail_ticks must be an integer within the run horizon")

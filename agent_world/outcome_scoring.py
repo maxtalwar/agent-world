@@ -175,7 +175,7 @@ def _health(value: Any) -> float:
     return value
 
 
-def score_outcome_counts(raw: dict[str, float], *, execution_unit: str = "decision") -> dict[str, Any]:
+def score_outcome_counts(raw: dict[str, float], *, execution_unit: str = "decision", capability_aggregation: str = "full_tail_geometric") -> dict[str, Any]:
     """Score pooled additive counts; never average rounded run scores."""
     def percent(numerator: str, denominator: str) -> float:
         try:
@@ -200,6 +200,14 @@ def score_outcome_counts(raw: dict[str, float], *, execution_unit: str = "decisi
         raise ValueError("Unknown execution unit")
     full = percent("health_point_ticks", "health_point_tick_capacity")
     tail = percent("tail_health_point_ticks", "tail_health_point_tick_capacity")
+    if capability_aggregation == "full_horizon_mean":
+        capability = full
+        capability_formula = "mean health across original population and all completed ticks"
+    elif capability_aggregation == "full_tail_geometric":
+        capability = math.sqrt(full * tail)
+        capability_formula = "geometric_mean(full-horizon population health %, final-window population health %)"
+    else:
+        raise ValueError("Unknown capability aggregation")
     return {
         "execution": {
             "score": round(execution, 2),
@@ -207,8 +215,8 @@ def score_outcome_counts(raw: dict[str, float], *, execution_unit: str = "decisi
             "components": execution_components,
         },
         "capability": {
-            "score": round(math.sqrt(full * tail), 2),
-            "formula": "geometric_mean(full-horizon population health %, final-window population health %)",
+            "score": round(capability, 2),
+            "formula": capability_formula,
             "components": {"full_horizon_health_pct": round(full, 4),
                            "final_window_health_pct": round(tail, 4)},
         },
