@@ -21,8 +21,8 @@ from agent_world.usage import summarize_decision_latency
 from test_benchmarks import _protocol_report
 
 
-def fixture(seed=11, health=80):
-    recipe = get_recipe("participant-v8")
+def fixture(seed=11, health=80, protocol="participant-v8"):
+    recipe = get_recipe(protocol)
     report = _protocol_report(seed, f"fixture-{seed}", protocol_id=recipe.id)
     members = report["population"]["cohorts"]["cohort-1"]["agents"]
     start = {"type": "run_started", "tick": 0, "actor_id": None, "data": {

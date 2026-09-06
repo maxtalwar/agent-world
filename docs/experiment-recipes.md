@@ -8,9 +8,9 @@ does not require checking out older code.
 | --- | --- | --- | --- |
 | participant-v6 | medium | Frozen external classifier; agents do not declare transfer kind | 2 |
 | participant-v7 | low | Agent-declared gift, payment, or barter | 1 |
-| participant-v8 | medium | Agent-declared gift, payment, or barter; diagnostic commerce | 1 |
+| participant-v8 | medium | Agent-declared gift, payment, or barter; diagnostic commerce | 1 |\n| participant-v8-action-review | medium | Same as v8; review recipe with per-action Execution | 1 |
 
-All three recipes use the frontier world, ten generalists, fresh conversations,
+All four recipes use the frontier world, ten generalists, fresh conversations,
 and connector-v3. V6/v7 retain fifty ticks and their shared historical formulas.
 V8 uses sixty ticks, no board, and outcome-production scoring. Revision numbers
 are local to each protocol. Worker counts are operational settings.
@@ -58,7 +58,7 @@ not registered by default and does not change either established benchmark.
 | `transfer_accounting` | `self_declared` or `frozen_classifier`; selects finalization behavior. |
 | `scoring.policy` | Implemented scoring method; `participant` or `outcome-production`. |
 | `scoring.revision` | Positive revision label within this recipe. |
-| `scoring.parameters` | Policy-specific parameters: four legacy reference targets for participant, or integer capability_tail_ticks for outcome-production. |
+| `scoring.parameters` | Policy-specific parameters: four legacy reference targets for participant, or integer capability_tail_ticks for outcome-production, plus optional execution_unit (decision or action). |
 
 The supplied files spell out every required default. Additional
 `WorldConfig` fields may be included in `defaults`, including reserve,
@@ -100,6 +100,11 @@ conflicting identities or digests are rejected.
 The outcome-production policy implements independently scored capability,
 execution, and productive value added. See [v8 production](v8-production.md).
 Its tail must be a positive integer no longer than the recipe horizon.
+The optional execution_unit defaults to decision, preserving published v8.
+The action setting requires per-proposal outcome telemetry and scores each
+submitted action or message independently. See [the action review](v8-action-review.md).
+The review recipe is not a replacement for the published leaderboard, and its
+Capability formula remains unchanged while that design is under discussion.
 
 ## Select a benchmark
 

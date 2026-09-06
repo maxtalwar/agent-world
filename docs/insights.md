@@ -36,6 +36,9 @@ it ranks Mini 19.49, 5.5 15.30, Luna 8.86. These are score and horizon
 effects, not proof that general model ability reversed. The audit also found
 shared capacity failures mislabeled as resource absence; their causal effect
 on performance remains untested. [Audit and hashed evidence](v8-first-cohort-audit.md).
+The subsequent [action review](v8-action-review.md) fixes capacity feedback
+and implements per-action scoring with exact outcome telemetry; published
+scores and existing pinned runs remain unchanged.
 
 ## 2026-09-05 — Separating sustained health from wealth changes the Luna board interpretation
 

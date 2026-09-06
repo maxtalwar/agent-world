@@ -789,6 +789,7 @@ def build_benchmark_results(
                     events, snapshot, member_ids=member_ids, target_ticks=horizon,
                     tail_ticks=min(recipe.scoring_parameters()["capability_tail_ticks"], horizon),
                     require_completed=bool(run.get("completed")),
+                    execution_unit=recipe.scoring_parameters().get("execution_unit", "decision"),
                 ))
                 raw.update(derive_production_counts(
                     events, member_ids=member_ids, target_ticks=horizon,
@@ -905,7 +906,7 @@ def score_benchmark_counts(raw: dict[str, Any], protocol_id: str | None = None) 
         try:
             if raw.get("scoring_evidence_error"):
                 raise ScoringEvidenceError(raw["scoring_evidence_error"])
-            return score_outcome_production_counts(raw)
+            return score_outcome_production_counts(raw, execution_unit=recipe.scoring_parameters().get("execution_unit", "decision"))
         except ScoringEvidenceError as exc:
             return {key: {"score": None, "unavailable_reason": str(exc)}
                     for key, _ in scoring_columns(recipe.scoring_policy)}

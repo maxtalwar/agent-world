@@ -28,6 +28,7 @@ def derive_outcome_counts(
     target_ticks: int,
     tail_ticks: int,
     require_completed: bool = True,
+    execution_unit: str = "decision",
 ) -> dict[str, float]:
     """Derive additive counts from completed, original-population evidence.
 
@@ -118,7 +119,11 @@ def derive_outcome_counts(
         and not is_model_output_failure_message(event.get("type"), event.get("message"))
         for key, event in responses.items()
     )
+    action_counts = derive_action_execution_counts(responses) if execution_unit == "action" else {}
+    if execution_unit not in {"decision", "action"}:
+        raise ValueError("Unknown execution unit")
     return {
+        **action_counts,
         "execution_valid_decisions": float(valid),
         "execution_decisions": float(len(responses)),
         "health_point_ticks": full_sum,
@@ -130,6 +135,37 @@ def derive_outcome_counts(
     }
 
 
+
+def derive_action_execution_counts(responses: dict) -> dict[str, float]:
+    """Require exact per-proposal outcomes; never infer success from silence."""
+    counts = Counter()
+    for key, event in responses.items():
+        if is_model_output_failure_message(event.get("type"), event.get("message")):
+            # A malformed whole response supplies no attributable actions.
+            # Retain it as one failed proposal, never a fabricated valid wait.
+            counts["invalid"] += 1
+            continue
+        data = event.get("data") or {}
+        execution = data.get("execution") or {}
+        if execution.get("schema_version") != 1:
+            raise ScoringEvidenceError(f"Missing per-action execution evidence at {key}")
+        for lane in ("actions", "messages"):
+            statuses = execution.get(lane)
+            expected = len(data.get(lane) or [])
+            if lane == "actions":
+                expected = max(1, expected)  # Engine's implicit rest action.
+            if not isinstance(statuses, list) or len(statuses) != expected:
+                raise ScoringEvidenceError(f"Incomplete {lane} outcomes at {key}")
+            if any(not isinstance(x, str) or x not in {"success", "invalid", "contention", "unexecuted"} for x in statuses):
+                raise ScoringEvidenceError(f"Unknown action outcome at {key}")
+            counts.update(statuses)
+    return {
+        "execution_valid_actions": float(counts["success"]),
+        "execution_actions": float(counts["success"] + counts["invalid"] + counts["unexecuted"]),
+        "execution_contention_actions": float(counts["contention"]),
+        "execution_unexecuted_actions": float(counts["unexecuted"]),
+    }
+
 def _health(value: Any) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ScoringEvidenceError("Health must be a finite number from 0 to 100")
@@ -139,7 +175,7 @@ def _health(value: Any) -> float:
     return value
 
 
-def score_outcome_counts(raw: dict[str, float]) -> dict[str, Any]:
+def score_outcome_counts(raw: dict[str, float], *, execution_unit: str = "decision") -> dict[str, Any]:
     """Score pooled additive counts; never average rounded run scores."""
     def percent(numerator: str, denominator: str) -> float:
         try:
@@ -150,15 +186,25 @@ def score_outcome_counts(raw: dict[str, float]) -> dict[str, Any]:
             raise ScoringEvidenceError(f"Invalid counts: {numerator}/{denominator}")
         return 100 * n / d
 
-    execution = percent("execution_valid_decisions", "execution_decisions")
+    if execution_unit == "action":
+        execution = percent("execution_valid_actions", "execution_actions")
+        execution_formula = "100 * successful actions / submitted non-contention actions"
+        execution_components = {"valid_actions": raw["execution_valid_actions"],
+                                "actions": raw["execution_actions"]}
+    elif execution_unit == "decision":
+        execution = percent("execution_valid_decisions", "execution_decisions")
+        execution_formula = "100 * fully executable decisions / resolved decisions"
+        execution_components = {"valid_decisions": raw["execution_valid_decisions"],
+                                "decisions": raw["execution_decisions"]}
+    else:
+        raise ValueError("Unknown execution unit")
     full = percent("health_point_ticks", "health_point_tick_capacity")
     tail = percent("tail_health_point_ticks", "tail_health_point_tick_capacity")
     return {
         "execution": {
             "score": round(execution, 2),
-            "formula": "100 * fully executable decisions / resolved decisions",
-            "components": {"valid_decisions": raw["execution_valid_decisions"],
-                           "decisions": raw["execution_decisions"]},
+            "formula": execution_formula,
+            "components": execution_components,
         },
         "capability": {
             "score": round(math.sqrt(full * tail), 2),

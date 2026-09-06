@@ -294,7 +294,7 @@ class WorldEngine:
                 continue
             decision = AgentDecision.from_json_like(decisions.get(agent_id, AgentDecision(actions=[{"type": "wait"}])))
             self._remember(agent, decision.memory_updates)
-            self.log_event(
+            response_event = self.log_event(
                 "agent_response",
                 actor_id=agent.id,
                 position=agent.position,
@@ -309,7 +309,9 @@ class WorldEngine:
                 scope="private",
                 recipients={agent.id},
             )
-            spare_ap = self._process_decision(agent, decision)
+            execution = {"schema_version": 1, "actions": [], "messages": []}
+            spare_ap = self._process_decision(agent, decision, execution=execution)
+            response_event.data["execution"] = execution
             self.state.capacity_samples.append(
                 {"spare_ap": max(0, spare_ap), "energy": max(0, agent.needs.energy)}
             )
@@ -334,17 +336,39 @@ class WorldEngine:
         offset = (self.state.tick * direction) % len(ordered)
         return ordered[offset:] + ordered[:offset]
 
-    def _process_decision(self, agent: Agent, decision: AgentDecision) -> int:
+    def _process_decision(
+        self, agent: Agent, decision: AgentDecision, *, execution: dict | None = None
+    ) -> int:
+        # Attach audit results to the already-private response, not to visible
+        # feedback. A proposal counts once even if it emits multiple failures.
+        def outcome(before: int) -> str:
+            kinds = {e.type for e in self.state.events[before:] if e.actor_id == agent.id}
+            if "invalid_action" in kinds:
+                return "invalid"
+            if "contention_failure" in kinds:
+                return "contention"
+            return "success"
+
         action_points = self.state.config.action_points_per_tick
         for message in decision.messages:
+            before = len(self.state.events)
             action_points = self._handle_message(agent, message, action_points)
+            if execution is not None:
+                execution["messages"].append(outcome(before))
         if not decision.actions:
             decision.actions = [{"type": "wait"}]
-        for action in decision.actions:
+        for index, action in enumerate(decision.actions):
+            before = len(self.state.events)
             if action_points <= 0 and not self._is_free_action(action):
                 self._invalid(agent, action, "No action points remain this tick.")
+                if execution is not None:
+                    execution["actions"].extend(
+                        ["unexecuted"] * (len(decision.actions) - index)
+                    )
                 break
             action_points = self._dispatch_action(agent, action, action_points)
+            if execution is not None:
+                execution["actions"].append(outcome(before))
         return action_points
 
     def _is_free_action(self, action: dict[str, Any]) -> bool:
@@ -630,10 +654,15 @@ class WorldEngine:
             quantity = min(quantity, source_tile.resources[resource])
         quantity = min(quantity, self._carry_room(agent, resource))
         if quantity <= 0:
-            if source_kind == "well":
-                self._invalid(agent, action, "No water is available on this tile or adjacent water.")
+            if requested <= 0:
+                reason = "Requested quantity must be at least 1."
             else:
-                self._invalid(agent, action, f"No {resource} is available.")
+                reason = (
+                    f"Not enough carrying capacity for {resource} "
+                    f"(load {agent.inventory_weight()}/{agent.carry_capacity}); "
+                    "use, drop, or store carried items to make room."
+                )
+            self._invalid(agent, action, reason)
             return action_points - cost
         if quantity < requested:
             resource_contention = (

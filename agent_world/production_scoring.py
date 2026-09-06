@@ -87,5 +87,5 @@ def score_production_counts(raw: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def score_outcome_production_counts(raw: dict[str, Any]) -> dict[str, Any]:
-    return {**score_outcome_counts(raw), "production": score_production_counts(raw)}
+def score_outcome_production_counts(raw: dict[str, Any], *, execution_unit: str = "decision") -> dict[str, Any]:
+    return {**score_outcome_counts(raw, execution_unit=execution_unit), "production": score_production_counts(raw)}
