@@ -69,6 +69,16 @@ CLI remains the source of truth for behavior.
   finalizes benchmark evidence. `agent-world resume RUN_ID` and `agent-world
   finalize RUN_ID` remain explicit recovery tools after an attention state;
   they are not normal babysitting steps.
+- Monitoring ownership includes diagnosing and repairing recoverable infrastructure
+  or connector faults, validating the fix, and resuming the existing checkpoint
+  through the managed interface. An authorized run includes this routine recovery;
+  diagnosis alone is not a completed handoff. Keep fixable faults on the monitoring
+  worklist. Escalate only when recovery needs user input, additional authorization,
+  an unavailable external service, or an unresolved evidence/experimental choice.
+  Never weaken integrity guards or silently edit pinned source. Record any required
+  source migration and its validation while retaining original provenance, accepted
+  decisions, seeds, model identity and checkpoint. If a repair changes experimental
+  conditions, preserve that distinction instead of claiming unchanged certification.
 - Do not poll healthy runs tick by tick. The job controller checks locally every
   30 seconds and writes `controller-heartbeat.json` plus an append-only
   `controller-events.jsonl`. Report status only on user request or a

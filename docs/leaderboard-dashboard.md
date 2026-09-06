@@ -134,9 +134,12 @@ python3 .local/leaderboard-app/leaderboard_launch.py monitor-list --root /path/t
 ```
 
 It handles one combined worklist, inspects meaningful attention/completion, and
-acknowledges audited terminal or explicitly blocked requests with `monitor-ack`
+acknowledges audited terminal or externally blocked requests with `monitor-ack`
 and `--request REQUEST_ID`. The command refuses to remove healthy active runs.
-This avoids repeatedly auditing completed studies. Configure the existing task
+An unresolved handoff additionally requires `--resolution external_blocker` or
+`--resolution evidence_decision` and a concrete `--reason`. Repairable connector
+and infrastructure faults stay on the worklist through repair, validation and
+checkpoint recovery. This avoids repeatedly auditing completed studies. Configure the existing task
 ID in the machine-local settings as `monitor_thread_id`; the installer preserves
 it and launching is blocked if it is absent. Never fall back to creating a new task.
 

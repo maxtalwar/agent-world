@@ -246,7 +246,7 @@ class LaunchService:
                                    for c in job.get("cells", [])]})
         return work
 
-    def monitoring_ack(self, identifier):
+    def monitoring_ack(self, identifier, resolution=None, reason=None):
         request = self.get(identifier)
         path = self.root / "runs/jobs" / request["run_id"] / "job.json"
         job = read(path) if path.exists() else {}
@@ -254,7 +254,11 @@ class LaunchService:
         if status not in {"completed", "completed_with_blockers", "needs_attention", "failed", "stopped", "cancelled"} and request["state"] != "needs_attention":
             raise LaunchError("A healthy active run cannot leave the monitoring worklist")
         ready = status == "completed" and (job.get("analysis_readiness") or {}).get("status") == "ready"
-        self.update(identifier, monitor_reviewed=True, state="completed" if ready else "needs_attention")
+        if not ready and (resolution not in {"external_blocker", "evidence_decision"} or not reason or not reason.strip()):
+            raise LaunchError("Repairable faults stay on the worklist; an unresolved handoff requires a named external blocker or evidence decision")
+        self.update(identifier, monitor_reviewed=True, state="completed" if ready else "needs_attention",
+                    monitor_resolution="verified_complete" if ready else resolution,
+                    monitor_resolution_reason=reason)
 
     def recent(self):
         with self.connection() as db:
@@ -500,6 +504,10 @@ def assignment_prompt(requests):
         "Your existing monitoring heartbeat discovers these requests from "
         ".local/leaderboard-launches/requests.sqlite. Controllers own startup gates, healthy progress, quota waits, "
         "bounded checkpoint recovery and finalization. Do not repeat these instructions on routine transitions. "
+        "After launch, attention means you own diagnosis, scoped connector/infrastructure repair, validation, "
+        "and managed resumption of the existing checkpoint. Do not stop at diagnosis for a repairable fault. "
+        "Record any required source migration; never silently edit pinned source or weaken integrity guards. "
+        "Keep repairable faults on the worklist; escalate only a concrete user/external/evidence dependency. "
         "At attention or completion follow each run's pinned benchmark skill and recipe, preserve provenance, "
         "never restart to evade quota, and do not admit results to the leaderboard. "
         "Only meaningful blockers or verified completion warrant an update. Batch:\n" +
@@ -583,10 +591,12 @@ if __name__ == "__main__":
     parser.add_argument("command", choices=["worker", "monitor-list", "monitor-ack"])
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--request")
+    parser.add_argument("--resolution", choices=["external_blocker", "evidence_decision"])
+    parser.add_argument("--reason")
     args = parser.parse_args()
     if args.command == "worker":
         worker(args.root, args.request)
     elif args.command == "monitor-list":
         print(json.dumps(LaunchService(args.root).monitoring_worklist(), indent=2))
     else:
-        LaunchService(args.root).monitoring_ack(args.request)
+        LaunchService(args.root).monitoring_ack(args.request, args.resolution, args.reason)

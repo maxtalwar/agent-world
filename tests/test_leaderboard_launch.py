@@ -214,7 +214,10 @@ class LaunchTests(unittest.TestCase):
         with self.assertRaises(LaunchError):
             self.service.monitoring_ack(self.identifier)
         self.service.update(self.identifier, state="needs_attention")
-        self.service.monitoring_ack(self.identifier)
+        with self.assertRaisesRegex(LaunchError, "Repairable faults"):
+            self.service.monitoring_ack(self.identifier)
+        self.assertEqual(len(self.service.monitoring_worklist()), 1)
+        self.service.monitoring_ack(self.identifier, "external_blocker", "User must renew expired provider login")
         self.assertEqual(self.service.monitoring_worklist(), [])
 
     def test_batch_holds_requests_until_all_are_accepted(self):
