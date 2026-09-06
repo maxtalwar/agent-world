@@ -150,3 +150,20 @@ and recovery without relaunch. Deployment smoke checks use real recipe dry runs
 and the real Codex model catalog without starting a paid benchmark.
 
 Codex integration follows the [official App Server interface](https://developers.openai.com/codex/app-server/).
+
+## Catalog and multiple launches
+
+The launcher uses a searchable model catalog with provider logos and automatic
+connectors. Codex and Antigravity advertisements refresh with launch options;
+other exact identities come from retained jobs and benchmark evidence, excluding
+diagnostic cohort labels. Availability still depends on the managed startup gate.
+Gemini reasoning variants resolve on the server to the recipe's fixed effort;
+models lacking that effort or connector in the retained source are omitted.
+
+Select multiple models, review the fixed conditions, then start the batch. Each
+model gets a separate durable reviewed request and Astra low-effort supervisor.
+Partial failures remain visible; retry reuses the same request IDs and skips
+successful launches. No model calls occur during catalog loading or review.
+
+The display name v8.1 aliases participant-v8-revised. Stored recipe IDs, hashes,
+source commits, and historical evidence remain unchanged.

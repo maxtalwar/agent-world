@@ -16,7 +16,7 @@ import shutil
 root = Path.cwd()
 target = root / ".local/leaderboard-app"
 (target / "static").mkdir(parents=True, exist_ok=True)
-for module in ["leaderboard.py", "leaderboard_launch.py", "leaderboard_supervisor.py"]:
+for module in ["leaderboard.py", "leaderboard_launch.py", "leaderboard_supervisor.py", "leaderboard_models.py"]:
     shutil.copy2(root / "agent_world" / module, target / module)
 shutil.copy2(root / "scripts/serve-leaderboard", target / "serve-leaderboard")
 for name in ["leaderboard.html", "leaderboard.css", "leaderboard.js", "leaderboard-launch.js", "inter-latin.woff2"]:

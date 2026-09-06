@@ -1,6 +1,8 @@
 'use strict';
-const launchState = {options:null, preview:null, busy:false};
+const launchState = {options:null, preview:null, busy:false, selected:new Set(), outcomes:new Map()};
 const launchEl = id => document.getElementById(id);
+const recipeName = id => 'Participant '+(id==='participant-v8-revised'?'v8.1':id.replace('participant-','').replaceAll('-',' '));
+const modelLogo = (lab,name) => '<span class="model-avatar"><img src="/labs/'+esc(lab||'unknown')+'.svg" alt="'+esc(name||'')+'"></span>';
 function launchError(message) {
   launchEl('launch-error').hidden=!message;
   launchEl('launch-error').textContent=message||'';
@@ -14,36 +16,62 @@ function launchConditions() {
     ? r.defaults.agents+' agents · '+r.defaults.ticks+' ticks · seeds '+r.seeds.join(' + ')+' · '+r.defaults.reasoning_effort+' reasoning'
     : 'No clean launch source is available for this recipe.';
 }
+function pickerOpen(open) {
+  launchEl('model-picker-panel').hidden=!open;
+  launchEl('model-picker-toggle').setAttribute('aria-expanded',String(open));
+  if(open)launchEl('model-search').focus();
+}
 function launchModels() {
-  const r=launchRecipe(),brain=launchEl('launch-brain').value;
-  launchEl('launch-models').innerHTML=(r?.models||[]).filter(m=>m.brain===brain)
-    .map(m=>'<option value="'+esc(m.id)+'"></option>').join('');
+  const models=launchRecipe()?.models||[],query=launchEl('model-search').value.trim().toLowerCase();
+  const visible=models.filter(m=>(m.name+' '+m.lab+' '+m.connector).toLowerCase().includes(query));
+  launchEl('model-options').innerHTML=visible.map(m=>'<label class="model-option">'+
+    '<input type="checkbox" value="'+esc(m.key)+'" '+(launchState.selected.has(m.key)?'checked':'')+'>'+
+    modelLogo(m.lab,'')+'<span class="model-option-copy"><strong>'+esc(m.name)+'</strong><span>'+esc(m.connector)+'</span></span></label>').join('')||
+    '<p class="small muted">No matching models for this recipe.</p>';
+  launchEl('model-options').querySelectorAll('input').forEach(input=>input.onchange=()=>{
+    if(input.checked)launchState.selected.add(input.value);else launchState.selected.delete(input.value);
+    updateSelected();
+  });
+  updateSelected();
+}
+function updateSelected() {
+  const models=(launchRecipe()?.models||[]).filter(m=>launchState.selected.has(m.key));
+  const count=models.length;
+  launchEl('model-picker-count').textContent=count?count+' model'+(count===1?'':'s')+' selected':'Choose models';
+  launchEl('selected-models').innerHTML=models.map(m=>'<span class="selected-model">'+modelLogo(m.lab,'')+
+    '<span>'+esc(m.name)+'<small>'+esc(m.connector)+'</small></span><button type="button" data-key="'+esc(m.key)+'" aria-label="Remove '+esc(m.name)+'">×</button></span>').join('');
+  launchEl('selected-models').querySelectorAll('button').forEach(button=>button.onclick=()=>{
+    launchState.selected.delete(button.dataset.key);launchModels();
+  });
+  launchEl('review-launch').disabled=launchState.busy||!launchState.options?.enabled||!count;
+  launchEl('review-launch').textContent='Review '+(count||'')+' benchmark'+(count===1?'':'s')+' →';
 }
 function chooseRecipe() {
-  const r=launchRecipe();
-  launchEl('launch-brain').innerHTML=(r?.brains||[]).map(b=>'<option value="'+esc(b)+'">'+esc(({codex:'Codex',claude:'Claude Code',openrouter:'OpenRouter',grok:'Grok',muse:'Muse',antigravity:'Antigravity',cursor:'Cursor',zcode:'ZCode',devin:'Devin'})[b]||b)+'</option>').join('');
-  if(r?.brains.includes('codex'))launchEl('launch-brain').value='codex';
+  const allowed=new Set((launchRecipe()?.models||[]).map(m=>m.key));
+  launchState.selected=new Set([...launchState.selected].filter(k=>allowed.has(k)));
   launchModels();launchConditions();
 }
 async function openLaunch() {
+  if(launchState.busy)return;
   launchEl('launch-dialog').showModal();
-  launchState.preview=null;launchState.options=null;
+  launchState.preview=null;launchState.options=null;launchState.selected.clear();launchState.outcomes.clear();
   launchEl('launch-form').hidden=false;launchEl('launch-review').hidden=true;
   launchEl('launch-loading').hidden=false;launchEl('review-launch').disabled=true;
-  launchError('');
+  launchEl('launch-recipe').innerHTML='';launchEl('model-options').innerHTML='';
+  launchEl('selected-models').innerHTML='';launchEl('model-picker-count').textContent='Choose models';
+  launchEl('model-search').value='';pickerOpen(false);launchError('');
   try {
     const response=await fetch('/api/launch/options',{cache:'no-store',signal:AbortSignal.timeout(120000)});
     const options=await response.json();
     if(!response.ok)throw new Error(options.error||'Could not load benchmark options.');
     launchState.options=options;
-    launchEl('launch-recipe').innerHTML=options.recipes.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.recipe_id.replace('participant-','Participant ').replaceAll('-',' '))+'</option>').join('');
+    launchEl('launch-recipe').innerHTML=options.recipes.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.title||recipeName(r.recipe_id))+'</option>').join('');
     const current=board();
-    const match=options.recipes.find(r=>r.id===current?.id)||
-      options.recipes.find(r=>r.recipe_id===current?.recipe);
+    const match=options.recipes.find(r=>r.id===current?.id)||options.recipes.find(r=>r.recipe_id===current?.recipe);
     if(match)launchEl('launch-recipe').value=match.id;
     chooseRecipe();
-    launchEl('review-launch').disabled=!options.enabled||!options.recipes.length;
     if(options.blocker)launchError(options.blocker);
+    else if(options.warnings?.length)launchError(options.warnings.join(' '));
   } catch(error) {launchError(error.message);}
   finally {launchEl('launch-loading').hidden=true;}
 }
@@ -55,37 +83,61 @@ async function launchPost(path,payload) {
   if(!response.ok)throw new Error(result.error||'The request could not be completed.');
   return result;
 }
+function renderReview() {
+  const previews=launchState.preview||[],first=previews[0];
+  if(!first)return;
+  launchEl('launch-review-summary').innerHTML='<h3>'+previews.length+' benchmark'+(previews.length===1?'':'s')+'</h3>'+
+    '<p>'+esc(first.recipe_title||recipeName(first.recipe_id))+'</p>'+
+    '<div class="review-models">'+previews.map(p=>{
+      const outcome=launchState.outcomes.get(p.id);
+      return '<div class="review-model">'+modelLogo(p.lab,'')+'<div><strong>'+esc(p.model_name||p.model)+'</strong>'+
+        '<p class="small muted">'+esc(p.brain)+' · '+esc(outcome?.error||outcome?.label||'Ready to start')+'</p></div></div>';
+    }).join('')+'</div><dl><div><dt>Population</dt><dd>'+first.defaults.agents+' agents per run</dd></div><div><dt>Duration</dt><dd>'+first.defaults.ticks+' ticks per seed</dd></div><div><dt>Required seeds</dt><dd>'+esc(first.seeds.join(', '))+'</dd></div><div><dt>Model reasoning</dt><dd>'+esc(first.defaults.reasoning_effort)+'</dd></div><div><dt>Each supervisor</dt><dd>GPT-6 Astra · Low</dd></div></dl>';
+  const pending=previews.filter(p=>!launchState.outcomes.get(p.id)?.ok).length;
+  launchEl('confirm-launch').textContent=launchState.outcomes.size?'Retry remaining ('+pending+')':'Start '+previews.length+' benchmark'+(previews.length===1?'':'s');
+}
 async function reviewLaunch(event) {
-  event.preventDefault();if(launchState.busy)return;
-  launchState.busy=true;launchEl('review-launch').disabled=true;launchError('');
+  event.preventDefault();if(launchState.busy||!launchState.selected.size)return;
+  if(launchState.selected.size>20){launchError('Select up to 20 models per batch.');return;}
+  launchState.busy=true;updateSelected();launchError('');pickerOpen(false);
+  launchEl('launch-recipe').disabled=true;launchEl('model-picker-toggle').disabled=true;
+  const recipe=launchEl('launch-recipe').value,keys=[...launchState.selected];
   try {
-    const preview=await launchPost('/api/launch/preview',{
-      recipe:launchEl('launch-recipe').value,brain:launchEl('launch-brain').value,
-      model:launchEl('launch-model').value.trim()});
-    launchState.preview=preview;
-    launchEl('launch-review-summary').innerHTML='<h3>'+esc(preview.model)+'</h3><p>'+esc(preview.recipe_id.replace('participant-','Participant '))+' · '+esc(preview.brain)+'</p><dl><div><dt>Population</dt><dd>'+preview.defaults.agents+' agents</dd></div><div><dt>Duration</dt><dd>'+preview.defaults.ticks+' ticks per seed</dd></div><div><dt>Required seeds</dt><dd>'+esc(preview.seeds.join(', '))+'</dd></div><div><dt>Model reasoning</dt><dd>'+esc(preview.defaults.reasoning_effort)+'</dd></div><div><dt>Supervisor</dt><dd>GPT-6 Astra · Low</dd></div></dl>';
+    const previews=[];
+    for(const key of keys){
+      launchEl('review-launch').textContent='Reviewing '+(previews.length+1)+' of '+keys.length+'…';
+      previews.push(await launchPost('/api/launch/preview',{recipe,model_key:key}));
+    }
+    launchState.preview=previews;launchState.outcomes.clear();renderReview();
     launchEl('launch-form').hidden=true;launchEl('launch-review').hidden=false;
-    launchEl('confirm-launch').focus();
+    launchEl('edit-launch').disabled=false;launchEl('confirm-launch').focus();
   } catch(error) {launchError(error.message);}
-  finally {launchState.busy=false;launchEl('review-launch').disabled=false;}
+  finally {
+    launchState.busy=false;launchEl('launch-recipe').disabled=false;launchEl('model-picker-toggle').disabled=false;updateSelected();
+  }
 }
 async function confirmLaunch() {
   if(launchState.busy||!launchState.preview)return;
-  launchState.busy=true;launchEl('confirm-launch').disabled=true;launchError('');
+  launchState.busy=true;launchEl('confirm-launch').disabled=true;launchEl('edit-launch').disabled=true;launchError('');
   try {
-    const request=await launchPost('/api/launch/start',{request_id:launchState.preview.id});
-    launchEl('launch-dialog').close();
-    const current=data?.launches||[];
-    renderLaunches([request,...current.filter(r=>r.id!==request.id)]);
+    for(const preview of launchState.preview){
+      if(launchState.outcomes.get(preview.id)?.ok)continue;
+      try{
+        const request=await launchPost('/api/launch/start',{request_id:preview.id});
+        launchState.outcomes.set(preview.id,{ok:true,label:request.state==='needs_attention'?'Needs attention — see activity':'Requested'});
+      }catch(error){launchState.outcomes.set(preview.id,{ok:false,error:error.message});}
+      renderReview();
+    }
+    const failed=launchState.preview.some(p=>!launchState.outcomes.get(p.id)?.ok);
+    if(failed)launchError('Some runs could not start. Retry uses the same reviewed requests; successful launches are skipped. Close and reopen to make a new selection if a review has expired.');
+    else launchEl('launch-dialog').close();
     refresh();
-  } catch(error) {
-    launchError(error.message+' You can retry this same reviewed request without creating a duplicate run.');
   } finally {launchState.busy=false;launchEl('confirm-launch').disabled=false;}
 }
 function renderLaunches(requests=[]) {
   launchEl('launch-history').hidden=!requests.length;
   launchEl('launch-history-list').innerHTML=requests.map(r=>
-    '<article class="launch-entry"><div class="study-head"><span>'+esc(r.model)+'</span><span class="badge">'+esc(({queued:'Queued',launching:'Starting',supervising:'In progress',completed:'Complete',needs_attention:'Needs attention'})[r.state]||r.state)+'</span></div><p class="small muted">'+esc(r.recipe_id.replace('participant-','Participant '))+' · '+esc(r.brain)+'</p><p class="supervisor-label"><span class="dot"></span> Astra · Low <span class="muted">/ '+esc((r.supervisor_state||'pending').replaceAll('_',' '))+'</span></p>'+
+    '<article class="launch-entry"><div class="study-head"><span>'+esc(r.model_name||r.model)+'</span><span class="badge">'+esc(({queued:'Queued',launching:'Starting',supervising:'In progress',completed:'Complete',needs_attention:'Needs attention'})[r.state]||r.state)+'</span></div><p class="small muted">'+esc(r.recipe_title||recipeName(r.recipe_id))+' · '+esc(r.brain)+'</p><p class="supervisor-label"><span class="dot"></span> Astra · Low <span class="muted">/ '+esc((r.supervisor_state||'pending').replaceAll('_',' '))+'</span></p>'+
     (r.error?'<p class="attention">'+esc(r.error)+'</p>':'')+
     (r.can_reconnect?'<button class="secondary-button reconnect-supervisor" data-request="'+esc(r.id)+'">Reconnect supervisor</button>':'')+
     (r.supervisor_message?'<details><summary>Supervisor notes</summary><p class="supervisor-note">'+esc(r.supervisor_message)+'</p></details>':'')+
@@ -98,18 +150,25 @@ function renderLaunches(requests=[]) {
         if(!response.ok)throw new Error('Cannot connect to the launcher.');
         launchState.options=await response.json();
       }
-      await launchPost('/api/launch/reconnect',{request_id:button.dataset.request});
-      refresh();
+      await launchPost('/api/launch/reconnect',{request_id:button.dataset.request});refresh();
     } catch(error) {button.textContent=error.message;}
     finally{button.disabled=false;}
   });
 }
 launchEl('new-benchmark').onclick=openLaunch;
 launchEl('close-launch').onclick=()=>{if(!launchState.busy)launchEl('launch-dialog').close();};
+launchEl('launch-dialog').addEventListener('cancel',event=>{
+  if(launchState.busy){event.preventDefault();return;}
+  if(!launchEl('model-picker-panel').hidden){event.preventDefault();pickerOpen(false);launchEl('model-picker-toggle').focus();}
+});
+launchEl('model-picker-toggle').onclick=()=>pickerOpen(launchEl('model-picker-panel').hidden);
+launchEl('model-search').oninput=launchModels;
+launchEl('model-search').onkeydown=event=>{if(event.key==='Enter')event.preventDefault();};
+launchEl('launch-dialog').addEventListener('click',event=>{if(!event.target.closest('.model-picker'))pickerOpen(false);});
 launchEl('launch-recipe').onchange=chooseRecipe;
-launchEl('launch-brain').onchange=launchModels;
 launchEl('launch-form').onsubmit=reviewLaunch;
 launchEl('confirm-launch').onclick=confirmLaunch;
 launchEl('edit-launch').onclick=()=>{
+  if(launchState.busy||launchState.outcomes.size)return;
   launchState.preview=null;launchEl('launch-form').hidden=false;launchEl('launch-review').hidden=true;launchError('');
 };

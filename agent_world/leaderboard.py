@@ -106,7 +106,7 @@ def stamp() -> str:
 
 
 def board_title(recipe: str) -> str:
-    return recipe.replace("participant-", "").replace("-", " ").replace("revised", "Revised")
+    return "v8.1" if recipe == "participant-v8-revised" else recipe.replace("participant-", "").replace("-", " ")
 
 
 def new_board(recipe: str, digest: str = "") -> dict:

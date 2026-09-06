@@ -36,17 +36,24 @@
 <dialog id="launch-dialog" aria-labelledby="launch-title">
 <button id="close-launch" class="icon-button close" aria-label="Close launch form">×</button>
 <p class="eyebrow">NEW BENCHMARK</p><h2 id="launch-title" class="detail-title">Add to the field.</h2>
-<p class="muted small">Choose a model. The recipe supplies the world, population, seeds, and reasoning settings.</p>
+<p class="muted small">Choose your models. The recipe supplies the world, population, seeds, and reasoning settings.</p>
 <p id="launch-loading" class="small">Checking recipes and Astra availability…</p>
 <div id="launch-error" class="attention" role="alert" hidden></div>
 <form id="launch-form">
 <label>Benchmark recipe<select id="launch-recipe" required></select></label>
-<label>Model connector<select id="launch-brain" required></select></label>
-<label>Exact model ID<input id="launch-model" list="launch-models" placeholder="e.g. gpt-5.6-sol" required maxlength="128" autocomplete="off"></label>
-<datalist id="launch-models"></datalist>
+<div class="model-picker">
+<span id="model-picker-label">Models</span>
+<button id="model-picker-toggle" class="model-picker-toggle" type="button" aria-expanded="false" aria-controls="model-picker-panel" aria-labelledby="model-picker-label model-picker-count"><span id="model-picker-count">Choose models</span><span class="select-chevron" aria-hidden="true"></span></button>
+<div id="model-picker-panel" class="model-picker-panel" hidden>
+<input id="model-search" type="search" placeholder="Search models or labs…" aria-label="Search model catalog" autocomplete="off">
+<div id="model-options" class="model-options" role="group" aria-label="Available models"></div>
+</div>
+<div id="selected-models" class="selected-models" aria-live="polite"></div>
+<p class="small muted">Select one or more models. Connectors are chosen automatically.</p>
+</div>
 <p id="launch-conditions" class="small muted"></p>
 <p class="supervisor-label"><span class="dot"></span> GPT-6 Astra · Low-effort supervisor</p>
-<button id="review-launch" class="primary-button" type="submit" disabled>Review benchmark →</button>
+<button id="review-launch" class="primary-button" type="submit" disabled>Review benchmarks →</button>
 </form>
 <div id="launch-review" hidden>
 <div id="launch-review-summary"></div>

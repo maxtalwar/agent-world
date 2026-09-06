@@ -17,8 +17,10 @@ import threading
 import time
 
 try:
+    from .leaderboard_models import model_catalog, for_recipe, recipe_label
     from .leaderboard_supervisor import AstraClient, SupervisorError, MODEL, EFFORT
 except ImportError:
+    from leaderboard_models import model_catalog, for_recipe, recipe_label
     from leaderboard_supervisor import AstraClient, SupervisorError, MODEL, EFFORT
 
 ACTIVE = {"queued", "launching", "supervising"}
@@ -152,6 +154,7 @@ class LaunchService:
             if force or self.cache is None or time.monotonic() > self.cache_until:
                 sources = self.sources()
                 blocker = None
+                models, warnings = [], []
                 binary = self.settings.get("supervisor_binary")
                 if not self.settings.get("launch_enabled"):
                     blocker = "Benchmark launches have not been enabled on this host."
@@ -164,12 +167,15 @@ class LaunchService:
                     try:
                         client = AstraClient(binary, self.root)
                         client.verify()
+                        models, warnings = model_catalog(sources, client, env())
                     except (OSError, RuntimeError) as exc:
                         blocker = str(exc)
                     finally:
                         if client:
                             client.close()
-                self.cache = {"sources": sources, "blocker": blocker}
+                if not models:
+                    models, warnings = model_catalog(sources, environment=env())
+                self.cache = {"sources": sources, "blocker": blocker, "models": models, "warnings": warnings}
                 self.cache_until = time.monotonic() + 60
             return self.cache
 
@@ -178,7 +184,11 @@ class LaunchService:
         return {
             "enabled": not c["blocker"], "blocker": c["blocker"],
             "supervisor": {"model": MODEL, "effort": EFFORT},
-            "recipes": [{k: v for k, v in s.items() if k != "source"}
+            "warnings": c.get("warnings", []),
+            "recipes": [{**{k: v for k, v in s.items() if k not in {"source", "models"}},
+                         "title": recipe_label(s["recipe_id"]),
+                         "models": [{k: v for k, v in m.items() if k not in {"model", "variants", "efforts"}}
+                                    for m in for_recipe(c.get("models", []), s)]}
                         for s in c["sources"].values()],
         }
 
@@ -204,7 +214,7 @@ class LaunchService:
         request = {**request, "can_reconnect": request.get("state") == "needs_attention" and
                    (self.root / "runs/jobs" / request["run_id"] / "job.json").exists()}
         return {k: v for k, v in request.items() if k in {
-            "id", "run_id", "state", "recipe_id", "model", "brain", "seeds", "defaults",
+            "id", "run_id", "state", "recipe_id", "recipe_title", "model", "model_name", "lab", "brain", "seeds", "defaults",
             "commit", "created_at", "updated_at", "error", "supervisor_thread_id",
             "supervisor_state", "supervisor_message", "supervisor_model", "supervisor_effort", "can_reconnect",
         }}
@@ -252,6 +262,17 @@ class LaunchService:
         return target
 
     def preview(self, values):
+        selected = None
+        if set(values) == {"recipe", "model_key"}:
+            catalog = self.catalog()
+            source = catalog["sources"].get(values["recipe"])
+            if not source:
+                raise LaunchError("This recipe has no clean retained launch source")
+            selected = next((m for m in for_recipe(catalog.get("models", []), source)
+                             if m["key"] == values["model_key"]), None)
+            if not selected:
+                raise LaunchError("This model is unavailable for the selected recipe. Refresh the catalog.")
+            values = {"recipe": values["recipe"], "brain": selected["brain"], "model": selected["model"]}
         if set(values) != {"recipe", "brain", "model"}:
             raise LaunchError("Choose a recipe, connector, and exact model ID")
         catalog = self.catalog()
@@ -293,7 +314,9 @@ class LaunchService:
         request = {
             "run_id": run_id, "recipe_id": source["recipe_id"], "recipe_key": source["id"],
             "digest": source["digest"], "source": source["source"], "origin_source": origin_source, "commit": source["commit"],
-            "brain": brain, "model": model, "seeds": source["seeds"], "defaults": source["defaults"],
+            "brain": brain, "model": model, "model_name": selected["name"] if selected else model,
+            "lab": selected["lab"] if selected else "unknown", "recipe_title": recipe_label(source["recipe_id"]),
+            "seeds": source["seeds"], "defaults": source["defaults"],
             "config_path": str(config_path), "config_hash": hashlib.sha256(config_path.read_bytes()).hexdigest(),
             "created_at": now(), "updated_at": now(), "supervisor_model": MODEL,
             "supervisor_effort": EFFORT, "supervisor_state": "pending",
