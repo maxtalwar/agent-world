@@ -1,7 +1,7 @@
-"""Read-only, automatically refreshed leaderboards for local and Tailscale use.
+"""Automatically refreshed leaderboards and fixed-recipe benchmark launches.
 
 Run with python -m agent_world.leaderboard --root /path/to/agent-world.
-No simulation controls, raw transcripts, filesystem browser, or write endpoints.
+Benchmark launches require a reviewed configuration and same-origin page action.
 """
 from __future__ import annotations
 
@@ -12,12 +12,19 @@ import json
 import logging
 from pathlib import Path
 import re
+import secrets
+import socket
 import sqlite3
 import subprocess
 import sys
 import threading
 import time
 from urllib.parse import urlsplit
+
+try:
+    from .leaderboard_launch import LaunchService, LaunchError
+except ImportError:
+    from leaderboard_launch import LaunchService, LaunchError
 
 LOG = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
@@ -367,15 +374,82 @@ class LeaderboardStore:
             return self.payload
 
 
-def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091) -> ThreadingHTTPServer:
+def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_service=None) -> ThreadingHTTPServer:
     store = LeaderboardStore(root)
+    launches = launch_service or LaunchService(root)
+    csrf_token = secrets.token_urlsafe(32)
+    allowed_hosts = {"127.0.0.1", "localhost", "::1", socket.gethostname().lower()}
+    allowed_hosts.update(h.lower() for h in launches.settings.get("allowed_hosts", []))
+    if launches.settings.get("launch_enabled"):
+        threading.Thread(target=launches.recovery_loop, daemon=True).start()
 
     class Handler(BaseHTTPRequestHandler):
+        def json_response(self, value, status=200):
+            body = json.dumps(value, allow_nan=False).encode()
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.end_headers()
+            self.wfile.write(body)
+
+        def trusted_host(self):
+            try:
+                return urlsplit("//" + self.headers.get("Host", "")).hostname in allowed_hosts
+            except ValueError:
+                return False
+
+        def do_POST(self):
+            path = urlsplit(self.path).path
+            if path not in {"/api/launch/preview", "/api/launch/start", "/api/launch/reconnect"}:
+                self.send_error(404)
+                return
+            origin = urlsplit(self.headers.get("Origin", ""))
+            if (not self.trusted_host() or origin.scheme not in {"http", "https"}
+                    or origin.netloc.lower() != self.headers.get("Host", "").lower()
+                    or self.headers.get("Sec-Fetch-Site") == "cross-site"
+                    or not secrets.compare_digest(self.headers.get("X-Leaderboard-Token", ""), csrf_token)):
+                self.json_response({"error": "Launch requests must come from this leaderboard page."}, 403)
+                return
+            if self.headers.get_content_type() != "application/json":
+                self.json_response({"error": "Expected a JSON launch request."}, 415)
+                return
+            try:
+                length = int(self.headers.get("Content-Length", "0"))
+                if not 0 < length <= 4096:
+                    raise LaunchError("Invalid launch request size")
+                values = json.loads(self.rfile.read(length))
+                if not isinstance(values, dict):
+                    raise LaunchError("Expected a launch request object")
+                if path.endswith("/preview"):
+                    result = launches.preview(values)
+                elif path.endswith("/reconnect"):
+                    result = launches.reconnect(values)
+                else:
+                    result = launches.start(values)
+                self.json_response(result, 200 if path.endswith("/preview") else 202)
+            except (LaunchError, ValueError, TypeError) as exc:
+                self.json_response({"error": str(exc)}, 400)
+            except Exception:
+                LOG.exception("Benchmark launch request failed")
+                self.json_response({"error": "Launch could not be completed. Check the recorded request state before retrying."}, 503)
+
         def do_GET(self):
             path = urlsplit(self.path).path
+            if path == "/api/launch/options":
+                if not self.trusted_host():
+                    self.json_response({"error": "Unrecognized leaderboard hostname"}, 403)
+                    return
+                try:
+                    self.json_response({**launches.public_options(), "token": csrf_token})
+                except Exception:
+                    LOG.exception("Launch options unavailable")
+                    self.json_response({"error": "Launch options are temporarily unavailable"}, 503)
+                return
             if path == "/api/leaderboards":
                 try:
-                    body = json.dumps(store.get(), allow_nan=False).encode()
+                    body = json.dumps({**store.get(), "launches": launches.recent()}, allow_nan=False).encode()
                 except Exception:
                     LOG.exception("Leaderboard request failed")
                     self.send_error(503, "Leaderboard data temporarily unavailable")
@@ -383,7 +457,7 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091) -> Thread
                 content_type = "application/json"
             elif path == "/healthz":
                 body, content_type = b'{"ok":true}', "application/json"
-            elif path in {"/", "/leaderboard.js", "/leaderboard.css", "/inter-latin.woff2"} | {
+            elif path in {"/", "/leaderboard.js", "/leaderboard-launch.js", "/leaderboard.css", "/inter-latin.woff2"} | {
                 "/labs/" + lab + ".svg" for lab in (*LABS, "unknown")
             }:
                 filenames = {"/": "leaderboard.html"}

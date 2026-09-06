@@ -35,7 +35,7 @@ function render() {
   $('table-note').textContent='Select a model for evidence and seed details.';
   $('updated').textContent='Evidence updated '+relative(b.updated_at);
   $('methodology').innerHTML='<p>'+esc(b.method || 'Final reports are scored using their original recipe. Incomplete studies remain in the activity panel.')+'</p><p>Versions and recipe fingerprints are kept separate. New studies are ranked only when the original scorer accepts a complete set of required seeds. Rankings within different versions are not directly comparable.</p><p>Cost / run is a token-derived API-list-price equivalent, not a subscription charge. A dash means unavailable. Reasoning estimates are marked with ~.</p><p>Recipe: <code>'+esc(b.recipe)+'</code>'+(b.digest?' · Fingerprint: <code>'+esc(b.digest)+'</code>':'')+'</p>'+b.warnings.map(w=>'<p class="warning">'+esc(w)+'</p>').join('');
-  renderTable();renderActivity();
+  renderTable();renderActivity();if(typeof renderLaunches==='function')renderLaunches(data.launches||[]);
 }
 function renderTable() {
   const b=board(); if(!b)return;

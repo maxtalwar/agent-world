@@ -147,7 +147,7 @@ class LeaderboardTests(unittest.TestCase):
             self.assertEqual(exc.exception.code, 404)
         with self.assertRaises(HTTPError) as exc:
             urlopen(base + "/api/leaderboards", data=b"{}")
-        self.assertEqual(exc.exception.code, 501)
+        self.assertEqual(exc.exception.code, 404)
 
 
 if __name__ == "__main__":

@@ -16,8 +16,9 @@ The dashboard refreshes every 30 seconds while its tab is visible.
 - Controller progress, quota/attention states, and stale-heartbeat warnings.
   A heartbeat older than two minutes cannot present a nonterminal run as live.
 
-The dashboard does not run simulations, resume jobs, classify transfers, change
-certification policy, or write results into the canonical database. New managed
+The dashboard can start standard benchmarks through the managed interface and
+assign Astra supervision. It does not change certification policy or write
+results into the canonical database. New managed
 studies appear without a dashboard deployment. Admission to an established
 canonical pool still requires the normal source-catalog maintenance workflow.
 
@@ -41,8 +42,8 @@ No extra Python dependencies or JavaScript build step are required:
 python3 -m agent_world.leaderboard --root /path/to/agent-world --port 8091
 ```
 
-The server binds to loopback by default. The only routes are the dashboard's
-bundled assets, `/healthz`, and the read-only `/api/leaderboards` endpoint.
+The server binds to loopback by default. The server exposes bundled assets, `/healthz`, read-only leaderboard data,
+and protected benchmark review/start/supervisor-reconnection endpoints.
 Inter is served locally, with its OFL license in `agent_world/static/inter-OFL.txt`.
 
 ## Windows / WSL installation
@@ -78,3 +79,74 @@ node --check agent_world/static/leaderboard.js
 The tests cover canonical score parity, controlled variants, absent costs,
 partial/duplicate evidence, recipe separation, stale status, terminal-state
 precedence, refresh caching, path containment, and HTTP route restrictions.
+
+
+## Starting a benchmark from the page
+
+Choose **Start benchmark**, select the recipe and connector, and choose or enter
+the exact model ID. **Review benchmark** runs the existing managed CLI's
+`--dry-run` validation. The review shows the fixed population, horizon, required
+seeds, reasoning effort, and **GPT-6 Astra · Low** supervisor. Only the final
+**Start benchmark** action authorizes model-backed execution.
+
+The initial review itself makes no model calls. Connector authentication and
+target model callability are checked by the existing managed startup gate;
+unknown IDs are never silently mapped to similarly named models.
+
+Launch controls require the configured Tailscale/loopback hostname, a matching
+Origin, JSON content type, and a same-origin request token. No cross-origin
+launch API is exposed. The installer enables this feature in the machine-local
+`.local/leaderboard-settings.json` and records the Windows Codex binary that
+advertises Astra at low effort. If Astra is unavailable, launching is blocked.
+
+### Source and execution ownership
+
+The source chooser finds clean retained recipe checkouts. Review prepares an
+independent local source clone at `.local/leaderboard-sources/COMMIT`. Its
+`runs/jobs` and `runs/managed` paths point to the shared run registry; its local
+`.env` link uses the host's existing credentials without copying or publishing
+them. Historical managers derive their controller commit from their repository
+HEAD, so this clone pins both the launcher and controller to the reviewed
+commit even while another task changes the main checkout. All simulation cell
+worktrees and detached controllers still come from the normal managed launcher.
+The dry-run plan must confirm both exact commits.
+
+A transactional SQLite request queue under `.local/leaderboard-launches`
+persists each reviewed configuration and its hash. Reviews expire after ten
+minutes. Repeating the final submission returns the same request/run ID.
+Unfinished studies of the same model/connector/recipe prevent duplicate launches.
+
+A durable tmux worker assigns a persistent Astra task before invoking
+`python3 -m agent_world.cli run --config CONFIG`. It persists the supervisor
+task ID before launch and requires a successful low-effort Astra assignment
+turn before any benchmark model calls. Retries and app restarts inspect the existing job and
+resume the same supervisor; they do not issue another launch for that job.
+
+Astra runs through the local Codex App Server with explicit
+`model=gpt-6-astra`, `effort=low`, workspace-write sandboxing, and automatic
+approval review. The app never silently approves an unresolved client-side
+approval request. The deterministic run controller retains responsibility for
+healthy polling, startup gating, quota waits, checkpoint recovery, and
+finalization. The Astra task is awakened only for lifecycle changes, completion,
+or attention events—not changing ticks. Its notes and blockers appear under
+**Your benchmark runs**. **Reconnect supervisor** reattaches supervision to
+an existing run; it does not launch another study.
+
+General experiments and custom world configurations remain outside this form.
+Run interpretation and canonical catalog admission still follow the reporting
+workflow after the analysis-readiness gate.
+
+### Launch validation
+
+```sh
+python3 -m unittest discover -s tests -p 'test_leaderboard*.py' -v
+node --check agent_world/static/leaderboard-launch.js
+```
+
+Tests simulate the paid boundaries and verify fixed configurations,
+source/configuration tamper detection, repeated submissions, duplicate studies,
+CSRF/Origin checks, exact Astra settings, assignment-before-launch ordering,
+and recovery without relaunch. Deployment smoke checks use real recipe dry runs
+and the real Codex model catalog without starting a paid benchmark.
+
+Codex integration follows the [official App Server interface](https://developers.openai.com/codex/app-server/).

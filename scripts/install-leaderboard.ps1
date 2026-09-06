@@ -16,14 +16,25 @@ import shutil
 root = Path.cwd()
 target = root / ".local/leaderboard-app"
 (target / "static").mkdir(parents=True, exist_ok=True)
-shutil.copy2(root / "agent_world/leaderboard.py", target / "leaderboard.py")
+for module in ["leaderboard.py", "leaderboard_launch.py", "leaderboard_supervisor.py"]:
+    shutil.copy2(root / "agent_world" / module, target / module)
 shutil.copy2(root / "scripts/serve-leaderboard", target / "serve-leaderboard")
-for name in ["leaderboard.html", "leaderboard.css", "leaderboard.js", "inter-latin.woff2"]:
+for name in ["leaderboard.html", "leaderboard.css", "leaderboard.js", "leaderboard-launch.js", "inter-latin.woff2"]:
     shutil.copy2(root / "agent_world/static" / name, target / "static" / name)
 shutil.copytree(root / "agent_world/static/labs", target / "static/labs", dirs_exist_ok=True)
 '@
 & $wsl -d $Distribution --cd $Repository --exec python3 -c $install
 if ($LASTEXITCODE) { throw 'Could not install the leaderboard release.' }
+$supervisor = (Get-Command codex -ErrorAction Stop).Source
+$supervisorWsl = (& $wsl -d $Distribution --exec wslpath -u $supervisor).Trim()
+$tailnet = (& $tailscale status --json | ConvertFrom-Json)
+$settingsJson = @{
+    launch_enabled = $true
+    supervisor_binary = $supervisorWsl
+    allowed_hosts = @($tailnet.Self.DNSName.TrimEnd('.'), $tailnet.Self.HostName.ToLower())
+} | ConvertTo-Json -Compress
+$settingsJson | & $wsl -d $Distribution --cd $Repository --exec python3 -c "import sys,pathlib,json; v=json.load(sys.stdin); pathlib.Path('.local/leaderboard-settings.json').write_text(json.dumps(v))"
+if ($LASTEXITCODE) { throw 'Could not configure the benchmark launcher.' }
 $existing = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
 if ($existing) { Stop-ScheduledTask -TaskName $taskName }
 # Task Scheduler owns the foreground WSL process; it survives the Codex task.
