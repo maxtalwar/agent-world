@@ -22,6 +22,13 @@ agent-world run --config /tmp/my-run.json --dry-run
 agent-world run --config /tmp/my-run.json
 ```
 
+Preflight rejects existing job directories, existing output directories for any
+seed (including dangling symlinks), and file-valued output ancestors before
+starting any cell. Dry-run performs these destination checks without requiring
+local tmux; real launch also requires tmux before creating the job.
+Connector executables and authentication still require appropriate setup;
+dry-run does not call providers or prove live model availability.
+
 The real launch returns only after every immediately eligible cell and the job
 controller are alive. It is then safe to close the terminal. The manager writes
 `runs/jobs/RUN_ID/job.json`, one log per cell, controller heartbeat and event
@@ -139,7 +146,7 @@ Every config has these top-level fields:
 | `run_id` | Unique filesystem-safe identifier. It names the job, supervisors, cohorts, and default output directory. |
 | `kind` | `benchmark` or `experiment`. This is an evidence boundary, not just a label. |
 | `question` | Required for experiments; the concrete claim or harness behavior being tested. |
-| `protocol` | Benchmark only: any registered JSON recipe ID; new current-suite configs explicitly select participant-v8 (the omitted-protocol legacy default remains v7). Locks the selected recipe’s certification settings. |
+| `protocol` | Benchmark only: any registered JSON recipe ID; new current-suite configs explicitly select participant-v8-revised (the omitted-protocol legacy default remains v7). Locks the selected recipe’s certification settings. |
 | `recipe` | Optional experiment defaults from any registered JSON recipe. World, effort, population, horizon, and seeds remain overridable; this does not request certification. |
 | `model` | Provider boundary, callable model ID, reasoning effort, or an experimental mixed population. |
 | `seeds` | Cells to launch. Defaults to `[11, 41]` for a benchmark and `[11]` for an experiment. |

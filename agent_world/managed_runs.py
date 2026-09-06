@@ -640,11 +640,21 @@ def launch_config(path: Path, *, run_id: str | None = None, dry_run: bool = Fals
     config = load_run_config(path)
     root = _canonical_root()
     job = build_launch_plan(config, root, run_id=run_id)
+    job_dir = Path(job["job_dir"])
+    if job_dir.exists() or job_dir.is_symlink():
+        raise FileExistsError(f"Managed run already exists: {job_dir}")
+    # Validate every seed before any cell can consume provider usage.
+    for cell in job["cells"]:
+        destination = Path(cell["output_dir"])
+        if destination.exists() or destination.is_symlink():
+            raise FileExistsError(f"Run output already exists: {destination}")
+        for parent in destination.parents:
+            if parent.exists() and not parent.is_dir():
+                raise NotADirectoryError(f"Run output parent is not a directory: {parent}")
     if dry_run:
         return job
-    job_dir = Path(job["job_dir"])
-    if job_dir.exists():
-        raise FileExistsError(f"Managed run already exists: {job_dir}")
+    if shutil.which("tmux") is None:
+        raise RuntimeError("tmux is required for durable managed runs")
     job_dir.mkdir(parents=True)
     atomic_write_json(job_dir / "config.json", config)
     atomic_write_json(job_dir / "job.json", job)

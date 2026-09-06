@@ -378,3 +378,53 @@ class ManagedRunStatusTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ManagedLaunchPreflightTests(unittest.TestCase):
+    def test_later_seed_collision_prevents_any_launch_or_job_creation(self):
+        from agent_world.managed_runs import launch_config
+        for collision in ("directory", "dangling_symlink", "parent_file"):
+            with self.subTest(collision=collision), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                output = root / "outputs"
+                output.mkdir()
+                second = output / "seed-41"
+                expected = FileExistsError
+                if collision == "directory":
+                    second.mkdir()
+                elif collision == "dangling_symlink":
+                    second.symlink_to(root / "missing")
+                else:
+                    ancestor = output / "file"
+                    ancestor.write_text("owned data")
+                    second = ancestor / "seed-41"
+                    expected = NotADirectoryError
+                plan = {"job_dir": str(root / "job"), "cells": [
+                    {"output_dir": str(output / "seed-11")},
+                    {"output_dir": str(second)}]}
+                with patch("agent_world.managed_runs.load_run_config", return_value={}), \
+                     patch("agent_world.managed_runs._canonical_root", return_value=root), \
+                     patch("agent_world.managed_runs.build_launch_plan", return_value=plan), \
+                     patch("agent_world.managed_runs._launch_cell") as launch:
+                    for dry in (True, False):
+                        with self.assertRaises(expected):
+                            launch_config(root / "config.json", dry_run=dry)
+                    launch.assert_not_called()
+                self.assertFalse((root / "job").exists())
+                self.assertFalse((output / "seed-11").exists())
+
+    def test_missing_supervisor_fails_before_writes_but_allows_dry_run(self):
+        from agent_world.managed_runs import launch_config
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            plan = {"job_dir": str(root / "job"),
+                    "cells": [{"output_dir": str(root / "output")}]}
+            with patch("agent_world.managed_runs.load_run_config", return_value={}), \
+                 patch("agent_world.managed_runs._canonical_root", return_value=root), \
+                 patch("agent_world.managed_runs.build_launch_plan", return_value=plan), \
+                 patch("agent_world.managed_runs.shutil.which", return_value=None), \
+                 patch("agent_world.managed_runs._launch_cell") as launch:
+                self.assertEqual(launch_config(root / "config.json", dry_run=True), plan)
+                with self.assertRaisesRegex(RuntimeError, "tmux"):
+                    launch_config(root / "config.json")
+                launch.assert_not_called()
+            self.assertFalse((root / "job").exists())

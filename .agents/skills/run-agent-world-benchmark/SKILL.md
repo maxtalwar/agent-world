@@ -5,52 +5,41 @@ description: Launch, resume, monitor, finalize, or report status on standardized
 
 # Run Agent World Benchmark
 
-Run benchmark cells reproducibly and leave an analysis-ready evidence handoff. Do not turn the run thread into the model-performance analysis.
+Use for explicit benchmark, leaderboard, certification, or named-protocol requests.
+Ordinary simulations belong to run-agent-world-experiment; interpretation and
+admission of completed evidence belong to report-agent-world-runs.
 
-## Read the protocol first
+## Select the study
 
-Before taking run action, read `docs/benchmark-run-protocol.md` completely. It is the canonical operational procedure. Also read the current suite definition in `docs/model-benchmarks.md`; never infer the active protocol from an old command or directory name.
+Launch model-backed work only within the user's authorized scope. Resolve the
+exact model and connector; never silently substitute a model or effort.
 
-For launch, status, resume, and finalize syntax plus the config field reference, read
-`docs/run-quickstart.md`.
+For new benchmarks, consult docs/model-benchmarks.md for the current suite and
+explicitly select its recipe. Inspect it with python3 -m agent_world recipes
+RECIPE_ID. Honor an explicitly named older recipe. A requested single seed is
+provisional; otherwise use the recipe's required seeds. Worker count controls
+throughput, not eligibility. Apply AGENTS.md's usage policy.
 
-Follow `AGENTS.md` for repository-wide isolation, quota, validation, commit, push, and insight-journal rules.
+Preserve recipe and source identity on recovery. Keep changed conditions
+separate; do not relabel historical evidence.
 
-## Interpret the request
+## Operate and hand off
 
-- Only start or resume model-backed work when the user asks.
-- Require explicit benchmark intent. The words “run,” “test,” “try,” “smoke test,” or “experiment” alone do not authorize benchmark defaults; use `$run-agent-world-experiment` for those requests.
-- “Run the benchmark on MODEL” means the current standardized suite and its required seeds. At present that is Participant v8 on seeds 11 and 41. Always encode protocol: participant-v8 explicitly for new current-suite runs; protocol-omitting legacy APIs retain their historical default. If the user asks for one seed, mark the study provisional.
-- If the user names Participant v6, v7, v8, or another suite, use that suite's documented rules and required seed set. Protocol versions share this workflow; do not invent a separate procedure or silently substitute the current suite.
-- Do not ask the user to choose a world preset for a standardized benchmark. The named `--benchmark-protocol` owns and locks the preset and every behavior-defining setting. If the user requests a different preset or setting, classify the run as an experiment or controlled diagnostic rather than standard benchmark evidence.
-- Never treat worker count as a benchmark treatment or require it to match
-  across models, seeds, or resumes. `max_workers` and provider worker ceilings
-  only control how quickly independent decisions from one frozen tick are
-  collected; tune them to provider capacity without downgrading benchmark
-  status. Record the actual values for operations and failure diagnosis.
-  `sequential_decisions` remains a separate nonstandard debug mode.
-- Resolve and record the exact brain, provider, callable model ID, returned model identity, reasoning effort, billing mode, and connector before launch. Do not substitute a similarly named model.
-- Treat protocol changes, nonstandard seeds, mixed populations, alternate reasoning settings, or connector experiments as controlled or diagnostic variants, never as standard leaderboard evidence.
+Use python3 -m agent_world run --config CONFIG.json --dry-run, then the same
+command without --dry-run. Consult docs/run-quickstart.md when authoring configs
+or resolving syntax. The managed runner owns isolation, supervision, startup
+release, recovery, quota waits and finalization.
 
-## Execute the state machine
+Inspect status on request or meaningful events, not ticks. Arrange follow-up
+using the user's monitoring preferences; remove verified completed studies
+from its worklist and stop when none remain. Do not duplicate controller work.
 
-1. **Preflight:** inspect the current protocol, provider/model availability, clean launch commit, study manifest, unique cohort IDs, output paths, and required environment without exposing secrets.
-2. **Launch:** encode the study in a benchmark config and run `agent-world run --config CONFIG.json`. The manager pins every seed to the same clean commit, assigns distinct cohorts, and starts durable detached supervisors. Never put the run itself in a temporary command/PTTY session. Do not manually create run worktrees during the standard path.
-3. **Health gate:** let the harness run unattended through tick 5. Check the recorded startup gate once; do not manually poll every tick or duplicate the harness check.
-4. **Monitor by event:** after the gate passes, inspect only meaningful transitions: startup failure, quota wait, checkpoint pause, process exit, completion, or a user status request. Remain responsible for every cell launched by the task until it reaches a terminal or explicit waiting state; arrange the task's next check around process completion rather than abandoning a background run after the tick-5 gate.
-5. **Resume safely:** a quota limit is a waiting state. Keep the world frozen at a completed tick, wait up to the configured allowance, and use `agent-world resume RUN_ID` when explicit resumption is needed. It reuses the same checkpoint, cohort, and launch commit. Never restart to evade a limit and never turn failed provider calls into agent `wait` actions.
-6. **Completion check-in:** when a run process exits or completion is first observed, proactively return to that cell before reporting it done. Run `agent-world finalize RUN_ID`; verify the terminal tick and event, expected decision count, full usage coverage, clean integrity, exact model provenance, report protocol/fingerprint, and required artifacts. Finalize a completed seed immediately even if another seed is still waiting. Process exit or reaching the target tick alone is not a completed benchmark handoff.
-7. **Finalize accounting:** derive public API-list cost independently from recorded token usage and a dated provider rate card. Preserve provider- or CLI-reported subscription cost only as a separately labelled field.
-8. **Finalize transfers during that check-in:** for Participant v7/v8, verify deterministic agent-declared `gift`, `payment`, and `barter` accounting and do not invoke an LLM classifier. For Participant v6 ledgers, apply the frozen post-run gift-classification procedure exactly once when gifts exist; validate complete coverage, hashes, and evidence quotes, then regenerate the report from the frozen artifact. Never overwrite a valid frozen artifact. Record `none_no_gifts` when no gifts exist. Do not leave classification for the analysis task to discover or perform.
-9. **Handoff:** only after cost and transfer finalization, write the study manifest's `analysis_readiness` block using the contract in `docs/benchmark-run-protocol.md`. A completed simulation is not analysis-ready—and must not be reported simply as “done”—until this gate passes.
+Read the relevant section of docs/benchmark-run-protocol.md for attention or
+finalization blockers. A quota wait preserves the world; it is not a reason
+to restart. Recover the existing study only after resolving its blocker.
 
-## Preserve evidence boundaries
-
-- Keep worktrees and checkpoints until analysis is complete.
-- Do not silently repair provenance, integrity, transfer accounting, or cost evidence merely to make a run leaderboard-eligible. Mark the exact blocker and retain the evidence.
-- Do not admit a result to the catalog or leaderboard from the run workflow. Durable admission and completed-run interpretation belong to `$report-agent-world-runs` after the readiness gate.
-- Report status with artifacts and state: completed seeds, waiting seeds, last completed tick, stop reason, quota deadline, launch commit, integrity, transfer-finalization mode, cost status, and readiness status.
-
-## Finish repository work
-
-Validate any changed code or metadata, append `docs/insights.md` only for a genuine evidence-backed surprise, then make a scoped commit and push it. Never commit secrets or populated environment files.
+Report readiness from the job manifest, not elapsed time or process exit.
+Include remaining seeds/blockers and artifact location. Readiness requires
+completion, integrity, usage, provenance and recipe-specific accounting.
+Hand ready evidence to report-agent-world-runs; this workflow does not admit
+leaderboard results. Follow AGENTS.md for repository changes.

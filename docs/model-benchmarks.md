@@ -1,12 +1,12 @@
 # Agent World model benchmarks
 
-Participant v8 is the current suite for new benchmark requests. Always select
-`protocol: participant-v8` explicitly in managed configs. Historical APIs that
+Revised Participant v8 is the current suite for new benchmark requests. Always select
+`protocol: participant-v8-revised` explicitly in managed configs. Historical APIs that
 omit a protocol retain their v7 default for compatibility; they do not select
 the current leaderboard. V6 and v7 remain independently selectable.
 
 The immutable recipe is
-[participant-v8.json](../agent_world/recipes/participant-v8.json).
+[participant-v8-revised.json](../agent_world/recipes/participant-v8-revised.json).
 The [benchmark run protocol](benchmark-run-protocol.md) governs execution,
 quota waits, provenance, and finalization. The recipe and its source commit
 travel with every run and checkpoint.
@@ -42,8 +42,8 @@ The current native-Max-only ZCode boundary remains such an exception.
 
 | Column | Definition |
 |---|---|
-| Capability | Geometric mean of mean original-population health across all 60 ticks and across final ticks 49–60 |
-| Execution | Percentage of resolved decisions with a valid output contract and no invalid action/message proposals; contention excluded |
+| Capability | Mean health across the original population and all 60 completed ticks, equally weighted |
+| Execution | Percentage of submitted non-contention actions/messages that succeed; unexecuted proposals earn no credit |
 | Production | Gross productive value added, at frozen accounting values, per 100 original-population agent-ticks |
 | Cost/run | Mean token-derived API-list equivalent per world, including recorded retries; distinct from subscription charges |
 | Mean time/decision | Sum of recorded call/attempt durations per resolved decision, then pooled by decision count; excludes between-call quota waits |
@@ -56,8 +56,8 @@ Dead agents remain in the original-population denominators for capability and
 production. Production is independent of health, execution, trade volume, and
 positive terminal wealth growth. No composite combines the three scores.
 
-[Capability and execution](v8-capability-execution.md) document their evidence
-requirements. [Production scoring](v8-production.md) defines event accounting,
+[Revised Capability and Execution](v8-revised.md) define the current rules;
+[per-action evidence](v8-action-review.md) documents execution telemetry. [Production scoring](v8-production.md) defines event accounting,
 counterexamples, limitations, and validation. Missing evidence yields unavailable
 scores and blocks certification; provider refusals are not fabricated behavior.
 
@@ -89,3 +89,6 @@ The [v6 leaderboard](model-leaderboard-v6.md),
 [historical v6/v7 definitions](model-benchmarks-v7.md) remain available.
 Their formulas and evidence are unchanged. Historical 50-tick runs and offline
 counterfactual scores are not v8 benchmark results.
+
+Original participant-v8 and participant-v8-action-review remain selectable,
+immutable historical recipes. Their results are not pooled with revised v8.
