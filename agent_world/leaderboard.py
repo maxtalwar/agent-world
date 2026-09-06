@@ -402,7 +402,7 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_se
 
         def do_POST(self):
             path = urlsplit(self.path).path
-            if path not in {"/api/launch/preview", "/api/launch/start", "/api/launch/reconnect"}:
+            if path not in {"/api/launch/preview", "/api/launch/start", "/api/launch/start-batch", "/api/launch/reconnect"}:
                 self.send_error(404)
                 return
             origin = urlsplit(self.headers.get("Origin", ""))
@@ -424,6 +424,8 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_se
                     raise LaunchError("Expected a launch request object")
                 if path.endswith("/preview"):
                     result = launches.preview(values)
+                elif path.endswith("/start-batch"):
+                    result = launches.start_batch(values)
                 elif path.endswith("/reconnect"):
                     result = launches.reconnect(values)
                 else:

@@ -9,7 +9,7 @@ const element=id=>{
   return elements.get(id);
 };
 const context=vm.createContext({document:{getElementById:element},Set,Map,AbortSignal,
-  esc:s=>String(s),refresh(){},board(){return null},relative:s=>s});
+  data:{boards:[{runs:[{id:'visible-run'}]}]},esc:s=>String(s),refresh(){},board(){return null},relative:s=>s});
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../agent_world/static/leaderboard-launch.js'),'utf8'),context);
 (async()=>{
   await vm.runInContext(`(async()=>{
@@ -17,20 +17,20 @@ vm.runInContext(fs.readFileSync(path.join(__dirname,'../agent_world/static/leade
     renderReview=()=>{};
     globalThis.calls=[];globalThis.fail=true;
     launchPost=async(path,payload)=>{
-      calls.push(payload.request_id);
-      if(payload.request_id==='second'&&fail)throw new Error('Temporary failure');
-      return {state:'queued'};
+      calls.push([...payload.request_ids]);
+      return {results:payload.request_ids.map(id=>id==='second'&&fail?
+        {id,error:'Temporary failure'}:{id,request:{state:'queued'}})};
     };
     await confirmLaunch();
   })()`,context);
-  assert.deepEqual(Array.from(context.calls),['first','second']);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.calls)),[['first','second']]);
   assert.equal(element('launch-dialog').closed,undefined);
   assert.match(element('launch-error').textContent,/Some runs could not start/);
   await vm.runInContext('fail=false;confirmLaunch()',context);
-  assert.deepEqual(Array.from(context.calls),['first','second','second']);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.calls)),[['first','second'],['second']]);
   assert.equal(element('launch-dialog').closed,true);
   await vm.runInContext('confirmLaunch()',context);
-  assert.deepEqual(Array.from(context.calls),['first','second','second']);
+  assert.deepEqual(JSON.parse(JSON.stringify(context.calls)),[['first','second'],['second']]);
   vm.runInContext(`
     launchState.options={enabled:true,recipes:[{id:'v8',models:[{key:'astra'},{key:'gemini'}]},
       {id:'v6',models:[{key:'astra'}]}]};
@@ -39,5 +39,7 @@ vm.runInContext(fs.readFileSync(path.join(__dirname,'../agent_world/static/leade
     launchModels=()=>{};launchConditions=()=>{};chooseRecipe();
   `,context);
   assert.deepEqual(Array.from(vm.runInContext('[...launchState.selected]',context)),['astra']);
-  console.log('Batch retries and recipe selection passed');
+  vm.runInContext("renderLaunches([{run_id:'visible-run'}])",context);
+  assert.equal(element('launch-history').hidden,true);
+  console.log('Batch retries, recipe selection and duplicate-card suppression passed');
 })().catch(error=>{console.error(error);process.exitCode=1});

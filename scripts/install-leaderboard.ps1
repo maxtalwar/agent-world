@@ -28,8 +28,10 @@ if ($LASTEXITCODE) { throw 'Could not install the leaderboard release.' }
 $supervisor = (Get-Command codex -ErrorAction Stop).Source
 $supervisorWsl = (& $wsl -d $Distribution --exec wslpath -u $supervisor).Trim()
 $tailnet = (& $tailscale status --json | ConvertFrom-Json)
+$existingSettings = (& $wsl -d $Distribution --cd $Repository --exec python3 -c "import json,pathlib; p=pathlib.Path('.local/leaderboard-settings.json'); print(p.read_text() if p.exists() else '{}')") | ConvertFrom-Json
 $settingsJson = @{
     launch_enabled = $true
+    monitor_thread_id = $existingSettings.monitor_thread_id
     supervisor_binary = $supervisorWsl
     allowed_hosts = @($tailnet.Self.DNSName.TrimEnd('.'), $tailnet.Self.HostName.ToLower())
 } | ConvertTo-Json -Compress

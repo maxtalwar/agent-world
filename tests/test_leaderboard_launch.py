@@ -10,7 +10,7 @@ from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 
 from agent_world.leaderboard import make_server
-from agent_world.leaderboard_launch import LaunchService, LaunchError, event_signature, worker
+from agent_world.leaderboard_launch import LaunchService, LaunchError, dispatch_once
 from agent_world.leaderboard_supervisor import AstraClient, MODEL, EFFORT
 
 
@@ -19,7 +19,7 @@ class LaunchTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
-        self.service = LaunchService(self.root, settings={"supervisor_binary": "/fake/codex"})
+        self.service = LaunchService(self.root, settings={"supervisor_binary": "/fake/codex", "monitor_thread_id": "shared-monitor"})
         self.identifier = "a" * 32
         folder = self.service.folder / self.identifier
         folder.mkdir()
@@ -76,22 +76,13 @@ class LaunchTests(unittest.TestCase):
             with self.assertRaisesRegex(LaunchError, "source changed"):
                 self.service.validate_source(self.request)
 
-    def test_supervisor_wakes_for_lifecycle_events_not_ticks(self):
-        job = {"controller": {"status": "running"}, "cells": [
-            {"id": "seed-11", "controller_state": "running", "controller_last_tick": 10}]}
-        original = event_signature(job)
-        job["cells"][0]["controller_last_tick"] = 20
-        job["controller"]["last_check_at_utc"] = "later"
-        self.assertEqual(original, event_signature(job))
-        job["cells"][0]["controller_state"] = "completed"
-        self.assertNotEqual(original, event_signature(job))
-
-    def test_worker_attaches_astra_before_launch_and_preserves_single_job(self):
+    def test_batch_attaches_existing_monitor_once_before_launch(self):
         completed = {"run_id": "web-test", "controller": {"status": "completed"},
                      "analysis_readiness": {"status": "ready"}, "cells": []}
         job_path = self.root / "runs/jobs/web-test/job.json"
         events = []
         fake = Mock()
+        fake.rpc.return_value = {"thread": {"turns": []}}
         fake.attach.side_effect = lambda tid: events.append("attach") or "thread-123"
         fake.turn.side_effect = lambda tid, prompt, update: (
             events.append("supervise"), update({"supervisor_message": "Readiness checked"}))
@@ -106,35 +97,40 @@ class LaunchTests(unittest.TestCase):
                 patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
                 patch.object(self.service, "validate_source"), \
                 patch("agent_world.leaderboard_launch.subprocess.run", side_effect=launch):
-            worker(self.root, self.identifier)
-            worker(self.root, self.identifier)
-        self.assertEqual(events[:4], ["attach", "supervise", "launch", "supervise"])
+            self.service.update(self.identifier, state="queued")
+            dispatch_once(self.service)
+            dispatch_once(self.service)
+        self.assertEqual(events, ["attach", "supervise", "launch"])
         self.assertEqual(events.count("launch"), 1)
-        self.assertEqual(fake.attach.call_args_list[-1].args[0], "thread-123")
-        self.assertEqual(self.service.get(self.identifier)["state"], "completed")
+        self.assertEqual(fake.attach.call_args_list[-1].args[0], "shared-monitor")
+        self.assertEqual(self.service.get(self.identifier)["state"], "supervising")
 
     def test_no_run_when_astra_cannot_be_assigned(self):
         fake = Mock()
+        fake.rpc.return_value = {"thread": {"turns": []}}
         fake.verify.side_effect = RuntimeError("Astra unavailable")
         with patch("agent_world.leaderboard_launch.LaunchService", return_value=self.service), \
                 patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
                 patch("agent_world.leaderboard_launch.subprocess.run") as launch:
-            worker(self.root, self.identifier)
+            self.service.update(self.identifier, state="queued")
+            dispatch_once(self.service)
         launch.assert_not_called()
         self.assertEqual(self.service.get(self.identifier)["state"], "needs_attention")
 
     def test_no_benchmark_calls_if_astra_assignment_turn_fails(self):
         fake = Mock()
+        fake.rpc.return_value = {"thread": {"turns": []}}
         fake.attach.return_value = "thread-before-launch"
         fake.turn.side_effect = RuntimeError("Supervisor provider unavailable")
         with patch("agent_world.leaderboard_launch.LaunchService", return_value=self.service), \
                 patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
                 patch.object(self.service, "validate_source"), \
                 patch("agent_world.leaderboard_launch.subprocess.run") as launch:
-            worker(self.root, self.identifier)
+            self.service.update(self.identifier, state="queued")
+            dispatch_once(self.service)
         launch.assert_not_called()
         self.assertEqual(self.service.get(self.identifier)["state"], "needs_attention")
-        self.assertEqual(self.service.get(self.identifier)["supervisor_thread_id"], "thread-before-launch")
+        self.assertEqual(self.service.get(self.identifier)["supervisor_thread_id"], "shared-monitor")
 
     def test_astra_request_uses_exact_model_low_effort_and_automatic_review(self):
         client = AstraClient.__new__(AstraClient)
@@ -177,6 +173,57 @@ class LaunchTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as error:
             urlopen(Request(base + "/api/launch/options", headers={"Host": "evil.example"}))
         self.assertEqual(error.exception.code, 403)
+
+    def test_two_requests_have_one_shared_assignment_and_no_healthy_wakeups(self):
+        other = "b" * 32
+        with self.service.connection() as db:
+            db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
+                other, "web-second", "queued", time.time(), time.time(),
+                json.dumps({**self.request, "run_id": "web-second", "model": "gemini-3.7"})))
+        self.service.update(self.identifier, state="queued")
+        fake = Mock()
+        fake.rpc.return_value = {"thread": {"turns": []}}
+        with patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
+             patch.object(self.service, "validate_source"), \
+             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
+            dispatch_once(self.service)
+            dispatch_once(self.service)
+        fake.attach.assert_called_once_with("shared-monitor")
+        fake.turn.assert_called_once()
+        prompt = fake.turn.call_args.args[1]
+        self.assertIn("web-test", prompt)
+        self.assertIn("web-second", prompt)
+        self.assertEqual(launch.call_count, 2)
+        self.assertEqual(self.service.get(other)["state"], "supervising")
+
+    def test_shared_monitor_busy_defers_without_launch(self):
+        self.service.update(self.identifier, state="queued")
+        fake = Mock()
+        fake.rpc.return_value = {"thread": {"turns": [{"status": "inProgress"}]}}
+        with patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
+             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
+            dispatch_once(self.service)
+        fake.attach.assert_not_called()
+        fake.turn.assert_not_called()
+        launch.assert_not_called()
+        self.assertEqual(self.service.get(self.identifier)["state"], "queued")
+
+    def test_worklist_requires_terminal_or_attention_before_acknowledgment(self):
+        self.service.update(self.identifier, state="supervising")
+        self.assertEqual(len(self.service.monitoring_worklist()), 1)
+        with self.assertRaises(LaunchError):
+            self.service.monitoring_ack(self.identifier)
+        self.service.update(self.identifier, state="needs_attention")
+        self.service.monitoring_ack(self.identifier)
+        self.assertEqual(self.service.monitoring_worklist(), [])
+
+    def test_batch_holds_requests_until_all_are_accepted(self):
+        with patch.object(self.service, "validate_source"), patch.object(self.service, "ensure_worker") as start:
+            result = self.service.start_batch({"request_ids": [self.identifier, "missing"]})
+        self.assertEqual(result["results"][0]["request"]["state"], "queued")
+        self.assertIn("error", result["results"][1])
+        self.assertTrue(self.service.get(self.identifier)["dispatch_ready"])
+        start.assert_called_once()
 
 
 if __name__ == "__main__":

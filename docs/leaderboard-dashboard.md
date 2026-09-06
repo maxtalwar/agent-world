@@ -83,8 +83,7 @@ precedence, refresh caching, path containment, and HTTP route restrictions.
 
 ## Starting a benchmark from the page
 
-Choose **Start benchmark**, select the recipe and connector, and choose or enter
-the exact model ID. **Review benchmark** runs the existing managed CLI's
+Choose **Start benchmark**, select the recipe and models from the catalog. **Review benchmark** runs the existing managed CLI's
 `--dry-run` validation. The review shows the fixed population, horizon, required
 seeds, reasoning effort, and **GPT-6 Astra · Low** supervisor. Only the final
 **Start benchmark** action authorizes model-backed execution.
@@ -116,10 +115,10 @@ persists each reviewed configuration and its hash. Reviews expire after ten
 minutes. Repeating the final submission returns the same request/run ID.
 Unfinished studies of the same model/connector/recipe prevent duplicate launches.
 
-A durable tmux worker assigns a persistent Astra task before invoking
+One durable tmux dispatcher resumes the configured existing Run Monitoring task before invoking
 `python3 -m agent_world.cli run --config CONFIG`. It persists the supervisor
-task ID before launch and requires a successful low-effort Astra assignment
-turn before any benchmark model calls. Retries and app restarts inspect the existing job and
+task ID before launch and requires one successful, consolidated low-effort Astra assignment
+turn for the whole accepted batch before any benchmark model calls. Retries and app restarts inspect the existing job and
 resume the same supervisor; they do not issue another launch for that job.
 
 Astra runs through the local Codex App Server with explicit
@@ -127,10 +126,23 @@ Astra runs through the local Codex App Server with explicit
 approval review. The app never silently approves an unresolved client-side
 approval request. The deterministic run controller retains responsibility for
 healthy polling, startup gating, quota waits, checkpoint recovery, and
-finalization. The Astra task is awakened only for lifecycle changes, completion,
-or attention events—not changing ticks. Its notes and blockers appear under
-**Your benchmark runs**. **Reconnect supervisor** reattaches supervision to
-an existing run; it does not launch another study.
+finalization. The web dispatcher sends no follow-up turns for routine progress.
+The existing Run Monitoring heartbeat discovers new requests with:
+
+```sh
+python3 .local/leaderboard-app/leaderboard_launch.py monitor-list --root /path/to/agent-world
+```
+
+It handles one combined worklist, inspects meaningful attention/completion, and
+acknowledges audited terminal or explicitly blocked requests with `monitor-ack`
+and `--request REQUEST_ID`. The command refuses to remove healthy active runs.
+This avoids repeatedly auditing completed studies. Configure the existing task
+ID in the machine-local settings as `monitor_thread_id`; the installer preserves
+it and launching is blocked if it is absent. Never fall back to creating a new task.
+
+**Starting benchmarks** only shows requests not yet represented in Study Activity.
+Once registered, the Study Activity card is the single progress display and also
+shows monitoring errors. A reconnect request keeps the same job and monitoring task.
 
 General experiments and custom world configurations remain outside this form.
 Run interpretation and canonical catalog admission still follow the reporting
@@ -140,7 +152,7 @@ workflow after the analysis-readiness gate.
 
 ```sh
 python3 -m unittest discover -s tests -p 'test_leaderboard*.py' -v
-node --check agent_world/static/leaderboard-launch.js
+node tests/test_leaderboard_picker.cjs
 ```
 
 Tests simulate the paid boundaries and verify fixed configurations,
@@ -155,13 +167,14 @@ Codex integration follows the [official App Server interface](https://developers
 
 The launcher uses a searchable model catalog with provider logos and automatic
 connectors. Codex and Antigravity advertisements refresh with launch options;
-other exact identities come from retained jobs and benchmark evidence, excluding
+other exact identities come from retained benchmark AND experiment jobs and benchmark evidence, excluding
 diagnostic cohort labels. Availability still depends on the managed startup gate.
 Gemini reasoning variants resolve on the server to the recipe's fixed effort;
 models lacking that effort or connector in the retained source are omitted.
 
 Select multiple models, review the fixed conditions, then start the batch. Each
-model gets a separate durable reviewed request and Astra low-effort supervisor.
+model gets a separate durable reviewed request; one consolidated prompt assigns
+the batch to the existing Run Monitoring task at Astra low effort.
 Partial failures remain visible; retry reuses the same request IDs and skips
 successful launches. No model calls occur during catalog loading or review.
 

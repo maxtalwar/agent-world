@@ -18,7 +18,7 @@
 <div id="error" role="alert" hidden></div>
 <div id="loading" class="card empty">Loading current rankings and studies…</div>
 <div id="dashboard" hidden>
-<section id="launch-history" class="card launch-history" aria-label="Requested benchmarks" hidden><div class="section-heading"><div><h2>Your benchmark runs</h2><p class="muted">Managed runs with Astra supervision</p></div></div><div id="launch-history-list"></div></section>
+<section id="launch-history" class="card launch-history" aria-label="Requested benchmarks" hidden><div class="section-heading"><div><h2>Starting benchmarks</h2><p class="muted">New requests appear here until they enter Study Activity.</p></div></div><div id="launch-history-list"></div></section>
 <section class="summary-grid" aria-label="Leaderboard overview">
 <article class="card leader-card"><div class="card-top"><span id="leader-label">Leading model</span><span class="light-pill" id="board-state"></span></div><div class="leader-info"><div><h2 id="leader-name"></h2><p id="leader-meta"></p></div><span class="leader-mark" aria-hidden="true">↗</span></div><div class="leader-bottom"><div><span class="hero-score" id="leader-score"></span><span class="score-caption" id="leader-metric"></span></div><span class="small" id="leader-seeds"></span></div></article>
 <article class="card field-card"><div class="card-top"><h2>The field</h2><span class="dot"></span></div><div class="field-numbers"><div><span id="ranked-count" class="big-number">0</span><span class="muted">ranked models</span></div><span class="field-separator"></span><div><span id="active-count" class="big-number">0</span><span class="muted">open studies</span></div></div><p class="small muted" id="field-caption"></p></article>
@@ -57,7 +57,7 @@
 </form>
 <div id="launch-review" hidden>
 <div id="launch-review-summary"></div>
-<p class="small muted">This starts model-backed runs using your connected account. The managed startup gate checks the connector and model before releasing the remaining seeds. Astra receives the handoff automatically.</p>
+<p class="small muted">This starts model-backed runs using your connected account. The managed startup gate checks the connector and model before releasing the remaining seeds. One consolidated handoff goes to Run Monitoring automatically.</p>
 <div class="launch-actions"><button id="edit-launch" class="secondary-button">Back</button><button id="confirm-launch" class="primary-button">Start benchmark</button></div>
 </div>
 </dialog>

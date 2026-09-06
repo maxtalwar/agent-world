@@ -117,17 +117,19 @@ async function reviewLaunch(event) {
   }
 }
 async function confirmLaunch() {
-  if(launchState.busy||!launchState.preview)return;
+  if(launchState.busy||!launchState.preview||launchState.preview.every(p=>launchState.outcomes.get(p.id)?.ok))return;
   launchState.busy=true;launchEl('confirm-launch').disabled=true;launchEl('edit-launch').disabled=true;launchError('');
   try {
-    for(const preview of launchState.preview){
-      if(launchState.outcomes.get(preview.id)?.ok)continue;
-      try{
-        const request=await launchPost('/api/launch/start',{request_id:preview.id});
-        launchState.outcomes.set(preview.id,{ok:true,label:request.state==='needs_attention'?'Needs attention — see activity':'Requested'});
-      }catch(error){launchState.outcomes.set(preview.id,{ok:false,error:error.message});}
-      renderReview();
+    const pending=launchState.preview.filter(p=>!launchState.outcomes.get(p.id)?.ok);
+    try {
+      const batch=await launchPost('/api/launch/start-batch',{request_ids:pending.map(p=>p.id)});
+      for(const result of batch.results){
+        launchState.outcomes.set(result.id,result.error?{ok:false,error:result.error}:{ok:true,label:'Requested'});
+      }
+    } catch(error) {
+      for(const p of pending)launchState.outcomes.set(p.id,{ok:false,error:error.message});
     }
+    renderReview();
     const failed=launchState.preview.some(p=>!launchState.outcomes.get(p.id)?.ok);
     if(failed)launchError('Some runs could not start. Retry uses the same reviewed requests; successful launches are skipped. Close and reopen to make a new selection if a review has expired.');
     else launchEl('launch-dialog').close();
@@ -135,6 +137,8 @@ async function confirmLaunch() {
   } finally {launchState.busy=false;launchEl('confirm-launch').disabled=false;}
 }
 function renderLaunches(requests=[]) {
+  const inActivity=new Set((data?.boards||[]).flatMap(b=>(b.runs||[]).map(r=>r.id)));
+  requests=requests.filter(r=>!inActivity.has(r.run_id));
   launchEl('launch-history').hidden=!requests.length;
   launchEl('launch-history-list').innerHTML=requests.map(r=>
     '<article class="launch-entry"><div class="study-head"><span>'+esc(r.model_name||r.model)+'</span><span class="badge">'+esc(({queued:'Queued',launching:'Starting',supervising:'In progress',completed:'Complete',needs_attention:'Needs attention'})[r.state]||r.state)+'</span></div><p class="small muted">'+esc(r.recipe_title||recipeName(r.recipe_id))+' · '+esc(r.brain)+'</p><p class="supervisor-label"><span class="dot"></span> Astra · Low <span class="muted">/ '+esc((r.supervisor_state||'pending').replaceAll('_',' '))+'</span></p>'+
