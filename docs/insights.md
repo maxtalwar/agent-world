@@ -22,6 +22,19 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-06 — Corrected capacity feedback improves output without uniformly deepening the economy
+
+**Across four models on matched seeds, consistently rescored health and production
+improve in every pair, while the largest production gains do not require more
+farming.** Sixteen deterministic replays reproduce the full terminal states and
+health trajectories, enabling exact per-action scoring of pre-telemetry runs.
+Execution improves in seven of eight pairs; Mini gains 11.97 pooled points.
+Capacity failures fall from 778 to 367. Terra Production rises 112.50 to 165.00,
+but its farm harvest output falls from 150 to zero and completed farms from five
+to two. This is consistent with better feedback supporting extraction and survival,
+not proof of stronger economic complexity or an isolated causal effect: provider
+responses vary between historical runs. [Full matched audit and source hashes](v8-feedback-comparison.md).
+
 ## 2026-09-03 — ZCode usage gaps erased cache savings but retained text made reasoning recoverable
 
 **The GLM 5.3 ZCode benchmark recorded every cache read as zero because the
