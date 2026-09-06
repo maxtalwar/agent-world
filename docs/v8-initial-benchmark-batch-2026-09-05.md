@@ -72,3 +72,19 @@ orchestrators predate this metadata correction: after automatic completion,
 check the accounting label against attempted_token_cost and recover the
 finalization audit using the corrected source checkout if necessary.
 Do not restart their simulations or modify their pinned cohorts.
+
+## Luna completion handoff — 2026-09-06 03:04 UTC
+
+Luna is analysis-ready on both required seeds at tick 60, with 466 decisions
+per seed and 100% usage coverage. Both have clean benchmark integrity, no
+provider or harness failures, complete self-declared transfer accounting, and
+requested_only gpt-5.6-luna provenance. Seed 41 retains one confirmed
+model-output contract failure as scored model behavior; it is not an integrity
+failure and was not repaired or discarded. Both reports match the same v8
+recipe and source fingerprint recorded for Terra.
+
+The corrected finalizer has been applied to Luna's completed evidence.
+API-list estimates are $0.563285 and $0.538626 for seeds 11 and 41,
+separate from $0 reported subscription charges. The original simulation source
+and raw evidence are unchanged. No leaderboard admission has been performed.
+Muse remains running under its controller.
