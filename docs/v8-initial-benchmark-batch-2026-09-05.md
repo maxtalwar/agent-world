@@ -88,3 +88,18 @@ API-list estimates are $0.563285 and $0.538626 for seeds 11 and 41,
 separate from $0 reported subscription charges. The original simulation source
 and raw evidence are unchanged. No leaderboard admission has been performed.
 Muse remains running under its controller.
+
+## Additional requested studies — 2026-09-05 Pacific
+
+GPT-5.5 and GPT-5.4 Mini are authorized for the same v8 recipe on seeds 11/41.
+Their exact Codex model IDs are gpt-5.5 and gpt-5.4-mini; both appear in the
+authenticated model catalog with medium effort. Mini carries an upcoming
+deprecation notice, so startup gating must verify actual call availability.
+No replacement model is authorized.
+
+Run IDs are gpt-5-5-v8-20260905 and gpt-5-4-mini-v8-20260905.
+Configs live beside the original batch configs. Each uses four Codex workers
+per world, subscription billing, connector-v3, and the same simulation source
+75bd330bfc4027a993ba007aa16ac2effe00fccb. Paths and cohorts follow the convention
+above. The current orchestrator includes the corrected API-list cost audit.
+The standalone low-effort monitor will cover startup, attention, and completion.
