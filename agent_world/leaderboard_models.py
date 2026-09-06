@@ -73,6 +73,30 @@ def claude_explicit_model(model, environment):
     return valid
 
 
+def decision_model_identity(model, name=""):
+    """Exclude explicitly specialized generation/retrieval endpoints, not vision inputs."""
+    identity = (model + " " + (name or "")).lower()
+    return not re.search(
+        r"(?:^|[\s/_:()\-])(?:image|imagen|imagine|nano[ -]banana|dall[ -]e|flux|"
+        r"stable[ -]diffusion|sora|veo|tts|whisper|transcribe|transcription|"
+        r"embed(?:ding|dings)?|rerank(?:er)?)(?:$|[\s/_:()\-\d])", identity)
+
+
+def openrouter_decision_model(model):
+    """A decision endpoint must accept text and generate only text.
+
+    Multimodal input is welcome. Text accompanying generated images/audio is
+    insufficient. Missing capability metadata is not evidence of compatibility.
+    """
+    architecture = model.get("architecture") or {}
+    inputs = architecture.get("input_modalities") or []
+    outputs = architecture.get("output_modalities") or []
+    identifier = model.get("id", "")
+    return ("text" in inputs and set(outputs) == {"text"}
+            and not identifier.endswith(":batch") and identifier != "openrouter/auto"
+            and decision_model_identity(identifier, model.get("name", "")))
+
+
 def command_models(brain, environment):
     import json
     import tempfile
@@ -124,8 +148,7 @@ def command_models(brain, environment):
         with urlopen("https://openrouter.ai/api/v1/models", timeout=20) as response:
             models = json.load(response)["data"]
         return [(m["id"], m.get("name") or friendly(m["id"]), None) for m in models
-                if "text" in m.get("architecture", {}).get("output_modalities", ["text"])
-                and not m["id"].endswith(":batch") and m["id"] != "openrouter/auto"]
+                if openrouter_decision_model(m)]
     output = re.sub(r"\x1b\[[0-9;]*m", "", run(commands[brain]))
     rows = []
     for line in output.splitlines():
@@ -202,6 +225,8 @@ def model_catalog(sources, client=None, environment=None):
 
     def add(brain, model, name=None, efforts=None, variants=None):
         if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/+\[\]\-]{0,127}", model):
+            return
+        if not decision_model_identity(model, name):
             return
         entries[brain + ":" + model] = {
             "key": brain + ":" + model, "name": name or friendly(model),

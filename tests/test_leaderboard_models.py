@@ -71,6 +71,24 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(next(m for m in chosen if m["name"]=='Claude Opus 4.8')["brain"], "claude")
         self.assertFalse(any(m["brain"]=='claude' and m["model"]=='claude-opus-9' for m in entries))
 
+    def test_decision_catalog_rejects_media_and_requires_capabilities(self):
+        from agent_world.leaderboard_models import openrouter_decision_model, decision_model_identity
+        def model(identifier="google/gemini-2.5-pro", inputs=None, outputs=None):
+            return {"id": identifier, "architecture": {"input_modalities": inputs or ["text", "image", "audio"],
+                    "output_modalities": outputs or ["text"]}}
+        self.assertTrue(openrouter_decision_model(model()))
+        self.assertTrue(openrouter_decision_model(model("qwen/qwen-vl")))
+        self.assertFalse(openrouter_decision_model(model(outputs=["text", "image"])))
+        self.assertFalse(openrouter_decision_model(model(outputs=["text", "audio"])))
+        self.assertFalse(openrouter_decision_model(model(inputs=["image"])))
+        self.assertFalse(openrouter_decision_model({"id": "unknown"}))
+        self.assertFalse(openrouter_decision_model(model("google/gemini-pro:batch")))
+        for identifier in ["google/gemini-3-pro-image", "google/gemini-3.1-flash-lite-image",
+                           "openai/gpt-image-1", "black-forest-labs/flux-2", "text-embedding-3"]:
+            self.assertFalse(openrouter_decision_model(model(identifier)), identifier)
+            self.assertFalse(decision_model_identity(identifier), identifier)
+        self.assertFalse(decision_model_identity("opaque-id", "Google: Nano Banana Pro"))
+
     def test_display_alias_preserves_recipe_identity(self):
         self.assertEqual(board_title("participant-v8-revised"), "v8.1")
         self.assertEqual(recipe_label("participant-v8-revised"), "Participant v8.1")

@@ -17,3 +17,13 @@ benchmark preflight, respecting `ZCODE_CONFIG_PATH` and otherwise using
 Native connectors win equivalent-model deduplication. The default browse view
 shows native models without results or studies in the selected recipe. All models
 and search retain access to the full catalog. Lab filters apply to both views.
+
+## Decision-model eligibility
+
+Discovery is not sufficient for inclusion. OpenRouter models must explicitly
+advertise text input and exclusively text output. Image/audio/video inputs are
+allowed; generated image/audio/video outputs are not. Missing modality metadata
+is excluded rather than assumed compatible. Across all connectors, explicitly
+named image generators, speech generators/transcribers, embedding and reranking
+endpoints are excluded, including when a connector supplies no modality metadata.
+This filters the benchmark picker; it does not restrict general laboratory runs.
