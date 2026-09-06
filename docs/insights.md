@@ -22,6 +22,20 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-06 — The 5.5/Mini health tie conceals different survival paths
+
+**GPT-5.5 keeps agents alive longer, but Mini's living agents have higher mean
+health; those effects cancel in the mean-health score.** On the completed v8.1
+seeds 11/41, 5.5 has 80.67% living original-population agent-ticks at mean
+conditional health 69.96, versus Mini's 75.42% at 74.12, yielding Capability
+56.43 versus 55.90. Sol scores 77.61 with 20/20 final survivors, so the field
+is not presently at a shared health ceiling. 5.5 still records zero reasoning
+tokens on 81.04% of calls, but a causal performance penalty remains a hypothesis.
+The audit also verifies that irreversible health makes equal-time mean health
+a time-weighted sum of damage; early mistakes persist even after stable behavior.
+A toy recovery test shows conditional healing can reward recovery while free
+healing can hide ongoing damage. [Methods, source hashes and probe](capability-health-audit.md).
+
 ## 2026-09-06 — Corrected capacity feedback improves output without uniformly deepening the economy
 
 **Across four models on matched seeds, consistently rescored health and production
