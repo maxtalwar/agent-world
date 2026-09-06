@@ -4,6 +4,11 @@ Connector advertisements are read-only. Historical run identities are never used
 the managed startup gate still verifies account access before model calls.
 """
 import re
+import json
+import os
+import time
+import tempfile
+import threading
 import shutil
 import subprocess
 from pathlib import Path
@@ -37,6 +42,37 @@ def lab_for(model):
 
 
 
+_NATIVE_CHECKS = {}
+_NATIVE_LOCK = threading.Lock()
+
+def claude_explicit_model(model, environment):
+    """Validate a current connector candidate with Claude's zero-inference /model command."""
+    binary = shutil.which("claude", path=environment.get("PATH"))
+    if not binary:
+        return False
+    key = (str(Path(binary).resolve()), Path(binary).stat().st_mtime_ns, model)
+    with _NATIVE_LOCK:
+        cached = _NATIVE_CHECKS.get(key)
+        if cached and time.monotonic() - cached[0] < 600:
+            return cached[1]
+    child = dict(environment)
+    for name in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
+                 "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY", "CLAUDECODE"):
+        child.pop(name, None)
+    with tempfile.TemporaryDirectory(prefix="aw-model-check-") as cwd:
+        result = subprocess.run([binary, "-p", "--output-format", "json", "--no-session-persistence",
+            "--settings", '{"disableAllHooks":true}', "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}'],
+            input="/model " + model, cwd=cwd, env=child, capture_output=True, text=True, timeout=25, check=True)
+    response = json.loads(result.stdout)
+    selected = re.search(r"^Set model to `([^`]+)` for this session only", response.get("result", ""))
+    expected = friendly(model).removeprefix("Claude ").lower()
+    valid = (not response.get("is_error") and response.get("num_turns") == 0
+             and bool(selected) and selected[1].lower() == expected)
+    with _NATIVE_LOCK:
+        _NATIVE_CHECKS[key] = (time.monotonic(), valid)
+    return valid
+
+
 def command_models(brain, environment):
     import json
     import tempfile
@@ -67,7 +103,17 @@ def command_models(brain, environment):
                 return [(m["resolvedModel"], friendly(m["resolvedModel"]), m.get("supportedEffortLevels"))
                         for m in models if m.get("resolvedModel")]
         raise ValueError("No Claude model catalog returned")
-    if brain in {"muse", "zcode"}:
+    if brain == "zcode":
+        # Use the same configured Coding Plan catalog as ZCodeBrain's preflight.
+        if not shutil.which("zcode-cli", path=environment.get("PATH")):
+            raise ValueError("Connector is not installed")
+        path = Path(environment.get("ZCODE_CONFIG_PATH") or Path.home() / ".zcode/cli/config.json").expanduser()
+        config = json.loads(path.read_text())
+        providers = config.get("provider") or config.get("providers") or {}
+        models = (providers.get("zai") or {}).get("models") or {}
+        return [(model, details.get("name") or friendly(model), None)
+                for model, details in models.items() if isinstance(details, dict)]
+    if brain == "muse":
         args = ["muse", "serve", "--no-session-log"] if brain == "muse" else ["zcode-cli", "app-server"]
         result = rpc_catalog(args, environment)
         return [(m.get("modelId") or m.get("model") or m.get("id"),
@@ -203,6 +249,23 @@ def model_catalog(sources, client=None, environment=None):
                     add(brain, model, group["name"], list(group["variants"]), group["variants"])
             except Exception:
                 warnings.append(CONNECTORS.get(brain, brain) + " catalog unavailable; no historical models substituted.")
+    # The short Claude menu contains aliases, not every supported version.
+    # Other live catalogs provide candidates only; Claude must accept each exact version.
+    if "claude" in brains and any(m["brain"] == "claude" for m in entries.values()):
+        candidates = set()
+        for entry in list(entries.values()):
+            model = entry["model"].split("/")[-1].replace(".", "-")
+            if re.fullmatch(r"claude-(?:opus|sonnet|haiku|fable)-[0-9]+(?:-[0-9]+){0,3}", model):
+                if "claude:" + model not in entries:
+                    candidates.add(model)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            checks = {pool.submit(claude_explicit_model, model, environment): model for model in candidates}
+            for future in as_completed(checks):
+                try:
+                    if future.result():
+                        add("claude", checks[future], efforts=["low", "medium", "high"])
+                except (OSError, ValueError, subprocess.SubprocessError):
+                    pass
     return sorted(entries.values(), key=lambda m: (m["lab"], m["name"], m["brain"])), sorted(warnings)
 
 

@@ -48,6 +48,29 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(entries, [])
         self.assertIn("catalog unavailable", warnings[0])
 
+    def test_zcode_uses_current_connector_config(self):
+        import tempfile
+        from agent_world.leaderboard_models import command_models
+        with tempfile.TemporaryDirectory() as root:
+            config = Path(root) / "config.json"
+            config.write_text(json.dumps({"provider": {"zai": {"options": {"apiKey": "secret"},
+                "models": {"glm-5.3": {"name": "GLM-5.3"}}}}}))
+            with patch("agent_world.leaderboard_models.shutil.which", return_value="/bin/zcode-cli"):
+                self.assertEqual(command_models("zcode", {"ZCODE_CONFIG_PATH": str(config)}),
+                                 [("glm-5.3", "GLM-5.3", None)])
+
+    def test_explicit_claude_versions_require_native_validation(self):
+        def catalog(brain, env):
+            return [("claude-opus-5", "Claude Opus 5", None)] if brain == "claude" else [
+                ("anthropic/claude-opus-4.8", "Anthropic: Claude Opus 4.8", None),
+                ("anthropic/claude-opus-9", "Anthropic: Claude Opus 9", None)]
+        with patch("agent_world.leaderboard_models.command_models", side_effect=catalog), \
+             patch("agent_world.leaderboard_models.claude_explicit_model", side_effect=lambda m,e:m=='claude-opus-4-8'):
+            entries, _ = model_catalog({"x": {"brains": ["claude", "openrouter"]}})
+        chosen=for_recipe(entries, {"brains": ["claude", "openrouter"], "defaults": {"reasoning_effort": "medium"}})
+        self.assertEqual(next(m for m in chosen if m["name"]=='Claude Opus 4.8')["brain"], "claude")
+        self.assertFalse(any(m["brain"]=='claude' and m["model"]=='claude-opus-9' for m in entries))
+
     def test_display_alias_preserves_recipe_identity(self):
         self.assertEqual(board_title("participant-v8-revised"), "v8.1")
         self.assertEqual(recipe_label("participant-v8-revised"), "Participant v8.1")

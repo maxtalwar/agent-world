@@ -45,6 +45,8 @@
 <button id="model-picker-toggle" class="model-picker-toggle" type="button" aria-expanded="false" aria-controls="model-picker-panel" aria-labelledby="model-picker-label model-picker-count"><span id="model-picker-count">Choose models</span><span class="select-chevron" aria-hidden="true"></span></button>
 <div id="model-picker-panel" class="model-picker-panel" hidden>
 <input id="model-search" type="search" placeholder="Search models or labs…" aria-label="Search model catalog" autocomplete="off">
+<div class="catalog-controls"><label>Browse<select id="model-browse" aria-label="Browse model catalog"><option value="next">To benchmark next</option><option value="all">All models</option></select></label><label>Lab<select id="model-lab" aria-label="Filter by lab"><option value="">All labs</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="google">Google</option><option value="meta">Meta</option><option value="xai">xAI</option><option value="zai">Z.ai</option><option value="deepseek">DeepSeek</option><option value="mistral">Mistral</option><option value="alibabacloud">Alibaba</option><option value="moonshot">Moonshot</option><option value="minimax">MiniMax</option><option value="cohere">Cohere</option><option value="unknown">Other labs</option></select></label></div>
+<p id="model-browse-note" class="small muted" aria-live="polite"></p>
 <div id="model-options" class="model-options" role="group" aria-label="Available models"></div>
 </div>
 <div id="selected-models" class="selected-models" aria-live="polite"></div>

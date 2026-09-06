@@ -21,13 +21,25 @@ function pickerOpen(open) {
   launchEl('model-picker-toggle').setAttribute('aria-expanded',String(open));
   if(open)launchEl('model-search').focus();
 }
+const nativeConnectors={openai:'codex',anthropic:'claude',google:'antigravity',meta:'muse',xai:'grok',zai:'zcode'};
+const catalogIdentity=name=>(name||'').toLowerCase().replace(/^(?:anthropic: ?|claude )/,'').replace(/ (?:low|medium|high|xhigh|max)$/,'').replace(/[^a-z0-9]/g,'');
+function browseModels(models,recipe,boards,{query='',lab='',mode='next'}={}) {
+  const study=boards.find(b=>b.recipe===recipe);
+  const seen=new Set([...(study?.rows||[]),...(study?.runs||[])].map(r=>catalogIdentity(r.model)));
+  const native=m=>nativeConnectors[m.lab]===m.brain;
+  return models.filter(m=>(!lab||m.lab===lab)&&(!query||(m.name+' '+m.lab+' '+m.connector).toLowerCase().includes(query))&&
+    (query||mode==='all'||(native(m)&&!seen.has(catalogIdentity(m.name)))))
+    .sort((a,b)=>Number(native(b))-Number(native(a))||Number(seen.has(catalogIdentity(a.name)))-Number(seen.has(catalogIdentity(b.name)))||a.name.localeCompare(b.name,undefined,{numeric:true}));
+}
 function launchModels() {
   const models=launchRecipe()?.models||[],query=launchEl('model-search').value.trim().toLowerCase();
-  const visible=models.filter(m=>(m.name+' '+m.lab+' '+m.connector).toLowerCase().includes(query));
+  const mode=launchEl('model-browse').value||'next';
+  const visible=browseModels(models,launchRecipe()?.recipe_id,data?.boards||[],{query,mode,lab:launchEl('model-lab').value});
+  launchEl('model-browse-note').textContent=visible.length+' models · '+(query?'Searching the full catalog.':mode==='all'?'Native connectors first.':'Native models without a result or study in this recipe. Search or choose All models for the full catalog.');
   launchEl('model-options').innerHTML=visible.map(m=>'<label class="model-option">'+
     '<input type="checkbox" value="'+esc(m.key)+'" '+(launchState.selected.has(m.key)?'checked':'')+'>'+
     modelLogo(m.lab,'')+'<span class="model-option-copy"><strong>'+esc(m.name)+'</strong><span>'+esc(m.connector)+'</span></span></label>').join('')||
-    '<p class="small muted">No matching models for this recipe.</p>';
+    '<p class="small muted">No matching models. Choose All models or adjust your search and lab filter.</p>';
   launchEl('model-options').querySelectorAll('input').forEach(input=>input.onchange=()=>{
     if(input.checked)launchState.selected.add(input.value);else launchState.selected.delete(input.value);
     updateSelected();
@@ -59,7 +71,7 @@ async function openLaunch() {
   launchEl('launch-loading').hidden=false;launchEl('review-launch').disabled=true;
   launchEl('launch-recipe').innerHTML='';launchEl('model-options').innerHTML='';
   launchEl('selected-models').innerHTML='';launchEl('model-picker-count').textContent='Choose models';
-  launchEl('model-search').value='';pickerOpen(false);launchError('');
+  launchEl('model-search').value='';launchEl('model-browse').value='next';launchEl('model-lab').value='';pickerOpen(false);launchError('');
   try {
     const response=await fetch('/api/launch/options',{cache:'no-store',signal:AbortSignal.timeout(120000)});
     const options=await response.json();
@@ -176,3 +188,6 @@ launchEl('edit-launch').onclick=()=>{
   if(launchState.busy||launchState.outcomes.size)return;
   launchState.preview=null;launchEl('launch-form').hidden=false;launchEl('launch-review').hidden=true;launchError('');
 };
+
+launchEl('model-browse').onchange=launchModels;
+launchEl('model-lab').onchange=launchModels;

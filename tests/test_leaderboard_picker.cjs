@@ -11,6 +11,17 @@ const element=id=>{
 const context=vm.createContext({document:{getElementById:element},Set,Map,AbortSignal,
   data:{boards:[{runs:[{id:'visible-run'}]}]},esc:s=>String(s),refresh(){},board(){return null},relative:s=>s});
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../agent_world/static/leaderboard-launch.js'),'utf8'),context);
+
+const browse=vm.runInContext('browseModels',context);
+const choices=[{name:'Claude Opus 4.8',brain:'claude',lab:'anthropic',connector:'Claude Code'},
+ {name:'GPT-6 Astra',brain:'codex',lab:'openai',connector:'Codex'},
+ {name:'Some hosted model',brain:'openrouter',lab:'unknown',connector:'OpenRouter'}];
+const history=[{recipe:'v8',rows:[{model:'GPT-6 Astra'}],runs:[]}];
+assert.deepEqual(Array.from(browse(choices,'v8',history),m=>m.name),['Claude Opus 4.8']);
+assert.equal(browse(choices,'v6',history).length,2);
+assert.equal(browse(choices,'v8',history,{mode:'all'}).length,3);
+assert.equal(browse(choices,'v8',history,{query:'hosted'}).length,1);
+assert.equal(browse(choices,'v8',history,{mode:'all',lab:'anthropic'}).length,1);
 (async()=>{
   await vm.runInContext(`(async()=>{
     launchState.preview=[{id:'first'},{id:'second'}];
