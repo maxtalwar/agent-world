@@ -23,6 +23,22 @@ masqueraded as model behavior — append an entry.** Rules:
   The bar is: would a researcher who read every leaderboard still be surprised?
 
 
+## 2026-09-06 — Revised runs improve full-horizon health for all three models
+
+**The revised cohort improves health even when old and new runs use the same
+equal-weight measure, so the displayed increase is not solely a scoring change.**
+Pooled original-population mean health on seeds 11/41 changes as follows:
+gpt-5-6-terra: 61.13 -> 66.05; gpt-5-6-luna: 56.88 -> 64.12; gpt-5-4-mini: 50.28 -> 55.90. All six new worlds completed 60 ticks with clean
+integrity and complete usage. Revised Capability ranks Terra, Luna, Mini;
+per-action Execution still puts Mini above Luna. The comparison is before/after
+with variable provider responses, not a randomized causal estimate of corrected
+capacity feedback. Original ledgers cannot be exactly rescored under new
+per-action telemetry. Sources: the two recipe groups in
+[data/run-sources.json](../data/run-sources.json), their report cohort raw
+health_point_ticks/health_point_tick_capacity counts, and the
+[revised leaderboard](model-leaderboard.md). Historical
+[original-v8 scores](model-leaderboard-v8-original.md) remain frozen.
+
 ## 2026-09-05 — Whole-plan execution reverses the ranking on unchanged v6 decisions
 
 **Mini's execution lead can be created by changing the score alone, while
