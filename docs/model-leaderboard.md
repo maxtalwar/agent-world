@@ -2,12 +2,14 @@
 
 Participant v8 is finalized for new benchmark runs: medium effort, ten agents,
 60 ticks, seeds 11 and 41, no message board, and explicit commerce labels.
-Two models have completed both required seeds and passed finalization.
+Four models have completed both required seeds and passed finalization.
 Rows are ordered by Capability; there is no composite overall score.
 
 | Model | Capability | Execution | Production | Cost/run | Mean time/decision |
 |---|---:|---:|---:|---:|---:|
 | GPT-5.6 Terra | 31.4 | 63.3 | 112.5 | $7.44 | 11.07s |
+| GPT-5.4 Mini | 19.5 | 65.3 | 57.8 | $3.34 | 20.88s |
+| GPT-5.5 | 15.3 | 52.0 | 99.6 | $15.16 | 7.77s |
 | GPT-5.6 Luna | 8.9 | 63.1 | 79.0 | $0.55 | 14.91s |
 
 Capability and Execution are 0–100 scores. Production is unbounded fixed
@@ -24,6 +26,6 @@ comparison data. The [source catalog](../data/run-sources.json) and generated
 [database](../data/model-benchmarks.sqlite) preserve those original suites.
 
 Luna seed 41 includes one confirmed model-output contract failure, retained in
-Execution scoring. Both studies have clean benchmark integrity and 100% usage
+Execution scoring. All four studies have clean benchmark integrity and 100% usage
 coverage. Native CLI identity is labelled requested-only. See the
 [batch evidence handoff](v8-initial-benchmark-batch-2026-09-05.md).
