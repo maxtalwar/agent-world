@@ -10,7 +10,9 @@
     $('world-select').add(new Option('Loading selected world…',value));
     $('world-select').value=value;
   }
-  const renderer=new WorldRenderer($('world-canvas'),{onInspect:info=>{
+  const renderer=new WorldRenderer($('world-canvas'),{onRotate:({northAngle})=>{
+    $('compass-needle').setAttribute('transform','rotate('+northAngle+' 25 25)');
+  },onInspect:info=>{
     const visible=info&&(info.agents.length||info.structures.length);
     $('tile-inspection').hidden=!visible;
     if(!visible)return;

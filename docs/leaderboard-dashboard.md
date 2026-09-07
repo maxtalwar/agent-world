@@ -26,6 +26,14 @@ resumes, or alters runs. Water, crop, and idle animation are decorative; agent
 coordinates change only when a new snapshot arrives. Reduced-motion preferences
 disable animation.
 
+Drag horizontally with a mouse or one finger to orbit the world through 360°
+around its vertical axis. Camera elevation is fixed; vertical dragging never
+tilts the scene. Focus the canvas and use Left/Right to rotate in 15° steps,
+or Home to restore the original angle. Buildings have projected sides and roofs;
+foliage and residents remain upright. Terrain, shorelines, draw order, inspection,
+and the compass follow the camera. The current angle survives snapshot refreshes.
+The homepage illustration stays at its original angle.
+
 The read-only `/api/worlds` endpoint discovers saved cells from managed jobs;
 `/api/world` reads the selected cell's JSON snapshot, never its checkpoint.
 File paths must resolve inside the repository, including symlink targets.
@@ -106,6 +114,7 @@ node --check agent_world/static/leaderboard.js
 python3 -m unittest discover -s tests -p test_world_viewer.py -v
 node --check agent_world/static/world-renderer.js
 node --check agent_world/static/world-viewer.js
+node tests/test_world_rotation.cjs
 ```
 
 The tests cover canonical score parity, controlled variants, absent costs,

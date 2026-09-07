@@ -12,18 +12,19 @@
 </head>
 <body>
 <header class="viewer-nav">
-<nav aria-label="Main navigation"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">◉</span><span>Agent World</span></a><span class="nav-divider" aria-hidden="true">/</span><span class="current">World viewer</span></nav>
+<nav aria-label="Main navigation"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">◉</span><span>Agent World</span></a><span class="nav-divider" aria-hidden="true">/</span><span class="current">World viewer</span><span class="rotation-hint">Drag ↔ to rotate</span></nav>
 <div class="world-navigation"><label class="sr-only" for="world-select">Navigate to a world</label><select id="world-select"><option value="demo">Willowbank · Demo</option></select><a class="back-link" href="/laboratory"><span aria-hidden="true">↖</span> Laboratory</a></div>
 </header>
 <main class="world-stage" id="world-stage">
 <div class="world-heading"><p class="eyebrow">A WINDOW INTO THE WORLD</p><h1 id="world-title">World viewer</h1><p id="world-subtitle">Opening saved world…</p></div>
 <div class="world-status"><span class="source-badge" id="source-badge">CONNECTING</span><p id="tick-label">Saved state</p><p id="population-label"></p></div>
-<canvas id="world-canvas" role="img" aria-describedby="world-description">An isometric view of the simulated world.</canvas>
+<canvas id="world-canvas" role="img" tabindex="0" aria-label="World view. Drag horizontally to rotate." aria-keyshortcuts="ArrowLeft ArrowRight Home" aria-describedby="rotation-instructions world-description">An isometric view of the simulated world.</canvas>
+<p id="rotation-instructions" class="sr-only">Drag left or right to orbit the world. Left and right arrow keys rotate; Home restores the original view. The viewing elevation stays fixed.</p>
 <p id="world-description" class="sr-only"></p>
 <div class="stage-message" id="stage-message" role="status">Opening a window into the world…</div>
 <div class="world-caption"><span class="caption-line" aria-hidden="true"></span><div><p id="scene-caption">A window into the laboratory.</p><p id="scene-note"></p></div></div>
 <div class="tile-inspection" id="tile-inspection" hidden><strong id="inspection-title"></strong><span id="inspection-detail"></span></div>
-<div class="compass" aria-hidden="true"><span>N</span><svg viewBox="0 0 50 50"><path d="M25 5 31 25 25 45 19 25Z" fill="#607969" opacity=".55"/><path d="m5 25 20-6 20 6-20 6Z" fill="#a6b4a1"/><circle cx="25" cy="25" r="3" fill="#eef1e8"/></svg></div>
+<div class="compass" aria-hidden="true"><span>N</span><svg viewBox="0 0 50 50"><g id="compass-needle" transform="rotate(63.435 25 25)"><path d="M25 5 31 25 25 22 19 25Z" fill="#607969"/><path d="M25 45 31 25 25 28 19 25Z" fill="#afbfaa"/><path d="m5 25 20-6 20 6-20 6Z" fill="#a6b4a1"/><circle cx="25" cy="25" r="3" fill="#eef1e8"/></g></svg></div>
 <noscript><p class="stage-message">Enable JavaScript to display the world viewer.</p></noscript>
 </main>
 </body></html>
