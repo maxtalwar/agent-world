@@ -76,7 +76,7 @@ function studyMarkup(run, grouped=false) {
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
     run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(cellState(c)==='waiting_quota'&&!sharedTiming?'<p class="study-note">'+esc(quotaTiming(c))+'</p>':'')).join('')+
     (sharedTiming&&!grouped?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
-    run.warnings.map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
+    [...new Set(run.warnings)].map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
     (diagnostics.length?'<details class="study-diagnostics"><summary>Technical details</summary>'+diagnostics.map(d=>'<p>'+esc(d)+'</p>').join('')+'</details>':'')+
     '<p class="study-note">'+(affected?'Last run update ':'Controller updated ')+esc(relative(run.checked_at))+'</p></article>';
 }
