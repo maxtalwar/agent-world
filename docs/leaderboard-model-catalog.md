@@ -46,3 +46,7 @@ The picker exposes only Standard Muse Spark entries, one per version. Contributo
 entries are omitted, including when Standard is unavailable, so hiding the tier
 label never silently opts a launch into different data-use terms. Existing run
 metadata and historical execution IDs are retained.
+
+ZCode advertises only native `max` reasoning, matching BrainSpec validation. Its
+models are omitted from fixed recipes requiring any other effort. General
+experiments and genuinely max-effort recipes remain supported.

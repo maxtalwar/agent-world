@@ -57,7 +57,7 @@ class CatalogTests(unittest.TestCase):
                 "models": {"glm-5.3": {"name": "GLM-5.3"}}}}}))
             with patch("agent_world.leaderboard_models.shutil.which", return_value="/bin/zcode-cli"):
                 self.assertEqual(command_models("zcode", {"ZCODE_CONFIG_PATH": str(config)}),
-                                 [("glm-5.3", "GLM-5.3", None)])
+                                 [("glm-5.3", "GLM-5.3", ["max"])])
 
     def test_explicit_claude_versions_require_native_validation(self):
         def catalog(brain, env):
@@ -98,6 +98,14 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual([m["name"] for m in models], ["Muse Spark 1.3"])
         self.assertEqual(models[0]["model"], "muse-spark-1.3")
         self.assertEqual(for_recipe(entries[1:], recipe), [])
+
+    def test_zcode_requires_matching_recipe_effort(self):
+        entry={"key":"zcode:glm-4.7","model":"glm-4.7","name":"GLM-4.7",
+               "brain":"zcode","lab":"zai","efforts":["max"],"variants":None}
+        recipe={"brains":["zcode"],"defaults":{"reasoning_effort":"medium"}}
+        self.assertEqual(for_recipe([entry],recipe),[])
+        recipe["defaults"]["reasoning_effort"]="max"
+        self.assertEqual(for_recipe([entry],recipe)[0]["model"],"glm-4.7")
 
     def test_display_alias_preserves_recipe_identity(self):
         self.assertEqual(board_title("participant-v8-revised"), "v8.1")

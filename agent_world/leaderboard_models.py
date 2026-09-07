@@ -135,7 +135,7 @@ def command_models(brain, environment):
         config = json.loads(path.read_text())
         providers = config.get("provider") or config.get("providers") or {}
         models = (providers.get("zai") or {}).get("models") or {}
-        return [(model, details.get("name") or friendly(model), None)
+        return [(model, details.get("name") or friendly(model), ["max"])
                 for model, details in models.items() if isinstance(details, dict)]
     if brain == "muse":
         args = ["muse", "serve", "--no-session-log"] if brain == "muse" else ["zcode-cli", "app-server"]
