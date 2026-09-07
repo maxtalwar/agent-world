@@ -25,4 +25,12 @@ def validate_recovery_record(record_path, checkpoint, protocol, fingerprint, pro
         raise ValueError("Archived pre-recovery checkpoint hash mismatch")
     if not record.get("reason") or not record.get("from_commit"):
         raise ValueError("Connector recovery requires historical source and reason")
+    # Journal execution identity includes all Python source. A source migration
+    # would silently prune accepted entries before usage recovery. Fail before
+    # touching the journal; explicit decision-preserving migration is required.
+    pending = Path(checkpoint).with_name("run-pending-tick.json")
+    if pending.exists():
+        payload = json.loads(pending.read_text())
+        if payload.get("decisions"):
+            raise ValueError("Source migration has accepted pending decisions; preserve and explicitly migrate their identities before resume")
     return record
