@@ -38,6 +38,27 @@ class LaunchTests(unittest.TestCase):
             db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
                 self.identifier, "web-test", "review", time.time(), time.time(), json.dumps(self.request)))
 
+    def test_recovered_run_clears_stale_monitor_blocker(self):
+        from datetime import datetime, timezone
+        folder=self.root / "runs/jobs/web-test"
+        folder.mkdir(parents=True)
+        (folder / "job.json").write_text("{}")
+        heartbeat={"checked_at_utc": datetime.now(timezone.utc).isoformat(),
+                   "cells": [{"controller_state": "running", "tick": 21}]}
+        (folder / "controller-heartbeat.json").write_text(json.dumps(heartbeat))
+        self.service.update(self.identifier, state="needs_attention", assignment_ready=True,
+                            supervisor_thread_id="shared-monitor", supervisor_state="watching",
+                            monitor_reviewed=True, monitor_resolution="external_blocker")
+        r=self.service.public_request(self.service.get(self.identifier))
+        self.assertEqual(r["state"], "supervising")
+        self.assertFalse(r["can_reconnect"])
+        self.assertFalse(r["monitor_reviewed"])
+        self.service.update(self.identifier, state="needs_attention", monitor_resolution="evidence_decision")
+        r=self.service.public_request(self.service.get(self.identifier))
+        self.assertEqual(r["state"], "needs_attention")
+        self.assertEqual(r["supervisor_state"], "attention_required")
+        self.assertFalse(r["can_reconnect"])
+
     def test_confirmation_is_idempotent(self):
         with patch.object(self.service, "validate_source"), patch.object(self.service, "ensure_worker") as start:
             a = self.service.start({"request_id": self.identifier})

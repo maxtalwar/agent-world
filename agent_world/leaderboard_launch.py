@@ -205,9 +205,36 @@ class LaunchService:
             db.execute("UPDATE requests SET state=?,updated=?,payload=? WHERE id=?",
                        (state, time.time(), json.dumps(payload), identifier))
 
+    def reconcile_monitoring(self, request):
+        """A fresh controller heartbeat can supersede an old external blocker."""
+        if request.get("state") != "needs_attention" or not request.get("assignment_ready"):
+            return request
+        if request.get("monitor_resolution") == "evidence_decision":
+            return request
+        path = self.root / "runs/jobs" / request["run_id"] / "controller-heartbeat.json"
+        try:
+            heartbeat = read(path)
+            checked = datetime.fromisoformat(heartbeat["checked_at_utc"].replace("Z", "+00:00"))
+            if time.time() - checked.timestamp() > 120:
+                return request
+            cells = heartbeat.get("cells", [])
+            if not cells or not all(c.get("controller_state") in {"running", "waiting_quota", "completed"} for c in cells):
+                return request
+            if not any(c.get("controller_state") == "running" and (c.get("tick") or 0) > 0 for c in cells):
+                return request
+        except (OSError, ValueError, KeyError, TypeError):
+            return request
+        self.update(request["id"], state="supervising", supervisor_state="watching", error=None,
+                    monitor_reviewed=False, monitor_resolution=None, monitor_resolution_reason=None)
+        return self.get(request["id"])
+
     def public_request(self, request):
-        request = {**request, "can_reconnect": request.get("state") == "needs_attention" and
-                   (self.root / "runs/jobs" / request["run_id"] / "job.json").exists()}
+        request = self.reconcile_monitoring(request)
+        owned = bool(request.get("assignment_ready") and request.get("supervisor_thread_id") == self.settings.get("monitor_thread_id"))
+        request = {**request, "can_reconnect": request.get("state") == "needs_attention" and not owned and
+                   (self.root / "runs/jobs" / request["run_id"] / "job.json").exists(),
+                   "supervisor_state": ("attention_required" if request.get("state") == "needs_attention" and owned
+                                        else request.get("supervisor_state"))}
         return {k: v for k, v in request.items() if k in {
             "id", "run_id", "state", "recipe_id", "recipe_title", "model", "model_name", "lab", "brain", "seeds", "defaults",
             "commit", "created_at", "updated_at", "error", "supervisor_thread_id",
@@ -220,7 +247,7 @@ class LaunchService:
             rows = db.execute("SELECT id FROM requests WHERE state != 'review' ORDER BY created").fetchall()
         work = []
         for row in rows:
-            request = self.get(row["id"])
+            request = self.reconcile_monitoring(self.get(row["id"]))
             if request.get("monitor_reviewed"):
                 continue
             path = self.root / "runs/jobs" / request["run_id"] / "job.json"
@@ -233,6 +260,7 @@ class LaunchService:
                          "experiment_handoff": request.get("experiment_handoff"),
                          "error": request.get("error"), "job_path": str(path),
                          "assignment_ready": bool(request.get("assignment_ready")),
+                         "monitor_attempt": request.get("monitor_attempt", 0),
                          "supervisor_thread_id": request.get("supervisor_thread_id"),
                          "seeds": request.get("seeds"), "defaults": request.get("defaults"),
                          "controller_status": (job.get("controller") or {}).get("status"),
@@ -467,14 +495,19 @@ class LaunchService:
         if set(values) != {"request_id"}:
             raise LaunchError("Choose an existing supervisor request")
         identifier = values["request_id"]
-        request = self.get(identifier)
+        request = self.reconcile_monitoring(self.get(identifier))
+        if request.get("assignment_ready") and request.get("supervisor_thread_id") == self.settings.get("monitor_thread_id"):
+            self.ensure_worker(identifier)
+            return self.public_request(request)
         if request["state"] in ACTIVE:
             return self.public_request(request)
         if request["state"] != "needs_attention" or not (
             self.root / "runs/jobs" / request["run_id"] / "job.json"
         ).exists():
             raise LaunchError("No existing run needs a supervisor reconnection")
-        self.update(identifier, state="queued", last_event_signature=None, monitor_reviewed=False, error=None)
+        self.update(identifier, state="queued", assignment_ready=False, supervisor_state="awaiting_monitor",
+                    monitor_attempt=int(request.get("monitor_attempt", 0)) + 1,
+                    last_event_signature=None, monitor_reviewed=False, error=None)
         self.ensure_worker(identifier)
         return self.public_request(self.get(identifier))
 

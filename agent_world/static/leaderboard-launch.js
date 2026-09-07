@@ -154,13 +154,14 @@ function renderLaunches(requests=[]) {
   requests=requests.filter(r=>!inActivity.has(r.run_id));
   launchEl('launch-history').hidden=!requests.length;
   launchEl('launch-history-list').innerHTML=requests.map(r=>
-    '<article class="launch-entry"><div class="study-head"><span>'+esc(r.model_name||r.model)+'</span><span class="badge">'+esc(({queued:'Queued',launching:'Starting',supervising:'In progress',completed:'Complete',needs_attention:'Needs attention'})[r.state]||r.state)+'</span></div><p class="small muted">'+esc(r.recipe_title||recipeName(r.recipe_id))+' · '+esc(r.brain)+'</p><p class="supervisor-label"><span class="dot"></span> Astra · Low <span class="muted">/ '+esc((r.supervisor_state||'pending').replaceAll('_',' '))+'</span></p>'+
+    '<article class="launch-entry"><div class="study-head"><span>'+esc((r.model_name||r.model).replace(/^gemini[- ]([0-9.]+)[- ]flash(?:[- ]medium)?$/i,'Gemini $1 Flash'))+'</span><span class="badge">'+esc(({queued:'Queued',launching:'Starting',supervising:'In progress',completed:'Complete',needs_attention:'Needs attention'})[r.state]||r.state)+'</span></div><p class="small muted">'+esc(r.recipe_title||recipeName(r.recipe_id))+' · '+esc(r.brain)+'</p><p class="supervisor-label"><span class="dot"></span> Astra · Low <span class="muted">/ '+esc(({watching:'event monitoring active',attention_required:'attention required',awaiting_monitor:'awaiting assignment'})[r.supervisor_state]||(r.supervisor_state||'pending').replaceAll('_',' '))+'</span></p>'+
     (r.error?'<p class="attention">'+esc(r.error)+'</p>':'')+
     (r.can_reconnect?'<button class="secondary-button reconnect-supervisor" data-request="'+esc(r.id)+'">Reconnect supervisor</button>':'')+
     (r.supervisor_message?'<details><summary>Supervisor notes</summary><p class="supervisor-note">'+esc(r.supervisor_message)+'</p></details>':'')+
     '<p class="study-note">Requested '+esc(relative(r.created_at))+'</p></article>').join('');
   launchEl('launch-history-list').querySelectorAll('.reconnect-supervisor').forEach(button=>button.onclick=async()=>{
     button.disabled=true;
+    button.textContent='Reconnecting…';
     try {
       if(!launchState.options){
         const response=await fetch('/api/launch/options',{cache:'no-store'});

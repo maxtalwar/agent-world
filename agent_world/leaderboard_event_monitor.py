@@ -20,7 +20,8 @@ def signal(request):
     if request.get("monitor_reviewed"):
         return None
     if request["state"] == "queued" and not request.get("assignment_ready"):
-        return {"kind": "launch", "request_id": request["request_id"]}
+        return {"kind": "launch", "request_id": request["request_id"],
+                **({"monitor_attempt": request["monitor_attempt"]} if request.get("monitor_attempt") else {})}
     states = [c.get("controller_state") for c in request.get("cells", [])]
     if states and all(s in {"waiting_quota", "completed", "waiting_startup_gate"} for s in states) and "waiting_quota" in states:
         return None
