@@ -35,6 +35,11 @@ tail health rose from 9.1417 to 20.7333. Clean decision quality and complete
 usage coverage support a behavioral interpretation, with stochastic variation
 and nonconcurrent controls still limiting causality. This does not establish
 cross-provider discrimination or justify recipe admission.
+Recovery qualification also differed: Sol met the conditions on 62.3% of checks,
+Terra on 46.6%, Luna on 28.3%, and Mini on 29.2% (including full-health checks).
+Thus the mechanic rewards sustained reserves unevenly; it is not a uniform
+health bonus. The expanded report now also includes Gemini through tick 44,
+explicitly too early to test its baseline late-death pattern.
 Evidence: [expanded comparison](regeneration-expanded-results.md) and its
 linked per-cell JSON preserve source paths, health, death and recovery evidence.
 
@@ -48,7 +53,7 @@ production from 180.67/223.83 to 160.83/167.83; final survivors from 10/10 to
 9/10. Final total health rose from 365/470 to 655/717 out of 1,000 per world.
 The engine recorded 84/107 health-recovery events. Each world had 10 Sol
 agents at medium effort; the treatment was two health points of recovery after
-two stable ticks with at least half food/water reserves. This is a two-seed
+two stable, damage-free ticks with at least half food/water/energy reserves. This is a two-seed
 stochastic pilot, not proof that regeneration reduces production. It shows
 that raising the health-based capability metric alone does not establish
 better survival strategy or economic outcomes.
