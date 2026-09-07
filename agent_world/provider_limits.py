@@ -35,6 +35,7 @@ QUOTA_MARKERS: tuple[str, ...] = (
     "out of usage credits",
     "insufficient_quota",
     "quota exceeded",
+    "quota reached",
     "quota unavailable",
     "credit balance is too low",
     "credits exhausted",
