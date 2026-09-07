@@ -96,61 +96,8 @@ class LaunchTests(unittest.TestCase):
             with self.assertRaisesRegex(LaunchError, "source changed"):
                 self.service.validate_source(self.request)
 
-    def test_batch_attaches_existing_monitor_once_before_launch(self):
-        completed = {"run_id": "web-test", "controller": {"status": "completed"},
-                     "analysis_readiness": {"status": "ready"}, "cells": []}
-        job_path = self.root / "runs/jobs/web-test/job.json"
-        events = []
-        fake = Mock()
-        fake.rpc.return_value = {"thread": {"turns": []}}
-        fake.attach.side_effect = lambda tid: events.append("attach") or "thread-123"
-        fake.turn.side_effect = lambda tid, prompt, update: (
-            events.append("supervise"), update({"supervisor_message": "Readiness checked"}))
 
-        def launch(*args, **kwargs):
-            events.append("launch")
-            job_path.parent.mkdir(parents=True, exist_ok=True)
-            job_path.write_text(json.dumps(completed))
-            return Mock(returncode=0)
 
-        with patch("agent_world.leaderboard_launch.LaunchService", return_value=self.service), \
-                patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
-                patch.object(self.service, "validate_source"), \
-                patch("agent_world.leaderboard_launch.subprocess.run", side_effect=launch):
-            self.service.update(self.identifier, state="queued")
-            dispatch_once(self.service)
-            dispatch_once(self.service)
-        self.assertEqual(events, ["attach", "supervise", "launch"])
-        self.assertEqual(events.count("launch"), 1)
-        self.assertEqual(fake.attach.call_args_list[-1].args[0], "shared-monitor")
-        self.assertEqual(self.service.get(self.identifier)["state"], "supervising")
-
-    def test_no_run_when_astra_cannot_be_assigned(self):
-        fake = Mock()
-        fake.rpc.return_value = {"thread": {"turns": []}}
-        fake.verify.side_effect = RuntimeError("Astra unavailable")
-        with patch("agent_world.leaderboard_launch.LaunchService", return_value=self.service), \
-                patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
-                patch("agent_world.leaderboard_launch.subprocess.run") as launch:
-            self.service.update(self.identifier, state="queued")
-            dispatch_once(self.service)
-        launch.assert_not_called()
-        self.assertEqual(self.service.get(self.identifier)["state"], "needs_attention")
-
-    def test_no_benchmark_calls_if_astra_assignment_turn_fails(self):
-        fake = Mock()
-        fake.rpc.return_value = {"thread": {"turns": []}}
-        fake.attach.return_value = "thread-before-launch"
-        fake.turn.side_effect = RuntimeError("Supervisor provider unavailable")
-        with patch("agent_world.leaderboard_launch.LaunchService", return_value=self.service), \
-                patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
-                patch.object(self.service, "validate_source"), \
-                patch("agent_world.leaderboard_launch.subprocess.run") as launch:
-            self.service.update(self.identifier, state="queued")
-            dispatch_once(self.service)
-        launch.assert_not_called()
-        self.assertEqual(self.service.get(self.identifier)["state"], "needs_attention")
-        self.assertEqual(self.service.get(self.identifier)["supervisor_thread_id"], "shared-monitor")
 
     def test_astra_request_uses_exact_model_low_effort_and_automatic_review(self):
         client = AstraClient.__new__(AstraClient)
@@ -194,90 +141,69 @@ class LaunchTests(unittest.TestCase):
             urlopen(Request(base + "/api/launch/options", headers={"Host": "evil.example"}))
         self.assertEqual(error.exception.code, 403)
 
-    def test_two_requests_have_one_shared_assignment_and_no_healthy_wakeups(self):
+
+
+
+
+
+    def test_inbox_waits_without_opening_a_writer(self):
+        self.service.update(self.identifier, state="queued", handoff_retry_at=time.time()+999)
+        with patch("agent_world.leaderboard_launch.AstraClient") as client, \
+             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
+            dispatch_once(self.service)
+        client.assert_not_called()
+        launch.assert_not_called()
+        r = self.service.get(self.identifier)
+        self.assertEqual(r["state"], "queued")
+        self.assertEqual(r["supervisor_state"], "awaiting_monitor")
+        self.assertFalse(self.service.monitoring_worklist()[0]["assignment_ready"])
+
+    def test_atomic_batch_acceptance_and_single_launch(self):
         other = "b" * 32
         with self.service.connection() as db:
             db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
                 other, "web-second", "queued", time.time(), time.time(),
-                json.dumps({**self.request, "run_id": "web-second", "model": "gemini-3.7"})))
+                json.dumps({**self.request, "run_id": "web-second", "model": "claude-test"})))
         self.service.update(self.identifier, state="queued")
-        fake = Mock()
-        fake.rpc.return_value = {"thread": {"turns": []}}
-        with patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
-             patch.object(self.service, "validate_source"), \
-             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
-            dispatch_once(self.service)
-            dispatch_once(self.service)
-        fake.attach.assert_called_once_with("shared-monitor")
-        fake.turn.assert_called_once()
-        prompt = fake.turn.call_args.args[1]
-        self.assertIn("web-test", prompt)
-        self.assertIn("web-second", prompt)
-        self.assertEqual(launch.call_count, 2)
-        self.assertEqual(self.service.get(other)["state"], "supervising")
-
-    def test_shared_monitor_busy_defers_without_launch(self):
-        self.service.update(self.identifier, state="queued")
-        fake = Mock()
-        fake.rpc.return_value = {"thread": {"turns": [{"status": "inProgress"}]}}
-        with patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
-             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
-            dispatch_once(self.service)
-        fake.attach.assert_not_called()
-        fake.turn.assert_not_called()
-        launch.assert_not_called()
-        self.assertEqual(self.service.get(self.identifier)["state"], "queued")
-
-    def test_writer_conflict_waits_then_launches_once(self):
-        self.service.update(self.identifier, state="queued")
-        fake = Mock()
-        fake.rpc.return_value = {"thread": {"turns": []}}
-        fake.attach.side_effect = [SupervisorBusy("already has an active writer"), "shared-monitor"]
-        with patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
-             patch.object(self.service, "validate_source"), \
-             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
-            dispatch_once(self.service)
-            request = self.service.get(self.identifier)
-            self.assertEqual(request["state"], "queued")
-            self.assertEqual(request["supervisor_state"], "waiting")
-            fake.turn.assert_not_called()
-            launch.assert_not_called()
-            dispatch_once(self.service)  # Backoff suppresses reconnection.
-            self.assertEqual(fake.attach.call_count, 1)
-            self.service.update(self.identifier, handoff_retry_at=0)
-            dispatch_once(self.service)
-            dispatch_once(self.service)
-        fake.turn.assert_called_once()
-        launch.assert_called_once()
-        self.assertEqual(self.service.get(self.identifier)["state"], "supervising")
-
-    def test_connection_before_assignment_retries_with_bound(self):
-        self.service.update(self.identifier, state="queued")
-        with patch("agent_world.leaderboard_launch.AstraClient",
-                   side_effect=SupervisorConnectionError("closed")), \
-             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
-            for attempt in range(6):
-                self.service.update(self.identifier, handoff_retry_at=0)
+        with patch.object(self.service, "validate_source"):
+            with self.assertRaises(LaunchError):
+                self.service.monitoring_accept([self.identifier, "missing"], "shared-monitor")
+            self.assertFalse(self.service.get(self.identifier).get("assignment_ready"))
+            with self.assertRaises(LaunchError):
+                self.service.monitoring_accept([self.identifier], "other-monitor")
+            self.service.monitoring_accept([self.identifier, other], "shared-monitor")
+            with patch("agent_world.leaderboard_launch.AstraClient") as client, \
+                 patch("agent_world.leaderboard_launch.subprocess.run") as launch:
                 dispatch_once(self.service)
-                self.assertEqual(self.service.get(self.identifier)["state"],
-                                 "queued" if attempt < 5 else "needs_attention")
-        launch.assert_not_called()
+                self.service.monitoring_accept([self.identifier, other], "shared-monitor")
+                dispatch_once(self.service)
+                self.assertEqual(launch.call_count, 2)
+                client.assert_not_called()
+        self.assertEqual(self.service.get(other)["state"], "supervising")
+        self.assertEqual(len(self.service.monitoring_worklist()), 2)
 
-    def test_connection_after_prompt_intent_never_resends(self):
-        self.service.update(self.identifier, state="queued")
-        fake = Mock()
-        fake.rpc.return_value = {"thread": {"turns": []}}
-        fake.turn.side_effect = SupervisorConnectionError("closed before turn id received")
-        with patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
-             patch.object(self.service, "validate_source"), \
-             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
+    def test_acceptance_rejects_unconfirmed_or_modified_requests(self):
+        with self.assertRaises(LaunchError):
+            self.service.monitoring_accept([self.identifier], "shared-monitor")
+        self.service.update(self.identifier, state="queued", dispatch_ready=False)
+        with self.assertRaises(LaunchError):
+            self.service.monitoring_accept([self.identifier], "shared-monitor")
+        self.service.update(self.identifier, dispatch_ready=True)
+        with patch.object(self.service, "validate_source", side_effect=LaunchError("changed")):
+            with self.assertRaises(LaunchError):
+                self.service.monitoring_accept([self.identifier], "shared-monitor")
+        self.assertFalse(self.service.get(self.identifier).get("assignment_ready"))
+
+    def test_acknowledged_existing_job_is_not_relaunched_after_restart(self):
+        self.service.update(self.identifier, state="launching", assignment_ready=True,
+                            supervisor_thread_id="shared-monitor")
+        path = self.root / "runs/jobs/web-test/job.json"
+        path.parent.mkdir(parents=True)
+        path.write_text("{}")
+        with patch("agent_world.leaderboard_launch.subprocess.run") as launch:
             dispatch_once(self.service)
-            self.assertTrue(self.service.get(self.identifier)["assignment_started"])
-            self.service.update(self.identifier, state="queued")  # Simulate dispatcher recovery.
-            dispatch_once(self.service)
-        fake.turn.assert_called_once()
         launch.assert_not_called()
-        self.assertEqual(self.service.get(self.identifier)["state"], "needs_attention")
+        self.assertEqual(self.service.get(self.identifier)["state"], "supervising")
 
     def test_detached_windows_client_uses_persistent_interop(self):
         with patch.dict("os.environ", {"WSL_INTEROP": "/run/WSL/expired_interop"}), \

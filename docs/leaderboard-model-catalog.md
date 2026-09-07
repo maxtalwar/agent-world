@@ -51,21 +51,23 @@ ZCode advertises only native `max` reasoning, matching BrainSpec validation. Its
 models are omitted from fixed recipes requiring any other effort. General
 experiments and genuinely max-effort recipes remain supported.
 
-## Monitoring handoff retries
+## Monitoring handoff inbox
 
-The detached leaderboard dispatcher leaves a batch queued when Run Monitoring
-is busy or its Codex writer is owned by another process. It retries with
-30-second exponential backoff capped at five minutes, without interrupting the
-current owner. Connection failures before prompt submission receive up to five
-retries. The dispatcher reloads its local runtime settings between attempts.
+The detached launcher never acquires the desktop monitoring task's writer.
+Confirmed page requests are the durable SQLite inbox. Run Monitoring discovers
+pending requests through `monitor-list`, accepts the exact IDs in one call to
+`monitor-accept --requests ID ... --thread CONFIGURED_THREAD_ID`, then leaves
+initial launch to the dispatcher. Its existing heartbeat performs discovery.
+Until that check the page says the request is queued for acknowledgment.
 
-Prompt intent is recorded before submission. A lost acknowledgment is held for
-inspection rather than resending the prompt or launching without confirmed
-supervision. Existing turn IDs retain the same duplicate guard. Local bounded
-process stderr and exit diagnostics are retained in
-`.local/leaderboard-launches/supervisor-diagnostics.log`; raw diagnostics are
-not displayed on the public dashboard.
+Acceptance validates the entire batch before committing ownership. It is
+idempotent and does not remove studies from the monitoring worklist. The
+separate `monitor-ack` remains reserved for verified completion or an explicit
+external/evidence blocker. After ownership is recorded, the dispatcher launches
+only the reviewed configuration through the managed CLI. Existing job records
+prevent relaunch after dispatcher recovery. No second app-server connection,
+per-model agent task, or repeated handoff prompt is required.
 
-For native Windows Codex, the detached client uses WSL's persistent init interop
-socket when available, rather than tmux's inherited interactive-login socket.
-This prevents `UtilAcceptVsock` timeouts after the original login has exited.
+The Codex catalog client still uses the persistent WSL init interop socket when
+available. Local process diagnostics remain in
+`.local/leaderboard-launches/supervisor-diagnostics.log`.

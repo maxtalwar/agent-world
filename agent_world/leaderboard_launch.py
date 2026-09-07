@@ -229,11 +229,41 @@ class LaunchService:
                          "model": request["model"], "recipe": request["recipe_id"],
                          "source": request["source"], "state": request["state"],
                          "error": request.get("error"), "job_path": str(path),
+                         "assignment_ready": bool(request.get("assignment_ready")),
+                         "supervisor_thread_id": request.get("supervisor_thread_id"),
+                         "seeds": request.get("seeds"), "defaults": request.get("defaults"),
                          "controller_status": (job.get("controller") or {}).get("status"),
                          "readiness": job.get("analysis_readiness"),
                          "cells": [{k: c.get(k) for k in ["id", "controller_state", "controller_attention"]}
                                    for c in job.get("cells", [])]})
         return work
+
+    def monitoring_accept(self, identifiers, thread_id):
+        """The configured desktop task acknowledges the exact reviewed batch."""
+        if not thread_id or thread_id != self.settings.get("monitor_thread_id"):
+            raise LaunchError("Only the configured Run Monitoring task can accept this batch")
+        if not identifiers or len(set(identifiers)) != len(identifiers):
+            raise LaunchError("Choose unique pending request IDs")
+        with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
+            accepted = []
+            for identifier in identifiers:
+                row = db.execute("SELECT * FROM requests WHERE id=?", (identifier,)).fetchone()
+                if not row:
+                    raise LaunchError("Launch request not found")
+                request = json.loads(row["payload"])
+                if request.get("assignment_ready") and request.get("supervisor_thread_id") == thread_id:
+                    continue  # Idempotent after launch or repeated heartbeat.
+                if row["state"] != "queued" or not request.get("dispatch_ready", True):
+                    raise LaunchError("Only accepted, queued page requests can be assigned")
+                self.validate_source(request)
+                request.update(assignment_ready=True, supervisor_thread_id=thread_id,
+                               supervisor_state="watching", assignment_accepted_at=now(),
+                               supervisor_model=MODEL, supervisor_effort=EFFORT,
+                               handoff_retry_at=0, error=None, updated_at=now())
+                accepted.append((json.dumps(request), time.time(), identifier))
+            db.executemany("UPDATE requests SET payload=?,updated=? WHERE id=?", accepted)
+        return {"accepted": identifiers, "thread_id": thread_id}
 
     def monitoring_ack(self, identifier, resolution=None, reason=None):
         request = self.get(identifier)
@@ -484,107 +514,36 @@ class LaunchService:
             time.sleep(30)
 
 
-def assignment_prompt(requests):
-    return (
-        "Consolidated leaderboard handoff to this existing Run Monitoring task. "
-        "You are GPT-6 Astra at low effort for ALL runs below, alongside your existing worklist. "
-        "The deterministic dispatcher owns initial launch after this acknowledgment; do not launch anything yourself. "
-        "Acknowledge this batch briefly in one response, without tool calls, polling, or a separate per-model task. "
-        "Your existing monitoring heartbeat discovers these requests from "
-        ".local/leaderboard-launches/requests.sqlite. Controllers own startup gates, healthy progress, quota waits, "
-        "bounded checkpoint recovery and finalization. Do not repeat these instructions on routine transitions. "
-        "After launch, attention means you own diagnosis, scoped connector/infrastructure repair, validation, "
-        "and managed resumption of the existing checkpoint. Do not stop at diagnosis for a repairable fault. "
-        "Record any required source migration; never silently edit pinned source or weaken integrity guards. "
-        "Keep repairable faults on the worklist; escalate only a concrete user/external/evidence dependency. "
-        "At attention or completion follow each run's pinned benchmark skill and recipe, preserve provenance, "
-        "never restart to evade quota, and do not admit results to the leaderboard. "
-        "Only meaningful blockers or verified completion warrant an update. Batch:\n" +
-        json.dumps([{k: r.get(k) for k in ["run_id", "model", "brain", "recipe_id", "seeds", "defaults",
-                                          "source", "commit", "config_path"]} for r in requests])
-    )
-
-
 def dispatch_once(service):
+    # The desktop-owned monitoring task consumes this durable inbox. Never try
+    # to acquire its writer from a second app-server process.
     with service.connection() as db:
         rows = db.execute("SELECT id FROM requests WHERE state IN ('queued','launching') ORDER BY created").fetchall()
-    requests = [service.get(row["id"]) for row in rows]
-    requests = [r for r in requests if r.get("dispatch_ready", True) and r.get("handoff_retry_at", 0) <= time.time()]
-    if not requests:
-        return False
     thread = service.settings.get("monitor_thread_id")
-    if not thread:
-        raise LaunchError("The shared Run Monitoring task is not configured")
-    client = None
-    try:
-        pending = [r for r in requests if not r.get("assignment_ready")]
-        # If the process died during an acknowledged turn, do not send it again.
-        ambiguous = [r for r in pending if r.get("supervisor_turn_id") or r.get("assignment_started")]
-        for r in ambiguous:
-            service.update(r["id"], state="needs_attention",
-                           error="Monitoring handoff was interrupted; inspect Run Monitoring before retrying.")
-        requests = [r for r in requests if r not in ambiguous]
-        pending = [r for r in pending if r not in ambiguous]
-        if pending:
-            client = AstraClient(service.settings["supervisor_binary"], service.root)
-            client.verify()
-            state = client.rpc("thread/read", {"threadId": thread, "includeTurns": True})
-            if any(t.get("status") == "inProgress" for t in state.get("thread", {}).get("turns", [])):
-                raise SupervisorBusy("Run Monitoring is working on another turn")
-            client.attach(thread)
-            for r in pending:
-                service.validate_source(r)
-                service.update(r["id"], supervisor_thread_id=thread, supervisor_state="assigning")
-            def update_all(changes):
-                for r in pending:
-                    service.update(r["id"], **changes)
-            # Also persist here so alternate clients cannot omit the duplicate guard.
-            update_all({"assignment_started": True})
-            client.turn(thread, assignment_prompt(pending), update_all)
-            for r in pending:
-                service.update(r["id"], assignment_ready=True, supervisor_state="watching",
-                               error=None, handoff_retry_at=0, handoff_retry_count=0)
-        for original in requests:
-            request = service.get(original["id"])
-            job_path = service.root / "runs/jobs" / request["run_id"] / "job.json"
-            try:
-                if not job_path.exists():
-                    service.validate_source(request)
-                    service.update(request["id"], state="launching")
-                    subprocess.run([sys.executable, "-m", "agent_world.cli", "run", "--config",
-                                    request["config_path"]], cwd=request["source"], env=env(), check=True, timeout=180)
-                service.update(request["id"], state="supervising", supervisor_thread_id=thread,
-                               supervisor_state="watching", error=None)
-            except Exception as exc:
-                service.update(request["id"], state="needs_attention", supervisor_thread_id=thread,
-                               error=str(exc)[-1000:])
-        return True
-    except (SupervisorBusy, SupervisorConnectionError) as exc:
-        for original in requests:
-            r = service.get(original["id"])
-            count = r.get("handoff_retry_count", 0) + 1
-            if r.get("assignment_started") or r.get("supervisor_turn_id"):
-                service.update(r["id"], state="needs_attention", supervisor_state="needs_attention",
-                               error="Monitoring acknowledgment was interrupted; checking the existing handoff is required before retrying.")
-            elif isinstance(exc, SupervisorBusy) or count <= 5:
-                delay = min(300, 30 * 2 ** min(count - 1, 4))
-                message = ("Waiting for Run Monitoring to become available. Retrying automatically."
-                           if isinstance(exc, SupervisorBusy) else
-                           "Monitoring connection interrupted. Retrying automatically.")
-                service.update(r["id"], state="queued", supervisor_state="waiting", error=message,
-                               handoff_retry_count=count, handoff_retry_at=time.time() + delay)
-            else:
-                service.update(r["id"], state="needs_attention", supervisor_state="needs_attention",
-                               error="Monitoring connection could not be restored after five retries. See local supervisor diagnostics.")
-        return True
-    except Exception as exc:
-        for r in requests:
-            service.update(r["id"], state="needs_attention", supervisor_state="needs_attention",
-                           error=str(exc)[-1000:])
-        return True
-    finally:
-        if client:
-            client.close()
+    for row in rows:
+        request = service.get(row["id"])
+        if not request.get("dispatch_ready", True):
+            continue
+        if not request.get("assignment_ready"):
+            if request.get("supervisor_state") != "awaiting_monitor":
+                service.update(request["id"], supervisor_state="awaiting_monitor",
+                               error="Queued for Run Monitoring to acknowledge on its next check.")
+            continue
+        if not thread or request.get("supervisor_thread_id") != thread:
+            service.update(request["id"], state="needs_attention",
+                           error="Monitoring ownership changed; a new acknowledgment is required.")
+            continue
+        job_path = service.root / "runs/jobs" / request["run_id"] / "job.json"
+        try:
+            if not job_path.exists():
+                service.validate_source(request)
+                service.update(request["id"], state="launching")
+                subprocess.run([sys.executable, "-m", "agent_world.cli", "run", "--config",
+                                request["config_path"]], cwd=request["source"], env=env(), check=True, timeout=180)
+            service.update(request["id"], state="supervising", supervisor_state="watching", error=None)
+        except Exception as exc:
+            service.update(request["id"], state="needs_attention", error=str(exc)[-1000:])
+    return bool(rows)
 
 
 def worker(root, identifier=None):
@@ -600,9 +559,11 @@ def worker(root, identifier=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["worker", "monitor-list", "monitor-ack"])
+    parser.add_argument("command", choices=["worker", "monitor-list", "monitor-accept", "monitor-ack"])
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--request")
+    parser.add_argument("--requests", nargs="+")
+    parser.add_argument("--thread")
     parser.add_argument("--resolution", choices=["external_blocker", "evidence_decision"])
     parser.add_argument("--reason")
     args = parser.parse_args()
@@ -610,5 +571,9 @@ if __name__ == "__main__":
         worker(args.root, args.request)
     elif args.command == "monitor-list":
         print(json.dumps(LaunchService(args.root).monitoring_worklist(), indent=2))
+    elif args.command == "monitor-accept":
+        service = LaunchService(args.root)
+        print(json.dumps(service.monitoring_accept(args.requests, args.thread)))
+        service.ensure_worker()
     else:
         LaunchService(args.root).monitoring_ack(args.request, args.resolution, args.reason)
