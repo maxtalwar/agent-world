@@ -24,6 +24,20 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-07 - Regeneration separates survival from health discrimination
+
+**Healing narrowed the Sol-Terra health gap while widening the Sol-Luna and Sol-Mini gaps; better survival did not always raise full-horizon health.**
+In the completed two-seed Codex pilot, mean Sol-minus-Terra full-horizon
+health fell from 11.56 to 9.61 points, while Sol-minus-Luna rose from 13.49
+to 16.46 and Sol-minus-Mini from 21.71 to 23.45. Luna seed 41 gained four
+survivors (3 to 7), but full-horizon health fell from 67.015 to 66.4783;
+tail health rose from 9.1417 to 20.7333. Clean decision quality and complete
+usage coverage support a behavioral interpretation, with stochastic variation
+and nonconcurrent controls still limiting causality. This does not establish
+cross-provider discrimination or justify recipe admission.
+Evidence: [expanded comparison](regeneration-expanded-results.md) and its
+linked per-cell JSON preserve source paths, health, death and recovery evidence.
+
 ## 2026-09-07 — Sol's regeneration pilot raised health while production fell
 
 **Conditional health recovery improved Sol's health score in both matched
