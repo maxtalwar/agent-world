@@ -95,8 +95,8 @@ function activityMarkup(runs) {
     group.map(r=>studyMarkup(r,true)).join('')+'<p class="study-note">'+esc(quotaTiming(group[0].cells[0]))+'</p></section>').join('');
 }
 function renderActivity(){
-  const runs=board().runs, open=runs.filter(r=>!r.ranked), complete=runs.filter(r=>r.ranked);
-  $('activity-list').innerHTML=(open.length?activityMarkup(open):'<div><p class="activity-empty">All quiet in<br>the laboratory.</p><p class="small muted">No pending studies in this leaderboard.</p></div>')+(complete.length?'<details class="completed-studies"><summary>'+complete.length+' completed studies</summary>'+complete.map(r=>studyMarkup(r)).join('')+'</details>':'');
+  const runs=board().runs, open=runs.filter(r=>!r.ranked&&!r.archived), complete=runs.filter(r=>r.ranked&&!r.archived), archived=runs.filter(r=>r.archived);
+  $('activity-list').innerHTML=(open.length?activityMarkup(open):'<div><p class="activity-empty">All quiet in<br>the laboratory.</p><p class="small muted">No pending studies in this leaderboard.</p></div>')+(complete.length?'<details class="completed-studies"><summary>'+complete.length+' completed studies</summary>'+complete.map(r=>studyMarkup(r)).join('')+'</details>':'')+(archived.length?'<details class="completed-studies"><summary>'+archived.length+' archived studies</summary>'+archived.map(r=>studyMarkup(r)).join('')+'</details>':'');
 }
 function showModel(id) {
   const b=board(),r=b.rows.find(row=>row.id===id);if(!r)return;

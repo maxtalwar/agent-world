@@ -126,7 +126,8 @@ def within(root: Path, value: str) -> Path:
 
 
 def model_label(model: str) -> str:
-    name = re.sub(r"(?<=\d)-(?=\d)", ".", model.removeprefix("claude-"))
+    display_model = re.sub(r"-20\d{6}$", "", model) if model.startswith("claude-") else model
+    name = re.sub(r"(?<=\d)-(?=\d)", ".", display_model.removeprefix("claude-"))
     return name.replace("-", " ").title().replace("Gpt ", "GPT-").replace("Glm", "GLM")
 
 
@@ -346,6 +347,8 @@ class LeaderboardStore:
             LOG.exception("Cannot read canonical leaderboard")
             canonical = []
             warnings.append("Canonical database unavailable; managed results are still shown.")
+        archive_path = STATIC / "leaderboard-activity-archive.json"
+        archived = read_json(archive_path) if archive_path.exists() else {}
         boards = {b["id"]: b for b in canonical}
         canonical_recipes = {b["recipe"] for b in canonical}
         for path in sorted((self.root / "runs/jobs").glob("*/job.json")):
@@ -358,6 +361,7 @@ class LeaderboardStore:
                 board = boards.setdefault(
                     recipe + ("@" + digest if digest else ""), new_board(recipe, digest))
                 run, rows, aggregate = self.managed_run(job, path)
+                run["archived"] = run["id"] in archived
                 board["runs"].append(run)
                 if recipe in canonical_recipes:
                     # The catalog, not discovery, decides admission to closed pools.
@@ -390,7 +394,7 @@ class LeaderboardStore:
             board["runs"].sort(key=lambda run: (run["ranked"], run["model"]))
             board["active_count"] = sum(
                 any(c["state"] not in {"completed", "failed", "stopped", "invalid", "cancelled"}
-                    for c in run["cells"]) for run in board["runs"])
+                    for c in run["cells"]) for run in board["runs"] if not run.get("archived"))
             board["state"] = "In progress" if board["active_count"] else (
                 "Established" if board["source"] == "Canonical metrics database" else "Completed studies")
         recipe_counts = {}
