@@ -1,0 +1,37 @@
+{
+  "harness": {
+    "connector_profile": "connector-v3",
+    "conversation_mode": "fresh-conversation",
+    "decision_mode": "raw"
+  },
+  "kind": "experiment",
+  "model": {
+    "brain": "codex",
+    "id": "gpt-5.6-luna",
+    "reasoning_effort": "medium"
+  },
+  "question": "Does conditional healing widen the performance gap by rewarding populations that keep more agents alive and maintain adequate reserves? Compare regeneration-on seeds 11/41 to the existing same-model v8.1 baseline; evaluate health recovery, survivor count, health over time, and between-model separation. Regeneration is the only world treatment.",
+  "recipe": "participant-v8-revised",
+  "run_id": "regen2-luna-20260907",
+  "runtime": {
+    "agents": 10,
+    "max_workers": 4,
+    "quota_wait_hours": 12,
+    "ticks": 60
+  },
+  "schema_version": 1,
+  "seeds": [
+    11,
+    41
+  ],
+  "source": {
+    "commit": "9f296668f779fa281e269da98f73c1683e45b467"
+  },
+  "world": {
+    "overrides": {
+      "health_regen_rate": 2,
+      "health_regen_reserve_fraction": 0.5,
+      "health_regen_stable_ticks": 2
+    }
+  }
+}
