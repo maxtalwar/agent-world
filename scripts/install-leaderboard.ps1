@@ -16,10 +16,10 @@ import shutil
 root = Path.cwd()
 target = root / ".local/leaderboard-app"
 (target / "static").mkdir(parents=True, exist_ok=True)
-for module in ["leaderboard.py", "leaderboard_launch.py", "leaderboard_supervisor.py", "leaderboard_models.py"]:
+for module in ["leaderboard.py", "leaderboard_launch.py", "leaderboard_supervisor.py", "leaderboard_models.py", "leaderboard_event_monitor.py"]:
     shutil.copy2(root / "agent_world" / module, target / module)
 shutil.copy2(root / "scripts/serve-leaderboard", target / "serve-leaderboard")
-for name in ["leaderboard.html", "leaderboard.css", "leaderboard.js", "leaderboard-launch.js", "inter-latin.woff2"]:
+for name in ["leaderboard.html", "leaderboard.css", "leaderboard.js", "leaderboard-launch.js", "inter-latin.woff2", "leaderboard-activity-archive.json"]:
     shutil.copy2(root / "agent_world/static" / name, target / "static" / name)
 shutil.copytree(root / "agent_world/static/labs", target / "static/labs", dirs_exist_ok=True)
 '@
@@ -31,6 +31,7 @@ $tailnet = (& $tailscale status --json | ConvertFrom-Json)
 $existingSettings = (& $wsl -d $Distribution --cd $Repository --exec python3 -c "import json,pathlib; p=pathlib.Path('.local/leaderboard-settings.json'); print(p.read_text() if p.exists() else '{}')") | ConvertFrom-Json
 $settingsJson = @{
     launch_enabled = $true
+    event_monitor_enabled = $true
     monitor_thread_id = $existingSettings.monitor_thread_id
     supervisor_binary = $supervisorWsl
     allowed_hosts = @($tailnet.Self.DNSName.TrimEnd('.'), $tailnet.Self.HostName.ToLower())

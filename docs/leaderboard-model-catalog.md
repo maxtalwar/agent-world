@@ -57,8 +57,9 @@ The detached launcher never acquires the desktop monitoring task's writer.
 Confirmed page requests are the durable SQLite inbox. Run Monitoring discovers
 pending requests through `monitor-list`, accepts the exact IDs in one call to
 `monitor-accept --requests ID ... --thread CONFIGURED_THREAD_ID`, then leaves
-initial launch to the dispatcher. Its existing heartbeat performs discovery.
-Until that check the page says the request is queued for acknowledgment.
+initial launch to the dispatcher. A local event watcher performs discovery without model calls. A short-lived
+Astra low-effort worker accepts the batch; the fixed agent heartbeat is disabled.
+Until that event is handled the page says the request is queued for acknowledgment.
 
 Acceptance validates the entire batch before committing ownership. It is
 idempotent and does not remove studies from the monitoring worklist. The
@@ -71,3 +72,24 @@ per-model agent task, or repeated handoff prompt is required.
 The Codex catalog client still uses the persistent WSL init interop socket when
 available. Local process diagnostics remain in
 `.local/leaderboard-launches/supervisor-diagnostics.log`.
+
+## Event-driven monitoring and quota use
+
+`leaderboard_event_monitor.py` runs within the durable dispatcher's cheap local
+30-second loop. Healthy progress and quota waits create no agent event, including
+when all cells share a future reset. Controllers continue to own quota resumption.
+New page launches, actionable attention and terminal outcomes are fingerprinted
+and batched. Each fingerprint is reserved durably before one detached ephemeral
+GPT-6 Astra low-effort worker starts. No recurring Codex agent heartbeat is used.
+A blocked provenance review is handled once; repeated timestamps and unchanged
+blockers do not create new agent calls. New evidence or an explicit reopening is
+required to re-review an acknowledged evidence dependency.
+
+Workers use `codex exec --ephemeral --approve-for-me` against the shared worklist,
+not a second writer on the desktop task. They do not create persistent monitoring
+tasks or poll/sleep. Event records, JSONL output and final notes are retained in
+`.local/leaderboard-launches/events/`; the final notes also appear on each request.
+Failed or interrupted workers are surfaced for attention rather than automatically
+replayed and charged again. The Run Monitoring task remains available for human
+follow-up; its old 15-minute automation must remain paused. The installer enables
+the local watcher through `event_monitor_enabled`.

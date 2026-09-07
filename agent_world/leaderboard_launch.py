@@ -527,7 +527,7 @@ def dispatch_once(service):
         if not request.get("assignment_ready"):
             if request.get("supervisor_state") != "awaiting_monitor":
                 service.update(request["id"], supervisor_state="awaiting_monitor",
-                               error="Queued for Run Monitoring to acknowledge on its next check.")
+                               error="Queued for the monitoring agent to acknowledge.")
             continue
         if not thread or request.get("supervisor_thread_id") != thread:
             service.update(request["id"], state="needs_attention",
@@ -554,6 +554,12 @@ def worker(root, identifier=None):
         if service.settings_path.exists():
             service.settings = read(service.settings_path)
         dispatch_once(service)
+        if service.settings.get("event_monitor_enabled"):
+            try:
+                from .leaderboard_event_monitor import watch_once
+            except ImportError:
+                from leaderboard_event_monitor import watch_once
+            watch_once(service)
         time.sleep(30)
 
 

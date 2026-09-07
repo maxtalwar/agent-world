@@ -67,7 +67,8 @@ function studyMarkup(run, grouped=false) {
   const sharedTiming=allQuota&&new Set(run.cells.map(quotaTiming)).size===1;
   const repairing=affected&&request?.supervisor_thread_id&&!request.monitor_reviewed;
   const provenanceReview=run.readiness_status==='needs_provenance_review';
-  const status=provenanceReview?'Provenance review needed':run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':quota?'Quota paused':'In study';
+  const reviewedEvidence=provenanceReview&&request?.monitor_reviewed&&request?.monitor_resolution==='evidence_decision';
+  const status=reviewedEvidence?'Evidence incomplete':provenanceReview?'Provenance review needed':run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':quota?'Quota paused':'In study';
   const message=repairing?'Run paused after an issue. The monitoring agent is working on a fix.':
     affected?(request?.monitor_resolution_reason||'Run paused after an issue. Monitoring attention is needed.') : '';
   const diagnostics=run.cells.filter(c=>c.attention).map(c=>'Seed '+c.seed+': '+c.attention);
@@ -75,6 +76,7 @@ function studyMarkup(run, grouped=false) {
   if(affected&&run.cells.some(c=>c.state==='status_stale'))diagnostics.push('Controller updates are paused while the run is stopped.');
   return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+(grouped?'':status)+'</span></div>'+
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
+    (reviewedEvidence?'<p class="study-note">'+esc(request.monitor_resolution_reason)+'</p>':'')+
     run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(cellState(c)==='waiting_quota'&&!sharedTiming?'<p class="study-note">'+esc(quotaTiming(c))+'</p>':'')).join('')+
     (sharedTiming&&!grouped?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
     [...new Set(run.warnings)].filter(w=>!provenanceReview||w!=='diagnostic only').map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
