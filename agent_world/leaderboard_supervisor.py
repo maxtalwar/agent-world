@@ -29,6 +29,16 @@ class SupervisorTimeout(SupervisorConnectionError):
     pass
 
 
+def supervisor_environment(native_windows):
+    environment = {**os.environ, "PATH": str(Path.home() / ".local/bin") + ":" + os.environ.get("PATH", "")}
+    # tmux may retain a socket belonging to a long-exited interactive WSL login.
+    # The WSL init socket lives for the distro lifetime and survives detachment.
+    interop = Path("/run/WSL/1_interop")
+    if native_windows and interop.is_socket():
+        environment["WSL_INTEROP"] = str(interop)
+    return environment
+
+
 class AstraClient:
     def __init__(self, binary: str, root: Path):
         self.root = root
@@ -36,7 +46,7 @@ class AstraClient:
         self.process = subprocess.Popen(
             [binary, "app-server"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE, text=True, bufsize=1,
-            env={**os.environ, "PATH": str(Path.home() / ".local/bin") + ":" + os.environ.get("PATH", "")},
+            env=supervisor_environment(self.native_windows),
         )
         self.diagnostics = deque(maxlen=40)
         self.stderr_reader = threading.Thread(target=self._read_stderr, daemon=True)

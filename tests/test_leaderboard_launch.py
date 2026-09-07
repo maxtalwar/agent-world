@@ -11,7 +11,7 @@ from urllib.error import HTTPError
 
 from agent_world.leaderboard import make_server
 from agent_world.leaderboard_launch import LaunchService, LaunchError, dispatch_once
-from agent_world.leaderboard_supervisor import AstraClient, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
+from agent_world.leaderboard_supervisor import AstraClient, SupervisorBusy, SupervisorConnectionError, supervisor_environment, MODEL, EFFORT
 
 
 class LaunchTests(unittest.TestCase):
@@ -278,6 +278,15 @@ class LaunchTests(unittest.TestCase):
         fake.turn.assert_called_once()
         launch.assert_not_called()
         self.assertEqual(self.service.get(self.identifier)["state"], "needs_attention")
+
+    def test_detached_windows_client_uses_persistent_interop(self):
+        with patch.dict("os.environ", {"WSL_INTEROP": "/run/WSL/expired_interop"}), \
+             patch("pathlib.Path.is_socket", return_value=True):
+            self.assertEqual(supervisor_environment(True)["WSL_INTEROP"], "/run/WSL/1_interop")
+            self.assertEqual(supervisor_environment(False)["WSL_INTEROP"], "/run/WSL/expired_interop")
+        with patch.dict("os.environ", {"WSL_INTEROP": "/run/WSL/current_interop"}), \
+             patch("pathlib.Path.is_socket", return_value=False):
+            self.assertEqual(supervisor_environment(True)["WSL_INTEROP"], "/run/WSL/current_interop")
 
     def test_rpc_classifies_active_writer_conflict(self):
         client = AstraClient.__new__(AstraClient)

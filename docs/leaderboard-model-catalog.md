@@ -65,3 +65,7 @@ supervision. Existing turn IDs retain the same duplicate guard. Local bounded
 process stderr and exit diagnostics are retained in
 `.local/leaderboard-launches/supervisor-diagnostics.log`; raw diagnostics are
 not displayed on the public dashboard.
+
+For native Windows Codex, the detached client uses WSL's persistent init interop
+socket when available, rather than tmux's inherited interactive-login socket.
+This prevents `UtilAcceptVsock` timeouts after the original login has exited.
