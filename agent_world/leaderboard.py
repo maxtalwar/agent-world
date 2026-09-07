@@ -279,6 +279,13 @@ class LeaderboardStore:
                     tick = manifest.get("final_tick", tick)
             except (OSError, ValueError, KeyError):
                 pass
+            stop_reason = latest.get("stop_reason") or cell.get("controller_stop_reason")
+            attention = latest.get("attention") or cell.get("controller_attention")
+            quota_blocked = (state != "completed" and (
+                stop_reason in {"insufficient_quota", "quota_exhausted"}
+                or attention == "quota_wait_budget_exhausted"))
+            if quota_blocked:
+                state = "waiting_quota"
             terminal = state in {"completed", "failed", "stopped", "invalid", "cancelled"}
             display_state = "status_stale" if stale and not terminal else state
             schedule = {}
@@ -290,9 +297,10 @@ class LeaderboardStore:
             run["cells"].append({
                 "seed": cell["seed"], "tick": tick, "target": cell.get("target_ticks"),
                 "state": display_state, "operational_state": state,
-                "attention": latest.get("attention") or cell.get("controller_attention"),
+                "attention": attention,
+                "quota_wait_exhausted": attention == "quota_wait_budget_exhausted",
                 "retry_at": ((latest.get("next_auto_resume_at_utc") or cell.get("next_auto_resume_at_utc")
-                              or schedule.get("retry_at")) if state == "waiting_quota" else None),
+                              or (schedule.get("retry_at") if attention != "quota_wait_budget_exhausted" else None)) if state == "waiting_quota" else None),
                 "reset_at": schedule.get("reset_at"),
             })
             report_path = within(self.root, cell["output_dir"]) / "run-report.json"

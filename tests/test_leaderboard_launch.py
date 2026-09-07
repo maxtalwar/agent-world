@@ -59,6 +59,17 @@ class LaunchTests(unittest.TestCase):
         self.assertEqual(r["supervisor_state"], "attention_required")
         self.assertFalse(r["can_reconnect"])
 
+    def test_startup_card_excludes_experiments_and_existing_jobs(self):
+        self.service.update(self.identifier, state="queued", run_kind="experiment")
+        r=self.service.public_request(self.service.get(self.identifier))
+        self.assertEqual(r["run_kind"], "experiment")
+        self.service.update(self.identifier, run_kind="benchmark")
+        self.assertTrue(self.service.public_request(self.service.get(self.identifier))["startup_pending"])
+        folder=self.root / "runs/jobs/web-test"
+        folder.mkdir(parents=True)
+        (folder / "job.json").write_text(json.dumps({"kind":"benchmark"}))
+        self.assertFalse(self.service.public_request(self.service.get(self.identifier))["startup_pending"])
+
     def test_confirmation_is_idempotent(self):
         with patch.object(self.service, "validate_source"), patch.object(self.service, "ensure_worker") as start:
             a = self.service.start({"request_id": self.identifier})

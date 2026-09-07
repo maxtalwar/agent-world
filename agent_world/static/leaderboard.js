@@ -53,7 +53,7 @@ function renderTable() {
 const stateLabel = state => ({running:'Running',completed:'Completed',status_stale:'Status out of date',waiting_quota:'Quota paused',paused_provider:'Provider paused',waiting_startup_gate:'Waiting for startup',blocked_startup_gate:'Startup blocked',needs_attention:'Needs attention',not_started:'Queued',unknown:'Status unavailable'})[state] || state.replaceAll('_',' ');
 function quotaTiming(cell) {
   const date=new Date(cell.retry_at);
-  if(!cell.retry_at||!Number.isFinite(date.getTime()))return 'Continuation time not yet reported.';
+  if(!cell.retry_at||!Number.isFinite(date.getTime()))return cell.quota_wait_exhausted?'Waiting for quota. Continuation is not yet scheduled.':'Continuation time not yet reported.';
   const today=new Date().toDateString()===date.toDateString();
   return 'Continues '+date.toLocaleString(undefined,{...(today?{}:{month:'short',day:'numeric'}),hour:'numeric',minute:'2-digit',timeZoneName:'short'});
 }
@@ -73,6 +73,7 @@ function studyMarkup(run, grouped=false) {
     affected?(request?.monitor_resolution_reason||'Run paused after an issue. Monitoring attention is needed.') : '';
   const diagnostics=run.cells.filter(c=>c.attention).map(c=>'Seed '+c.seed+': '+c.attention);
   if(affected&&request?.error)diagnostics.push(request.error);
+  if(quota&&request?.monitor_resolution_reason)diagnostics.push(request.monitor_resolution_reason);
   if(affected&&run.cells.some(c=>c.state==='status_stale'))diagnostics.push('Controller updates are paused while the run is stopped.');
   return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+(grouped?'':status)+'</span></div>'+
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
@@ -88,7 +89,7 @@ function activityMarkup(runs) {
   const groups=new Map();
   for(const run of runs){
     const times=run.cells.map(quotaTiming);
-    const shared=run.connector&&run.cells.length&&run.cells.every(c=>(c.operational_state||c.state)==='waiting_quota')&&new Set(times).size===1&&run.cells.every(c=>c.retry_at);
+    const shared=run.connector&&run.cells.length&&run.cells.every(c=>(c.operational_state||c.state)==='waiting_quota')&&new Set(times).size===1;
     const key=shared?run.connector+'|'+times[0]:run.id;
     if(!groups.has(key))groups.set(key,[]);
     groups.get(key).push(run);

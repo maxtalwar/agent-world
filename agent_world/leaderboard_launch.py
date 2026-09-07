@@ -230,6 +230,13 @@ class LaunchService:
 
     def public_request(self, request):
         request = self.reconcile_monitoring(request)
+        job_path = self.root / "runs/jobs" / request["run_id"] / "job.json"
+        try:
+            job = read(job_path) if job_path.exists() else {}
+        except (OSError, ValueError):
+            job = {}
+        request = {**request, "run_kind": job.get("kind", request.get("run_kind", request.get("kind", "benchmark"))),
+                   "startup_pending": not job_path.exists() and request.get("state") in {"queued", "launching", "needs_attention"}}
         owned = bool(request.get("assignment_ready") and request.get("supervisor_thread_id") == self.settings.get("monitor_thread_id"))
         request = {**request, "can_reconnect": request.get("state") == "needs_attention" and not owned and
                    (self.root / "runs/jobs" / request["run_id"] / "job.json").exists(),
@@ -239,7 +246,7 @@ class LaunchService:
             "id", "run_id", "state", "recipe_id", "recipe_title", "model", "model_name", "lab", "brain", "seeds", "defaults",
             "commit", "created_at", "updated_at", "error", "supervisor_thread_id",
             "supervisor_state", "supervisor_message", "supervisor_model", "supervisor_effort", "can_reconnect",
-            "monitor_reviewed", "monitor_resolution", "monitor_resolution_reason",
+            "monitor_reviewed", "monitor_resolution", "monitor_resolution_reason", "run_kind", "startup_pending",
         }}
 
     def monitoring_worklist(self):

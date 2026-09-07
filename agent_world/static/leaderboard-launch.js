@@ -151,7 +151,7 @@ async function confirmLaunch() {
 }
 function renderLaunches(requests=[]) {
   const inActivity=new Set((data?.boards||[]).flatMap(b=>(b.runs||[]).map(r=>r.id)));
-  requests=requests.filter(r=>!inActivity.has(r.run_id));
+  requests=requests.filter(r=>r.run_kind==='benchmark'&&r.startup_pending&&!inActivity.has(r.run_id));
   launchEl('launch-history').hidden=!requests.length;
   launchEl('launch-history-list').innerHTML=requests.map(r=>
     '<article class="launch-entry"><div class="study-head"><span>'+esc((r.model_name||r.model).replace(/^gemini[- ]([0-9.]+)[- ]flash(?:[- ]medium)?$/i,'Gemini $1 Flash'))+'</span><span class="badge">'+esc(({queued:'Queued',launching:'Starting',supervising:'In progress',completed:'Complete',needs_attention:'Needs attention'})[r.state]||r.state)+'</span></div><p class="small muted">'+esc(r.recipe_title||recipeName(r.recipe_id))+' · '+esc(r.brain)+'</p><p class="supervisor-label"><span class="dot"></span> Astra · Low <span class="muted">/ '+esc(({watching:'event monitoring active',attention_required:'attention required',awaiting_monitor:'awaiting assignment'})[r.supervisor_state]||(r.supervisor_state||'pending').replaceAll('_',' '))+'</span></p>'+
