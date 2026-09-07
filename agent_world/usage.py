@@ -9,6 +9,7 @@ before/after rate-limit snapshot.
 from __future__ import annotations
 
 from agent_world.io import fsync_directory
+from agent_world.gemini_pricing import RATES as GEMINI_RATES, SOURCE as GEMINI_PRICING_SOURCE
 
 from decimal import Decimal
 import json
@@ -40,12 +41,13 @@ CODEX_CREDIT_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
 }
 
 USD_RATE_CARD_SOURCES = {
+    "google": GEMINI_PRICING_SOURCE,
     "openai": "https://developers.openai.com/api/docs/pricing",
     "anthropic": "https://platform.claude.com/docs/en/pricing",
     "openrouter": "https://openrouter.ai/models",
     "xai": "https://docs.x.ai/developers/models/grok-4.6",
 }
-USD_RATE_CARD_EFFECTIVE_DATE = "2026-08-24"
+USD_RATE_CARD_EFFECTIVE_DATE = "2026-09-07"
 # List-price API rates. Cached reads use the published cached-input rate.
 # Models with a distinct cache-write tier bill writes at that published rate;
 # models without one fall back to ordinary input pricing. Rate keys are matched
@@ -53,6 +55,8 @@ USD_RATE_CARD_EFFECTIVE_DATE = "2026-08-24"
 # ("gpt-5-6-luna-medium") and effort-tagged variants resolve to their base
 # model without collapsing "gpt-5.4-mini" into "gpt-5.4".
 MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
+    **{model: {key: Decimal(str(rate)) for key, rate in rates.items()}
+       for model, rates in GEMINI_RATES.items()},
     # Grok 4.6 requests below 200k input tokens. xAI publishes a higher
     # long-context tier at/above 200k; the Participant-v6 run's maximum
     # request was 18,331 input tokens, so every recorded request uses this tier.

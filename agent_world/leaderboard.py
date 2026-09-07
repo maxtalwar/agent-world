@@ -24,9 +24,11 @@ from urllib.parse import urlsplit
 try:
     from .leaderboard_launch import LaunchService, LaunchError
     from .benchmark_acceptance import accepted_report
+    from .gemini_pricing import historical_cost
 except ImportError:
     from leaderboard_launch import LaunchService, LaunchError
     from benchmark_acceptance import accepted_report
+    from gemini_pricing import historical_cost
 
 LOG = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
@@ -129,6 +131,8 @@ def within(root: Path, value: str) -> Path:
 
 def model_label(model: str) -> str:
     display_model = re.sub(r"-20\d{6}$", "", model) if model.startswith("claude-") else model
+    if display_model.lower().startswith("gemini-"):
+        display_model = re.sub(r"-(?:low|medium|high|max)$", "", display_model, flags=re.IGNORECASE)
     name = re.sub(r"(?<=\d)-(?=\d)", ".", display_model.removeprefix("claude-"))
     return name.replace("-", " ").title().replace("Gpt ", "GPT-").replace("Glm", "GLM")
 
@@ -261,6 +265,7 @@ class LeaderboardStore:
             "readiness_status": (job.get("analysis_readiness") or {}).get("status"),
         }
         reports, signatures = [], []
+        missing_costs = {}
         for cell in job["cells"]:
             latest = heartbeat_cells.get(cell["id"], {})
             state = (latest.get("controller_state") or cell.get("controller_state")
@@ -308,6 +313,8 @@ class LeaderboardStore:
                 report_digest = protocol.get("recipe_fingerprint_sha256")
                 if report_digest and report_digest != job.get("recipe_fingerprint_sha256"):
                     raise ValueError("Report and job recipe fingerprints differ")
+                missing_costs[cell["seed"]] = historical_cost(
+                    report.get("usage", {}).get("estimated_cost"), job["config"]["model"]["id"])
                 reports.append(report)
                 stat = report_path.stat()
                 signatures.append((str(report_path), stat.st_mtime_ns, stat.st_size))
@@ -327,7 +334,8 @@ class LeaderboardStore:
                 if not r.get("certified"):
                     run["warnings"].append("Awaiting a complete, unique set of required seeds; no replicated rank yet.")
                     continue
-                costs = [x.get("api_list_cost_usd") for x in r["required_replications"]]
+                costs = [x.get("api_list_cost_usd") if x.get("api_list_cost_usd") is not None
+                         else missing_costs.get(x["seed"]) for x in r["required_replications"]]
                 rows.append({
                     "id": job["run_id"] + ":" + r["model"], "model": model_label(r["model"]),
                     "lab": model_lab(r["model"]),

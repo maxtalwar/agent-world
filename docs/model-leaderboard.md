@@ -118,7 +118,9 @@ These standard benchmark results include seeds 11 and 41. The owner explicitly
 accepted the recorded provenance exception; original reports remain unchanged.
 They are ranked on the managed v8.1 leaderboard, separately from v6 above.
 
-| Model | Capability | Execution | Production |
-|---|---:|---:|---:|
-| Gemini 3.7 Flash Medium | 82.66 | 92.37 | 171.5 |
-| Gemini 3.6 Flash Medium | 76.02 | 92.95 | 196.33 |
+| Model | Capability | Execution | Production | API-equivalent cost/run |
+|---|---:|---:|---:|---:|
+| Gemini 3.7 Flash | 82.66 | 92.37 | 171.5 | $5.84 |
+| Gemini 3.6 Flash | 76.02 | 92.95 | 196.33 | $8.18 |
+
+Gemini costs use recorded token totals and [Google standard API rates](https://ai.google.dev/gemini-api/docs/pricing) verified 2026-09-07: $0.75/M uncached input, $0.075/M cached input, and $3.75/M output including thinking. These introductory rates apply through December 31, 2026. Values average the two seeds, exclude cache-storage charges, and estimate API-equivalent cost rather than subscription charges. Original report bytes and acceptance hashes are unchanged.
