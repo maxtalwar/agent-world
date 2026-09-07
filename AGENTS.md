@@ -37,6 +37,14 @@ Explicit user scope overrides these defaults. The already-launched
 September 5 Grok/Luna ledger factorial experiment is authorized to finish
 both seeds; this policy does not cancel those runs.
 
+## Run Monitoring handoff authorization
+
+The user grants standing permission to send run handoffs and operational updates
+to the existing local **Run Monitoring** thread
+(`01a0757e-3b69-75c3-ae4b-5a9c719d3feb`). Use a consolidated handoff for a batch;
+do not ask again for permission to use that thread. This permission covers
+monitoring messages, not unrelated external publication or new run scope.
+
 ## Agent workflow routing
 
 The repository-tracked skills in `.agents/skills` are the canonical operating
