@@ -124,7 +124,13 @@ async function refresh(){
     $('loading').hidden=true;$('sync-status').textContent='Connection interrupted';
   }finally{$('refresh').disabled=false;}
 }
+const experimentDetailState = new Map();
+function experimentStartTime(iso){
+  if(!iso || Number.isNaN(Date.parse(iso)))return 'Not recorded';
+  return new Intl.DateTimeFormat(undefined,{year:'numeric',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(iso));
+}
 function renderExperiments(){
+  $('experiment-list').querySelectorAll('details[data-experiment-id]').forEach(d=>experimentDetailState.set(d.dataset.experimentId,d.open));
   $('loading').hidden=true;$('dashboard').hidden=false;
   const query=$('experiment-search').value.trim().toLowerCase(),filter=$('experiment-filter').value;
   const runs=(data.experiments||[]).filter(r=>{
@@ -137,7 +143,7 @@ function renderExperiments(){
     const request=(data.launches||[]).find(x=>x.run_id===r.id);
     const monitor=request?.monitor_reviewed?'Monitoring paused':request?.supervisor_thread_id?'Event monitoring active':'Local controller';
     return '<section class="card experiment-card"><div class="experiment-context"><img src="/labs/'+esc(r.lab?.id||'unknown')+'.svg" width="24" height="24" alt="'+esc(r.lab?.name||'Model provider')+'"><span>'+esc(r.connector_label||r.connector||'Mixed population')+' · '+esc(r.effort||'Default')+' effort</span><span class="small muted">'+esc(monitor)+'</span></div>'+studyMarkup(r)+
-      '<details class="experiment-details"><summary>Experiment details</summary><p>'+esc(r.question||'No experiment question recorded.')+'</p><p class="small muted">'+esc(r.id)+'</p>'+
+      '<details class="experiment-details" data-experiment-id="'+esc(r.id)+'"'+(experimentDetailState.get(r.id)?' open':'')+'><summary>Experiment details</summary><p class="experiment-started"><span class="small muted">Started</span><strong>'+esc(experimentStartTime(r.created_at))+'</strong></p><p>'+esc(r.question||'No experiment question recorded.')+'</p><p class="small muted">'+esc(r.id)+'</p>'+
       (r.agents?'<p>'+esc(r.agents)+' agents · '+esc(r.cells[0]?.target||'—')+' ticks</p>':'')+
       (Object.keys(r.world_overrides||{}).length?'<dl>'+Object.entries(r.world_overrides).map(([k,v])=>'<dt>'+esc(k.replaceAll('_',' '))+'</dt><dd>'+esc(typeof v==='object'?JSON.stringify(v):v)+'</dd>').join('')+'</dl>':'')+'</details></section>';
   }).join('')||'<div class="card empty">'+(query?'No experiments match your search.':filter==='completed'?'No completed experiments yet.':'No ongoing experiments. Experiments launched from your agents appear here automatically.')+'</div>';

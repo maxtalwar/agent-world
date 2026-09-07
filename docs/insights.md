@@ -22,6 +22,21 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+
+## 2026-09-07 — Ledger adoption did not reliably improve Luna's longer-run outcomes
+
+**Luna wrote substantially more public notes with the ledger enabled, but the
+completed 50-tick comparison did not show a consistent survival benefit.**
+At low effort, ledger-on produced 54/46 notes and 1/2 accepted trades across
+seeds 11/41 versus zero notes/trades with it disabled; survivors remained 3/1.
+At high effort, ledger-on produced 160/163 notes but survivors changed from
+3/5 to 6/2 and accepted trades from 6/5 to 7/3. Thus additional communication
+was not itself a reliable measure of useful coordination. These matched
+10-agent frontier experiments retain the one-AP posting cost, use only two
+world seeds, and include model-output mistakes (0–5 per cell, zero reported
+external-decision failures). They do not establish a general harmful or
+beneficial ledger effect. [Conditions, diagnostic scores, and evidence](ledger-followup-status.md).
+
 ## 2026-09-07 — Flash leads average health without leading production or final survival
 
 **Gemini 3.7 Flash's v8.1 lead over Sol reflects health over time, while Sol
