@@ -22,6 +22,32 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-06 — High effort widens the 5.5/Mini health gap, but helps both models
+
+**On matched seed 11, raising effort improves both societies and widens GPT-5.5's
+Capability lead over Mini from 2.36 to 8.20 points without changing the score.**
+5.5 moves from 57.64 to 74.49 Capability and four to nine survivors; Mini moves
+from 55.28 to 66.28 and three to seven. Reported reasoning per call rises
+81 to 385 for 5.5 and 1,377 to 3,464 for Mini. Thus 5.5 remains far more
+token-frugal even at high, but its zero-reasoning fraction falls from 79.55%
+to 25.26%. This strengthens, without proving, the under-deliberation hypothesis.
+
+The outcome change is not simply fewer invalid actions: Mini's Execution
+falls 89.19 to 88.50 while Production rises 82.00 to 116.00, with two farms
+and a storage structure replacing no completed structures. 5.5's hunger-damage
+events fall 71 to 10, and it completes seven farms versus two. More surviving
+agents also experience more winter-exposure events, so raw exposure-event
+counts should not be mistaken for worsening winter management.
+
+All four worlds reached 60 ticks with clean integrity and full usage coverage.
+They share world configuration, static prompt and CLI version; Mini's older
+baseline source differs only in launcher plumbing, not simulation or connector
+behavior. Model/effort identity is requested-only, not independently returned.
+These are one-seed historical comparisons, not independent repeated trials;
+do not generalize the gap or tune the score to reproduce it. The high worlds
+remain diagnostic experiments, excluded from the medium leaderboard.
+[Reproducible comparison and evidence hashes](capability-effort-comparison.md).
+
 ## 2026-09-06 — Grok 4.6's missing v6 rank was an unaudited fingerprint false positive
 
 **The corrected Grok 4.6 study was excluded despite running the same v6 world;
