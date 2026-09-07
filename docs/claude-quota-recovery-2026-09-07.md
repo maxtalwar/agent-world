@@ -53,3 +53,13 @@ Sonnet had no accepted pending entries and remains in durable quota sleep until
 recovery validator now refuses a nonempty pending journal before mutation.
 Future migrations must archive the journal and explicitly validate any identity
 migration against unchanged observations, model, world, and accepted decisions.
+
+## Authorized diagnostic continuation
+
+The user subsequently approved recomputing Haiku's unfinished tick for each
+seed while preserving every completed tick and recording the deviation.
+Seed 11 resumes from tick 23 and seed 41 from tick 21. Eight previously accepted
+decisions per seed (sixteen total) will be resampled; their original attempted
+usage remains retained separately. This is explicitly diagnostic/deviating
+evidence, not a byte-identical recovery or automatic benchmark certification.
+The existing corrected quota deadline remains 2026-09-07T20:51:00Z.
