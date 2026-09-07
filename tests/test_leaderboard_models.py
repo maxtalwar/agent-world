@@ -89,6 +89,16 @@ class CatalogTests(unittest.TestCase):
             self.assertFalse(decision_model_identity(identifier), identifier)
         self.assertFalse(decision_model_identity("opaque-id", "Google: Nano Banana Pro"))
 
+    def test_muse_picker_exposes_only_standard_tier(self):
+        entries = [{"key": "muse:"+model, "model": model, "name": friendly(model),
+                    "brain": "muse", "lab": "meta", "efforts": None, "variants": None}
+                   for model in ["muse-spark-1.3", "muse-spark-1.3-contributor"]]
+        recipe = {"brains": ["muse"], "defaults": {"reasoning_effort": "medium"}}
+        models = for_recipe(entries, recipe)
+        self.assertEqual([m["name"] for m in models], ["Muse Spark 1.3"])
+        self.assertEqual(models[0]["model"], "muse-spark-1.3")
+        self.assertEqual(for_recipe(entries[1:], recipe), [])
+
     def test_display_alias_preserves_recipe_identity(self):
         self.assertEqual(board_title("participant-v8-revised"), "v8.1")
         self.assertEqual(recipe_label("participant-v8-revised"), "Participant v8.1")

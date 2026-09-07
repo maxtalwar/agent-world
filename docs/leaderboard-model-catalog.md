@@ -41,3 +41,8 @@ from per-token API pricing. It does not establish a Contributor multiplier for
 subscription allowance. Lower API pricing alone is insufficient to switch the
 benchmark default or hide the tier's distinct data-use terms. Standard remains
 unchanged pending documented subscription savings.
+
+The picker exposes only Standard Muse Spark entries, one per version. Contributor
+entries are omitted, including when Standard is unavailable, so hiding the tier
+label never silently opts a launch into different data-use terms. Existing run
+metadata and historical execution IDs are retained.

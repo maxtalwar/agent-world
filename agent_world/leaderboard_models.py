@@ -298,6 +298,10 @@ def for_recipe(entries, source):
     effort = source["defaults"]["reasoning_effort"]
     result = []
     for m in entries:
+        # Expose one Muse option per version, using Standard. Do not silently
+        # substitute the Contributor data-use tier when Standard is unavailable.
+        if re.search(r"muse[- ]spark", m["model"], re.I) and m["model"].endswith("-contributor"):
+            continue
         if m["brain"] not in source["brains"] or (m["efforts"] is not None and effort not in m["efforts"]):
             continue
         result.append({**m, "model": m["variants"].get(effort) if m["variants"] else m["model"]})
