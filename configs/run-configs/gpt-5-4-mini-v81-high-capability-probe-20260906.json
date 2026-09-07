@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "run_id": "gpt-5-4-mini-v81-high-capability-probe-20260906",
+  "kind": "experiment",
+  "question": "How does GPT-5.4 Mini respond to high versus medium effort, and does its Capability gap from GPT-5.5 change at high effort in the matched seed-11 v8.1 world?",
+  "recipe": "participant-v8-revised",
+  "model": {
+    "brain": "codex",
+    "id": "gpt-5.4-mini",
+    "reasoning_effort": "high"
+  },
+  "seeds": [
+    11
+  ],
+  "runtime": {
+    "ticks": 60,
+    "agents": 10,
+    "max_workers": 4,
+    "provider_max_workers": {
+      "codex": 4
+    }
+  },
+  "source": {
+    "commit": "39232e4729d28111b794054c48895c527bf0ad07"
+  }
+}

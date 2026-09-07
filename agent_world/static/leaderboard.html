@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="Live Agent World leaderboards, completed replications, and current benchmark progress.">
+<meta name="theme-color" content="#fafbfc">
+<title>Agent World · Leaderboards</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23243248'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/leaderboard.css">
+<script src="/leaderboard.js" defer></script>
+<script src="/leaderboard-launch.js" defer></script>
+</head>
+<body>
+<main>
+<header class="masthead"><nav class="breadcrumbs" aria-label="Breadcrumb"><a class="brand" href="/" aria-label="Agent World home"><span class="brand-icon" aria-hidden="true">◉</span> Agent World</a><span class="brand-divider" aria-hidden="true">/</span><a href="/laboratory" id="nav-laboratory">Laboratory</a><span class="brand-divider page-crumb" aria-hidden="true">/</span><span id="current-page" aria-current="page">Leaderboards</span></nav><span class="connection"><span class="dot"></span> Private workspace</span></header>
+<section id="laboratory-panel" hidden><div class="page-heading"><div><p class="eyebrow">YOUR WORKSPACE</p><h1>Laboratory<span class="title-dot">.</span></h1></div></div><div class="experiment-grid"><a class="card laboratory-link" href="/"><h2>Leaderboards <span aria-hidden="true">↗</span></h2><p class="muted">Compare benchmark results and follow active studies.</p></a><a class="card laboratory-link" href="/experiments"><h2>Experiments <span aria-hidden="true">↗</span></h2><p class="muted">Follow ongoing experiments, seed progress, and scheduled continuations.</p></a></div></section>
+<div class="page-heading" id="study-heading"><div><p class="eyebrow">THE OBSERVATORY</p><h1>Leaderboards<span class="title-dot">.</span></h1></div><div class="sync"><button id="new-benchmark" class="primary-button">+ Start benchmark</button><span id="sync-status" role="status">Connecting to the laboratory…</span><button id="refresh" class="icon-button" aria-label="Refresh leaderboard" title="Refresh leaderboard">↻</button></div></div>
+<nav id="versions" aria-label="Benchmark version"></nav>
+<div id="error" role="alert" hidden></div>
+<div id="loading" class="card empty">Loading current rankings and studies…</div>
+<div id="dashboard" hidden>
+<section id="launch-history" class="card launch-history" aria-label="Requested benchmarks" hidden><div class="section-heading"><div><h2>Starting benchmarks</h2><p class="muted">New requests appear here until they enter Study Activity.</p></div></div><div id="launch-history-list"></div></section>
+
+<section id="experiments-panel" hidden aria-label="Experiment activity">
+<div class="experiment-toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="experiment-search" type="search" placeholder="Find an experiment or model" aria-label="Find an experiment or model"></label><label class="experiment-filter">Show <select id="experiment-filter"><option value="active">Ongoing</option><option value="completed">Completed</option><option value="all">All experiments</option></select></label></div>
+<p id="experiment-count" class="small muted" role="status"></p>
+<div id="experiment-list" class="experiment-grid"></div>
+</section>
+<div class="content-grid">
+<section class="card rankings"><div class="section-heading"><div><h2>Model rankings</h2><p class="muted" id="ranking-caption"></p></div><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a model" aria-label="Find a model"></label></div><div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div><p id="no-results" class="empty" hidden>No models match your search.</p><div class="table-footer"><span id="table-note"></span><span>Higher scores are better ↗</span></div></section>
+<aside class="card activity"><div class="section-heading"><div><h2>Study activity</h2><p class="muted">From the local run controllers</p></div><span class="activity-icon" aria-hidden="true">◷</span></div><div id="activity-list"></div></aside>
+</div>
+<details class="card methodology"><summary>About these results <span aria-hidden="true">+</span></summary><div id="methodology"></div></details>
+<footer><span>Agent World <span class="muted">/ A living record of agent capabilities</span></span><span id="updated"></span></footer>
+</div>
+</main>
+<dialog id="model-dialog"><button id="close-dialog" class="icon-button close" aria-label="Close model details">×</button><div id="model-details"></div></dialog>
+<dialog id="launch-dialog" aria-labelledby="launch-title">
+<button id="close-launch" class="icon-button close" aria-label="Close launch form">×</button>
+<p class="eyebrow">NEW BENCHMARK</p><h2 id="launch-title" class="detail-title">Add to the field.</h2>
+<p class="muted small">Choose your models. The recipe supplies the world, population, seeds, and reasoning settings.</p>
+<p id="launch-loading" class="small">Checking recipes and Astra availability…</p>
+<div id="launch-error" class="attention" role="alert" hidden></div>
+<form id="launch-form">
+<label>Benchmark recipe<select id="launch-recipe" required></select></label>
+<div class="model-picker">
+<span id="model-picker-label">Models</span>
+<button id="model-picker-toggle" class="model-picker-toggle" type="button" aria-expanded="false" aria-controls="model-picker-panel" aria-labelledby="model-picker-label model-picker-count"><span id="model-picker-count">Choose models</span><span class="select-chevron" aria-hidden="true"></span></button>
+<div id="model-picker-panel" class="model-picker-panel" hidden>
+<input id="model-search" type="search" placeholder="Search models or labs…" aria-label="Search model catalog" autocomplete="off">
+<div class="catalog-controls"><label>Browse<select id="model-browse" aria-label="Browse model catalog"><option value="next">To benchmark next</option><option value="all">All models</option></select></label><label>Lab<select id="model-lab" aria-label="Filter by lab"><option value="">All labs</option><option value="openai">OpenAI</option><option value="anthropic">Anthropic</option><option value="google">Google</option><option value="meta">Meta</option><option value="xai">xAI</option><option value="zai">Z.ai</option><option value="deepseek">DeepSeek</option><option value="mistral">Mistral</option><option value="alibabacloud">Alibaba</option><option value="moonshot">Moonshot</option><option value="minimax">MiniMax</option><option value="cohere">Cohere</option><option value="unknown">Other labs</option></select></label></div>
+<p id="model-browse-note" class="small muted" aria-live="polite"></p>
+<div id="model-options" class="model-options" role="group" aria-label="Available models"></div>
+</div>
+<div id="selected-models" class="selected-models" aria-live="polite"></div>
+<p class="small muted">Select one or more models. Connectors are chosen automatically.</p>
+</div>
+<p id="launch-conditions" class="small muted"></p>
+<p class="supervisor-label"><span class="dot"></span> GPT-6 Astra · Low-effort supervisor</p>
+<button id="review-launch" class="primary-button" type="submit" disabled>Review benchmarks →</button>
+</form>
+<div id="launch-review" hidden>
+<div id="launch-review-summary"></div>
+<p class="small muted">This starts model-backed runs using your connected account. The managed startup gate checks the connector and model before releasing the remaining seeds. One consolidated handoff goes to Run Monitoring automatically.</p>
+<div class="launch-actions"><button id="edit-launch" class="secondary-button">Back</button><button id="confirm-launch" class="primary-button">Start benchmark</button></div>
+</div>
+</dialog>
+</body></html>

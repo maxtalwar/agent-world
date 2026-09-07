@@ -10,7 +10,9 @@ from agent_world.persistence import load_run_checkpoint
 package = Path(agent_world.__file__).resolve().parent
 checkout = Path(__file__).resolve().parents[1]
 assert package != checkout / "agent_world", f"Imported checkout instead of wheel: {package}"
-assert (package / "static" / "observer.html").is_file()
+for asset in ("observer.html", "leaderboard.html", "leaderboard.js", "leaderboard-launch.js",
+              "leaderboard.css", "inter-latin.woff2", "leaderboard-activity-archive.json", "labs/openai.svg"):
+    assert (package / "static" / asset).is_file(), f"Missing packaged dashboard asset: {asset}"
 assert (package / "recipes" / "participant-v6.json").is_file()
 assert (package / "recipes" / "participant-v7.json").is_file()
 with tempfile.TemporaryDirectory(prefix="agent-world-wheel-smoke-") as temporary:

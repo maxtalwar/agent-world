@@ -2,7 +2,7 @@
 
 Revised Participant v8: medium effort, ten agents, 60 ticks, seeds 11 and 41,
 no message board, corrected capacity feedback, per-action Execution, and
-equal-weight Capability. All three models passed two-seed finalization.
+equal-weight Capability. The three models below passed two-seed finalization.
 Rows are ordered by Capability; there is no composite overall score.
 
 | Model | Capability | Execution | Production | Cost/run | Mean time/decision |
@@ -28,4 +28,17 @@ See the [batch handoff](v8-revised-benchmark-batch-2026-09-05.md),
 
 Historical [original v8](model-leaderboard-v8-original.md),
 [v7](model-leaderboard-v7.md), and [v6](model-leaderboard-v6.md) remain separate.
-GPT-5.5 has no revised-v8 run yet and is therefore absent from this table.
+Only cataloged, accepted results appear here; active studies are shown by the dashboard.
+
+## Participant v8.1 — owner-accepted Gemini results (2026-09-07)
+
+These standard benchmark results include seeds 11 and 41. The owner explicitly
+accepted the recorded provenance exception; original reports remain unchanged.
+They are ranked on the managed v8.1 leaderboard, separately from v6 above.
+
+| Model | Capability | Execution | Production | API-equivalent cost/run |
+|---|---:|---:|---:|---:|
+| Gemini 3.7 Flash | 82.66 | 92.37 | 171.5 | $5.84 |
+| Gemini 3.6 Flash | 76.02 | 92.95 | 196.33 | $8.18 |
+
+Gemini costs use recorded token totals and [Google standard API rates](https://ai.google.dev/gemini-api/docs/pricing) verified 2026-09-07: $0.75/M uncached input, $0.075/M cached input, and $3.75/M output including thinking. These introductory rates apply through December 31, 2026. Values average the two seeds, exclude cache-storage charges, and estimate API-equivalent cost rather than subscription charges. Original report bytes and acceptance hashes are unchanged.

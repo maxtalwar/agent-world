@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-09-06T17:15:20.561101+00:00",
+  "updated_at_utc": "2026-09-07",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -478,8 +478,7 @@
       "model_key": "xai-grok-4-6-build-grok-cli",
       "label": "Grok 4.6 Build via Grok CLI",
       "kind": "benchmark_trial",
-      "leaderboard_eligible": false,
-      "leaderboard_exclusion_reason": "Both required seeds completed cleanly and are analytically poolable under Participant v6, but the launch fingerprint has not been admitted as a compatible canonical Participant-v6 fingerprint. Retain the two-seed result as a simulated placement, not an official leaderboard entry.",
+      "admission_audit": "docs/grok-4-6-v6-fingerprint-audit.md",
       "runs": [
         {
           "seed": 11,
@@ -860,6 +859,139 @@
           "report_path": "runs/managed/gpt-5-4-mini-v8-revised-20260905/seed-41/run-report.json"
         }
       ]
+    },
+    {
+      "model_key": "gemini-3.6-flash-medium@participant-v8-revised",
+      "label": "gemini-3.6-flash-medium (v8.1)",
+      "suite": "participant-v8-revised",
+      "scoring_revision": 1,
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "Uses the managed v8.1 ranking projection.",
+      "runs": [
+        {
+          "run_id": "web-gemini-3-6-flash-medium-8c4e0fb57817:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/web-gemini-3-6-flash-medium-8c4e0fb57817/seed-11/run-report.json",
+          "kind": "benchmark_trial",
+          "certification": "eligible_replication",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Ranked by the managed v8.1 recipe projection, not the legacy v6 model-results projection.",
+          "acceptance": "explicit_owner_provenance_override"
+        },
+        {
+          "run_id": "web-gemini-3-6-flash-medium-8c4e0fb57817:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/web-gemini-3-6-flash-medium-8c4e0fb57817/seed-41/run-report.json",
+          "kind": "benchmark_trial",
+          "certification": "eligible_replication",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Ranked by the managed v8.1 recipe projection, not the legacy v6 model-results projection.",
+          "acceptance": "explicit_owner_provenance_override"
+        }
+      ]
+    },
+    {
+      "model_key": "gemini-3.7-flash-medium@participant-v8-revised",
+      "label": "gemini-3.7-flash-medium (v8.1)",
+      "suite": "participant-v8-revised",
+      "scoring_revision": 1,
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "Uses the managed v8.1 ranking projection.",
+      "runs": [
+        {
+          "run_id": "web-gemini-3-7-flash-medium-1ae63d77303d:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/web-gemini-3-7-flash-medium-1ae63d77303d/seed-11/run-report.json",
+          "kind": "benchmark_trial",
+          "certification": "eligible_replication",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Ranked by the managed v8.1 recipe projection, not the legacy v6 model-results projection.",
+          "acceptance": "explicit_owner_provenance_override"
+        },
+        {
+          "run_id": "web-gemini-3-7-flash-medium-1ae63d77303d:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/web-gemini-3-7-flash-medium-1ae63d77303d/seed-41/run-report.json",
+          "kind": "benchmark_trial",
+          "certification": "eligible_replication",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Ranked by the managed v8.1 recipe projection, not the legacy v6 model-results projection.",
+          "acceptance": "explicit_owner_provenance_override"
+        }
+      ]
+    }
+  ],
+  "benchmark_acceptances": [
+    {
+      "report_path": "runs/managed/web-gemini-3-6-flash-medium-8c4e0fb57817/seed-11/run-report.json",
+      "report_sha256": "49c249197575adbe0dff549c784cf968f87fd4dd7c15ec9d8e720741a3a4d4d7",
+      "run_id": "web-gemini-3-6-flash-medium-8c4e0fb57817",
+      "seed": 11,
+      "model": "gemini-3.6-flash-medium",
+      "recipe": "participant-v8-revised",
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "approved_by": "Repository owner",
+      "approved_at": "2026-09-07",
+      "reason": "Owner explicitly accepts the recorded source migration and incomplete native trace retention for standard benchmark admission. Original evidence and limitations remain preserved.",
+      "review_path": "docs/reviews/gemini-v81-provenance-20260907.md"
+    },
+    {
+      "report_path": "runs/managed/web-gemini-3-6-flash-medium-8c4e0fb57817/seed-41/run-report.json",
+      "report_sha256": "cbbb9da023137e53b841d6dd51372cd2b44db774934a39ee614171f51cdcd93e",
+      "run_id": "web-gemini-3-6-flash-medium-8c4e0fb57817",
+      "seed": 41,
+      "model": "gemini-3.6-flash-medium",
+      "recipe": "participant-v8-revised",
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "approved_by": "Repository owner",
+      "approved_at": "2026-09-07",
+      "reason": "Owner explicitly accepts the recorded source migration and incomplete native trace retention for standard benchmark admission. Original evidence and limitations remain preserved.",
+      "review_path": "docs/reviews/gemini-v81-provenance-20260907.md"
+    },
+    {
+      "report_path": "runs/managed/web-gemini-3-7-flash-medium-1ae63d77303d/seed-11/run-report.json",
+      "report_sha256": "af528d33edb0b82257014d094e6acf85f3f6a495376a21fd6cc6dba7bccb6d01",
+      "run_id": "web-gemini-3-7-flash-medium-1ae63d77303d",
+      "seed": 11,
+      "model": "gemini-3.7-flash-medium",
+      "recipe": "participant-v8-revised",
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "approved_by": "Repository owner",
+      "approved_at": "2026-09-07",
+      "reason": "Owner explicitly accepts the recorded source migration and incomplete native trace retention for standard benchmark admission. Original evidence and limitations remain preserved.",
+      "review_path": "docs/reviews/gemini-v81-provenance-20260907.md"
+    },
+    {
+      "report_path": "runs/managed/web-gemini-3-7-flash-medium-1ae63d77303d/seed-41/run-report.json",
+      "report_sha256": "dfa6cfbea62b4e307c9be3dda0dab0a33dc89ea6be90d08833baf9fbc2628c85",
+      "run_id": "web-gemini-3-7-flash-medium-1ae63d77303d",
+      "seed": 41,
+      "model": "gemini-3.7-flash-medium",
+      "recipe": "participant-v8-revised",
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "approved_by": "Repository owner",
+      "approved_at": "2026-09-07",
+      "reason": "Owner explicitly accepts the recorded source migration and incomplete native trace retention for standard benchmark admission. Original evidence and limitations remain preserved.",
+      "review_path": "docs/reviews/gemini-v81-provenance-20260907.md"
+    }
+  ],
+  "pricing_updates": [
+    {
+      "verified_at": "2026-09-07",
+      "source": "https://ai.google.dev/gemini-api/docs/pricing",
+      "models": [
+        "gemini-3.6-flash",
+        "gemini-3.7-flash"
+      ],
+      "basis": "Standard API-equivalent token cost; original reports preserved",
+      "rates_usd_per_million": {
+        "input": 0.75,
+        "cached_input": 0.075,
+        "output_including_thinking": 3.75
+      },
+      "valid_through": "2026-12-31"
     }
   ]
 }

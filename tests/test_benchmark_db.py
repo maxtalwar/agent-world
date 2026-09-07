@@ -14,7 +14,7 @@ class BenchmarkDatabaseTests(unittest.TestCase):
         repo_root = Path(__file__).resolve().parents[1]
         database = repo_root / "data/model-benchmarks.sqlite"
         catalog = repo_root / "data/run-sources.json"
-        expected_leaderboard_sha256 = "c2c29ca514382e5e18732447a6f1e0e2dbaecf22bd9164b42497bfc56fbbd343"
+        expected_leaderboard_sha256 = "d668d7a6602b736cbd8918e77f1230ef3aabf0a391b181436e1e7ac50d7489f5"
         verification = verify_database(database)
         self.assertEqual(verification["integrity"], "ok")
         self.assertEqual(verification["foreign_key_errors"], 0)
@@ -25,14 +25,14 @@ class BenchmarkDatabaseTests(unittest.TestCase):
             rows = [row[:-1] for row in connection.execute("SELECT * FROM leaderboard WHERE suite = 'participant-v6' ORDER BY rank").fetchall()]
         self.assertEqual(catalog_digest, hashlib.sha256(catalog.read_bytes()).hexdigest())
         digest = hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()
-        self.assertEqual(len(rows), 19)
+        self.assertEqual(len(rows), 20)
         self.assertEqual(digest, expected_leaderboard_sha256)
 
     def test_committed_protocols_have_independent_contiguous_ranks(self):
         from agent_world.benchmark_db import format_leaderboard
         database = Path(__file__).resolve().parents[1] / "data/model-benchmarks.sqlite"
         with sqlite3.connect(database) as connection:
-            for suite, count in [("participant-v6", 19), ("participant-v7", 7)]:
+            for suite, count in [("participant-v6", 20), ("participant-v7", 7)]:
                 ranks = [r[0] for r in connection.execute(
                     "SELECT rank FROM leaderboard WHERE suite=? ORDER BY rank", (suite,))]
                 self.assertEqual(ranks, list(range(1, count + 1)))

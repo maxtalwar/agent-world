@@ -154,6 +154,131 @@ Evidence: `tests/test_muse_native_offline.py` (installed native binary, loopback
 server, including an alternate returned model), `tests/test_native_headless_brains.py`
 (trace deduplication and reminder auditing), and
 [connector notes](native-model-connectors.md). No live model quota was used.
+## 2026-09-07 — Ledger adoption did not reliably improve Luna's longer-run outcomes
+
+**Luna wrote substantially more public notes with the ledger enabled, but the
+completed 50-tick comparison did not show a consistent survival benefit.**
+At low effort, ledger-on produced 54/46 notes and 1/2 accepted trades across
+seeds 11/41 versus zero notes/trades with it disabled; survivors remained 3/1.
+At high effort, ledger-on produced 160/163 notes but survivors changed from
+3/5 to 6/2 and accepted trades from 6/5 to 7/3. Thus additional communication
+was not itself a reliable measure of useful coordination. These matched
+10-agent frontier experiments retain the one-AP posting cost, use only two
+world seeds, and include model-output mistakes (0–5 per cell, zero reported
+external-decision failures). They do not establish a general harmful or
+beneficial ledger effect. [Conditions, diagnostic scores, and evidence](ledger-followup-status.md).
+
+## 2026-09-07 — Flash leads average health without leading production or final survival
+
+**Gemini 3.7 Flash's v8.1 lead over Sol reflects health over time, while Sol
+produces more and retains more survivors; equal nominal effort also hides a
+fivefold difference in reported reasoning.** Both use the same recipe digest,
+ten agents, 60 ticks, and seeds 11/41. Gemini scores 82.66 Capability versus
+77.61, but Production is 171.50 versus 202.25 and final survivor counts are
+9/8 versus Sol's 10/10. Seed-level Capability reverses: 90.06 versus 73.95
+on seed 11, and 75.25 versus 81.26 on seed 41. Two seeds cannot establish a
+stable model ordering.
+
+Gemini records about 1,736 reasoning tokens per call versus Sol's 338 despite
+both requesting medium effort. These are provider-reported token counts, not
+matched compute budgets. Its API-equivalent cost is $5.84 versus $25.42 per
+seed under the recorded pricing projection: cheaper token rates and cached
+input allow substantially more reported deliberation at lower estimated cost.
+The estimate covers accepted-decision usage, not every discarded/retried call
+or subscription expenditure.
+
+The recorded behavior differs: Gemini 3.7 has 784 communication events versus
+539, but only three accepted trades versus fourteen; harvest output is 104
+versus 894 accounting units across the two seeds. This is consistent with
+different strategies, not evidence that communication caused the health lead.
+An earlier-health advantage is directly scored by this recipe; general
+intelligence, richer economic coordination, and long-run sustainability are
+not established by the first-place rank.
+
+Both manifests record fresh-conversation connector-v3 operation and identical
+world configuration for each seed. The retained Antigravity connector disables
+tools, MCP, skills, plugins and command execution. This inspection finds no
+configured extra-tool or persistent-session advantage, but does not isolate
+native harness prompts or prove equal effective reasoning budgets. A matched
+cross-harness experiment and more seeds would distinguish these explanations.
+The previously accepted source-recovery exception remains documented; this
+analysis neither changes admission nor treats missing traces as proof of tool use.
+
+Evidence: [Gemini seed 11](../runs/managed/web-gemini-3-7-flash-medium-1ae63d77303d/seed-11/run-report.json),
+[Gemini seed 41](../runs/managed/web-gemini-3-7-flash-medium-1ae63d77303d/seed-41/run-report.json),
+[Sol seed 11](../runs/managed/gpt-5-6-sol-v8-revised-20260906/seed-11/run-report.json),
+[Sol seed 41](../runs/managed/gpt-5-6-sol-v8-revised-20260906/seed-41/run-report.json),
+the adjacent manifests and usage ledgers, [pricing projection](model-leaderboard.md),
+and [source-recovery review and owner acceptance](reviews/gemini-v81-provenance-20260907.md).
+Connector invocation inspected at c94b8afd; its agent_world tree is unchanged
+from Sol's launch commit 39232e47. Recovery changes are covered by that review.
+
+## 2026-09-06 — High effort widens the 5.5/Mini health gap, but helps both models
+
+**On matched seed 11, raising effort improves both societies and widens GPT-5.5's
+Capability lead over Mini from 2.36 to 8.20 points without changing the score.**
+5.5 moves from 57.64 to 74.49 Capability and four to nine survivors; Mini moves
+from 55.28 to 66.28 and three to seven. Reported reasoning per call rises
+81 to 385 for 5.5 and 1,377 to 3,464 for Mini. Thus 5.5 remains far more
+token-frugal even at high, but its zero-reasoning fraction falls from 79.55%
+to 25.26%. This strengthens, without proving, the under-deliberation hypothesis.
+
+The outcome change is not simply fewer invalid actions: Mini's Execution
+falls 89.19 to 88.50 while Production rises 82.00 to 116.00, with two farms
+and a storage structure replacing no completed structures. 5.5's hunger-damage
+events fall 71 to 10, and it completes seven farms versus two. More surviving
+agents also experience more winter-exposure events, so raw exposure-event
+counts should not be mistaken for worsening winter management.
+
+All four worlds reached 60 ticks with clean integrity and full usage coverage.
+They share world configuration, static prompt and CLI version; Mini's older
+baseline source differs only in launcher plumbing, not simulation or connector
+behavior. Model/effort identity is requested-only, not independently returned.
+These are one-seed historical comparisons, not independent repeated trials;
+do not generalize the gap or tune the score to reproduce it. The high worlds
+remain diagnostic experiments, excluded from the medium leaderboard.
+[Reproducible comparison and evidence hashes](capability-effort-comparison.md).
+
+## 2026-09-06 — Grok 4.6's missing v6 rank was an unaudited fingerprint false positive
+
+**The corrected Grok 4.6 study was excluded despite running the same v6 world;
+its unknown fingerprint came from adding the Grok provider boundary and later
+reporting maintenance, not from a different behavioral benchmark.** Both seeds
+ran from pinned commit `8bbd62e`, finished at tick 50 with clean integrity and
+100% usage coverage, and resolved to `grok-4.6-build`. Against admitted v6
+commit `e8057f0`, all common world, rules, interface, parser, engine, and scoring
+sources were unchanged; the two changed common fingerprint files only registered
+the new provider and its worker limit. A fresh pooled-count rescore reproduced
+91.45 execution, 82.41 competence, 92.60 entrepreneurship, and 303.50 productivity
+exactly. This shows why an unknown fingerprint should trigger review rather than
+automatic permanent exclusion. [Full audit](grok-4-6-v6-fingerprint-audit.md).
+
+## 2026-09-06 — The 5.5/Mini health tie conceals different survival paths
+
+**GPT-5.5 keeps agents alive longer, but Mini's living agents have higher mean
+health; those effects cancel in the mean-health score.** On the completed v8.1
+seeds 11/41, 5.5 has 80.67% living original-population agent-ticks at mean
+conditional health 69.96, versus Mini's 75.42% at 74.12, yielding Capability
+56.43 versus 55.90. Sol scores 77.61 with 20/20 final survivors, so the field
+is not presently at a shared health ceiling. 5.5 still records zero reasoning
+tokens on 81.04% of calls, but a causal performance penalty remains a hypothesis.
+The audit also verifies that irreversible health makes equal-time mean health
+a time-weighted sum of damage; early mistakes persist even after stable behavior.
+A toy recovery test shows conditional healing can reward recovery while free
+healing can hide ongoing damage. [Methods, source hashes and probe](capability-health-audit.md).
+
+## 2026-09-06 — Corrected capacity feedback improves output without uniformly deepening the economy
+
+**Across four models on matched seeds, consistently rescored health and production
+improve in every pair, while the largest production gains do not require more
+farming.** Sixteen deterministic replays reproduce the full terminal states and
+health trajectories, enabling exact per-action scoring of pre-telemetry runs.
+Execution improves in seven of eight pairs; Mini gains 11.97 pooled points.
+Capacity failures fall from 778 to 367. Terra Production rises 112.50 to 165.00,
+but its farm harvest output falls from 150 to zero and completed farms from five
+to two. This is consistent with better feedback supporting extraction and survival,
+not proof of stronger economic complexity or an isolated causal effect: provider
+responses vary between historical runs. [Full matched audit and source hashes](v8-feedback-comparison.md).
 
 ## 2026-09-03 — ZCode usage gaps erased cache savings but retained text made reasoning recoverable
 

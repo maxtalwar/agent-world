@@ -145,6 +145,30 @@ authentication failures, failed health gates, and integrity-type
 failures never auto-restart. Use `agent-world resume RUN_ID` only after resolving
 the controller's explicit `needs_attention` condition.
 
+### Recovery ownership after controller attention
+
+An attention state transfers responsibility from the deterministic controller to
+its monitoring agent; it does not automatically transfer work back to the user.
+For an authorized study, the monitor owns investigation, a scoped infrastructure
+or connector repair, focused validation, and managed checkpoint resumption.
+Inspect actual failure evidence before choosing a fix. A repeated deterministic
+failure needs a changed, tested condition, not another identical retry.
+
+Keep the study on the worklist while the fault is repairable. Use an isolated
+engineering checkout, commit and push the fix, and use explicit recorded source
+migration when required. Preserve the original source, recipe, requested model,
+effort, seeds, cohort, checkpoint and accepted decisions. Do not edit a pinned
+checkout in place, relax a tool/provenance guard, reset a study, or fabricate
+successful decisions. Verify post-recovery progress past the blocked checkpoint
+before reporting recovery. The monitor may hand back an unresolved issue only
+when it names the required user input, external dependency, authorization, or
+experimental/evidence decision. Such a handoff must explain what was tried and
+why further autonomous work cannot resolve it.
+
+This preserves the distinction between automatic retries (controller-owned)
+and engineering recovery (monitor-owned). Healthy progress and quota waits
+remain controller-owned and do not need agent messages.
+
 ### 6. Cell completion gate
 
 The job controller automatically performs the protocol-aware report,

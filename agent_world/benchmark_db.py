@@ -519,7 +519,8 @@ def _run_record(
     manifest_path = repo_root / run_spec.get(
         "manifest_path", _related_path(report_path, "-manifest.json").relative_to(repo_root)
     )
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+    from agent_world.benchmark_acceptance import accepted_report
+    report = accepted_report(repo_root, report_path, json.loads(report_path.read_text(encoding="utf-8")))
     usage = [
         _normalize_loaded_usage_record(json.loads(line))
         for line in usage_path.read_text(encoding="utf-8").splitlines()

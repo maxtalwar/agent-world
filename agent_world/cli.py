@@ -799,7 +799,7 @@ def _run(args: argparse.Namespace) -> None:
                 args.brain or saved.get("brain")
             )
             resume_providers = [provider] if provider else []
-        if args.source_recovery_record:
+        if getattr(args, "source_recovery_record", None):
             from agent_world.source_recovery import validate_recovery_record
             validate_recovery_record(args.source_recovery_record, args.resume_checkpoint,
                                      saved_benchmark, args.benchmark_code_fingerprint, resume_providers)

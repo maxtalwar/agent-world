@@ -1,6 +1,6 @@
 # Agent World model-selection leaderboard
 
-**Last updated: 2026-08-25.** This is the canonical agent-facing table for
+**Last updated: 2026-09-06.** This is the canonical agent-facing table for
 choosing models for new Agent World benchmark runs. It contains the complete
 closed Participant v6 field plus the GPT-5.6 Luna Max controlled reasoning
 variant. Use this snapshot as the best cross-model evidence until Participant
@@ -18,24 +18,25 @@ rounded seed scores.
 | Rank | Model | Execution | Competence | Entrepreneurship | Reasoning/decision | Cost/run |
 |---:|---|---:|---:|---:|---:|---:|
 | 1 | Fable 5 | 89.7 | 86.2 | 130.5 | ~615 tok | $57.86 |
-| 2 | Opus 5 | 91.4 | 79.2 | 77.5 | ~287 tok | $24.00 |
-| 3 | Opus 4.8 | 85.0 | 76.7 | 54.5 | ~1,195 tok | $30.84 |
-| 4 | GPT-5.6 Sol | 88.3 | 74.4 | 26.9 | 317 tok | $19.98 |
-| 5 | Sonnet 4.6 | 84.6 | 71.6 | 31.7 | ~1,765 tok | $26.44 |
-| 6† | GPT-5.6 Luna Max | 88.6 | 65.1 | 34.1 | 3,773 tok | $2.96 |
-| 7† | Opus 4.7 | 84.0 | 60.8 | 25.9 | ~383 tok | $17.76 |
-| 8† | GPT-5.4 | 88.5 | 58.4 | 16.4 | 799 tok | $13.13 |
-| 9† | Sonnet 5 | 70.5 | 49.8 | 0.0 | ~287 tok | $9.76 |
-| 10† | Opus 4.6 | 84.7 | 47.3 | 0.0 | ~216 tok | $26.16 |
-| 11† | GPT-5.6 Terra | 82.0 | 43.6 | 0.0 | 226 tok | $7.25 |
-| 12† | GPT-5.6 Luna | 81.6 | 35.5 | 0.0 | 474 tok | $0.79 |
-| 13† | GPT-5.5 | 84.6 | 34.7 | 0.0 | 19 tok | $13.12 |
-| 14† | GPT-5.4 Mini | 73.5 | 26.6 | 0.0 | 1,362 tok | $3.02 |
-| 15† | GPT-5.3 Codex Spark | 72.2 | 20.0 | 0.0 | 5,198 tok | unavailable |
-| 16† | Haiku 4.5 | 79.8 | 0.0 | 0.0 | ~1,830 tok | $8.09 |
-| 17† | GPT-5 Mini | 78.9 | 0.0 | 0.0 | 0 tok | $2.33 |
-| 18† | Qwen3.8 Max | 63.1 | 0.0 | 0.0 | 1,602 tok | $5.81 |
-| 19† | GPT-5.4 Nano | 61.2 | 0.0 | 0.0 | 0 tok | $1.05 |
+| 2 | Grok 4.6 Build via Grok CLI | 91.5 | 82.4 | 92.6 | 3,743 tok | $24.15 |
+| 3 | Opus 5 | 91.4 | 79.2 | 77.5 | ~287 tok | $24.00 |
+| 4 | Opus 4.8 | 85.0 | 76.7 | 54.5 | ~1,195 tok | $30.84 |
+| 5 | GPT-5.6 Sol | 88.3 | 74.4 | 26.9 | 317 tok | $19.98 |
+| 6 | Sonnet 4.6 | 84.6 | 71.6 | 31.7 | ~1,765 tok | $26.44 |
+| 7† | GPT-5.6 Luna Max | 88.6 | 65.1 | 34.1 | 3,773 tok | $2.96 |
+| 8† | Opus 4.7 | 84.0 | 60.8 | 25.9 | ~383 tok | $17.76 |
+| 9† | GPT-5.4 | 88.5 | 58.4 | 16.4 | 799 tok | $13.13 |
+| 10† | Sonnet 5 | 70.5 | 49.8 | 0.0 | ~287 tok | $9.76 |
+| 11† | Opus 4.6 | 84.7 | 47.3 | 0.0 | ~216 tok | $26.16 |
+| 12† | GPT-5.6 Terra | 82.0 | 43.6 | 0.0 | 226 tok | $7.25 |
+| 13† | GPT-5.6 Luna | 81.6 | 35.5 | 0.0 | 474 tok | $0.79 |
+| 14† | GPT-5.5 | 84.6 | 34.7 | 0.0 | 19 tok | $13.12 |
+| 15† | GPT-5.4 Mini | 73.5 | 26.6 | 0.0 | 1,362 tok | $3.02 |
+| 16† | GPT-5.3 Codex Spark | 72.2 | 20.0 | 0.0 | 5,198 tok | unavailable |
+| 17† | Haiku 4.5 | 79.8 | 0.0 | 0.0 | ~1,830 tok | $8.09 |
+| 18† | GPT-5 Mini | 78.9 | 0.0 | 0.0 | 0 tok | $2.33 |
+| 19† | Qwen3.8 Max | 63.1 | 0.0 | 0.0 | 1,602 tok | $5.81 |
+| 20† | GPT-5.4 Nano | 61.2 | 0.0 | 0.0 | 0 tok | $1.05 |
 
 † Luna Max intentionally changes the Participant v6 reasoning effort from
 medium to max. Its rank, and the shifted ranks below it, are analytical rather
@@ -52,11 +53,11 @@ rate, so its cost is not estimated by substitution.
 
 - **Highest demonstrated societal capability:** Fable 5, with the strongest
   competence and by far the strongest entrepreneurship, at the highest cost.
-- **Strong standard-effort balance:** Opus 5 leads standard v6 execution and
-  is second in competence at less than half Fable's estimated cost.
+- **Strong standard-effort balance:** Grok 4.6 Build is second in competence,
+  nearly ties Opus 5 on cost, and leads it substantially in entrepreneurship.
 - **Strongest standard OpenAI result:** GPT-5.6 Sol.
 - **Best demonstrated low-cost upside:** GPT-5.6 Luna Max. It is a controlled
-  effort variant, but its $2.96/run result placed analytically sixth.
+  effort variant, but its $2.96/run result placed analytically seventh.
 - **Cheap baseline or harness smoke:** standard GPT-5.6 Luna is only
   $0.79/run, but its much lower competence means it is not a substitute for
   Luna Max when model behavior is the object of study.
@@ -86,12 +87,10 @@ the study.
   interface and behavioral analysis only; it is not an Ox Alpha leaderboard
   result.
 - The corrected Grok 4.6 Build study completed both required seeds cleanly
-  through the Grok CLI. Its pooled analytical result is 91.5 execution, 82.4
-  competence, and 92.6 entrepreneurship at a token-derived API-list
-  equivalent of $24.15/run, which would place it second by competence between
-  Fable 5 and Opus 5. It remains a simulated position because its clean launch
-  fingerprint has not been admitted as compatible with the closed canonical
-  Participant-v6 pool.
+  through the Grok CLI. Its launch fingerprint was admitted after an explicit
+  [compatibility audit](grok-4-6-v6-fingerprint-audit.md) verified that the
+  intervening source changes did not alter the v6 world, agent interface,
+  actions, engine, or scoring and independently reproduced the pooled scores.
 - Grok 4.5 has no valid cross-harness benchmark result. The Participant-v7
   Grok Build cells both stopped at tick 5 after 20/50 and 13/50
   ambiguous-boundary failures whose provider envelopes were marked

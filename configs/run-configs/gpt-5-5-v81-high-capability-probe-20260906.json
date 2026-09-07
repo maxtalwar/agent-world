@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "run_id": "gpt-5-5-v81-high-capability-probe-20260906",
+  "kind": "experiment",
+  "question": "Does high effort increase GPT-5.5 deliberation and improve sustained survival relative to its completed medium-effort v8.1 seed-11 world?",
+  "recipe": "participant-v8-revised",
+  "model": {
+    "brain": "codex",
+    "id": "gpt-5.5",
+    "reasoning_effort": "high"
+  },
+  "seeds": [
+    11
+  ],
+  "runtime": {
+    "ticks": 60,
+    "agents": 10,
+    "max_workers": 4,
+    "provider_max_workers": {
+      "codex": 4
+    }
+  },
+  "source": {
+    "commit": "39232e4729d28111b794054c48895c527bf0ad07"
+  }
+}
