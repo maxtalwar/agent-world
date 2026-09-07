@@ -542,10 +542,10 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_se
                 content_type = "application/json"
             elif path == "/healthz":
                 body, content_type = b'{"ok":true}', "application/json"
-            elif path in {"/", "/experiments", "/experiments/", "/leaderboard.js", "/leaderboard-launch.js", "/leaderboard.css", "/inter-latin.woff2"} | {
+            elif path in {"/", "/laboratory", "/laboratory/", "/experiments", "/experiments/", "/leaderboard.js", "/leaderboard-launch.js", "/leaderboard.css", "/inter-latin.woff2"} | {
                 "/labs/" + lab + ".svg" for lab in (*LABS, "unknown")
             }:
-                filenames = {"/": "leaderboard.html", "/experiments": "leaderboard.html", "/experiments/": "leaderboard.html"}
+                filenames = {"/": "leaderboard.html", "/laboratory": "leaderboard.html", "/laboratory/": "leaderboard.html", "/experiments": "leaderboard.html", "/experiments/": "leaderboard.html"}
                 file = STATIC / filenames.get(path, path[1:])
                 try:
                     body = file.read_bytes()

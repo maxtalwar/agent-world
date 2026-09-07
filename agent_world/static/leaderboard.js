@@ -4,6 +4,7 @@ const esc = text => String(text ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;'
 const number = (value, digits = 1) => value == null ? '—' : Number(value).toLocaleString(undefined,{minimumFractionDigits:digits,maximumFractionDigits:digits});
 const money = value => value == null ? '—' : '$' + number(value,2);
 let data, selected = new URL(location.href).searchParams.get('board'), sortKey, sortAsc = false;
+const laboratoryPage = location.pathname.replace(/\/$/,'') === '/laboratory';
 const experimentsPage = location.pathname.replace(/\/$/,'') === '/experiments';
 const board = () => data?.boards.find(b => b.id === selected) || data?.boards[0];
 function relative(iso) {
@@ -142,11 +143,16 @@ function renderExperiments(){
   }).join('')||'<div class="card empty">'+(query?'No experiments match your search.':filter==='completed'?'No completed experiments yet.':'No ongoing experiments. Experiments launched from your agents appear here automatically.')+'</div>';
   $('updated').textContent='Updated '+relative(data.updated_at);
 }
-$('nav-experiments').setAttribute('aria-current',experimentsPage?'page':'false');
-$('nav-leaderboards').setAttribute('aria-current',experimentsPage?'false':'page');
+$('current-page').textContent=experimentsPage?'Experiments':'Leaderboards';
+if(laboratoryPage){
+  document.title='Agent World · Laboratory';
+  $('laboratory-panel').hidden=false;$('study-heading').hidden=true;$('versions').hidden=true;$('loading').hidden=true;
+  $('current-page').hidden=true;document.querySelector('.page-crumb').hidden=true;
+  $('nav-laboratory').setAttribute('aria-current','page');
+}
 if(experimentsPage){
   document.title='Agent World · Experiments';
-  document.querySelector('h1').innerHTML='Experiments<span class="title-dot">.</span>';
+  document.querySelector('#study-heading h1').innerHTML='Experiments<span class="title-dot">.</span>';
   $('new-benchmark').hidden=true;$('versions').hidden=true;
   $('loading').textContent='Loading experiments…';
   $('refresh').setAttribute('aria-label','Refresh experiments');$('refresh').title='Refresh experiments';
@@ -159,6 +165,6 @@ $('search').addEventListener('input',renderTable);
 $('refresh').onclick=refresh;
 $('close-dialog').onclick=()=>$('model-dialog').close();
 $('model-dialog').addEventListener('click',event=>{if(event.target===$('model-dialog')&&event.offsetX<0)$('model-dialog').close();});
-refresh();
-setInterval(()=>{if(!document.hidden&&!$('refresh').disabled)refresh();},30000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!$('refresh').disabled)refresh();});
+if(!laboratoryPage)refresh();
+setInterval(()=>{if(!laboratoryPage&&!document.hidden&&!$('refresh').disabled)refresh();},30000);
+document.addEventListener('visibilitychange',()=>{if(!laboratoryPage&&!document.hidden&&!$('refresh').disabled)refresh();});
