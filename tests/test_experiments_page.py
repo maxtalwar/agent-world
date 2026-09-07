@@ -29,3 +29,19 @@ class ExperimentsPageTests(unittest.TestCase):
             self.assertEqual(run['cells'][0]['tick'],12)
             self.assertIsNone(run['cells'][0]['attention'])
             self.assertFalse(run['ranked'])
+
+    def test_catalog_backfill_does_not_suppress_live_pool(self):
+        from agent_world.leaderboard import new_board
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);folder=root/'runs/jobs/live';folder.mkdir(parents=True)
+            (folder/'job.json').write_text(json.dumps({'run_id':'live','kind':'benchmark','recipe':'test-recipe','recipe_fingerprint_sha256':'abc'}))
+            canonical=new_board('test-recipe');canonical['source']='Canonical metrics database'
+            canonical['rows']=[{'id':'older'}]
+            row={'id':'new','model':'New model','scores':{'sustained_competence':42}}
+            run={'id':'live','model':'New model','ranked':True,'cells':[],'warnings':[]}
+            store=LeaderboardStore(root)
+            with patch.object(store,'canonical_boards',return_value=[canonical]),patch.object(store,'managed_run',return_value=(run,[row],None)):
+                data=store.build()
+            self.assertEqual(len(data['boards']),1)
+            self.assertEqual(data['boards'][0]['rows'][0]['id'],'new')
+            self.assertEqual(data['boards'][0]['title'],'test recipe')

@@ -24,6 +24,24 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-07 — Sol's regeneration pilot raised health while production fell
+
+**Conditional health recovery improved Sol's health score in both matched
+seeds, but did not improve final survival or production in this pilot.**
+Both regeneration runs completed 60 ticks with zero model-output or external
+failures. Seed 11/41 capability changed from 73.95/81.26 to 86.22/85.66;
+production from 180.67/223.83 to 160.83/167.83; final survivors from 10/10 to
+9/10. Final total health rose from 365/470 to 655/717 out of 1,000 per world.
+The engine recorded 84/107 health-recovery events. Each world had 10 Sol
+agents at medium effort; the treatment was two health points of recovery after
+two stable ticks with at least half food/water reserves. This is a two-seed
+stochastic pilot, not proof that regeneration reduces production. It shows
+that raising the health-based capability metric alone does not establish
+better survival strategy or economic outcomes.
+Evidence: `runs/jobs/regen2-sol-20260907/job.json` and the `seed-{11,41}`
+`run-report.json` / `run.jsonl` files under `runs/managed/regen2-sol-20260907/`;
+controls under `runs/managed/gpt-5-6-sol-v8-revised-20260906/`.
+
 ## 2026-09-07 — Cumulative quota waiting can make healthy progress look blocked
 
 **A lifetime quota-wait allowance prematurely stopped Claude runs that had

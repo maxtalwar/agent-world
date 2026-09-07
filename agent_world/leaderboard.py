@@ -188,6 +188,8 @@ class LeaderboardStore:
                 board["updated_at"] = datetime.fromtimestamp(
                     database.stat().st_mtime, timezone.utc).isoformat()
                 scores = json.loads(r["scores_json"])
+                board["columns"] = ([["capability", "Capability"], ["execution", "Execution"], ["production", "Production"]]
+                                    if "capability" in scores else CLASSIC_COLUMNS)
                 seeds = [x[0] for x in conn.execute("""
                     SELECT DISTINCT runs.seed FROM runs
                     JOIN run_cohorts USING(run_id) JOIN benchmark_trials USING(run_id)
@@ -380,8 +382,7 @@ class LeaderboardStore:
             warnings.append("Canonical database unavailable; managed results are still shown.")
         archive_path = STATIC / "leaderboard-activity-archive.json"
         archived = read_json(archive_path) if archive_path.exists() else {}
-        boards = {b["id"]: b for b in canonical}
-        canonical_recipes = {b["recipe"] for b in canonical}
+        boards = {}
         for path in sorted((self.root / "runs/jobs").glob("*/job.json")):
             try:
                 job = read_json(path)
@@ -404,12 +405,7 @@ class LeaderboardStore:
                 run, rows, aggregate = self.managed_run(job, path)
                 run["archived"] = run["id"] in archived
                 board["runs"].append(run)
-                if recipe in canonical_recipes:
-                    # The catalog, not discovery, decides admission to closed pools.
-                    run["warnings"].append("This managed study is outside the canonical catalog table.")
-                    run["ranked"] = False
-                else:
-                    board["rows"].extend(rows)
+                board["rows"].extend(rows)
                 if aggregate:
                     protocol = aggregate["protocol"]
                     board["columns"] = protocol.get("score_columns") or CLASSIC_COLUMNS
@@ -424,6 +420,17 @@ class LeaderboardStore:
             except (OSError, ValueError, KeyError, TypeError):
                 LOG.exception("Cannot read managed job %s", path.parent.name)
                 warnings.append(f"Could not read study {path.parent.name}; it has been omitted.")
+        # Database backfills are a fallback, not a signal to close a live
+        # recipe pool. Prefer its validated managed results when available.
+        # Keep distinct managed fingerprints separate; never pool them here.
+        for catalog_board in canonical:
+            matching = [b for b in boards.values() if b["recipe"] == catalog_board["recipe"]]
+            if any(b["rows"] for b in matching):
+                continue
+            for empty in matching:
+                catalog_board["runs"].extend(empty["runs"])
+                del boards[empty["id"]]
+            boards[catalog_board["id"]] = catalog_board
         for board in boards.values():
             if board["source"] != "Canonical metrics database":
                 primary = board["columns"][0][0]
