@@ -4,6 +4,7 @@ const esc = text => String(text ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;'
 const number = (value, digits = 1) => value == null ? '—' : Number(value).toLocaleString(undefined,{minimumFractionDigits:digits,maximumFractionDigits:digits});
 const money = value => value == null ? '—' : '$' + number(value,2);
 let data, selected = new URL(location.href).searchParams.get('board'), sortKey, sortAsc = false;
+const experimentsPage = location.pathname.replace(/\/$/,'') === '/experiments';
 const board = () => data?.boards.find(b => b.id === selected) || data?.boards[0];
 function relative(iso) {
   if(!iso) return 'No update recorded';
@@ -15,6 +16,7 @@ function changeBoard(id) {
   const url=new URL(location.href);url.searchParams.set('board',id);history.replaceState(null,'',url);render();
 }
 function render() {
+  if(experimentsPage){renderExperiments();return;}
   const b=board(); if(!b){$('loading').textContent='No benchmark evidence is available yet.';return;}
   selected=b.id;$('loading').hidden=true;$('dashboard').hidden=false;
   $('versions').innerHTML=data.boards.map(item => '<button class="version-button" aria-current="'+(item.id===b.id)+'" data-board="'+esc(item.id)+'">'+esc(item.title)+(item.source==='Canonical metrics database'?' <span class="version-count">Established</span>':' <span class="version-count">'+item.rows.length+' models</span>')+'</button>').join('');
@@ -68,7 +70,8 @@ function studyMarkup(run, grouped=false) {
   const repairing=affected&&request?.supervisor_thread_id&&!request.monitor_reviewed;
   const provenanceReview=run.readiness_status==='needs_provenance_review';
   const reviewedEvidence=provenanceReview&&request?.monitor_reviewed&&request?.monitor_resolution==='evidence_decision';
-  const status=reviewedEvidence?'Evidence incomplete':provenanceReview?'Provenance review needed':run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':quota?'Quota paused':'In study';
+  const finishedExperiment=run.is_experiment&&run.cells.length&&run.cells.every(c=>cellState(c)==='completed');
+  const status=finishedExperiment?'Completed':reviewedEvidence?'Evidence incomplete':provenanceReview?'Provenance review needed':run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':quota?'Quota paused':'In study';
   const message=repairing?'Run paused after an issue. The monitoring agent is working on a fix.':
     affected?(request?.monitor_resolution_reason||'Run paused after an issue. Monitoring attention is needed.') : '';
   const diagnostics=run.cells.filter(c=>c.attention).map(c=>'Seed '+c.seed+': '+c.attention);
@@ -110,7 +113,7 @@ function showModel(id) {
 async function refresh(){
   $('refresh').disabled=true;
   try{
-    const response=await fetch('/api/leaderboards',{cache:'no-store',signal:AbortSignal.timeout(120000)});
+    const response=await fetch(experimentsPage?'/api/experiments':'/api/leaderboards',{cache:'no-store',signal:AbortSignal.timeout(120000)});
     if(!response.ok)throw new Error('Unavailable');
     data=await response.json();render();
     $('error').hidden=!data.warnings.length;$('error').textContent=data.warnings.join(' ');
@@ -120,6 +123,38 @@ async function refresh(){
     $('loading').hidden=true;$('sync-status').textContent='Connection interrupted';
   }finally{$('refresh').disabled=false;}
 }
+function renderExperiments(){
+  $('loading').hidden=true;$('dashboard').hidden=false;
+  const query=$('experiment-search').value.trim().toLowerCase(),filter=$('experiment-filter').value;
+  const runs=(data.experiments||[]).filter(r=>{
+    const completed=r.cells.length&&r.cells.every(c=>(c.operational_state||c.state)==='completed');
+    return (filter==='all'||(filter==='completed'?completed:!completed))&&
+      [r.model,r.question,r.id,r.connector_label].join(' ').toLowerCase().includes(query);
+  });
+  $('experiment-count').textContent=runs.length+' '+(runs.length===1?'experiment':'experiments');
+  $('experiment-list').innerHTML=runs.map(r=>{
+    const request=(data.launches||[]).find(x=>x.run_id===r.id);
+    const monitor=request?.monitor_reviewed?'Monitoring paused':request?.supervisor_thread_id?'Event monitoring active':'Local controller';
+    return '<section class="card experiment-card"><div class="experiment-context"><img src="/labs/'+esc(r.lab?.id||'unknown')+'.svg" width="24" height="24" alt="'+esc(r.lab?.name||'Model provider')+'"><span>'+esc(r.connector_label||r.connector||'Mixed population')+' · '+esc(r.effort||'Default')+' effort</span><span class="small muted">'+esc(monitor)+'</span></div>'+studyMarkup(r)+
+      '<details class="experiment-details"><summary>Experiment details</summary><p>'+esc(r.question||'No experiment question recorded.')+'</p><p class="small muted">'+esc(r.id)+'</p>'+
+      (r.agents?'<p>'+esc(r.agents)+' agents · '+esc(r.cells[0]?.target||'—')+' ticks</p>':'')+
+      (Object.keys(r.world_overrides||{}).length?'<dl>'+Object.entries(r.world_overrides).map(([k,v])=>'<dt>'+esc(k.replaceAll('_',' '))+'</dt><dd>'+esc(typeof v==='object'?JSON.stringify(v):v)+'</dd>').join('')+'</dl>':'')+'</details></section>';
+  }).join('')||'<div class="card empty">'+(query?'No experiments match your search.':filter==='completed'?'No completed experiments yet.':'No ongoing experiments. Experiments launched from your agents appear here automatically.')+'</div>';
+  $('updated').textContent='Updated '+relative(data.updated_at);
+}
+$('nav-experiments').setAttribute('aria-current',experimentsPage?'page':'false');
+$('nav-leaderboards').setAttribute('aria-current',experimentsPage?'false':'page');
+if(experimentsPage){
+  document.title='Agent World · Experiments';
+  document.querySelector('h1').innerHTML='Experiments<span class="title-dot">.</span>';
+  $('new-benchmark').hidden=true;$('versions').hidden=true;
+  $('loading').textContent='Loading experiments…';
+  $('refresh').setAttribute('aria-label','Refresh experiments');$('refresh').title='Refresh experiments';
+  document.querySelector('.content-grid').hidden=true;document.querySelector('.methodology').hidden=true;
+  $('experiments-panel').hidden=false;
+}
+$('experiment-search').addEventListener('input',()=>{if(data)renderExperiments();});
+$('experiment-filter').addEventListener('change',()=>{if(data)renderExperiments();});
 $('search').addEventListener('input',renderTable);
 $('refresh').onclick=refresh;
 $('close-dialog').onclick=()=>$('model-dialog').close();

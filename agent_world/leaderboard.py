@@ -255,12 +255,13 @@ class LeaderboardStore:
                 pass
         heartbeat_cells = {c["id"]: c for c in heartbeat.get("cells", [])}
         run = {
-            "id": job["run_id"], "model": model_label(job["config"]["model"]["id"]),
+            "id": job["run_id"], "model": model_label(job["config"]["model"].get("id", "Mixed population")),
             "effort": job["config"]["model"].get("reasoning_effort"),
             "created_at": job.get("created_at_utc"), "commit": job.get("launch_commit"),
             "connector": job["config"]["model"].get("brain"),
             "connector_label": {"antigravity": "Antigravity", "muse": "Muse Code", "claude": "Claude Code",
-                                "codex": "Codex"}.get(job["config"]["model"].get("brain"), job["config"]["model"].get("brain")),
+                                "codex": "Codex", "grok": "Grok CLI", "openrouter": "OpenRouter",
+                                "cursor": "Cursor", "devin": "Devin", "zcode": "ZCode"}.get(job["config"]["model"].get("brain"), job["config"]["model"].get("brain")),
             "checked_at": checked, "cells": [], "warnings": [],
             "readiness_status": (job.get("analysis_readiness") or {}).get("status"),
         }
@@ -281,6 +282,8 @@ class LeaderboardStore:
                 pass
             stop_reason = latest.get("stop_reason") or cell.get("controller_stop_reason")
             attention = latest.get("attention") or cell.get("controller_attention")
+            if state == "running" and (tick or 0) > 0:
+                attention = None  # Completed progress supersedes historical startup attention.
             quota_blocked = (state not in {"completed", "running"} and (
                 stop_reason in {"insufficient_quota", "quota_exhausted"}
                 or attention == "quota_wait_budget_exhausted"))
@@ -303,6 +306,8 @@ class LeaderboardStore:
                               or (schedule.get("retry_at") if attention != "quota_wait_budget_exhausted" else None)) if state == "waiting_quota" else None),
                 "reset_at": schedule.get("reset_at"),
             })
+            if job.get("kind") == "experiment":
+                continue
             report_path = within(self.root, cell["output_dir"]) / "run-report.json"
             if not report_path.is_file():
                 continue
@@ -364,6 +369,7 @@ class LeaderboardStore:
 
     def build(self) -> dict:
         warnings = []
+        experiments = []
         try:
             canonical = self.canonical_boards()
         except (OSError, sqlite3.Error, ValueError) as exc:
@@ -378,6 +384,14 @@ class LeaderboardStore:
             try:
                 job = read_json(path)
                 recipe = job.get("recipe") or job.get("protocol")
+                if job.get("kind") == "experiment":
+                    run, _, _ = self.managed_run(job, path)
+                    run.update(is_experiment=True, question=job.get("question") or job.get("config", {}).get("question", ""),
+                               recipe=recipe, lab=model_lab(job["config"]["model"].get("id", "")),
+                               agents=job.get("config", {}).get("runtime", {}).get("agents"),
+                               world_overrides=job.get("config", {}).get("world", {}).get("overrides", {}))
+                    experiments.append(run)
+                    continue
                 if job.get("kind") != "benchmark" or not recipe:
                     continue
                 digest = job.get("recipe_fingerprint_sha256") or ""
@@ -433,7 +447,7 @@ class LeaderboardStore:
             int(re.search(r"v(\d+)", b["recipe"])[1]) if re.search(r"v(\d+)", b["recipe"]) else 0,
             "revised" in b["recipe"], b["source"] == "Canonical metrics database"), reverse=True)
         return {"updated_at": stamp(), "refresh_seconds": self.refresh_seconds,
-                "boards": ordered, "warnings": warnings}
+                "boards": ordered, "experiments": sorted(experiments, key=lambda r: r.get("created_at") or "", reverse=True), "warnings": warnings}
 
     def get(self) -> dict:
         with self.lock:
@@ -518,7 +532,7 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_se
                     LOG.exception("Launch options unavailable")
                     self.json_response({"error": "Launch options are temporarily unavailable"}, 503)
                 return
-            if path == "/api/leaderboards":
+            if path in {"/api/leaderboards", "/api/experiments"}:
                 try:
                     body = json.dumps({**store.get(), "launches": launches.recent()}, allow_nan=False).encode()
                 except Exception:
@@ -528,10 +542,10 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_se
                 content_type = "application/json"
             elif path == "/healthz":
                 body, content_type = b'{"ok":true}', "application/json"
-            elif path in {"/", "/leaderboard.js", "/leaderboard-launch.js", "/leaderboard.css", "/inter-latin.woff2"} | {
+            elif path in {"/", "/experiments", "/experiments/", "/leaderboard.js", "/leaderboard-launch.js", "/leaderboard.css", "/inter-latin.woff2"} | {
                 "/labs/" + lab + ".svg" for lab in (*LABS, "unknown")
             }:
-                filenames = {"/": "leaderboard.html"}
+                filenames = {"/": "leaderboard.html", "/experiments": "leaderboard.html", "/experiments/": "leaderboard.html"}
                 file = STATIC / filenames.get(path, path[1:])
                 try:
                     body = file.read_bytes()

@@ -13,6 +13,7 @@
 <body>
 <main>
 <header class="masthead"><a class="brand" href="/" aria-label="Agent World home"><span class="brand-icon" aria-hidden="true">◉</span> Agent World <span class="brand-divider">/</span> <span class="muted">Laboratory</span></a><span class="connection"><span class="dot"></span> Private workspace</span></header>
+<nav class="site-nav" aria-label="Laboratory pages"><a href="/" id="nav-leaderboards">Leaderboards</a><a href="/experiments" id="nav-experiments">Experiments</a></nav>
 <div class="page-heading"><div><p class="eyebrow">THE OBSERVATORY</p><h1>Leaderboards<span class="title-dot">.</span></h1></div><div class="sync"><button id="new-benchmark" class="primary-button">+ Start benchmark</button><span id="sync-status" role="status">Connecting to the laboratory…</span><button id="refresh" class="icon-button" aria-label="Refresh leaderboard" title="Refresh leaderboard">↻</button></div></div>
 <nav id="versions" aria-label="Benchmark version"></nav>
 <div id="error" role="alert" hidden></div>
@@ -20,6 +21,11 @@
 <div id="dashboard" hidden>
 <section id="launch-history" class="card launch-history" aria-label="Requested benchmarks" hidden><div class="section-heading"><div><h2>Starting benchmarks</h2><p class="muted">New requests appear here until they enter Study Activity.</p></div></div><div id="launch-history-list"></div></section>
 
+<section id="experiments-panel" hidden aria-label="Experiment activity">
+<div class="experiment-toolbar"><label class="search"><span aria-hidden="true">⌕</span><input id="experiment-search" type="search" placeholder="Find an experiment or model" aria-label="Find an experiment or model"></label><label class="experiment-filter">Show <select id="experiment-filter"><option value="active">Ongoing</option><option value="completed">Completed</option><option value="all">All experiments</option></select></label></div>
+<p id="experiment-count" class="small muted" role="status"></p>
+<div id="experiment-list" class="experiment-grid"></div>
+</section>
 <div class="content-grid">
 <section class="card rankings"><div class="section-heading"><div><h2>Model rankings</h2><p class="muted" id="ranking-caption"></p></div><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a model" aria-label="Find a model"></label></div><div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div><p id="no-results" class="empty" hidden>No models match your search.</p><div class="table-footer"><span id="table-note"></span><span>Higher scores are better ↗</span></div></section>
 <aside class="card activity"><div class="section-heading"><div><h2>Study activity</h2><p class="muted">From the local run controllers</p></div><span class="activity-icon" aria-hidden="true">◷</span></div><div id="activity-list"></div></aside>
