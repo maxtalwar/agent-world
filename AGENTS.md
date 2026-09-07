@@ -45,6 +45,19 @@ to the existing local **Run Monitoring** thread
 do not ask again for permission to use that thread. This permission covers
 monitoring messages, not unrelated external publication or new run scope.
 
+## Monitoring notification policy
+
+Send at most one consolidated recovery update per incident or batch after the
+recovery outcome is verified. Then stay silent until continuation succeeds,
+fails, or needs user action. Record intermediate diagnoses, scheduling steps,
+verification details, and unchanged blockers locally; do not send each as a
+separate handoff or user notification. A documentation commit/push problem must
+not trigger another run-status update when runtime continuation is unaffected.
+Do not acknowledge routine monitor-to-parent messages unless they materially
+change the user's information or require action. Explicit user status requests
+remain an exception. Do not send acknowledgement-only replies to notification
+policy updates.
+
 ## Agent workflow routing
 
 The repository-tracked skills in `.agents/skills` are the canonical operating
