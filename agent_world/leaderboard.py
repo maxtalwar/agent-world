@@ -281,7 +281,7 @@ class LeaderboardStore:
                 pass
             stop_reason = latest.get("stop_reason") or cell.get("controller_stop_reason")
             attention = latest.get("attention") or cell.get("controller_attention")
-            quota_blocked = (state != "completed" and (
+            quota_blocked = (state not in {"completed", "running"} and (
                 stop_reason in {"insufficient_quota", "quota_exhausted"}
                 or attention == "quota_wait_budget_exhausted"))
             if quota_blocked:
