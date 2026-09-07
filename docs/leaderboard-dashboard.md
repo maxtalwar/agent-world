@@ -4,6 +4,35 @@ Open **http://desktop-lbmut2i.tailb88da4.ts.net:8091/** from a device connected 
 the same Tailscale network. The host must be awake and signed in to Windows.
 The dashboard refreshes every 30 seconds while its tab is visible.
 
+## World viewer
+
+The home page (`/` or `/laboratory`) includes an illustrated **Enter the world**
+link. Leaderboards now live at `/leaderboards`; existing `/?board=…` links still
+open the requested board.
+
+Open `/world` for Willowbank, a clearly labeled, curated tick-48 snapshot of a
+120-tick standard 16×16 world with ten residents. It uses the canonical map,
+native engine dataclasses and snapshot serialization, six farm plots with
+different food quantities, houses, shelters, storage, a workshop, a well, and
+an unfinished house. It is mock illustration data, not a recorded trajectory
+or benchmark evidence. Rebuild it with `python3 scripts/build-world-demo.py`.
+
+The top navigation also lists saved managed worlds. A direct link has the form
+`/world?run=RUN_ID&cell=CELL_ID`. Both demo and real worlds use the same renderer
+and native snapshot shape, including arbitrary supported map sizes, overlapping
+structures, living/dead agents, and construction state. Real snapshots refresh
+every 30 seconds while the page is visible. The viewer never launches, pauses,
+resumes, or alters runs. Water, crop, and idle animation are decorative; agent
+coordinates change only when a new snapshot arrives. Reduced-motion preferences
+disable animation.
+
+The read-only `/api/worlds` endpoint discovers saved cells from managed jobs;
+`/api/world` reads the selected cell's JSON snapshot, never its checkpoint.
+File paths must resolve inside the repository, including symlink targets.
+The response excludes memories, prompts, and diagnostics. An unavailable world
+shows an error; it never silently falls back to the demo. Connection failures
+retain the last successful image and explicitly clear the live status.
+
 ## What it shows
 
 - Canonical model rankings from `data/model-benchmarks.sqlite`, including
@@ -74,6 +103,9 @@ Disable its Tailscale route with `tailscale serve --http=8091 off`.
 ```sh
 python3 -m unittest discover -s tests -p test_leaderboard.py -v
 node --check agent_world/static/leaderboard.js
+python3 -m unittest discover -s tests -p test_world_viewer.py -v
+node --check agent_world/static/world-renderer.js
+node --check agent_world/static/world-viewer.js
 ```
 
 The tests cover canonical score parity, controlled variants, absent costs,

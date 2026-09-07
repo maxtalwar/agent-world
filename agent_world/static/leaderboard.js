@@ -4,7 +4,7 @@ const esc = text => String(text ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;'
 const number = (value, digits = 1) => value == null ? '—' : Number(value).toLocaleString(undefined,{minimumFractionDigits:digits,maximumFractionDigits:digits});
 const money = value => value == null ? '—' : '$' + number(value,2);
 let data, selected = new URL(location.href).searchParams.get('board'), sortKey, sortAsc = false;
-const laboratoryPage = location.pathname.replace(/\/$/,'') === '/laboratory';
+const laboratoryPage = location.pathname.replace(/\/$/,'') === '/laboratory' || (location.pathname === '/' && !new URL(location.href).searchParams.has('board'));
 const experimentsPage = location.pathname.replace(/\/$/,'') === '/experiments';
 const board = () => data?.boards.find(b => b.id === selected) || data?.boards[0];
 function relative(iso) {

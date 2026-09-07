@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#eef1e8">
+<meta name="description" content="A quiet window into Agent World. Watch settlements take shape in the Laboratory.">
+<title>Agent World · World viewer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%233c594b'/%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="/world-viewer.css">
+<script src="/world-renderer.js" defer></script>
+<script src="/world-viewer.js" defer></script>
+</head>
+<body>
+<header class="viewer-nav">
+<nav aria-label="Main navigation"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">◉</span><span>Agent World</span></a><span class="nav-divider" aria-hidden="true">/</span><span class="current">World viewer</span></nav>
+<div class="world-navigation"><label class="sr-only" for="world-select">Navigate to a world</label><select id="world-select"><option value="demo">Willowbank · Demo</option></select><a class="back-link" href="/laboratory"><span aria-hidden="true">↖</span> Laboratory</a></div>
+</header>
+<main class="world-stage" id="world-stage">
+<div class="world-heading"><p class="eyebrow">A WINDOW INTO THE WORLD</p><h1 id="world-title">World viewer</h1><p id="world-subtitle">Opening saved world…</p></div>
+<div class="world-status"><span class="source-badge" id="source-badge">CONNECTING</span><p id="tick-label">Saved state</p><p id="population-label"></p></div>
+<canvas id="world-canvas" role="img" aria-describedby="world-description">An isometric view of the simulated world.</canvas>
+<p id="world-description" class="sr-only"></p>
+<div class="stage-message" id="stage-message" role="status">Opening a window into the world…</div>
+<div class="world-caption"><span class="caption-line" aria-hidden="true"></span><div><p id="scene-caption">A window into the laboratory.</p><p id="scene-note"></p></div></div>
+<div class="tile-inspection" id="tile-inspection" hidden><strong id="inspection-title"></strong><span id="inspection-detail"></span></div>
+<div class="compass" aria-hidden="true"><span>N</span><svg viewBox="0 0 50 50"><path d="M25 5 31 25 25 45 19 25Z" fill="#607969" opacity=".55"/><path d="m5 25 20-6 20 6-20 6Z" fill="#a6b4a1"/><circle cx="25" cy="25" r="3" fill="#eef1e8"/></svg></div>
+<noscript><p class="stage-message">Enable JavaScript to display the world viewer.</p></noscript>
+</main>
+</body></html>

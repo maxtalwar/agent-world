@@ -19,16 +19,18 @@ import subprocess
 import sys
 import threading
 import time
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 try:
     from .leaderboard_launch import LaunchService, LaunchError
     from .benchmark_acceptance import accepted_report
     from .gemini_pricing import historical_cost
+    from .world_viewer import WorldViewer, SnapshotUnavailable
 except ImportError:
     from leaderboard_launch import LaunchService, LaunchError
     from benchmark_acceptance import accepted_report
     from gemini_pricing import historical_cost
+    from world_viewer import WorldViewer, SnapshotUnavailable
 
 LOG = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
@@ -461,6 +463,7 @@ class LeaderboardStore:
 
 def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_service=None) -> ThreadingHTTPServer:
     store = LeaderboardStore(root)
+    viewer = WorldViewer(root)
     launches = launch_service or LaunchService(root)
     csrf_token = secrets.token_urlsafe(32)
     allowed_hosts = {"127.0.0.1", "localhost", "::1", socket.gethostname().lower()}
@@ -524,6 +527,17 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_se
 
         def do_GET(self):
             path = urlsplit(self.path).path
+            if path in {"/api/worlds", "/api/world"}:
+                try:
+                    query = parse_qs(urlsplit(self.path).query)
+                    result = viewer.worlds() if path == "/api/worlds" else viewer.snapshot(
+                        query.get("run", ["demo"])[0], query.get("cell", [None])[0])
+                    self.json_response(result)
+                except FileNotFoundError:
+                    self.json_response({"error": "World not found."}, 404)
+                except (SnapshotUnavailable, OSError, ValueError, KeyError, TypeError):
+                    self.json_response({"error": "World snapshot temporarily unavailable."}, 503)
+                return
             if path == "/api/launch/options":
                 if not self.trusted_host():
                     self.json_response({"error": "Unrecognized leaderboard hostname"}, 403)
@@ -544,10 +558,10 @@ def make_server(root: Path, host: str = "127.0.0.1", port: int = 8091, launch_se
                 content_type = "application/json"
             elif path == "/healthz":
                 body, content_type = b'{"ok":true}', "application/json"
-            elif path in {"/", "/laboratory", "/laboratory/", "/experiments", "/experiments/", "/leaderboard.js", "/leaderboard-launch.js", "/leaderboard.css", "/inter-latin.woff2"} | {
+            elif path in {"/", "/laboratory", "/laboratory/", "/experiments", "/experiments/", "/leaderboard.js", "/leaderboard-launch.js", "/leaderboard.css", "/inter-latin.woff2", "/leaderboards", "/leaderboards/", "/world", "/world/", "/world-renderer.js", "/world-viewer.js", "/world-preview.js", "/world-viewer.css"} | {
                 "/labs/" + lab + ".svg" for lab in (*LABS, "unknown")
             }:
-                filenames = {"/": "leaderboard.html", "/laboratory": "leaderboard.html", "/laboratory/": "leaderboard.html", "/experiments": "leaderboard.html", "/experiments/": "leaderboard.html"}
+                filenames = {"/world": "world-viewer.html", "/world/": "world-viewer.html", "/leaderboards": "leaderboard.html", "/leaderboards/": "leaderboard.html", "/": "leaderboard.html", "/laboratory": "leaderboard.html", "/laboratory/": "leaderboard.html", "/experiments": "leaderboard.html", "/experiments/": "leaderboard.html"}
                 file = STATIC / filenames.get(path, path[1:])
                 try:
                     body = file.read_bytes()
