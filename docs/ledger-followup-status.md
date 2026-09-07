@@ -60,3 +60,11 @@ from the original config. Partial outputs, checkpoints and usage are preserved.
 
 Both low-effort Grok conditions retain **seeds 11 and 41** as explicitly
 requested. This scope update did not launch or resume any model calls.
+
+### Medium effort deferred
+
+Later on September 7, the user deferred both medium-effort Grok conditions
+entirely. Their seed-11 cells are preserved under `deferred_cells`, with no
+active cells eligible for managed resumption. Seed 41 remains withdrawn.
+Resuming medium effort requires a new user request; if requested, restore only
+seed 11 to the active cell list. Low-effort conditions retain both seeds.

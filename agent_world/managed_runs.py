@@ -743,6 +743,8 @@ def job_status(run_id: str, root: Path | None = None) -> dict[str, Any]:
 
 def resume_job(run_id: str) -> dict[str, Any]:
     initial = load_job(run_id)
+    if initial.get("deferral", {}).get("status") == "deferred":
+        raise ValueError("Experiment deferred by user; explicit reactivation is required before resume")
     resumed = []
     with _job_lock(initial["job_dir"]):
         job = load_job(run_id)

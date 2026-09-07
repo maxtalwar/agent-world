@@ -385,6 +385,8 @@ class LeaderboardStore:
                 job = read_json(path)
                 recipe = job.get("recipe") or job.get("protocol")
                 if job.get("kind") == "experiment":
+                    if job.get("deferral", {}).get("status") == "deferred":
+                        continue
                     run, _, _ = self.managed_run(job, path)
                     run.update(is_experiment=True, question=job.get("question") or job.get("config", {}).get("question", ""),
                                recipe=recipe, lab=model_lab(job["config"]["model"].get("id", "")),
