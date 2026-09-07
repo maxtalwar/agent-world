@@ -186,7 +186,7 @@ class LeaderboardStore:
                     ORDER BY runs.seed
                 """, (r["model_key"],))]
                 board["rows"].append({
-                    "id": r["model_key"], "model": r["label"], "rank": r["rank"],
+                    "id": r["model_key"], "model": ("Grok 4.6" if r["label"] == "Grok 4.6 Build via Grok CLI" else r["label"]), "rank": r["rank"],
                     "lab": model_lab(r["model_key"]),
                     "scores": {k: v.get("score") for k, v in scores.items()},
                     "formulas": {k: v.get("formula", "") for k, v in scores.items()},
