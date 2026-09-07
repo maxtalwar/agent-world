@@ -51,6 +51,9 @@ class WorldConfig:
     survival_food_decay: int = 1
     survival_water_decay: int = 2
     survival_energy_decay: int = 1
+    health_regen_rate: int = 0
+    health_regen_reserve_fraction: float = 0.5
+    health_regen_stable_ticks: int = 2
     exhaustion_damage: int = 2
     carried_food_spoil_interval: int = 6
     carried_food_spoil_quantity: int = 1
@@ -115,6 +118,10 @@ class WorldConfig:
                     raise ValueError(f"{descriptor.name} must be finite")
                 if value < 0:
                     raise ValueError(f"{descriptor.name} cannot be negative")
+        if not 0 < self.health_regen_reserve_fraction <= 1:
+            raise ValueError("health_regen_reserve_fraction must be in (0, 1]")
+        if self.health_regen_stable_ticks < 1:
+            raise ValueError("health_regen_stable_ticks must be positive")
         for name in ("width", "height", "action_points_per_tick", "season_length_ticks"):
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} must be positive")
@@ -206,6 +213,7 @@ class Agent:
     needs: Needs = field(default_factory=Needs)
     skills: dict[str, int] = field(default_factory=dict)
     health: int = 100
+    health_regen_streak: int = 0
     reputation: int = 0
     relationships: dict[str, int] = field(default_factory=dict)
     memory: list[str] = field(default_factory=list)

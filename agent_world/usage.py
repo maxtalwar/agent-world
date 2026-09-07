@@ -9,6 +9,7 @@ before/after rate-limit snapshot.
 from __future__ import annotations
 
 from agent_world.io import fsync_directory
+from agent_world.gemini_pricing import RATES as GEMINI_RATES, SOURCE as GEMINI_SOURCE
 
 from decimal import Decimal
 import json
@@ -40,6 +41,7 @@ CODEX_CREDIT_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
 }
 
 USD_RATE_CARD_SOURCES = {
+    "google": GEMINI_SOURCE,
     "openai": "https://developers.openai.com/api/docs/pricing",
     "anthropic": "https://platform.claude.com/docs/en/pricing",
     "openrouter": "https://openrouter.ai/models",
@@ -55,6 +57,8 @@ USD_RATE_CARD_EFFECTIVE_DATE = "2026-09-05"
 # ("gpt-5-6-luna-medium") and effort-tagged variants resolve to their base
 # model without collapsing "gpt-5.4-mini" into "gpt-5.4".
 MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
+    **{model: {key: Decimal(str(value)) for key, value in rates.items()}
+       for model, rates in GEMINI_RATES.items()},
     "grok-4.5": {
         "input": Decimal("2"), "cached_input": Decimal("0.3"),
         "cache_write": Decimal("2"), "output": Decimal("6"),

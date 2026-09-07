@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "run_id": "regen2-sol-20260907",
+  "kind": "experiment",
+  "question": "Does conditional health regeneration improve recovery and distinguish sustainable survival? Compare with existing v8.1 same-model seeds 11/41; regeneration is the only world treatment.",
+  "recipe": "participant-v8-revised",
+  "model": {
+    "brain": "codex",
+    "id": "gpt-5.6-sol",
+    "reasoning_effort": "medium"
+  },
+  "seeds": [
+    11,
+    41
+  ],
+  "world": {
+    "overrides": {
+      "health_regen_rate": 2,
+      "health_regen_reserve_fraction": 0.5,
+      "health_regen_stable_ticks": 2
+    }
+  },
+  "runtime": {
+    "ticks": 60,
+    "agents": 10,
+    "max_workers": 4,
+    "quota_wait_hours": 12
+  },
+  "harness": {
+    "connector_profile": "connector-v3",
+    "conversation_mode": "fresh-conversation",
+    "decision_mode": "raw"
+  }
+}

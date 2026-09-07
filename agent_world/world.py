@@ -2366,6 +2366,7 @@ class WorldEngine:
                     scope="private",
                     recipients={agent.id},
                 )
+            self._apply_health_regeneration(agent, damage)
             if agent.health <= 0:
                 agent.alive = False
                 self.log_event(
@@ -2376,6 +2377,31 @@ class WorldEngine:
                     data={"reserves": agent.needs.as_dict()},
                     scope="public",
                 )
+
+    def _apply_health_regeneration(self, agent: Agent, damage: int) -> None:
+        config = self.state.config
+        if not config.health_regen_rate:
+            return
+        maxima = {"food": config.food_reserve_max, "water": config.water_reserve_max,
+                  "energy": config.energy_reserve_max}
+        eligible = agent.alive and agent.health > 0 and damage == 0 and all(
+            maximum > 0 and getattr(agent.needs, name) >= maximum * config.health_regen_reserve_fraction
+            for name, maximum in maxima.items()
+        )
+        agent.health_regen_streak = (getattr(agent, "health_regen_streak", 0) + 1) if eligible else 0
+        before = agent.health
+        if eligible and agent.health_regen_streak >= config.health_regen_stable_ticks:
+            agent.health = min(100, agent.health + config.health_regen_rate)
+        self.log_event(
+            "health_recovery" if agent.health > before else "health_recovery_check", actor_id=agent.id, position=agent.position,
+            message=f"{agent.name} recovered {agent.health - before} health." if agent.health > before
+                    else f"{agent.name} recovery conditions checked.",
+            data={"eligible": eligible, "streak": agent.health_regen_streak,
+                  "restored": agent.health - before, "health": agent.health,
+                  "reserves": agent.needs.as_dict(), "damage": damage,
+                  "cause": "sustained_reserves_without_damage" if eligible else "conditions_not_met"},
+            scope="private", recipients={agent.id},
+        )
 
     def _apply_food_spoilage(self) -> None:
         interval = self.state.config.carried_food_spoil_interval

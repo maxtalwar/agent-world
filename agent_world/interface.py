@@ -27,6 +27,7 @@ from agent_world.rules import (
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
 HARNESS_CONTROL_EVENT_TYPES = {
+    "health_recovery_check",
     "benchmark_checkpoint",
     "run_completed",
     "run_failed",
@@ -171,6 +172,11 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         "tick": state.tick,
         **({"season": season_payload} if season_payload else {}),
         "world": {
+            **({"health_regeneration": {
+                "rate": state.config.health_regen_rate,
+                "reserve_fraction": state.config.health_regen_reserve_fraction,
+                "stable_ticks": state.config.health_regen_stable_ticks,
+            }} if state.config.health_regen_rate else {}),
             "width": state.config.width,
             "height": state.config.height,
             "visible_radius": radius,
@@ -415,6 +421,14 @@ def _render_static_context(world: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.extend(_prompt_rules(world))
     lines.append(objective_instruction(world))
+    if regen := world.get("health_regeneration"):
+        lines.append(
+            f"HEALTH RECOVERY: After actions and passive needs decay, keep food, water and energy "
+            f"each at least {100 * regen['reserve_fraction']:g}% of maximum and take no health damage "
+            f"for {regen['stable_ticks']} consecutive ticks. On that tick and each qualifying tick "
+            f"afterward, automatically regain {regen['rate']} health, capped at 100. "
+            "A shortage or damage resets the streak. Death is permanent."
+        )
     ledger_prompt_mode = str(world.get("town_ledger_prompt_mode", "baseline"))
     ledger_output_mode = str(world.get("town_ledger_output_mode", "action"))
     ledger_submission = (
