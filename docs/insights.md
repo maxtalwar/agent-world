@@ -22,6 +22,20 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-06 — Grok 4.6's missing v6 rank was an unaudited fingerprint false positive
+
+**The corrected Grok 4.6 study was excluded despite running the same v6 world;
+its unknown fingerprint came from adding the Grok provider boundary and later
+reporting maintenance, not from a different behavioral benchmark.** Both seeds
+ran from pinned commit `8bbd62e`, finished at tick 50 with clean integrity and
+100% usage coverage, and resolved to `grok-4.6-build`. Against admitted v6
+commit `e8057f0`, all common world, rules, interface, parser, engine, and scoring
+sources were unchanged; the two changed common fingerprint files only registered
+the new provider and its worker limit. A fresh pooled-count rescore reproduced
+91.45 execution, 82.41 competence, 92.60 entrepreneurship, and 303.50 productivity
+exactly. This shows why an unknown fingerprint should trigger review rather than
+automatic permanent exclusion. [Full audit](grok-4-6-v6-fingerprint-audit.md).
+
 ## 2026-09-06 — The 5.5/Mini health tie conceals different survival paths
 
 **GPT-5.5 keeps agents alive longer, but Mini's living agents have higher mean

@@ -61,9 +61,11 @@ class LeaderboardTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         boards = LeaderboardStore(root).canonical_boards()
         board = next(b for b in boards if b["recipe"] == "participant-v6")
-        self.assertEqual(len(board["rows"]), 19)
+        self.assertEqual(len(board["rows"]), 20)
         self.assertEqual(board["rows"][0]["model"], "Fable 5")
         self.assertEqual(board["rows"][0]["scores"]["sustained_competence"], 86.21)
+        self.assertEqual(board["rows"][1]["model"], "Grok 4.6 Build via Grok CLI")
+        self.assertEqual(board["rows"][1]["scores"]["sustained_competence"], 82.41)
         variant = next(r for r in board["rows"] if "Luna Max" in r["model"])
         self.assertEqual(variant["status"], "Controlled variant")
         self.assertEqual(variant["seeds"], [11, 41])

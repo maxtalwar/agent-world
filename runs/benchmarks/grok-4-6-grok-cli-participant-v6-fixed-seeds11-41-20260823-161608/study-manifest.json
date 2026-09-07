@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "study_id": "grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608",
-  "status": "replicated_complete_analytical_only",
+  "status": "replicated_certified",
   "created_at_utc": "2026-08-23T16:16:08Z",
   "study_type": "benchmark_trial",
   "suite_id": "agent-world-participant-v6",
@@ -33,6 +33,20 @@
     "launch_branch": "codex/fix-grok-build-v6-rerun",
     "dirty_worktree": false,
     "supersedes_invalid_study": "grok-4-6-grok-cli-participant-v6-seeds11-41-20260822-233838"
+  },
+  "admission_audit": {
+    "audited_at_utc": "2026-09-07T00:23:51Z",
+    "audit_path": "docs/grok-4-6-v6-fingerprint-audit.md",
+    "baseline_commit": "e8057f0044541ad3fd75f097ccda001da980d430",
+    "launch_commit": "8bbd62e6b1bc7dc09b6239d3b6d3c4df6e59c793",
+    "launch_fingerprint": "8e68cf64dbb92792b6a5f27a860d34c44289cbec3420e8a9b5a1cb469215b6f8",
+    "conclusion": "compatible_participant_v6",
+    "score_reproduction": {
+      "effective_execution": 91.45,
+      "sustained_competence": 82.41,
+      "entrepreneurial_agency": 92.6,
+      "economic_productivity": 303.5
+    }
   },
   "replications": {
     "required_seeds": [11, 41],
@@ -110,10 +124,10 @@
   },
   "launcher": "scripts/run-isolated-cohort",
   "result": {
-    "certification": "replicated_complete_analytical_only",
+    "certification": "replicated_certified",
     "seeds": [11, 41],
-    "source_fingerprint_compatible": false,
-    "leaderboard_status": "analytical_only_not_admitted",
+    "source_fingerprint_compatible": true,
+    "leaderboard_status": "admitted",
     "effective_execution": 91.45,
     "sustained_competence": 82.41,
     "entrepreneurial_agency": 92.6,
@@ -135,8 +149,8 @@
   },
   "analysis_readiness": {
     "schema_version": 1,
-    "status": "diagnostic_only",
-    "checked_at_utc": "2026-08-25T02:38:20Z",
+    "status": "ready",
+    "checked_at_utc": "2026-09-07T00:23:51Z",
     "launch_commit": "8bbd62e6b1bc7dc09b6239d3b6d3c4df6e59c793",
     "protocol": "participant-v6",
     "completed_seeds": [11, 41],
@@ -157,8 +171,6 @@
       "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed11/run-report.json",
       "runs/benchmarks/grok-4-6-grok-cli-participant-v6-fixed-seeds11-41-20260823-161608/grok-4-6-build-v6-seed41/run-report.json"
     ],
-    "blockers": [
-      "The clean launch fingerprint has not been admitted as a compatible canonical Participant-v6 fingerprint, so the pooled result supports a simulated analytical placement only."
-    ]
+    "blockers": []
   }
 }
