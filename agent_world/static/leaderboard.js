@@ -80,9 +80,10 @@ function studyMarkup(run, grouped=false) {
   if(quota&&request?.monitor_resolution_reason)diagnostics.push(request.monitor_resolution_reason);
   if(affected&&run.cells.some(c=>c.state==='status_stale'))diagnostics.push('Controller updates are paused while the run is stopped.');
   return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+(grouped?'':status)+'</span></div>'+
+    run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>').join('')+
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
     (reviewedEvidence?'<p class="study-note">'+esc(request.monitor_resolution_reason)+'</p>':'')+
-    run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>'+(cellState(c)==='waiting_quota'&&!sharedTiming?'<p class="study-note">'+esc(quotaTiming(c))+'</p>':'')).join('')+
+    (!sharedTiming?[...new Set(run.cells.filter(c=>cellState(c)==='waiting_quota').map(c=>quotaTiming(c)))].map(t=>'<p class="study-note">'+esc(t)+'</p>').join(''):'')+
     (sharedTiming&&!grouped?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
     [...new Set(run.warnings)].filter(w=>!provenanceReview||w!=='diagnostic only').map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
     (diagnostics.length?'<details class="study-diagnostics"><summary>Technical details</summary>'+diagnostics.map(d=>'<p>'+esc(d)+'</p>').join('')+'</details>':'')+
