@@ -255,6 +255,7 @@ class LeaderboardStore:
             "connector_label": {"antigravity": "Antigravity", "muse": "Muse Code", "claude": "Claude Code",
                                 "codex": "Codex"}.get(job["config"]["model"].get("brain"), job["config"]["model"].get("brain")),
             "checked_at": checked, "cells": [], "warnings": [],
+            "readiness_status": (job.get("analysis_readiness") or {}).get("status"),
         }
         reports, signatures = [], []
         for cell in job["cells"]:
