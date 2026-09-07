@@ -23,8 +23,10 @@ from urllib.parse import urlsplit
 
 try:
     from .leaderboard_launch import LaunchService, LaunchError
+    from .benchmark_acceptance import accepted_report
 except ImportError:
     from leaderboard_launch import LaunchService, LaunchError
+    from benchmark_acceptance import accepted_report
 
 LOG = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
@@ -202,7 +204,8 @@ class LeaderboardStore:
         return list(boards.values())
 
     def aggregate(self, job: dict, reports: list[dict], signatures: tuple) -> dict:
-        key = (job["run_id"], job.get("recipe_fingerprint_sha256"), signatures)
+        key = (job["run_id"], job.get("recipe_fingerprint_sha256"), signatures,
+               json.dumps([r.get("owner_acceptance") for r in reports], sort_keys=True))
         if key in self.aggregates:
             return self.aggregates[key]
         candidates = [job.get("execution_root")]
@@ -291,7 +294,10 @@ class LeaderboardStore:
             if not report_path.is_file():
                 continue
             try:
-                report = read_json(report_path)
+                report = accepted_report(self.root, report_path, read_json(report_path))
+                if report.get("owner_acceptance"):
+                    run["readiness_status"] = "owner_accepted"
+                    run["owner_acceptance"] = report["owner_acceptance"]
                 # Only final reports may contribute to ranking, including early
                 # population extinction when the report declares completion.
                 if not report.get("run", {}).get("completed"):
@@ -327,8 +333,8 @@ class LeaderboardStore:
                     "lab": model_lab(r["model"]),
                     "scores": {k: v.get("score") for k, v in r["scores"].items()},
                     "formulas": {k: v.get("formula", "") for k, v in r["scores"].items()},
-                    "status": r["status"].replace("_", " ").capitalize(),
-                    "seeds": r["required_seeds"], "note": "; ".join(r.get("certification_flags", [])),
+                    "status": "Certified" if run.get("owner_acceptance") else r["status"].replace("_", " ").capitalize(),
+                    "seeds": r["required_seeds"], "note": ("Owner-approved provenance override: source migration and incomplete native trace retention accepted on 2026-09-07." if run.get("owner_acceptance") else "; ".join(r.get("certification_flags", []))),
                     "cost": sum(costs) / len(costs) if costs and all(x is not None for x in costs) else None,
                     "reasoning": r.get("mean_reasoning_tokens_per_call"),
                     "reasoning_estimated": r.get("reasoning_tokens_estimated", False),

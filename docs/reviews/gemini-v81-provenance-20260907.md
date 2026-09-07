@@ -41,3 +41,12 @@ The adjacent JSON contains per-cell report hashes, checkpoint verification,
 trace receipt counts, and missing native session IDs. Restore those databases
 and associated stream indices to reopen the review. Fresh runs under one clean
 connector revision are another option, but were not launched by this review.
+
+## Owner acceptance — 2026-09-07
+
+The owner subsequently directed that these four seed reports be accepted as
+standard benchmark evidence despite this recorded provenance limitation. This
+supersedes the earlier admission decision, not the factual audit. Exact report
+hashes and the approval are recorded in data/run-sources.json. Derived views
+apply the acceptance while preserving original reports and missing-evidence
+disclosures. Future reports and other integrity failures are not waived.

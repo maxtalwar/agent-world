@@ -110,3 +110,15 @@ When adding a model or corrected replication, update the source catalog,
 regenerate `data/model-benchmarks.sqlite`, and update this document in the same
 commit as the durable benchmark evidence. Never update the table from a startup
 manifest, partial run, or arithmetic mean of rounded seed scores.
+
+
+## Participant v8.1 — owner-accepted Gemini results (2026-09-07)
+
+These standard benchmark results include seeds 11 and 41. The owner explicitly
+accepted the recorded provenance exception; original reports remain unchanged.
+They are ranked on the managed v8.1 leaderboard, separately from v6 above.
+
+| Model | Capability | Execution | Production |
+|---|---:|---:|---:|
+| Gemini 3.7 Flash Medium | 82.66 | 92.37 | 171.5 |
+| Gemini 3.6 Flash Medium | 76.02 | 92.95 | 196.33 |
