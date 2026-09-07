@@ -18,10 +18,10 @@ import time
 
 try:
     from .leaderboard_models import model_catalog, for_recipe, recipe_label
-    from .leaderboard_supervisor import AstraClient, SupervisorError, MODEL, EFFORT
+    from .leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
 except ImportError:
     from leaderboard_models import model_catalog, for_recipe, recipe_label
-    from leaderboard_supervisor import AstraClient, SupervisorError, MODEL, EFFORT
+    from leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
 
 ACTIVE = {"queued", "launching", "supervising"}
 MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/+\[\]\-]{0,127}\Z")
@@ -509,7 +509,7 @@ def dispatch_once(service):
     with service.connection() as db:
         rows = db.execute("SELECT id FROM requests WHERE state IN ('queued','launching') ORDER BY created").fetchall()
     requests = [service.get(row["id"]) for row in rows]
-    requests = [r for r in requests if r.get("dispatch_ready", True)]
+    requests = [r for r in requests if r.get("dispatch_ready", True) and r.get("handoff_retry_at", 0) <= time.time()]
     if not requests:
         return False
     thread = service.settings.get("monitor_thread_id")
@@ -519,7 +519,7 @@ def dispatch_once(service):
     try:
         pending = [r for r in requests if not r.get("assignment_ready")]
         # If the process died during an acknowledged turn, do not send it again.
-        ambiguous = [r for r in pending if r.get("supervisor_turn_id")]
+        ambiguous = [r for r in pending if r.get("supervisor_turn_id") or r.get("assignment_started")]
         for r in ambiguous:
             service.update(r["id"], state="needs_attention",
                            error="Monitoring handoff was interrupted; inspect Run Monitoring before retrying.")
@@ -530,7 +530,7 @@ def dispatch_once(service):
             client.verify()
             state = client.rpc("thread/read", {"threadId": thread, "includeTurns": True})
             if any(t.get("status") == "inProgress" for t in state.get("thread", {}).get("turns", [])):
-                return True  # Leave queued; never overlap an existing monitoring turn.
+                raise SupervisorBusy("Run Monitoring is working on another turn")
             client.attach(thread)
             for r in pending:
                 service.validate_source(r)
@@ -538,9 +538,12 @@ def dispatch_once(service):
             def update_all(changes):
                 for r in pending:
                     service.update(r["id"], **changes)
+            # Also persist here so alternate clients cannot omit the duplicate guard.
+            update_all({"assignment_started": True})
             client.turn(thread, assignment_prompt(pending), update_all)
             for r in pending:
-                service.update(r["id"], assignment_ready=True, supervisor_state="watching")
+                service.update(r["id"], assignment_ready=True, supervisor_state="watching",
+                               error=None, handoff_retry_at=0, handoff_retry_count=0)
         for original in requests:
             request = service.get(original["id"])
             job_path = service.root / "runs/jobs" / request["run_id"] / "job.json"
@@ -555,6 +558,24 @@ def dispatch_once(service):
             except Exception as exc:
                 service.update(request["id"], state="needs_attention", supervisor_thread_id=thread,
                                error=str(exc)[-1000:])
+        return True
+    except (SupervisorBusy, SupervisorConnectionError) as exc:
+        for original in requests:
+            r = service.get(original["id"])
+            count = r.get("handoff_retry_count", 0) + 1
+            if r.get("assignment_started") or r.get("supervisor_turn_id"):
+                service.update(r["id"], state="needs_attention", supervisor_state="needs_attention",
+                               error="Monitoring acknowledgment was interrupted; checking the existing handoff is required before retrying.")
+            elif isinstance(exc, SupervisorBusy) or count <= 5:
+                delay = min(300, 30 * 2 ** min(count - 1, 4))
+                message = ("Waiting for Run Monitoring to become available. Retrying automatically."
+                           if isinstance(exc, SupervisorBusy) else
+                           "Monitoring connection interrupted. Retrying automatically.")
+                service.update(r["id"], state="queued", supervisor_state="waiting", error=message,
+                               handoff_retry_count=count, handoff_retry_at=time.time() + delay)
+            else:
+                service.update(r["id"], state="needs_attention", supervisor_state="needs_attention",
+                               error="Monitoring connection could not be restored after five retries. See local supervisor diagnostics.")
         return True
     except Exception as exc:
         for r in requests:
@@ -571,6 +592,8 @@ def worker(root, identifier=None):
     # healthy runs or opens a new Codex task. The existing heartbeat owns monitoring.
     service = LaunchService(root)
     while True:
+        if service.settings_path.exists():
+            service.settings = read(service.settings_path)
         dispatch_once(service)
         time.sleep(30)
 

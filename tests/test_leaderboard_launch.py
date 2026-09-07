@@ -11,7 +11,7 @@ from urllib.error import HTTPError
 
 from agent_world.leaderboard import make_server
 from agent_world.leaderboard_launch import LaunchService, LaunchError, dispatch_once
-from agent_world.leaderboard_supervisor import AstraClient, MODEL, EFFORT
+from agent_world.leaderboard_supervisor import AstraClient, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
 
 
 class LaunchTests(unittest.TestCase):
@@ -227,6 +227,66 @@ class LaunchTests(unittest.TestCase):
         fake.turn.assert_not_called()
         launch.assert_not_called()
         self.assertEqual(self.service.get(self.identifier)["state"], "queued")
+
+    def test_writer_conflict_waits_then_launches_once(self):
+        self.service.update(self.identifier, state="queued")
+        fake = Mock()
+        fake.rpc.return_value = {"thread": {"turns": []}}
+        fake.attach.side_effect = [SupervisorBusy("already has an active writer"), "shared-monitor"]
+        with patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
+             patch.object(self.service, "validate_source"), \
+             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
+            dispatch_once(self.service)
+            request = self.service.get(self.identifier)
+            self.assertEqual(request["state"], "queued")
+            self.assertEqual(request["supervisor_state"], "waiting")
+            fake.turn.assert_not_called()
+            launch.assert_not_called()
+            dispatch_once(self.service)  # Backoff suppresses reconnection.
+            self.assertEqual(fake.attach.call_count, 1)
+            self.service.update(self.identifier, handoff_retry_at=0)
+            dispatch_once(self.service)
+            dispatch_once(self.service)
+        fake.turn.assert_called_once()
+        launch.assert_called_once()
+        self.assertEqual(self.service.get(self.identifier)["state"], "supervising")
+
+    def test_connection_before_assignment_retries_with_bound(self):
+        self.service.update(self.identifier, state="queued")
+        with patch("agent_world.leaderboard_launch.AstraClient",
+                   side_effect=SupervisorConnectionError("closed")), \
+             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
+            for attempt in range(6):
+                self.service.update(self.identifier, handoff_retry_at=0)
+                dispatch_once(self.service)
+                self.assertEqual(self.service.get(self.identifier)["state"],
+                                 "queued" if attempt < 5 else "needs_attention")
+        launch.assert_not_called()
+
+    def test_connection_after_prompt_intent_never_resends(self):
+        self.service.update(self.identifier, state="queued")
+        fake = Mock()
+        fake.rpc.return_value = {"thread": {"turns": []}}
+        fake.turn.side_effect = SupervisorConnectionError("closed before turn id received")
+        with patch("agent_world.leaderboard_launch.AstraClient", return_value=fake), \
+             patch.object(self.service, "validate_source"), \
+             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
+            dispatch_once(self.service)
+            self.assertTrue(self.service.get(self.identifier)["assignment_started"])
+            self.service.update(self.identifier, state="queued")  # Simulate dispatcher recovery.
+            dispatch_once(self.service)
+        fake.turn.assert_called_once()
+        launch.assert_not_called()
+        self.assertEqual(self.service.get(self.identifier)["state"], "needs_attention")
+
+    def test_rpc_classifies_active_writer_conflict(self):
+        client = AstraClient.__new__(AstraClient)
+        client.sequence = 0
+        client.send = Mock()
+        client.receive = Mock(return_value={"id": 1, "error": {
+            "message": "thread shared-monitor already has an active writer"}})
+        with self.assertRaises(SupervisorBusy):
+            client.rpc("thread/resume", {})
 
     def test_worklist_requires_terminal_or_attention_before_acknowledgment(self):
         self.service.update(self.identifier, state="supervising")

@@ -50,3 +50,18 @@ metadata and historical execution IDs are retained.
 ZCode advertises only native `max` reasoning, matching BrainSpec validation. Its
 models are omitted from fixed recipes requiring any other effort. General
 experiments and genuinely max-effort recipes remain supported.
+
+## Monitoring handoff retries
+
+The detached leaderboard dispatcher leaves a batch queued when Run Monitoring
+is busy or its Codex writer is owned by another process. It retries with
+30-second exponential backoff capped at five minutes, without interrupting the
+current owner. Connection failures before prompt submission receive up to five
+retries. The dispatcher reloads its local runtime settings between attempts.
+
+Prompt intent is recorded before submission. A lost acknowledgment is held for
+inspection rather than resending the prompt or launching without confirmed
+supervision. Existing turn IDs retain the same duplicate guard. Local bounded
+process stderr and exit diagnostics are retained in
+`.local/leaderboard-launches/supervisor-diagnostics.log`; raw diagnostics are
+not displayed on the public dashboard.

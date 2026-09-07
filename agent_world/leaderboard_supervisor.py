@@ -7,6 +7,7 @@ import queue
 import subprocess
 import threading
 import time
+from collections import deque
 
 MODEL = "gpt-6-astra"
 EFFORT = "low"
@@ -16,7 +17,15 @@ class SupervisorError(RuntimeError):
     pass
 
 
-class SupervisorTimeout(SupervisorError):
+class SupervisorBusy(SupervisorError):
+    pass
+
+
+class SupervisorConnectionError(SupervisorError):
+    pass
+
+
+class SupervisorTimeout(SupervisorConnectionError):
     pass
 
 
@@ -26,9 +35,12 @@ class AstraClient:
         self.native_windows = binary.lower().endswith(".exe")
         self.process = subprocess.Popen(
             [binary, "app-server"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL, text=True, bufsize=1,
+            stderr=subprocess.PIPE, text=True, bufsize=1,
             env={**os.environ, "PATH": str(Path.home() / ".local/bin") + ":" + os.environ.get("PATH", "")},
         )
+        self.diagnostics = deque(maxlen=40)
+        self.stderr_reader = threading.Thread(target=self._read_stderr, daemon=True)
+        self.stderr_reader.start()
         self.messages = queue.Queue()
         self.events = []
         self.sequence = 0
@@ -41,6 +53,10 @@ class AstraClient:
             self.close()
             raise
 
+    def _read_stderr(self):
+        for line in self.process.stderr:
+            self.diagnostics.append(line.rstrip()[-2000:])
+
     def _read(self):
         try:
             for line in self.process.stdout:
@@ -52,8 +68,11 @@ class AstraClient:
             self.messages.put(None)
 
     def send(self, payload):
-        self.process.stdin.write(json.dumps(payload) + "\n")
-        self.process.stdin.flush()
+        try:
+            self.process.stdin.write(json.dumps(payload) + "\n")
+            self.process.stdin.flush()
+        except (BrokenPipeError, OSError) as exc:
+            raise SupervisorConnectionError("Astra supervisor connection closed") from exc
 
     def receive(self, timeout=30):
         try:
@@ -61,7 +80,7 @@ class AstraClient:
         except queue.Empty:
             raise SupervisorTimeout("Astra supervisor did not respond in time")
         if item is None:
-            raise SupervisorError("Astra supervisor connection closed")
+            raise SupervisorConnectionError("Astra supervisor connection closed")
         # Automatic approval review is configured on the thread. If a request
         # still reaches this headless client, never approve it silently.
         if "id" in item and "method" in item:
@@ -79,7 +98,10 @@ class AstraClient:
             msg = self.receive(max(0.1, deadline - time.monotonic()))
             if msg.get("id") == request_id:
                 if "error" in msg:
-                    raise SupervisorError(str(msg["error"].get("message", "Codex request failed"))[:500])
+                    error = str(msg["error"].get("message", "Codex request failed"))[:500]
+                    if "already has an active writer" in error.lower():
+                        raise SupervisorBusy(error)
+                    raise SupervisorError(error)
                 return msg.get("result", {})
             self.events.append(msg)
         raise SupervisorError("Codex request timed out")
@@ -119,6 +141,8 @@ class AstraClient:
         return result["thread"]["id"]
 
     def turn(self, thread_id, prompt, on_update):
+        # Persist intent BEFORE sending: a lost response must never duplicate a prompt.
+        on_update({"assignment_started": True})
         result = self.rpc("turn/start", {
             "threadId": thread_id, "model": MODEL, "effort": EFFORT,
             "input": [{"type": "text", "text": prompt}],
@@ -161,3 +185,10 @@ class AstraClient:
             except subprocess.TimeoutExpired:
                 self.process.kill()
                 self.process.wait()
+        self.stderr_reader.join(timeout=2)
+        if self.diagnostics or self.process.returncode not in (0, -15):
+            folder = self.root / ".local/leaderboard-launches"
+            folder.mkdir(parents=True, exist_ok=True)
+            # Local diagnostics only; never put provider stderr into public request errors.
+            with (folder / "supervisor-diagnostics.log").open("a") as log:
+                log.write(f"{time.time()} exit={self.process.returncode}\n" + "\n".join(self.diagnostics) + "\n")
