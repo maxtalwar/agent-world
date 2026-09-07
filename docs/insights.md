@@ -23,6 +23,23 @@ masqueraded as model behavior — append an entry.** Rules:
   The bar is: would a researcher who read every leaderboard still be surprised?
 
 
+
+## 2026-09-07 — Cumulative quota waiting can make healthy progress look blocked
+
+**A lifetime quota-wait allowance prematurely stopped Claude runs that had
+successfully recovered between provider windows.** Sonnet seed 11 in
+`web-claude-sonnet-5-f8f540cb1847` waited at ticks 36, 41 and 45. Its ledger
+correctly parsed the 03:50, 08:50 and 13:50 Pacific resets, but summed
+16,677.7 + 17,343.6 + 9,178.8 seconds against one 43,200-second allowance.
+The third wait therefore ended around 11:32 Pacific, before the real 13:50
+reset, producing an unnecessary refusing call and an attention state.
+Haiku's sibling run reached the same cumulative cap. This is infrastructure
+accounting, not model behavior. The repair renews the episode allowance only
+after a completed tick, preserves aggregate wait telemetry, and refuses to
+probe before a known reset when a single episode exhausts its allowance.
+See [Claude quota recovery](claude-quota-recovery-2026-09-07.md).
+
+
 ## 2026-09-06 — Antigravity schema completion can look like forbidden tool use
 
 **Generic Antigravity stream tool events can be internal schema-finish retries,

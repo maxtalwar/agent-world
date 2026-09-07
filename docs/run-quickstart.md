@@ -211,8 +211,10 @@ entirely because its protocol rejects incompatible overrides.
   provider capacity, rate limits, and wall-clock throughput. The run records
   the actual counts for diagnosis, but comparisons and finalization do not
   require equal counts.
-- `quota_wait_hours` controls how long the harness freezes and retries the same
-  tick after a provider limit. A benchmark supplies its protocol default.
+- `quota_wait_hours` bounds the wait for one blocked tick after a provider limit.
+  A completed tick renews the allowance; repeated resumes of the same blocked
+  tick retain it. A benchmark supplies its protocol default. If the allowance
+  ends before a stated reset, the harness checkpoints without an early probe.
 - `sequential_decisions: true` disables concurrent decisions and therefore
   bypasses the normal worker pool; standardized benchmark configs still reject
   this separate debug mode.

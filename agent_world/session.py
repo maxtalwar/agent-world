@@ -149,6 +149,7 @@ class SimulationSession:
         self._sleep = sleep
         saved_quota = getattr(engine, "_session_quota_state", {})
         self._quota_wait_used = float(saved_quota.get("reserved_seconds", 0.0))
+        self._quota_wait_total = float(saved_quota.get("total_seconds", self._quota_wait_used))
         self._quota_backoff_seconds = float(saved_quota.get("backoff_seconds", 300.0))
         self._quota_resume_until = float(saved_quota.get("resume_at", 0.0))
         self.pending_tick_path = pending_tick_path or pending_tick_path_for_artifacts(
@@ -210,6 +211,12 @@ class SimulationSession:
                 usage_checkpoint = self.runtime.usage_checkpoint()
                 try:
                     events = self.runner.step()
+                    # A completed tick proves the provider recovered. The wait
+                    # allowance bounds one blocked tick, not the whole study.
+                    self._quota_wait_used = 0.0
+                    self._quota_backoff_seconds = 300.0
+                    self._quota_resume_until = 0.0
+                    self.engine._session_quota_state = {"total_seconds": self._quota_wait_total}
                 except RunBudgetExceeded as exc:
                     self._rollback_uncached_usage(usage_checkpoint)
                     status, stop_reason = "paused_checkpoint", "resource_budget_exhausted"
@@ -278,6 +285,7 @@ class SimulationSession:
                             "cached_decision_count": len(exc.cached_agents),
                             "provider_event_counts": self.runtime.provider_event_summary(),
                             "quota_wait_seconds_used": round(self._quota_wait_used, 1),
+                            "quota_wait_seconds_total": round(self._quota_wait_total, 1),
                             "partial_usage_path": (
                                 str(partial_usage_path.resolve()) if partial_usage_path else None
                             ),
@@ -526,10 +534,14 @@ class SimulationSession:
                 self._quota_backoff_seconds * 2, self.quota_wait_poll_max_seconds
             )
             source = "backoff"
-        delay = min(remaining, max(60.0, delay))
+        required_delay = max(60.0, delay)
+        delay = min(remaining, required_delay)
         self._quota_wait_used += delay
+        self._quota_wait_total += delay
         self._quota_resume_until = time.time() + delay
         self.engine._session_quota_state = {
+            "completed_tick": self.engine.state.tick,
+            "total_seconds": self._quota_wait_total,
             "reserved_seconds": self._quota_wait_used,
             "backoff_seconds": self._quota_backoff_seconds,
             "resume_at": self._quota_resume_until,
@@ -548,7 +560,8 @@ class SimulationSession:
                 "wait_seconds": round(delay, 1),
                 "wait_source": source,
                 "provider_reset_at_utc": reset_at.isoformat() if reset_at else None,
-                "waited_seconds_total": round(self._quota_wait_used, 1),
+                "waited_seconds_total": round(self._quota_wait_total, 1),
+                "waited_seconds_episode": round(self._quota_wait_used, 1),
                 "resume_at_unix": self._quota_resume_until,
                 "wait_budget_seconds": self.quota_wait_max_seconds,
                 "provider_messages": messages,
@@ -559,6 +572,10 @@ class SimulationSession:
         self._sleep_for_quota(delay)
         self._quota_resume_until = 0.0
         self.engine._session_quota_state["resume_at"] = 0.0
+        if delay < required_delay:
+            # The allowance ended before the advertised reset. Preserve the
+            # checkpoint without making a known-early provider call.
+            return False
         # Clear the cached quota flag so the retry makes a real call instead of
         # short-circuiting on the message that triggered this wait.
         self.runtime.clear_quota_unavailable()
@@ -567,7 +584,8 @@ class SimulationSession:
             message="Retrying the tick after the quota wait.",
             data={
                 "completed_tick": self.engine.state.tick,
-                "waited_seconds_total": round(self._quota_wait_used, 1),
+                "waited_seconds_total": round(self._quota_wait_total, 1),
+                "waited_seconds_episode": round(self._quota_wait_used, 1),
             },
             scope="public",
         )

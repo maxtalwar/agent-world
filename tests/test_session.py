@@ -629,6 +629,42 @@ class QuotaWaitAndResumeTests(unittest.TestCase):
         self.assertAlmostEqual(sum(slept), 3600, places=6)
         self.assertLessEqual(engine._session_quota_state["reserved_seconds"], 3600)
 
+    def test_successful_tick_renews_quota_allowance(self) -> None:
+        class RepeatedLimit:
+            calls = 0
+            def decide(self, _observation):
+                self.calls += 1
+                if self.calls in (1, 3):
+                    return AgentDecision(failure_kind="quota", intent="quota exceeded; retry after 60", actions=[])
+                return AgentDecision(intent="wait", actions=[{"type": "wait"}])
+
+        brain = RepeatedLimit()
+        slept = []
+        engine, session = self._session({"A": brain}, target_ticks=2,
+                                        quota_wait_max_seconds=120, slept=slept)
+        result = session.run()
+        self.assertEqual(result.status, "completed")
+        self.assertEqual(brain.calls, 4)
+        self.assertAlmostEqual(sum(slept), 240)
+        self.assertEqual(engine._session_quota_state, {"total_seconds": 240})
+
+    def test_budget_expiry_does_not_probe_before_known_reset(self) -> None:
+        class Limited:
+            calls = 0
+            def decide(self, _observation):
+                self.calls += 1
+                return AgentDecision(failure_kind="quota", intent="quota exceeded; retry after 600", actions=[])
+
+        brain = Limited()
+        slept = []
+        engine, session = self._session({"A": brain}, target_ticks=1,
+                                        quota_wait_max_seconds=120, slept=slept)
+        result = session.run()
+        self.assertEqual(result.stop_reason, "insufficient_quota")
+        self.assertEqual(brain.calls, 1)
+        self.assertAlmostEqual(sum(slept), 120)
+        self.assertFalse(any(e.type == "run_quota_retry" for e in engine.state.events))
+
     def test_waiting_disabled_keeps_the_original_pause_behavior(self) -> None:
         class AlwaysLimitedBrain:
             def decide(self, _observation):
