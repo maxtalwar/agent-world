@@ -22,6 +22,51 @@ masqueraded as model behavior — append an entry.** Rules:
 - Routine results (model X scored Y) belong in benchmark reports, not here.
   The bar is: would a researcher who read every leaderboard still be surprised?
 
+## 2026-09-07 — Flash leads average health without leading production or final survival
+
+**Gemini 3.7 Flash's v8.1 lead over Sol reflects health over time, while Sol
+produces more and retains more survivors; equal nominal effort also hides a
+fivefold difference in reported reasoning.** Both use the same recipe digest,
+ten agents, 60 ticks, and seeds 11/41. Gemini scores 82.66 Capability versus
+77.61, but Production is 171.50 versus 202.25 and final survivor counts are
+9/8 versus Sol's 10/10. Seed-level Capability reverses: 90.06 versus 73.95
+on seed 11, and 75.25 versus 81.26 on seed 41. Two seeds cannot establish a
+stable model ordering.
+
+Gemini records about 1,736 reasoning tokens per call versus Sol's 338 despite
+both requesting medium effort. These are provider-reported token counts, not
+matched compute budgets. Its API-equivalent cost is $5.84 versus $25.42 per
+seed under the recorded pricing projection: cheaper token rates and cached
+input allow substantially more reported deliberation at lower estimated cost.
+The estimate covers accepted-decision usage, not every discarded/retried call
+or subscription expenditure.
+
+The recorded behavior differs: Gemini 3.7 has 784 communication events versus
+539, but only three accepted trades versus fourteen; harvest output is 104
+versus 894 accounting units across the two seeds. This is consistent with
+different strategies, not evidence that communication caused the health lead.
+An earlier-health advantage is directly scored by this recipe; general
+intelligence, richer economic coordination, and long-run sustainability are
+not established by the first-place rank.
+
+Both manifests record fresh-conversation connector-v3 operation and identical
+world configuration for each seed. The retained Antigravity connector disables
+tools, MCP, skills, plugins and command execution. This inspection finds no
+configured extra-tool or persistent-session advantage, but does not isolate
+native harness prompts or prove equal effective reasoning budgets. A matched
+cross-harness experiment and more seeds would distinguish these explanations.
+The previously accepted source-recovery exception remains documented; this
+analysis neither changes admission nor treats missing traces as proof of tool use.
+
+Evidence: [Gemini seed 11](../runs/managed/web-gemini-3-7-flash-medium-1ae63d77303d/seed-11/run-report.json),
+[Gemini seed 41](../runs/managed/web-gemini-3-7-flash-medium-1ae63d77303d/seed-41/run-report.json),
+[Sol seed 11](../runs/managed/gpt-5-6-sol-v8-revised-20260906/seed-11/run-report.json),
+[Sol seed 41](../runs/managed/gpt-5-6-sol-v8-revised-20260906/seed-41/run-report.json),
+the adjacent manifests and usage ledgers, [pricing projection](model-leaderboard.md),
+and [source-recovery review and owner acceptance](reviews/gemini-v81-provenance-20260907.md).
+Connector invocation inspected at c94b8afd; its agent_world tree is unchanged
+from Sol's launch commit 39232e47. Recovery changes are covered by that review.
+
 ## 2026-09-06 — High effort widens the 5.5/Mini health gap, but helps both models
 
 **On matched seed 11, raising effort improves both societies and widens GPT-5.5's
