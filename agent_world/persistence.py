@@ -152,7 +152,8 @@ def load_run_checkpoint(path: Path) -> tuple[WorldEngine, dict[str, Any]]:
     if not isinstance(payload, dict) or payload.get("schema_version") not in {1, 2}:
         raise ValueError("Unsupported Agent World checkpoint schema.")
     engine = payload.get("engine")
-    if not isinstance(engine, WorldEngine):
+    from agent_world.world_revisions.frontier_v6.world import WorldEngine as HistoricalWorldEngine
+    if not isinstance(engine, (WorldEngine, HistoricalWorldEngine)):
         raise ValueError("Checkpoint does not contain a WorldEngine.")
     event_count = payload.get("event_count")
     event_ledger = payload.get("event_ledger")

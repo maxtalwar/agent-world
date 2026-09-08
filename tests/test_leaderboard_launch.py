@@ -19,6 +19,8 @@ class LaunchTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+        (self.root / "agent_world").mkdir()
+        (self.root / "agent_world/recipe-execution-locks.json").write_text(json.dumps({"recipes": {"participant-test": {"recipe_digest": "hash"}}}))
         self.service = LaunchService(self.root, settings={"supervisor_binary": "/fake/codex", "monitor_thread_id": "shared-monitor"})
         self.identifier = "a" * 32
         folder = self.service.folder / self.identifier
@@ -37,6 +39,25 @@ class LaunchTests(unittest.TestCase):
         with self.service.connection() as db:
             db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
                 self.identifier, "web-test", "review", time.time(), time.time(), json.dumps(self.request)))
+
+    def test_retired_recipe_review_cannot_launch(self):
+        self.request["digest"] = "retired-world"
+        with self.assertRaisesRegex(LaunchError, "retired conditions"):
+            self.service.validate_source(self.request)
+
+    def test_sources_do_not_select_retained_job_worktrees(self):
+        recipes = self.root / "agent_world/recipes"
+        recipes.mkdir()
+        (recipes / "participant-test.json").write_text("{}")
+        old = self.root / "runs/jobs/old"
+        old.mkdir(parents=True)
+        (old / "job.json").write_text(json.dumps({"kind":"benchmark", "protocol":"participant-test", "recipe_fingerprint_sha256":"retired", "execution_root":str(self.root/"old-source"), "cells":[]}))
+        info = {"digest":"current", "brains":["codex"], "recipe":{"defaults":{}, "replications":{"required_seeds":[11,41]}}}
+        with patch("agent_world.leaderboard_launch.git", side_effect=lambda root,*args: "a"*40 if args[0]=="rev-parse" else ""), patch("agent_world.leaderboard_launch.subprocess.check_output", return_value=json.dumps(info)) as query:
+            sources = self.service.sources()
+        self.assertEqual(list(sources), ["participant-test@current"])
+        self.assertEqual(query.call_count, 1)
+        self.assertEqual(query.call_args.kwargs["cwd"], self.root)
 
     def test_recovered_run_clears_stale_monitor_blocker(self):
         from datetime import datetime, timezone

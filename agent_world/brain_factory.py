@@ -564,6 +564,9 @@ def create_population_brains(
                 action_limit=getattr(engine, "_codex_action_max_items", 4),
                 ledger_mode=engine.state.config.town_ledger_output_mode == "message",
             )
+        if spec.type == "codex" and engine.state.config.world_revision == "frontier-v6":
+            from agent_world.world_revisions.frontier_v6.codex_schema import CODEX_AGENT_DECISION_SCHEMA
+            kwargs["decision_schema"] = CODEX_AGENT_DECISION_SCHEMA
         if spec.type == "claude" and "thinking_budget_tokens" in inspect.signature(brain_class).parameters:
             kwargs["thinking_budget_tokens"] = getattr(engine, "_claude_thinking_budget_tokens", None)
         brain = brain_class(**kwargs)

@@ -79,6 +79,11 @@ class ResumeQuotaTests(unittest.TestCase):
                 self.assertIn("--quota-wait-hours " + expected, script)
 
 class ManagedRunConfigTests(unittest.TestCase):
+    def setUp(self):
+        guard = patch("agent_world.recipe_execution.verify_recipe_execution")
+        guard.start()
+        self.addCleanup(guard.stop)
+
     def _load(self, value: dict) -> dict:
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "run.json"

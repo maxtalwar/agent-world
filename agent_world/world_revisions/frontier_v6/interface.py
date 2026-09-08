@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from agent_world.event_index import event_index
-from agent_world.observation_policy import apply_history_policy
-
-from functools import lru_cache
 import json
 from typing import Any
 
 from agent_world.models import Agent, AgentDecision, Event, Position, WorldState
-from agent_world.rules import (
-    action_schema_for_transfers,
+from agent_world.world_revisions.frontier_v6.rules import (
+    ACTION_SCHEMA,
     COMMUNICATION_ACTION_TYPES,
     GROUP_ADMIN_ACTION_TYPES,
     MECHANICS_SUMMARY,
@@ -26,37 +22,10 @@ from agent_world.rules import (
 
 
 AGENT_IO_EVENT_TYPES = {"agent_observation", "agent_prompt", "agent_prompt_context", "agent_response"}
-HARNESS_CONTROL_EVENT_TYPES = {
-    "benchmark_checkpoint",
-    "run_completed",
-    "run_failed",
-    "run_health_check",
-    "run_paused",
-    "run_quota_retry",
-    "run_quota_wait",
-    "run_resumed",
-    "run_started",
-    "run_stopped",
-}
 ACTION_FAILURE_EVENT_TYPES = {"invalid_action", "contention_failure"}
-ORGANIC_ONLY_ACTION_TYPES = {
-    "propose_contract",
-    "deliver_contract",
-    "cancel_contract",
-    "post_ledger_note",
-}
 
 
-def build_observation(state: WorldState, agent_id: str, *, history_policy: str = "full-v1") -> dict[str, Any]:
-    if getattr(state.config, "world_revision", "current") == "frontier-v6":
-        from agent_world.world_revisions.frontier_v6.interface import build_observation as historical
-        observation = historical(state, agent_id)
-        observation["world"]["world_revision"] = "frontier-v6"
-        return observation
-    return apply_history_policy(_full_observation(state, agent_id), history_policy)
-
-
-def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
+def build_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
     agent = state.agents[agent_id]
     radius = state.config.visible_radius
     visible_positions = _visible_positions(agent.position, radius, state.config.width, state.config.height)
@@ -104,46 +73,20 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         for trade in state.trades.values()
         if trade.status == "open" and _trade_visible_to_agent(state, agent, trade, radius)
     ]
-    if state.config.economy_mode == "organic":
-        visible_contracts = [contract.summary() for contract in state.contracts.values()]
-    else:
-        visible_contracts = [
-            contract.summary()
-            for contract in getattr(state, "contracts", {}).values()
-            if agent.id in {contract.lender_id, contract.borrower_id}
-        ]
+    visible_contracts = [
+        contract.summary()
+        for contract in getattr(state, "contracts", {}).values()
+        if agent.id in {contract.lender_id, contract.borrower_id}
+    ]
     effective_recipes = recipes_for_mode(
         state.config.economy_mode, getattr(state.config, "world_variant", "classic")
     )
-    mechanics = MECHANICS_SUMMARY
-    if state.config.economy_mode != "organic":
-        mechanics = {
-            **MECHANICS_SUMMARY,
-            "action_notes": {
-                key: value
-                for key, value in MECHANICS_SUMMARY["action_notes"].items()
-                if key not in {"propose_contract", "post_ledger_note"}
-            },
-        }
     disabled_actions = (
-        {"offer_contract", "repay_contract"}
+        {"offer_contract", "accept_contract", "repay_contract"}
         if state.config.economy_mode == "organic"
         else set()
     )
-    ledger_enabled = state.config.town_ledger_output_mode != "disabled"
-    if not ledger_enabled:
-        disabled_actions.add("post_ledger_note")
-        mechanics = {**mechanics, "action_notes": {
-            key: value for key, value in mechanics["action_notes"].items()
-            if key != "post_ledger_note"
-        }}
-    schema_disabled_actions = disabled_actions | (
-        set() if state.config.economy_mode == "organic" else ORGANIC_ONLY_ACTION_TYPES
-    )
-    valid_actions = [
-        action for action in action_schema_for_transfers(state.config.transfer_kind_mode)
-        if action.get("type") not in schema_disabled_actions
-    ]
+    valid_actions = [action for action in ACTION_SCHEMA if action.get("type") not in disabled_actions]
     feedback_mode = getattr(state.config, "action_feedback_mode", "baseline")
     recent_events = _recent_visible_events(state, agent, radius)
     if feedback_mode in {"minimal", "none"}:
@@ -163,15 +106,6 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             season_payload["storm"] = True
         if is_storm_tick(state.config.seed, length, state.tick + 1):
             season_payload["storm_warning"] = True
-    ledger_notes = [
-        {
-            "author": event.data.get("author") or event.actor_id,
-            "tick": event.tick,
-            "title": event.data.get("title", ""),
-            "body": event.data.get("body", ""),
-        }
-        for event in event_index(state).ledger
-    ]
     return {
         "tick": state.tick,
         **({"season": season_payload} if season_payload else {}),
@@ -193,11 +127,6 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             # not itself described to model-backed agents.
             "action_feedback_mode": feedback_mode,
             "communication_action_cost": getattr(state.config, "communication_cost", lambda: 0)(),
-            "town_ledger_action_cost": getattr(state.config, "town_ledger_action_cost", 1),
-            "town_ledger_prompt_mode": getattr(state.config, "town_ledger_prompt_mode", "baseline"),
-            "town_ledger_seed_mode": getattr(state.config, "town_ledger_seed_mode", "none"),
-            "town_ledger_output_mode": getattr(state.config, "town_ledger_output_mode", "action"),
-            **({"transfer_kind_mode": "external"} if state.config.transfer_kind_mode == "external" else {}),
             "group_admin_action_cost": getattr(state.config, "group_admin_cost", lambda: 0)(),
             "trade_settlement": (
                 "physical_meeting_at_escrow_position"
@@ -223,7 +152,7 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
                 }
                 for name, rule in TERRAIN_RULES.items()
             },
-            "mechanics": mechanics,
+            "mechanics": MECHANICS_SUMMARY,
             "recipes": {
                 name: {
                     "inputs": dict(recipe.inputs),
@@ -275,16 +204,6 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
         "open_trades": open_trades,
         "market_history": _visible_market_history(state, agent, radius)[-12:],
         "known_contracts": visible_contracts,
-        **(
-            {
-                "town_ledger": {
-                    "total_count": len(ledger_notes),
-                    "recent_notes": ledger_notes[-8:],
-                }
-            }
-            if state.config.economy_mode == "organic" and ledger_enabled
-            else {}
-        ),
         "known_groups": {
             gid: group.summary()
             for gid, group in state.groups.items()
@@ -398,19 +317,7 @@ def objective_instruction(world: dict[str, Any]) -> str:
     return OBJECTIVE_INSTRUCTIONS.get(mode, OBJECTIVE_INSTRUCTIONS["neutral"])
 
 
-def build_static_context(world: dict[str, Any] | None = None) -> str:
-    if world and world.get("world_revision") == "frontier-v6":
-        from agent_world.world_revisions.frontier_v6.interface import build_static_context as historical
-        return historical(world)
-    return _cached_static_context(json.dumps(world or {}, separators=(",", ":")))
-
-
-@lru_cache(maxsize=128)
-def _cached_static_context(encoded: str) -> str:
-    return _render_static_context(json.loads(encoded))
-
-
-def _render_static_context(world: dict[str, Any]) -> str:
+def build_static_context(world: dict[str, Any]) -> str:
     """Render the fixed rulebook as terse text.
 
     This block is byte-identical for every agent and tick of a run, so it can sit at the
@@ -423,75 +330,6 @@ def _render_static_context(world: dict[str, Any]) -> str:
     lines: list[str] = []
     lines.extend(_prompt_rules(world))
     lines.append(objective_instruction(world))
-    ledger_prompt_mode = str(world.get("town_ledger_prompt_mode", "baseline"))
-    ledger_output_mode = str(world.get("town_ledger_output_mode", "action"))
-    ledger_submission = (
-        'add {"mode":"ledger","text":"Short title\\nConcrete body","to":""} to messages'
-        if ledger_output_mode == "message"
-        else 'add {"type":"post_ledger_note","title":"Short title","body":"Concrete body"} to actions'
-    )
-    if ledger_output_mode == "disabled":
-        ledger_prompt_mode = "disabled"
-    if ledger_prompt_mode == "baseline":
-        if world.get("economy_mode") == "organic":
-            lines.append(
-                'LEDGER RULE: the town ledger is durable and world-global; distant agents cannot see local facts. '
-                "When a useful specialty/resource/supply/need/offer fact is absent from recent notes, "
-                f"{ledger_submission}; do not repeat unchanged facts."
-            )
-        ledger_prompt_mode = "legacy"
-    if world.get("economy_mode") == "organic" and ledger_prompt_mode in {
-        "salient",
-        "mandated",
-        "bootstrap_one",
-        "reflect",
-        "private_value",
-        "decision_rule",
-        "perspective",
-    }:
-        lines.append(
-            "The town ledger is the only durable world-global communication channel. "
-            "Every living agent can read its recent notes from anywhere on later ticks. "
-            f"To post, {ledger_submission}. Use it for information that should outlive recent events or "
-            "reach agents beyond local speech and broadcast range; use free-form messages "
-            "for immediate local conversation."
-        )
-    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "mandated":
-        lines.append(
-            f"Capability check: on tick 0, {ledger_submission} to state your specialty "
-            "or intended role and one useful resource fact."
-        )
-    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "bootstrap_one":
-        lines.append(
-            f"One-time institutional bootstrap: only if self.id is agent-1 and tick is 0, "
-            f"{ledger_submission} with your specialty and one concrete local resource fact. "
-            "All other posting remains your choice."
-        )
-    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "reflect":
-        lines.append(
-            "Decision audit: begin intent with LEDGER POST or LEDGER SKIP and briefly state "
-            "whether you currently have novel information whose value to nonlocal agents "
-            "justifies a durable update. Posting remains your choice."
-        )
-    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "private_value":
-        lines.append(
-            "Distant complementary agents cannot discover your specialty, supplies, or needs "
-            "through local speech. Durable discovery can bring you trade, materials, and aid, "
-            "so treat a concise ledger update as part of your own long-term resilience when it is novel."
-        )
-    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "decision_rule":
-        lines.append(
-            "Ledger decision rule: when your specialty, a concrete resource location, a current supply, "
-            "an unmet need, or an offer is useful beyond your local area and is not already represented "
-            f"in recent notes, {ledger_submission}. Do not repeat unchanged information."
-        )
-    if world.get("economy_mode") == "organic" and ledger_prompt_mode == "perspective":
-        lines.append(
-            "Information perspective: agents beyond local range cannot see your specialty, local map, "
-            "inventory, nearby speech, or private observations. A fact familiar to you may still be new "
-            "to the town; judge public novelty by whether the concrete fact is already represented in "
-            "recent ledger notes, not by whether you personally already know it."
-        )
     lines.append("")
     lines.append(
         f"WORLD: {world.get('width', '?')}x{world.get('height', '?')} grid, visible radius {world.get('visible_radius', '?')}, "
@@ -542,12 +380,8 @@ def _render_static_context(world: dict[str, Any]) -> str:
     structure_names = [
         name for name, recipe in world_recipes.items() if not recipe.get("outputs")
     ]
-    for action in action_schema_for_transfers(world.get("transfer_kind_mode", "self_declared")):
-        if ledger_output_mode == "disabled" and action.get("type") == "post_ledger_note":
-            continue
+    for action in ACTION_SCHEMA:
         if action.get("type") in disabled_actions:
-            continue
-        if world.get("economy_mode") != "organic" and action.get("type") in ORGANIC_ONLY_ACTION_TYPES:
             continue
         cost = action.get("cost", {})
         params = action.get("parameters", {})
@@ -564,8 +398,6 @@ def _render_static_context(world: dict[str, Any]) -> str:
         action_points = cost.get("action_points", 0)
         if action_type in COMMUNICATION_ACTION_TYPES:
             action_points = world.get("communication_action_cost", action_points)
-        elif action_type == "post_ledger_note":
-            action_points = world.get("town_ledger_action_cost", action_points)
         elif action_type in GROUP_ADMIN_ACTION_TYPES:
             action_points = world.get("group_admin_action_cost", action_points)
         energy = cost.get("energy", 0)
@@ -598,24 +430,6 @@ def _render_static_context(world: dict[str, Any]) -> str:
                 "- ingot, advanced_tool, mint_coin require crafting skill 4 and a workshop.",
             ]
         )
-        lines.extend(
-            [
-                "",
-                "DELIVERY CONTRACTS:",
-                "- propose_contract names an agent or open counterparty, give/payment bundles, an absolute deadline 1-20 ticks ahead, and optional proposer collateral; proposal moves nothing.",
-                "- accept_contract escrows the buyer's full payment and the proposer's collateral; deliver_contract settles one full delivery; missed deadlines return payment and forfeit collateral.",
-                "- each agent may have at most 3 unaccepted proposals and 5 active contracts as either party; unaccepted proposals expire after 5 ticks and may be cancelled by the proposer.",
-            ]
-        )
-        if ledger_output_mode != "disabled" and world.get("town_ledger_prompt_mode", "baseline") != "baseline":
-            lines.extend(
-                [
-                    "",
-                    "TOWN LEDGER:",
-                    "- post_ledger_note appends a public world-global note (title <=60 chars, body <=400); each agent may post once per tick.",
-                    "- the latest 8 notes and total note count are in town_ledger. Notes can share prices, agreements, laws, or other durable public information.",
-                ]
-            )
     lines.append("")
     for section_name, notes in COMPACT_MECHANICS.items():
         lines.append(f"{section_name}:")
@@ -656,10 +470,6 @@ def build_dynamic_observation(observation: dict[str, Any]) -> dict[str, Any]:
     (event scope/recipients/data) are omitted.
     """
 
-    if observation.get("world", {}).get("world_revision") == "frontier-v6":
-        from agent_world.world_revisions.frontier_v6.interface import build_dynamic_observation as historical
-        return historical(observation)
-
     dynamic = {
         key: value
         for key, value in observation.items()
@@ -694,7 +504,6 @@ def _slim_market_transaction(item: dict[str, Any]) -> dict[str, Any]:
     keys = (
         "tick",
         "trade_id",
-        "contract_id",
         "seller_id",
         "buyer_id",
         "give",
@@ -825,7 +634,7 @@ def parse_agent_response(response: str | dict[str, Any] | AgentDecision) -> Agen
             salvaged = _extract_json_object(response)
             if salvaged is not None:
                 return AgentDecision.from_json_like(salvaged)
-            return AgentDecision(intent=f"Invalid JSON response: {exc}", actions=[{"type": "wait"}], failure_kind="model_output")
+            return AgentDecision(intent=f"Invalid JSON response: {exc}", actions=[{"type": "wait"}])
         return AgentDecision.from_json_like(value)
     return AgentDecision.from_json_like(response)
 
@@ -902,7 +711,7 @@ def _recent_visible_events(state: WorldState, agent: Agent, radius: int) -> list
     visible: list[dict[str, Any]] = []
     limit = state.config.recent_event_limit
     for event in reversed(state.events):
-        if event.type in AGENT_IO_EVENT_TYPES or event.type in HARNESS_CONTROL_EVENT_TYPES:
+        if event.type in AGENT_IO_EVENT_TYPES:
             continue
         if not _event_visible_to(
             event,
@@ -970,7 +779,7 @@ def _recent_action_feedback(
     state: WorldState, agent: Agent, *, causal: bool = False
 ) -> list[dict[str, Any]]:
     feedback = []
-    for event in reversed(event_index(state).feedback[agent.id]):
+    for event in reversed(state.events):
         if event.actor_id != agent.id or event.type not in ACTION_FAILURE_EVENT_TYPES:
             continue
         action = event.data.get("action", {})
@@ -1039,16 +848,3 @@ def _minimal_action_feedback(state: WorldState, agent: Agent) -> list[dict[str, 
             {"tick": event.tick, "failed_action": str(action_type or "unknown")}
         )
     return feedback[-5:]
-
-
-class PreparedObservation(dict):
-    """A fresh per-decision observation with reusable transport bytes."""
-    def __init__(self, observation):
-        super().__init__(observation)
-        self.dynamic_json = json.dumps(build_dynamic_observation(self), separators=(",", ":"), sort_keys=True)
-
-
-def dynamic_observation_json(observation: dict[str, Any]) -> str:
-    if isinstance(observation, PreparedObservation):
-        return observation.dynamic_json
-    return json.dumps(build_dynamic_observation(observation), separators=(",", ":"), sort_keys=True)

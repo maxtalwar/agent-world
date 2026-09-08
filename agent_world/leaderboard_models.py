@@ -19,7 +19,7 @@ CONNECTORS = {"codex": "Codex", "claude": "Claude Code", "antigravity": "Antigra
 
 
 def recipe_label(recipe):
-    return "Participant " + ("v8.1" if recipe == "participant-v8-revised"
+    return "Participant " + ({"participant-v8-revised": "v8.1", "participant-v6-1": "v6.1"}.get(recipe) if recipe in {"participant-v8-revised", "participant-v6-1"}
                             else recipe.removeprefix("participant-").replace("-", " "))
 
 

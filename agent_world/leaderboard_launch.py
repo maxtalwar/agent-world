@@ -29,6 +29,8 @@ INFO = """
 import json,sys
 from agent_world.protocols import get_recipe
 from agent_world.managed_runs import _MODEL_BACKED_BRAINS
+from agent_world.recipe_execution import verify_recipe_execution
+verify_recipe_execution(sys.argv[1])
 r=get_recipe(sys.argv[1])
 print(json.dumps({'recipe':r.to_dict(),'digest':r.digest,'brains':sorted(_MODEL_BACKED_BRAINS)}))
 """
@@ -92,22 +94,10 @@ class LaunchService:
         return db
 
     def sources(self):
-        candidates = []
-        jobs = []
-        for path in (self.root / "runs/jobs").glob("*/job.json"):
-            try:
-                job = read(path)
-                if job.get("kind") == "benchmark" and job.get("protocol"):
-                    jobs.append(job)
-            except (OSError, ValueError):
-                continue
-        jobs.sort(key=lambda j: j.get("created_at_utc", ""), reverse=True)
-        for job in jobs:
-            for location in [job.get("execution_root")] + [c.get("worktree") for c in job["cells"]]:
-                if location:
-                    candidates.append((job["protocol"], job.get("recipe_fingerprint_sha256"), location))
-        for path in (self.root / "agent_world/recipes").glob("*.json"):
-            candidates.append((path.stem, None, str(self.root)))
+        # Only reviewed, registered recipes are launchable. Old job worktrees
+        # are evidence, never an alternate launch catalog with drifting defaults.
+        candidates = [(path.stem, None, str(self.root))
+                      for path in (self.root / "agent_world/recipes").glob("*.json")]
         result = {}
         checked = set()
         for recipe, expected_digest, location in candidates:
@@ -528,6 +518,11 @@ class LaunchService:
         return self.public_request(self.get(identifier))
 
     def validate_source(self, request):
+        locks_path = self.root / "agent_world/recipe-execution-locks.json"
+        locks = read(locks_path) if locks_path.exists() else {}
+        selected = locks.get("recipes", {}).get(request["recipe_id"], {})
+        if selected.get("recipe_digest") != request["digest"]:
+            raise LaunchError("This benchmark review uses retired conditions; close it and select the recipe again")
         source = contained(self.root, request["source"])
         if git(source, "rev-parse", "HEAD") != request["commit"]:
             raise LaunchError("Launch source changed; review the benchmark again")

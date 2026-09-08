@@ -698,6 +698,9 @@ def _run(args: argparse.Namespace) -> None:
     resumed = resume_checkpoint is not None
     if not resumed:
         _apply_benchmark_protocol(args)
+        if getattr(args, "benchmark_protocol", None):
+            from agent_world.recipe_execution import verify_recipe_execution
+            verify_recipe_execution(args.benchmark_protocol)
     checkpoint_extra: dict[str, Any] = {}
     population_spec: PopulationSpec | None = None
     if resumed:

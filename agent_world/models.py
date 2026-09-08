@@ -74,6 +74,7 @@ class WorldConfig:
     specialization_mode: str = "generalists"
     economy_mode: str = "baseline"
     objective_mode: str = "neutral"
+    world_revision: str = "current"
     action_feedback_mode: str = "baseline"
     transfer_kind_mode: str = "self_declared"
     # None selects the treatment default: one AP in commerce, free in baseline
@@ -99,6 +100,8 @@ class WorldConfig:
     skill_bonus_cap: int = 2
 
     def __post_init__(self) -> None:
+        if self.world_revision not in {"current", "frontier-v6"}:
+            raise ValueError("Unsupported world_revision")
         import math
         for descriptor in fields(self):
             value = getattr(self, descriptor.name)

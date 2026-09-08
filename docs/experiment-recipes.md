@@ -6,14 +6,15 @@ does not require checking out older code.
 
 | Recipe | Reasoning default | Informal-transfer accounting | Scoring revision |
 | --- | --- | --- | --- |
-| participant-v6 | medium | Frozen external classifier; agents do not declare transfer kind | 2 |
+| participant-v6 | medium | Historical world; frozen external classifier | 2 |
+| participant-v6-1 | medium | Message board and delivery contracts; frozen external classifier | 2 |
 | participant-v7 | low | Agent-declared gift, payment, or barter | 1 |
 | participant-v8 | medium | Agent-declared gift, payment, or barter; diagnostic commerce | 1 |
 | participant-v8-action-review | medium | Same as v8; review recipe with per-action Execution | 1 |
 | participant-v8-revised | medium | Same as v8; per-action Execution and equal-weight Capability | 1 |
 
-All five recipes use the frontier world, ten generalists, fresh conversations,
-and connector-v3. V6/v7 retain fifty ticks and their shared historical formulas.
+These recipes use the frontier world, ten generalists, fresh conversations,
+and connector-v3. V6/v6.1/v7 retain fifty ticks and their shared historical formulas. V6 preserves the original pre-ledger engine; v6.1 names the later message-board setup.
 V8 uses sixty ticks, no board, and outcome-production scoring. Revision numbers
 are local to each protocol. Worker counts are operational settings.
 
@@ -217,3 +218,5 @@ study manifests and recovery script remain original historical snapshots,
 including their launch/recovery status fields and source references. They are
 not current managed-job status or launch instructions. Existing run worktrees
 and ignored evidence are preserved.
+
+See [historical recipe restoration and execution locks](benchmark-recipe-restoration-20260908.md). Published benchmark launches require reviewed implementation locks; new features cannot silently enter an existing recipe.

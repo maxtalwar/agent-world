@@ -315,6 +315,9 @@ def _canonical_root() -> Path:
 
 def build_launch_plan(config: dict[str, Any], root: Path, *, run_id: str | None = None) -> dict[str, Any]:
     resolved_id = _safe_id(run_id or str(config["run_id"]), label="run_id")
+    if config["kind"] == "benchmark":
+        from agent_world.recipe_execution import verify_recipe_execution
+        verify_recipe_execution(config["protocol"], root)
     requested_commit = str((config.get("source") or {}).get("commit") or "HEAD")
     commit = _git(root, "rev-parse", f"{requested_commit}^{{commit}}")
     if requested_commit == "HEAD" and _git(root, "status", "--porcelain", "--untracked-files=no"):

@@ -28,7 +28,7 @@ def registered(value):
         path.write_text(json.dumps(value))
         loaded = load_recipes(Path(directory))
         registry = {**protocols.RECIPES, **loaded}
-        with patch.object(protocols, "RECIPES", registry), patch.object(cli, "RECIPES", registry), \
+        with patch("agent_world.recipe_execution.verify_recipe_execution"), patch.object(protocols, "RECIPES", registry), patch.object(cli, "RECIPES", registry), \
              patch.object(benchmarks, "RECIPES", registry), patch.object(managed_runs, "RECIPES", registry):
             yield loaded[value["id"]]
 

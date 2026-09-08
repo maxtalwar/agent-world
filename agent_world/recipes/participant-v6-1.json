@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "id": "participant-v6",
+  "id": "participant-v6-1",
   "defaults": {
     "ticks": 50,
     "agents": 10,
@@ -27,8 +27,11 @@
     "season_length_ticks": 12,
     "observation_history_policy": "full-v1",
     "codex_action_max_items": 4,
-    "world_revision": "frontier-v6",
-    "town_ledger_output_mode": "disabled"
+    "world_revision": "current",
+    "town_ledger_action_cost": 1,
+    "town_ledger_prompt_mode": "baseline",
+    "town_ledger_seed_mode": "none",
+    "town_ledger_output_mode": "action"
   },
   "transfer_accounting": "frozen_classifier",
   "replications": {

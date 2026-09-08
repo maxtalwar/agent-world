@@ -148,7 +148,7 @@ def stamp() -> str:
 
 
 def board_title(recipe: str) -> str:
-    return "v8.1" if recipe == "participant-v8-revised" else recipe.replace("participant-", "").replace("-", " ")
+    return {"participant-v8-revised": "v8.1", "participant-v6-1": "v6.1"}.get(recipe) or recipe.replace("participant-", "").replace("-", " ")
 
 
 def new_board(recipe: str, digest: str = "") -> dict:
@@ -418,8 +418,13 @@ class LeaderboardStore:
                 if job.get("kind") != "benchmark" or not recipe:
                     continue
                 digest = job.get("recipe_fingerprint_sha256") or ""
+                # Explicit display mapping preserves the original report/job identity.
+                aliases_path = self.root / "data/benchmark-release-aliases.json"
+                aliases = read_json(aliases_path) if aliases_path.exists() else {}
+                alias = aliases.get(recipe + "@" + digest, {})
+                display_recipe, display_digest = alias.get("recipe", recipe), alias.get("digest", digest)
                 board = boards.setdefault(
-                    recipe + ("@" + digest if digest else ""), new_board(recipe, digest))
+                    display_recipe + ("@" + display_digest if display_digest else ""), new_board(display_recipe, display_digest))
                 run, rows, aggregate = self.managed_run(job, path)
                 run["archived"] = run["id"] in archived
                 board["runs"].append(run)
@@ -443,6 +448,20 @@ class LeaderboardStore:
         # is never grounds to hide the established leaderboard.
         for catalog_board in canonical:
             matching = [b for b in boards.values() if b["recipe"] == catalog_board["recipe"]]
+            compatibility_path = self.root / "data/benchmark-release-compatibility.json"
+            compatibility = read_json(compatibility_path) if compatibility_path.exists() else {}
+            # Reviewed restoration fingerprints can add new model rows to a
+            # historical catalog. Never replace an existing model or mix seeds.
+            known_models = {row["model"] for row in catalog_board["rows"]}
+            for candidate in list(matching):
+                if candidate["digest"] not in compatibility.get(catalog_board["recipe"], []):
+                    continue
+                catalog_board["extended"] = True
+                catalog_board["rows"].extend(row for row in candidate["rows"] if row["model"] not in known_models)
+                known_models.update(row["model"] for row in candidate["rows"])
+                catalog_board["runs"].extend(candidate["runs"])
+                del boards[candidate["id"]]
+                matching.remove(candidate)
             covered = None
             for candidate in matching:
                 evidence = {str(Path(p).resolve()) for row in candidate["rows"] for p in row.get("report_paths", [])}
@@ -484,7 +503,7 @@ class LeaderboardStore:
                     except (OSError, ValueError, KeyError) as exc:
                         row["scores"]["capability"] = None
                         board["warnings"].append(row["model"] + ": capability rescoring unavailable — " + str(exc))
-            if board["source"] != "Canonical metrics database" or policy:
+            if board["source"] != "Canonical metrics database" or policy or board.get("extended"):
                 primary = board["columns"][0][0]
                 board["rows"].sort(key=lambda row: (
                     -(row["scores"].get(primary) if row["scores"].get(primary) is not None else -1),

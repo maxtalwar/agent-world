@@ -170,6 +170,21 @@ class LeaderboardTests(unittest.TestCase):
         self.assertEqual(board["study_groups"][0]["rows"][0]["model"], "New")
         self.assertEqual(board["title"], "test")
 
+    def test_reviewed_restoration_adds_new_model_without_hiding_catalog(self):
+        self.fixture()
+        (self.root / "data").mkdir(exist_ok=True)
+        (self.root / "data/benchmark-release-compatibility.json").write_text(json.dumps({"participant-test": ["abc"]}))
+        catalog = new_board("participant-test")
+        catalog["source"] = "Canonical metrics database"
+        catalog["rows"] = [{"id":"old", "model":"Established", "rank":1, "scores":{"sustained_competence":80}, "evidence_paths":[str(self.root/"old.json")]}]
+        run = {"id":"test", "model":"New", "ranked":True, "cells":[]}
+        row = {"id":"new", "model":"New", "scores":{"sustained_competence":90}, "report_paths":[str(self.root/"new.json")]}
+        with patch.object(self.store, "canonical_boards", return_value=[catalog]), patch.object(self.store, "managed_run", return_value=(run,[row],None)):
+            board = self.store.build()["boards"][0]
+        self.assertEqual([r["model"] for r in board["rows"]], ["New", "Established"])
+        self.assertEqual([r["rank"] for r in board["rows"]], [1, 2])
+        self.assertEqual(board["study_groups"], [])
+
     def test_complete_managed_projection_can_replace_duplicate_catalog(self):
         self.fixture()
         evidence = str(self.root / "same-report.json")

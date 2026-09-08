@@ -588,6 +588,11 @@ def benchmark_code_fingerprint(providers: Iterable[str] | None = None, protocol_
         for provider in providers:
             scoped.update(BENCHMARK_PROVIDER_FINGERPRINT_FILES.get(provider, ()))
         names = tuple(sorted(set(BENCHMARK_CORE_FINGERPRINT_FILES) | scoped))
+    if get_recipe(protocol_id).defaults().get("world_revision") == "frontier-v6":
+        names = tuple(sorted(set(names) | {
+            "world_revisions/frontier_v6/" + name + ".py"
+            for name in ("world", "interface", "maps", "rules", "codex_schema")
+        }))
     if get_recipe(protocol_id).scoring_policy == "outcome-production":
         names = tuple(sorted(set(names) | {"outcome_scoring.py", "production_scoring.py"}))
     digest = hashlib.sha256(get_recipe(protocol_id).digest.encode())
