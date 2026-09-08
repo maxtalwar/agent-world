@@ -6,7 +6,7 @@ const money = value => value == null ? '—' : '$' + number(value,2);
 let data, selected = new URL(location.href).searchParams.get('board'), sortKey, sortAsc = false;
 const laboratoryPage = location.pathname.replace(/\/$/,'') === '/laboratory' || (location.pathname === '/' && !new URL(location.href).searchParams.has('board'));
 const experimentsPage = location.pathname.replace(/\/$/,'') === '/experiments';
-const board = () => data?.boards.find(b => b.id === selected) || data?.boards[0];
+const board = () => data?.boards.find(b => b.id === selected || b.study_groups?.some(g=>g.id===selected)) || data?.boards[0];
 function relative(iso) {
   if(!iso) return 'No update recorded';
   const mins = Math.max(0, Math.floor((Date.now() - Date.parse(iso))/60000));
@@ -27,7 +27,14 @@ function render() {
   $('table-note').textContent='Select a model for evidence and seed details.';
   $('updated').textContent='Evidence updated '+relative(b.updated_at);
   $('methodology').innerHTML='<p>'+esc(b.method || 'Final reports are scored using their original recipe. Incomplete studies remain in the activity panel.')+'</p><p>Versions and recipe fingerprints are kept separate. New studies are ranked only when the original scorer accepts a complete set of required seeds. Rankings within different versions are not directly comparable.</p><p>Cost / run is a token-derived API-list-price equivalent, not a subscription charge. A dash means unavailable. Reasoning estimates are marked with ~.</p><p>Recipe: <code>'+esc(b.recipe)+'</code>'+(b.digest?' · Fingerprint: <code>'+esc(b.digest)+'</code>':'')+'</p>'+b.warnings.map(w=>'<p class="warning">'+esc(w)+'</p>').join('');
-  renderTable();renderActivity();if(typeof renderLaunches==='function')renderLaunches(data.launches||[]);
+  renderAdditionalStudies();renderTable();renderActivity();if(typeof renderLaunches==='function')renderLaunches(data.launches||[]);
+}
+function renderAdditionalStudies() {
+  const groups=board().study_groups||[];
+  $('additional-studies').hidden=!groups.length;
+  $('additional-study-list').innerHTML='<p class="muted">These studies retain separate recipe evidence and rankings. They do not replace the established table above.</p>'+groups.map(g=>
+    '<section><h3>'+esc(g.rows.map(r=>r.model).join(', ')||'Ongoing studies')+'</h3><p class="small muted">'+esc(g.recipe)+' · '+esc(g.digest?.slice(0,8)||'Historical evidence')+'</p><div class="table-scroll"><table><thead><tr><th>Model</th>'+g.columns.map(c=>'<th>'+esc(c[1])+'</th>').join('')+'<th>Cost / run</th></tr></thead><tbody>'+g.rows.map(r=>'<tr><td><button class="model-button" data-model="'+esc(r.id)+'">'+esc(r.model)+'</button></td>'+g.columns.map(c=>'<td>'+number(r.scores[c[0]])+'</td>').join('')+'<td>'+money(r.cost)+'</td></tr>').join('')+'</tbody></table></div>'+g.runs.filter(r=>!r.archived&&!r.ranked).map(r=>studyMarkup(r)).join('')+'</section>').join('');
+  $('additional-study-list').querySelectorAll('[data-model]').forEach(el=>el.onclick=()=>showModel(el.dataset.model));
 }
 function renderTable() {
   const b=board(); if(!b)return;
@@ -108,7 +115,7 @@ function renderActivity(){
   $('activity-list').innerHTML=(open.length?activityMarkup(open):'<div><p class="activity-empty">All quiet in<br>the laboratory.</p><p class="small muted">No pending studies in this leaderboard.</p></div>')+(complete.length?'<details class="completed-studies"><summary>'+complete.length+' completed studies</summary>'+complete.map(r=>studyMarkup(r)).join('')+'</details>':'')+(archived.length?'<details class="completed-studies"><summary>'+archived.length+' archived studies</summary>'+archived.map(r=>studyMarkup(r)).join('')+'</details>':'');
 }
 function showModel(id) {
-  const b=board(),r=b.rows.find(row=>row.id===id);if(!r)return;
+  const primary=board(),b=[primary,...(primary.study_groups||[])].find(g=>g.rows.some(row=>row.id===id));if(!b)return;const r=b.rows.find(row=>row.id===id);
   $('model-details').innerHTML='<p class="eyebrow">PARTICIPANT '+esc(b.title.toUpperCase())+' · RANK '+r.rank+'</p><h2 class="detail-title">'+esc(r.model)+'</h2><span class="badge">'+esc(r.status)+'</span><div class="detail-scores">'+b.columns.map(([k,title])=>'<div><span>'+esc(title)+'</span><strong>'+number(r.scores[k])+'</strong></div>').join('')+'</div>'+b.columns.map(([k,title])=>'<p class="detail-line"><strong>'+esc(title)+':</strong> '+esc(r.formulas[k])+'</p>').join('')+(r.reanalysis?'<p class="detail-line">Final population health: '+number(r.reanalysis.capability.endpoint)+' · Winter health lost: '+number(r.reanalysis.capability.winter_damage)+' · Extra winter penalty: '+number(r.reanalysis.capability.winter_surcharge)+' · Original full-run average: '+number(r.reanalysis.capability.original_full_horizon)+'</p>':'')+'<p class="detail-line">Seeds '+esc(r.seeds.join(', '))+' · '+money(r.cost)+' / run</p><p class="detail-line">Reasoning / decision: '+(r.reasoning_estimated?'~':'')+number(r.reasoning,0)+' tokens'+(r.latency!=null?' · Median response: '+number(r.latency)+'s':'')+'</p>'+(r.note?'<p class="detail-line warning">'+esc(r.note)+'</p>':'')+'<div class="detail-seeds">'+r.seed_scores.map(s=>'<div><p class="detail-line">Seed '+s.seed+'</p>'+b.columns.map(([k,title])=>'<p>'+esc(title)+' '+number(s.scores[k])+'</p>').join('')+'</div>').join('')+'</div>'+(r.commit?'<p class="detail-line muted">Launch commit · '+esc(r.commit.slice(0,12))+'</p>':'<p class="detail-line muted">Source · canonical model metrics database</p>');
   $('model-dialog').showModal();
 }

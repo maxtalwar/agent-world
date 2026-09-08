@@ -217,6 +217,10 @@ class LeaderboardStore:
                     "reasoning_estimated": bool(r["reasoning_tokens_estimated"]),
                     "latency": r["latency_median_seconds"],
                     "seed_scores": [], "commit": None, "reanalysis": reanalysis,
+                    "evidence_paths": [str(within(self.root, x[0])) for x in conn.execute(
+                        "SELECT DISTINCT r.source_report FROM runs r JOIN run_cohorts c USING(run_id) "
+                        "JOIN benchmark_trials t USING(run_id) WHERE c.model=? AND t.included_in_model_result=1",
+                        (r["model_key"],))],
                 })
         return list(boards.values())
 
@@ -434,16 +438,28 @@ class LeaderboardStore:
             except (OSError, ValueError, KeyError, TypeError):
                 LOG.exception("Cannot read managed job %s", path.parent.name)
                 warnings.append(f"Could not read study {path.parent.name}; it has been omitted.")
-        # Database backfills are a fallback, not a signal to close a live
-        # recipe pool. Prefer its validated managed results when available.
-        # Keep distinct managed fingerprints separate; never pool them here.
+        # A managed projection may replace the catalog only when it contains
+        # every cataloged row's exact source evidence. One newly completed study
+        # is never grounds to hide the established leaderboard.
         for catalog_board in canonical:
             matching = [b for b in boards.values() if b["recipe"] == catalog_board["recipe"]]
-            if any(b["rows"] for b in matching):
+            covered = None
+            for candidate in matching:
+                evidence = {str(Path(p).resolve()) for row in candidate["rows"] for p in row.get("report_paths", [])}
+                if catalog_board["rows"] and all(
+                        row.get("evidence_paths") and set(row["evidence_paths"]).issubset(evidence)
+                        for row in catalog_board["rows"]):
+                    covered = candidate
+                    break
+            if covered is not None:
+                covered["preferred_projection"] = True
                 continue
-            for empty in matching:
-                catalog_board["runs"].extend(empty["runs"])
-                del boards[empty["id"]]
+            existing = boards.pop(catalog_board["id"], None)
+            if existing:
+                catalog_board["runs"].extend(existing["runs"])
+                if existing["rows"]:
+                    existing["id"] += "@unversioned"
+                    boards[existing["id"]] = existing
             boards[catalog_board["id"]] = catalog_board
         revisions = scoring_policies(self.root)
         for board in boards.values():
@@ -481,18 +497,22 @@ class LeaderboardStore:
                     for c in run["cells"]) for run in board["runs"] if not run.get("archived"))
             board["state"] = "In progress" if board["active_count"] else (
                 "Established" if board["source"] == "Canonical metrics database" else "Completed studies")
-        recipe_counts = {}
-        for b in boards.values():
-            recipe_counts[b["recipe"]] = recipe_counts.get(b["recipe"], 0) + 1
-        for b in boards.values():
-            if recipe_counts[b["recipe"]] > 1:
-                suffix = ("Canonical" if b["source"] == "Canonical metrics database"
-                          else b["digest"][:8] or "Other studies")
-                b["title"] += " · " + suffix
-        # Recipe IDs supply display order only; never choose scoring by version.
-        ordered = sorted(boards.values(), key=lambda b: (
+        # Release navigation is one entry per recipe. Distinct evidence groups
+        # remain separate within that page; grouping never pools their scores.
+        releases = {}
+        for candidate in boards.values():
+            releases.setdefault(candidate["recipe"], []).append(candidate)
+        primary_boards = []
+        for groups in releases.values():
+            groups.sort(key=lambda b: (b["source"] == "Canonical metrics database",
+                                       b.get("preferred_projection", False), len(b["rows"]), b["id"]), reverse=True)
+            primary = groups[0]
+            primary["study_groups"] = [g for g in groups[1:] if g["rows"] or
+                any(not run.get("archived") for run in g["runs"])]
+            primary_boards.append(primary)
+        ordered = sorted(primary_boards, key=lambda b: (
             int(re.search(r"v(\d+)", b["recipe"])[1]) if re.search(r"v(\d+)", b["recipe"]) else 0,
-            "revised" in b["recipe"], b["source"] == "Canonical metrics database"), reverse=True)
+            "revised" in b["recipe"]), reverse=True)
         return {"updated_at": stamp(), "refresh_seconds": self.refresh_seconds,
                 "boards": ordered, "experiments": sorted(experiments, key=lambda r: r.get("created_at") or "", reverse=True), "warnings": warnings}
 

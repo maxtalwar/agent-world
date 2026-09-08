@@ -7,7 +7,7 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
-from agent_world.leaderboard import LeaderboardStore, make_server, within
+from agent_world.leaderboard import LeaderboardStore, make_server, within, new_board
 
 
 class LeaderboardTests(unittest.TestCase):
@@ -146,8 +146,44 @@ class LeaderboardTests(unittest.TestCase):
         (other / "job.json").write_text(json.dumps(job2))
         with patch.object(self.store, "canonical_boards", return_value=[]):
             payload = self.store.get()
-        self.assertEqual({b["id"] for b in payload["boards"]},
+        self.assertEqual(len(payload["boards"]), 1)
+        primary = payload["boards"][0]
+        self.assertEqual({b["id"] for b in [primary, *primary["study_groups"]]},
                          {"participant-test@abc", "participant-test@different"})
+
+    def test_partial_managed_results_never_hide_catalog(self):
+        self.fixture()
+        catalog = new_board("participant-test")
+        catalog["source"] = "Canonical metrics database"
+        catalog["rows"] = [{"id": "old", "model": "Established", "rank": 1,
+            "scores": {"sustained_competence": 80}, "evidence_paths": [str(self.root / "old-report.json")]}]
+        run = {"id": "test", "model": "New", "ranked": True, "cells": []}
+        row = {"id": "new", "model": "New", "scores": {"sustained_competence": 90},
+               "report_paths": [str(self.root / "new-report.json")]}
+        with patch.object(self.store, "canonical_boards", return_value=[catalog]), \
+             patch.object(self.store, "managed_run", return_value=(run, [row], None)):
+            payload = self.store.build()
+        self.assertEqual(len(payload["boards"]), 1)
+        board = payload["boards"][0]
+        self.assertEqual(board["id"], "participant-test")
+        self.assertEqual([r["model"] for r in board["rows"]], ["Established"])
+        self.assertEqual(board["study_groups"][0]["rows"][0]["model"], "New")
+        self.assertEqual(board["title"], "test")
+
+    def test_complete_managed_projection_can_replace_duplicate_catalog(self):
+        self.fixture()
+        evidence = str(self.root / "same-report.json")
+        catalog = new_board("participant-test")
+        catalog["source"] = "Canonical metrics database"
+        catalog["rows"] = [{"id": "old", "model": "Same", "evidence_paths": [evidence]}]
+        run = {"id": "test", "model": "Same", "ranked": True, "cells": []}
+        row = {"id": "new", "model": "Same", "scores": {"sustained_competence": 80}, "report_paths": [evidence]}
+        with patch.object(self.store, "canonical_boards", return_value=[catalog]), \
+             patch.object(self.store, "managed_run", return_value=(run, [row], None)):
+            payload = self.store.build()
+        self.assertEqual(len(payload["boards"]), 1)
+        self.assertEqual(payload["boards"][0]["id"], "participant-test@abc")
+        self.assertEqual(payload["boards"][0]["study_groups"], [])
 
     def test_cache_refreshes_but_does_not_rebuild_per_request(self):
         with patch.object(self.store, "build", side_effect=[{"v": 1}, {"v": 2}]) as build:

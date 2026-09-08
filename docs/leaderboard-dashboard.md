@@ -230,3 +230,22 @@ successful launches. No model calls occur during catalog loading or review.
 
 The display name v8.1 aliases participant-v8-revised. Stored recipe IDs, hashes,
 source commits, and historical evidence remain unchanged.
+
+## Release projection completeness (2026-09-07)
+
+The release navigation contains one entry per recipe ID. Different recipe
+fingerprints retain separate result groups within that page; their scores are
+never pooled just because the human-readable version matches.
+
+The established catalog is retained unless one managed result group contains
+the exact source-report paths for every established catalog row. A newly
+completed model cannot replace an entire historical leaderboard. A complete
+managed projection can still supply newer accepted results without duplicating
+a smaller catalog projection. Additional groups are accessible under
+**Additional studies**; empty groups containing only archived activity do not
+create tabs. Historical group URLs resolve to their release page.
+
+Regression coverage in `tests/test_leaderboard.py` checks partial versus complete
+coverage and separate fingerprint groups. The recurring v6 failure was caused by
+an old `any(managed rows)` shortcut: completing Astra hid all 20 canonical rows.
+No source data was lost or changed during the display repair.
