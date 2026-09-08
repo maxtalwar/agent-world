@@ -1,44 +1,15 @@
 # Agent World model leaderboard
 
-Revised Participant v8: medium effort, ten agents, 60 ticks, seeds 11 and 41,
-no message board, corrected capacity feedback, per-action Execution, and
-equal-weight Capability. The three models below passed two-seed finalization.
-Rows are ordered by Capability; there is no composite overall score.
+Participant v8.1: medium effort, ten original agents, 60 ticks, seeds 11 and 41, no healing. This compact table contains the accepted studies admitted to the source catalog. The live dashboard also contains subsequently finalized managed studies; the [complete current rescoring report](v81-endpoint-winter-rescoring.md) compares all nine available models.
+
+Capability rescoring: Final original-population health minus 10% of health lost during the last winter per original agent; minimum zero. Original trial identity retained (endpoint-winter-damage-v1).
 
 | Model | Capability | Execution | Production | Cost/run | Mean time/decision |
 |---|---:|---:|---:|---:|---:|
-| GPT-5.6 Terra | 66.0 | 90.1 | 165.0 | $8.50 | 11.61s |
-| GPT-5.6 Luna | 64.1 | 86.6 | 108.2 | $0.65 | 17.25s |
-| GPT-5.4 Mini | 55.9 | 88.4 | 86.8 | $3.90 | 23.25s |
+| GPT-5.6 Terra | 10.1 | 90.1 | 165.0 | $8.50 | 11.61s |
+| GPT-5.4 Mini | 4.5 | 88.4 | 86.8 | $3.90 | 23.25s |
+| GPT-5.6 Luna | 3.6 | 86.6 | 108.2 | $0.65 | 17.25s |
 
-Capability and Execution are 0–100 scores. Capability averages health over the
-original population and every completed tick; dead agents contribute zero.
-Production is unbounded fixed accounting value added per 100 original-population
-agent-ticks. Cost/run is token-derived API-list equivalent per world, including
-retries, not a subscription charge. Mean time/decision includes recorded attempts
-per resolved decision and excludes between-call quota waits.
+Original certification and provenance exceptions are unchanged. Gemini admission includes the owner-accepted evidence exception recorded in the source catalog. Cost is API-list equivalent per world, not subscription drawdown. Execution and Production are diagnostic columns, not components of Capability.
 
-All six worlds have clean integrity and 100% usage coverage, complete declared
-transfer accounting and API-list cost. Native CLI identity is requested-only.
-Simulation source is 783341aad5cf195209091652f6eb25420f4af0b8.
-See the [batch handoff](v8-revised-benchmark-batch-2026-09-05.md),
-[specification](model-benchmarks.md), [scoring revision](v8-revised.md),
-[source catalog](../data/run-sources.json), and
-[generated database](../data/model-benchmarks.sqlite).
-
-Historical [original v8](model-leaderboard-v8-original.md),
-[v7](model-leaderboard-v7.md), and [v6](model-leaderboard-v6.md) remain separate.
-Only cataloged, accepted results appear here; active studies are shown by the dashboard.
-
-## Participant v8.1 — owner-accepted Gemini results (2026-09-07)
-
-These standard benchmark results include seeds 11 and 41. The owner explicitly
-accepted the recorded provenance exception; original reports remain unchanged.
-They are ranked on the managed v8.1 leaderboard, separately from v6 above.
-
-| Model | Capability | Execution | Production | API-equivalent cost/run |
-|---|---:|---:|---:|---:|
-| Gemini 3.7 Flash | 82.66 | 92.37 | 171.5 | $5.84 |
-| Gemini 3.6 Flash | 76.02 | 92.95 | 196.33 | $8.18 |
-
-Gemini costs use recorded token totals and [Google standard API rates](https://ai.google.dev/gemini-api/docs/pricing) verified 2026-09-07: $0.75/M uncached input, $0.075/M cached input, and $3.75/M output including thinking. These introductory rates apply through December 31, 2026. Values average the two seeds, exclude cache-storage charges, and estimate API-equivalent cost rather than subscription charges. Original report bytes and acceptance hashes are unchanged.
+See the [rescoring definition and evidence](v81-endpoint-winter-rescoring.md), [original v8.1 projection](model-leaderboard-v81-original-score.md), and historical [v8](model-leaderboard-v8-original.md), [v7](model-leaderboard-v7.md), and [v6](model-leaderboard-v6.md).

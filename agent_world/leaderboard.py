@@ -26,11 +26,13 @@ try:
     from .benchmark_acceptance import accepted_report
     from .gemini_pricing import historical_cost
     from .world_viewer import WorldViewer, SnapshotUnavailable
+    from .capability_reanalysis import policies as scoring_policies, rescore, formula as reanalysis_formula
 except ImportError:
     from leaderboard_launch import LaunchService, LaunchError
     from benchmark_acceptance import accepted_report
     from gemini_pricing import historical_cost
     from world_viewer import WorldViewer, SnapshotUnavailable
+    from capability_reanalysis import policies as scoring_policies, rescore, formula as reanalysis_formula
 
 LOG = logging.getLogger(__name__)
 STATIC = Path(__file__).with_name("static")
@@ -188,6 +190,11 @@ class LeaderboardStore:
                 board["updated_at"] = datetime.fromtimestamp(
                     database.stat().st_mtime, timezone.utc).isoformat()
                 scores = json.loads(r["scores_json"])
+                reanalysis = None
+                if conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='model_score_reanalyses'").fetchone():
+                    revised = conn.execute("SELECT result_json FROM model_score_reanalyses WHERE model_key=?", (r["model_key"],)).fetchone()
+                    if revised:
+                        reanalysis = json.loads(revised[0])
                 board["columns"] = ([["capability", "Capability"], ["execution", "Execution"], ["production", "Production"]]
                                     if "capability" in scores else CLASSIC_COLUMNS)
                 seeds = [x[0] for x in conn.execute("""
@@ -207,7 +214,7 @@ class LeaderboardStore:
                     "reasoning": r["reasoning_tokens_per_decision"],
                     "reasoning_estimated": bool(r["reasoning_tokens_estimated"]),
                     "latency": r["latency_median_seconds"],
-                    "seed_scores": [], "commit": None,
+                    "seed_scores": [], "commit": None, "reanalysis": reanalysis,
                 })
         return list(boards.values())
 
@@ -355,6 +362,7 @@ class LeaderboardStore:
                          else missing_costs.get(x["seed"]) for x in r["required_replications"]]
                 rows.append({
                     "id": job["run_id"] + ":" + r["model"], "model": model_label(r["model"]),
+                    "report_paths": [signature[0] for signature in signatures],
                     "lab": model_lab(r["model"]),
                     "scores": {k: v.get("score") for k, v in r["scores"].items()},
                     "formulas": {k: v.get("formula", "") for k, v in r["scores"].items()},
@@ -431,8 +439,30 @@ class LeaderboardStore:
                 catalog_board["runs"].extend(empty["runs"])
                 del boards[empty["id"]]
             boards[catalog_board["id"]] = catalog_board
+        revisions = scoring_policies(self.root)
         for board in boards.values():
-            if board["source"] != "Canonical metrics database":
+            policy = revisions.get(board["recipe"])
+            if policy:
+                board["scoring_revision"] = policy["id"]
+                board["scoring_caption"] = f"Final health · {policy['season_name']} damage counts {policy['season_damage_multiplier']:g}×"
+                board["method"] = (reanalysis_formula(policy) + ". Dead original agents contribute zero. "
+                                   "Scoring is revised after the run; source recipes, original scores and admission remain unchanged.")
+                for row in board["rows"]:
+                    try:
+                        result = (rescore(self.root, row["report_paths"], policy) if row.get("report_paths") else row.get("reanalysis"))
+                        if not result or result["policy_id"] != policy["id"]:
+                            raise ValueError("Matching capability reanalysis is unavailable")
+                        row["reanalysis"] = result
+                        row["original_capability"] = row["scores"].get("capability")
+                        row["scores"]["capability"] = result["capability"]["score"]
+                        row["formulas"]["capability"] = result["capability"]["formula"]
+                        per_seed = {c["seed"]: c["capability"]["score"] for c in result["cells"]}
+                        for seed in row["seed_scores"]:
+                            seed["scores"]["capability"] = per_seed[seed["seed"]]
+                    except (OSError, ValueError, KeyError) as exc:
+                        row["scores"]["capability"] = None
+                        board["warnings"].append(row["model"] + ": capability rescoring unavailable — " + str(exc))
+            if board["source"] != "Canonical metrics database" or policy:
                 primary = board["columns"][0][0]
                 board["rows"].sort(key=lambda row: (
                     -(row["scores"].get(primary) if row["scores"].get(primary) is not None else -1),

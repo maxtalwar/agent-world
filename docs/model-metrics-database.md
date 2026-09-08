@@ -240,3 +240,7 @@ durations by resolved (run, tick, agent) decision, including retries while
 excluding between-call quota waits. Missing or orphan timing makes the mean
 unavailable. `decisions.committed` retains attempt disposition; raw attempt
 durations and tick metrics remain available for diagnosis.
+
+## Post-hoc capability projections (schema 5)
+
+`data/run-sources.json` can declare an explicit `capability_reanalyses` policy pinned to an exact source recipe digest. `model_score_reanalyses` stores the derived score and its raw evidence by model key; `production_leaderboard` selects it for that suite. `model_results`, run reports, recipe identity, certification and original raw scores remain unchanged. The current v8.1 policy is documented in [endpoint/winter rescoring](v81-endpoint-winter-rescoring.md). No healing-enabled or different-recipe evidence can enter this projection.

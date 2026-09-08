@@ -31,7 +31,7 @@ from agent_world.usage import (
 )
 
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 DEFAULT_CATALOG = Path("data/run-sources.json")
 DEFAULT_DATABASE = Path("data/model-benchmarks.sqlite")
 
@@ -453,12 +453,23 @@ def _create_schema(connection: sqlite3.Connection) -> None:
           )
         ORDER BY r.rank;
 
+        CREATE TABLE model_score_reanalyses (
+            model_key TEXT PRIMARY KEY REFERENCES models(model_key),
+            policy_id TEXT NOT NULL,
+            capability REAL NOT NULL,
+            result_json TEXT NOT NULL
+        );
+
         CREATE VIEW production_leaderboard AS
-        SELECT r.rank, m.label AS model, r.capability, r.execution, r.production,
-               r.api_list_cost_per_run_usd, r.latency_mean_seconds, m.suite
+        SELECT CASE WHEN a.policy_id IS NULL THEN r.rank ELSE
+               ROW_NUMBER() OVER (PARTITION BY m.suite ORDER BY COALESCE(a.capability, r.capability) DESC, m.label) END AS rank,
+               m.label AS model, COALESCE(a.capability, r.capability) AS capability,
+               r.execution, r.production, r.api_list_cost_per_run_usd, r.latency_mean_seconds, m.suite,
+               a.policy_id AS capability_reanalysis
         FROM model_results r JOIN models m USING (model_key)
+        LEFT JOIN model_score_reanalyses a USING (model_key)
         WHERE m.leaderboard_eligible = 1 AND r.capability IS NOT NULL
-        ORDER BY r.rank;
+        ORDER BY rank;
 
         CREATE VIEW evidence AS
         SELECT
@@ -1264,6 +1275,27 @@ def build_database(catalog_path: Path, output_path: Path, repo_root: Path | None
                     _insert(connection, "decisions", decision)
                 _insert_tick_metrics(connection, record, decisions)
         _insert_model_results(connection, models, run_records, run_decisions)
+        # Reanalysis is a separate projection: frozen model_results and all run
+        # recipe identities remain untouched.
+        from agent_world.capability_reanalysis import validate_policy, rescore
+        score_policies = {}
+        for spec in catalog.get("capability_reanalyses", []):
+            validate_policy(spec)
+            if spec["source_recipe"] in score_policies:
+                raise ValueError("Multiple active capability reanalyses for one recipe")
+            score_policies[spec["source_recipe"]] = spec
+        for model in models:
+            spec = score_policies.get(model.get("suite") or catalog.get("suite"))
+            if not spec or not connection.execute("SELECT 1 FROM model_results WHERE model_key=?", (model["model_key"],)).fetchone():
+                continue
+            paths = []
+            for record in run_records[model["model_key"]]:
+                row = connection.execute("SELECT r.source_report FROM runs r JOIN benchmark_trials b USING(run_id) WHERE r.run_id=? AND b.included_in_model_result=1", (record["run_id"],)).fetchone()
+                if row:
+                    paths.append(row[0])
+            result = rescore(repo_root, paths, spec)
+            _insert(connection, "model_score_reanalyses", {"model_key": model["model_key"], "policy_id": spec["id"],
+                    "capability": result["capability"]["unrounded_score"], "result_json": _json(result)})
         connection.commit()
         integrity = connection.execute("PRAGMA integrity_check").fetchone()[0]
         if integrity != "ok":
@@ -1377,7 +1409,10 @@ def _format_production_leaderboard(database_path: Path, suite: str) -> str:
             "SELECT model, capability, execution, production, api_list_cost_per_run_usd, "
             "latency_mean_seconds FROM production_leaderboard WHERE suite=? ORDER BY rank", (suite,)
         ).fetchall()
-    lines = ["| Model | Capability | Execution | Production | Cost/run | Mean time/decision |",
+    with sqlite3.connect(database_path) as connection:
+        revision = connection.execute("SELECT a.policy_id, a.result_json FROM model_score_reanalyses a JOIN models m USING(model_key) WHERE m.suite=? LIMIT 1", (suite,)).fetchone()
+    prefix = (["Capability rescoring: " + json.loads(revision[1])["capability"]["formula"] + ". Original trial identity retained (" + revision[0] + ").", ""] if revision else [])
+    lines = prefix + ["| Model | Capability | Execution | Production | Cost/run | Mean time/decision |",
              "|---|---:|---:|---:|---:|---:|"]
     for model, capability, execution, production, cost, latency in rows:
         lines.append(f"| {model} | {capability:.1f} | {execution:.1f} | {production:.1f} "

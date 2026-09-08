@@ -1,5 +1,7 @@
 # Agent World model benchmarks
 
+> Current v8.1 leaderboard display uses the separate [endpoint-health / winter-damage rescoring](v81-endpoint-winter-rescoring.md). The recipe and frozen scores described below remain the original run specification.
+
 Revised Participant v8 is the current suite for new benchmark requests. Always select
 `protocol: participant-v8-revised` explicitly in managed configs. Historical APIs that
 omit a protocol retain their v7 default for compatibility; they do not select

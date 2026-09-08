@@ -1,5 +1,7 @@
 # Revised v8 — equal-weight Capability
 
+> Current v8.1 leaderboard display uses the separate [endpoint-health / winter-damage rescoring](v81-endpoint-winter-rescoring.md). The recipe and frozen scores described below remain the original run specification.
+
 Approved after the first v8 ranking audit. The registered recipe for the next
 leaderboard rebuild is participant-v8-revised. This does not edit the published
 participant-v8 recipe or relabel its admitted results. The action-only review

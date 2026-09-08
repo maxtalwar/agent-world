@@ -993,5 +993,23 @@
       },
       "valid_through": "2026-12-31"
     }
+  ],
+  "capability_reanalyses": [
+    {
+      "id": "endpoint-winter-damage-v1",
+      "source_recipe": "participant-v8-revised",
+      "source_recipe_digest": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "horizon": 60,
+      "season_length_ticks": 12,
+      "season_index": 3,
+      "season_name": "winter",
+      "required_seeds": [
+        11,
+        41
+      ],
+      "approved_at": "2026-09-07",
+      "note": "Post-hoc endpoint score with a 10% extra penalty for actual health lost during winter, floored at zero. Original trial identity, frozen scores and certification remain unchanged.",
+      "season_damage_multiplier": 1.1
+    }
   ]
 }

@@ -25,6 +25,12 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+
+## 2026-09-07 — Winter resilience and terminal food buffers disagree
+
+**Gemini 3.7 retains more endpoint health than Sol, but Sol carries more food in both matched worlds and loses far less health during the final spring.** In the no-healing v8.1 seeds 11/41, winter health loss per original agent is 24.15 for Gemini versus 38.45 for Sol; final-spring loss reverses to 8.30 versus 2.75. All three Gemini deaths occur during that final spring. Sol carries 57 food across the two worlds versus Gemini's 10 and operates eight farms versus two. Another 104 food is concentrated in two private Sol stores in seed 41, so a pooled stockpile comparison exaggerates the breadth of that buffer. Gemini survivors have better water reserves. These are observed world outcomes, not a connector-effect claim or evidence of what an unrun extension would do. See [evidence and caveats](sol-gemini-terminal-supplies.md) and [endpoint/winter rescoring](v81-endpoint-winter-rescoring.md).
+
+
 ## 2026-09-07 — Healing can raise scores without materially reducing damage
 
 **Gemini's completed healing pilot gains 5.89 health-score points while total damage barely changes; a wider Sol–Mini score gap likewise does not imply a wider damage-prevention gap.**
