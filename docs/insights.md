@@ -25,6 +25,23 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-07 — Healing can raise scores without materially reducing damage
+
+**Gemini's completed healing pilot gains 5.89 health-score points while total damage barely changes; a wider Sol–Mini score gap likewise does not imply a wider damage-prevention gap.**
+Across seeds 11/41, Gemini 3.7 Flash loses 946 HP without healing and 938 HP
+with it, restores 357 HP, and improves survival from 17 to 20 of 20 original
+agents. Exact temporal accounting attributes 5.16 of its 5.89 score-point gain
+to restored health, with 0.73 from changed damage amount/timing. This is not a
+causal counterfactual: healing changes later trajectories. Sol's health-score
+lead over Mini widens 1.74 points, but relative restored-health credit adds 2.31
+points while the damage component narrows the gap 0.57. Thus gap widening can
+reflect recovery rather than prevention. All twenty compared cells completed
+with clean report integrity and full usage coverage. Actual HP loss is clipped
+to remaining health, deaths and exposure are reported explicitly, and all 200
+agent health balances reconcile. No general capability ordering is inferred.
+Evidence: [damage investigation](regeneration-damage-investigation.md), its
+reproducible script and source-hashed per-agent JSON.
+
 ## 2026-09-07 - Completed Gemini recovery narrows the Sol gap
 
 **More restored health did not imply a higher final population-health score.** Sol restored 382 HP versus Gemini 357 across seeds 11/41, yet Gemini finished at 70.95% original-population health with 20 survivors versus Sol 68.60% with 19. Regeneration narrowed the full-horizon Gemini-minus-Sol gap from 5.0533 to 2.6067 points. All eight comparison reports are clean with complete usage coverage; nonconcurrent controls, stochastic decisions and Gemini requested-only identity limit attribution. See [final comparison](health-regeneration-final-comparison.md) and its exact per-tick evidence.

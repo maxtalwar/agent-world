@@ -1,5 +1,7 @@
 # Healing versus matched controls — 2026-09-07
 
+Update: Gemini has since completed both seeds. The [full damage/recovery investigation](regeneration-damage-investigation.md) supersedes the partial Gemini comparison below and qualifies the earlier recommendation to adopt healing.
+
 Batch: `health-regeneration-expanded-20260907`. Handoff: [pilot](regeneration-expanded-pilot.md). Source context: `.worktrees/health-regeneration`; treatment commit `9f296668f779fa281e269da98f73c1683e45b467`. Diagnostic only; no leaderboard admission.
 
 All eight Codex treatment cells and their eight controls completed 60 ticks with clean decision quality and 100% usage-record coverage. Mini finalization audited once: both manifests completed, reports/usage/checkpoints present, no LLM failures. Mini manifests label resolved identity unknown, while report usage resolves gpt-5.4-mini; preserve this metadata discrepancy. World config differences are only the three regeneration settings. Controls precede treatments, so model/provider drift and stochastic behavior are not eliminated.
