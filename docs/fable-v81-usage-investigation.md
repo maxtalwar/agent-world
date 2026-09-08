@@ -112,3 +112,15 @@ or that refreshing the login restored any quota allowance. No subscription
 change, purchase, extra-usage enablement, or model request was made to test that
 hypothesis. The benchmark retained its checkpoint and recorded quota wait;
 Run Monitoring received the verified authentication result.
+
+## Verification after the login refresh
+
+The authenticated Claude web Usage page explicitly showed `Plan usage limits
+Max (5x)` after reauthentication. Its current-session meter remained 100% used,
+and both the all-model and Fable weekly meters showed 8%. The Billing page also
+identified the active plan as Max with 5x usage. Thus the refresh corrected the
+CLI label but did not restore usable session allowance. This weakens the
+hypothesis that a stale Pro label alone caused the refusal; it does not reveal
+the server's historical quota enforcement. No pre-refresh entitlement snapshot
+or server-side quota calculation is available to establish that causal claim.
+No model request or subscription change was needed for this verification.
