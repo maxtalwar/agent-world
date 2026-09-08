@@ -40,6 +40,16 @@ class LaunchTests(unittest.TestCase):
             db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
                 self.identifier, "web-test", "review", time.time(), time.time(), json.dumps(self.request)))
 
+    def test_working_indicator_requires_recent_event_heartbeat(self):
+        event=self.service.folder/"event.json"
+        event.write_text(json.dumps({"status":"working","heartbeat_unix":time.time()}))
+        self.service.update(self.identifier, monitor_event_path=str(event.relative_to(self.root)))
+        self.assertEqual(self.service.public_request(self.service.get(self.identifier))["monitor_event_state"], "working")
+        event.write_text(json.dumps({"status":"working","heartbeat_unix":time.time()-120}))
+        self.assertEqual(self.service.public_request(self.service.get(self.identifier))["monitor_event_state"], "interrupted")
+        event.write_text(json.dumps({"status":"completed","heartbeat_unix":time.time()}))
+        self.assertEqual(self.service.public_request(self.service.get(self.identifier))["monitor_event_state"], "completed")
+
     def test_retired_recipe_review_cannot_launch(self):
         self.request["digest"] = "retired-world"
         with self.assertRaisesRegex(LaunchError, "retired conditions"):

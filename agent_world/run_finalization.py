@@ -420,8 +420,12 @@ def finalize_job(
                 if report_path.exists()
                 else {"run": {}, "reliability": {}, "benchmarks": {}}
             )
+        from .benchmark_acceptance import accepted_report
+        report_path = stem.with_name(stem.name + "-report.json")
+        if report_path.exists():
+            report = accepted_report(root, report_path, report)
         audit = _audit_report(job, cell, report)
-        if cell.get("source_recovery_record"):
+        if cell.get("source_recovery_record") and not report.get("provenance_acceptance"):
             audit["blockers"].append(f"Seed {cell['seed']} requires source migration provenance review.")
         if not transfer_complete:
             audit["blockers"].append(

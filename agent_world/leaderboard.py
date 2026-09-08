@@ -226,7 +226,7 @@ class LeaderboardStore:
 
     def aggregate(self, job: dict, reports: list[dict], signatures: tuple) -> dict:
         key = (job["run_id"], job.get("recipe_fingerprint_sha256"), signatures,
-               json.dumps([r.get("owner_acceptance") for r in reports], sort_keys=True))
+               json.dumps([r.get("provenance_acceptance") for r in reports], sort_keys=True))
         if key in self.aggregates:
             return self.aggregates[key]
         candidates = [job.get("execution_root")]
@@ -330,9 +330,9 @@ class LeaderboardStore:
                 continue
             try:
                 report = accepted_report(self.root, report_path, read_json(report_path))
-                if report.get("owner_acceptance"):
+                if report.get("provenance_acceptance"):
                     run["readiness_status"] = "owner_accepted"
-                    run["owner_acceptance"] = report["owner_acceptance"]
+                    run["provenance_acceptance"] = report["provenance_acceptance"]
                 # Only final reports may contribute to ranking, including early
                 # population extinction when the report declares completion.
                 if not report.get("run", {}).get("completed"):
@@ -376,8 +376,8 @@ class LeaderboardStore:
                     "lab": model_lab(r["model"]),
                     "scores": {k: v.get("score") for k, v in r["scores"].items()},
                     "formulas": {k: v.get("formula", "") for k, v in r["scores"].items()},
-                    "status": "Certified" if run.get("owner_acceptance") else r["status"].replace("_", " ").capitalize(),
-                    "seeds": r["required_seeds"], "note": ("Owner-approved provenance override: source migration and incomplete native trace retention accepted on 2026-09-07." if run.get("owner_acceptance") else "; ".join(r.get("certification_flags", []))),
+                    "status": "Certified" if run.get("provenance_acceptance") else r["status"].replace("_", " ").capitalize(),
+                    "seeds": r["required_seeds"], "note": (run["provenance_acceptance"]["reason"] if run.get("provenance_acceptance") else "; ".join(r.get("certification_flags", []))),
                     "cost": sum(costs) / len(costs) if costs and all(x is not None for x in costs) else None,
                     "reasoning": r.get("mean_reasoning_tokens_per_call"),
                     "reasoning_estimated": r.get("reasoning_tokens_estimated", False),

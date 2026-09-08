@@ -478,6 +478,8 @@ def _launch_cell(job: dict[str, Any], cell: dict[str, Any], *, resume: bool = Fa
     cell["session"] = session
     cell["launch_state"] = "launching"
     cell["last_launched_at_utc"] = utc_now()
+    # A paused interval is not stalled execution in the new attempt.
+    cell["controller_last_progress_at_utc"] = cell["last_launched_at_utc"]
     atomic_write_json(Path(job["job_dir"]) / "job.json", job, fsync=True)
     subprocess.run(
         ["tmux", "new-session", "-d", "-s", session, "-c", job["source_root"], str(launcher)],

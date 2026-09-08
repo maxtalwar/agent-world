@@ -8,6 +8,7 @@ import shlex
 import subprocess
 import sys
 import time
+import threading
 try:
     from .leaderboard_launch import LaunchService
     from .leaderboard_supervisor import supervisor_environment
@@ -29,10 +30,11 @@ def signal(request):
     if status in {"completed", "completed_with_blockers", "failed", "stopped", "cancelled"}:
         return {"kind": "terminal", "request_id": request["request_id"], "status": status,
                 "readiness": (request.get("readiness") or {}).get("status"),
-                "blockers": sorted((request.get("readiness") or {}).get("blockers", []))}
+                "blockers": sorted((request.get("readiness") or {}).get("blockers", [])),
+                **({"attempts": [{k: c.get(k) for k in ("id", "resume_count", "last_launched_at_utc")} for c in request.get("cells", [])]} if status in {"failed", "stopped", "cancelled"} else {})}
     if request["state"] == "needs_attention" or status == "needs_attention" or any(s == "needs_attention" for s in states):
         return {"kind": "attention", "request_id": request["request_id"], "error": request.get("error"),
-                "cells": [{k: c.get(k) for k in ("id", "controller_state", "controller_attention")} for c in request.get("cells", [])]}
+                "cells": [{k: c.get(k) for k in ("id", "controller_state", "controller_attention", "resume_count", "last_launched_at_utc")} for c in request.get("cells", [])]}
     return None
 
 
@@ -64,6 +66,8 @@ def watch_once(service):
     event_dir = folder / str(time.time_ns())
     event_dir.mkdir()
     write(event_dir / "event.json", {"status": "pending", "events": pending})
+    for event in pending:
+        service.update(event["request_id"], monitor_event_path=str((event_dir / "event.json").relative_to(service.root)))
     # Reserve before dispatch: lost/ambiguous responses must not spend quota twice.
     for event in pending:
         seen[event["fingerprint"]] = str(event_dir)
@@ -82,6 +86,7 @@ def worker(root, event_dir):
     service = LaunchService(root)
     record = json.loads((event_dir / "event.json").read_text())
     record["status"] = "working"
+    record["heartbeat_unix"] = time.time()
     write(event_dir / "event.json", record)
     thread = service.settings["monitor_thread_id"]
     prompt = ("You are the low-effort Astra event worker for the existing Run Monitoring worklist. "
@@ -90,8 +95,15 @@ def worker(root, event_dir):
               "For launch events, accept all exact IDs together via the deployed leaderboard_launch.py "
               "monitor-accept --root /home/maxtalwar/agent-world --thread " + thread + " --requests ID ...; "
               "do not launch simulations yourself. For attention, diagnose and repair authorized infrastructure "
-              "using repository benchmark guidance; preserve checkpoints and source provenance. For completed "
-              "runs audit finalization once; do not admit leaderboard scores. For experiment runs, use the experiment "
+              "using repository benchmark guidance; preserve checkpoints and source provenance. A resume command "
+              "returning is not recovery success: verify progress beyond the saved tick or a confirmed quota "
+              "wait. If startup fails, repair it in this event. For completed "
+              "runs complete the provenance review and leaderboard admission using the reporting skill. "
+              "A code fingerprint mismatch is a review trigger, not a reason to stop: compare the exact source "
+              "changes, recipe, accepted decisions, event prefixes and usage evidence. Record an evidence-backed "
+              "review for infrastructure-only repairs and admit qualifying results through the catalog/database "
+              "workflow. Never invent owner approval or waive changed conditions or lost decisions; explain "
+              "any substantive exception requiring the owner in one plain sentence. For experiment runs, use the experiment "
               "workflow and retain the supplied batch/source/handoff context. Once every run in the batch is "
               "complete, perform the authorized comparison against the existing baseline described in its "
               "handoff document, whether the comparison uses benchmark or experiment runs; do not launch "
@@ -112,6 +124,13 @@ def worker(root, event_dir):
     command = [binary, "exec", "--ephemeral", "--approve-for-me", "-m", "gpt-6-astra",
                "-c", 'model_reasoning_effort="low"', "--json", "--cd", convert(root),
                "--output-last-message", convert(event_dir / "response.txt"), "-"]
+    heartbeat_stop = threading.Event()
+    def heartbeat():
+        while not heartbeat_stop.wait(15):
+            record["heartbeat_unix"] = time.time()
+            write(event_dir / "event.json", record)
+    heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
+    heartbeat_thread.start()
     try:
         with (event_dir / "agent.jsonl").open("w") as log:
             result = subprocess.run(command, input=prompt, text=True, stdout=log, stderr=subprocess.STDOUT,
@@ -120,6 +139,8 @@ def worker(root, event_dir):
     except (OSError, subprocess.TimeoutExpired) as exc:
         record["status"] = "failed"
         record["error"] = type(exc).__name__
+    heartbeat_stop.set()
+    heartbeat_thread.join()
     write(event_dir / "event.json", record)
     response = event_dir / "response.txt"
     if response.exists():

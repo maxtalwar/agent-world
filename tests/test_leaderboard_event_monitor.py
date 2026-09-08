@@ -41,6 +41,34 @@ class EventMonitorTests(unittest.TestCase):
                 watch_once(service)
                 self.assertEqual(sum(c.args[0][1]=="new-session" for c in run.call_args_list), 2)
 
+    def test_same_failure_after_resume_is_a_new_incident(self):
+        with tempfile.TemporaryDirectory() as directory:
+            service = Mock(folder=Path(directory), root=Path(directory))
+            request = self.request(cells=[{"id":"seed-11", "controller_state":"needs_attention",
+                "controller_attention":"authentication_required", "resume_count":0}])
+            service.monitoring_worklist.return_value = [request]
+            def command(args, **kwargs):
+                return Mock(returncode=1 if args[1]=="has-session" else 0)
+            with patch("agent_world.leaderboard_event_monitor.subprocess.run", side_effect=command) as run:
+                watch_once(service)
+                # Progress in a different healthy seed must not re-dispatch the blocked seed.
+                request["cells"][0]["controller_last_tick"] = 6
+                watch_once(service)
+                self.assertEqual(sum(c.args[0][1]=="new-session" for c in run.call_args_list), 1)
+                request["cells"][0]["resume_count"] = 1
+                for _ in range(20): watch_once(service)
+                self.assertEqual(sum(c.args[0][1]=="new-session" for c in run.call_args_list), 2)
+
+    def test_review_scope_changes_only_with_material_progress(self):
+        from agent_world.leaderboard_launch import LaunchService
+        job={"controller":{"status":"needs_attention","last_check_at_utc":"old"},
+             "cells":[{"id":"seed-11","resume_count":0,"controller_last_tick":5}]}
+        before=LaunchService.monitoring_incident(job)
+        job["controller"]["last_check_at_utc"]="new"
+        self.assertEqual(before,LaunchService.monitoring_incident(job))
+        job["cells"][0]["resume_count"]=1
+        self.assertNotEqual(before,LaunchService.monitoring_incident(job))
+
     def test_simultaneous_launches_are_batched(self):
         with tempfile.TemporaryDirectory() as directory:
             service = Mock(folder=Path(directory), root=Path(directory))
@@ -59,6 +87,8 @@ class EventMonitorTests(unittest.TestCase):
             (root/"event.json").write_text(json.dumps({"status":"pending", "events":[{"request_id":"one", "kind":"launch"}]}))
             service = Mock(settings={"monitor_thread_id":"monitor", "supervisor_binary":"/fake/codex"})
             def execute(command, **kwargs):
+                self.assertIn("complete the provenance review and leaderboard admission", kwargs["input"])
+                self.assertNotIn("do not admit leaderboard scores", kwargs["input"])
                 self.assertIn("--ephemeral", command)
                 self.assertIn("--approve-for-me", command)
                 self.assertIn("gpt-6-astra", command)

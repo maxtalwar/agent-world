@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-09-07",
+  "updated_at_utc": "2026-09-08T21:14:37.481060+00:00",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -944,6 +944,52 @@
           "report_path": "runs/managed/gpt-6-astra-v8-revised-20260907/seed-41/run-report.json"
         }
       ]
+    },
+    {
+      "model_key": "claude-sonnet-5-participant-v8-revised",
+      "label": "Sonnet 5",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "model_id": "claude-sonnet-5",
+      "leaderboard_eligible": true,
+      "notes": "Both seeds admitted after recorded infrastructure-only source migration review; original reports preserved. See docs/reviews/claude-v81-provenance-20260908.md",
+      "runs": [
+        {
+          "run_id": "web-claude-sonnet-5-f8f540cb1847:seed-11",
+          "seed": 11,
+          "kind": "benchmark_trial",
+          "report_path": "runs/managed/web-claude-sonnet-5-f8f540cb1847/seed-11/run-report.json"
+        },
+        {
+          "run_id": "web-claude-sonnet-5-f8f540cb1847:seed-41",
+          "seed": 41,
+          "kind": "benchmark_trial",
+          "report_path": "runs/managed/web-claude-sonnet-5-f8f540cb1847/seed-41/run-report.json"
+        }
+      ]
+    },
+    {
+      "model_key": "claude-haiku-4-5-participant-v8-revised",
+      "label": "Haiku 4.5",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "model_id": "claude-haiku-4-5-20251001",
+      "leaderboard_eligible": true,
+      "notes": "Owner approved standard admission with disclosed quota-recovery source migration and regeneration of eight unfinished decisions per seed. Completed ticks and original evidence preserved. See docs/reviews/haiku-v81-admission-20260908.md",
+      "runs": [
+        {
+          "run_id": "web-claude-haiku-4-5-20251001-cdc35c0408ed:seed-11",
+          "seed": 11,
+          "kind": "benchmark_trial",
+          "report_path": "runs/managed/web-claude-haiku-4-5-20251001-cdc35c0408ed/seed-11/run-report.json"
+        },
+        {
+          "run_id": "web-claude-haiku-4-5-20251001-cdc35c0408ed:seed-41",
+          "seed": 41,
+          "kind": "benchmark_trial",
+          "report_path": "runs/managed/web-claude-haiku-4-5-20251001-cdc35c0408ed/seed-41/run-report.json"
+        }
+      ]
     }
   ],
   "benchmark_acceptances": [
@@ -998,6 +1044,66 @@
       "approved_at": "2026-09-07",
       "reason": "Owner explicitly accepts the recorded source migration and incomplete native trace retention for standard benchmark admission. Original evidence and limitations remain preserved.",
       "review_path": "docs/reviews/gemini-v81-provenance-20260907.md"
+    },
+    {
+      "report_path": "runs/managed/web-claude-sonnet-5-f8f540cb1847/seed-11/run-report.json",
+      "report_sha256": "7f1e77b30d77161ef2a7ce971ef021f72a8db9885730b7e02d5783e1323ea073",
+      "seed": 11,
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "recovery_path": "runs/jobs/web-claude-sonnet-5-f8f540cb1847/source-recovery/quota-windows-seed-11/recovery.json",
+      "recovery_sha256": "6cade2ed7c495fd6fb7f8ac27ed73ced632d8840982138d7a43d86d3a0911ad9",
+      "run_id": "web-claude-sonnet-5-f8f540cb1847",
+      "model": "claude-sonnet-5",
+      "recipe": "participant-v8-revised",
+      "review_type": "infrastructure_compatibility",
+      "reviewed_by": "Codex provenance review",
+      "reviewed_at": "2026-09-08",
+      "reason": "Quota wait accounting repair only; unchanged simulation conditions and accepted decisions; completed event prefixes verified.",
+      "review_path": "docs/reviews/claude-v81-provenance-20260908.md",
+      "review_sha256": "ea0baabaec4167a96714164c9de122217a3aa6cc0cb670214d93c6f6667bc11a"
+    },
+    {
+      "report_path": "runs/managed/web-claude-sonnet-5-f8f540cb1847/seed-41/run-report.json",
+      "report_sha256": "0562ee5caae6d6909573d6e50da22d6a312e4181a885e49073d856949d58f431",
+      "seed": 41,
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "recovery_path": "runs/jobs/web-claude-sonnet-5-f8f540cb1847/source-recovery/quota-windows-seed-41/recovery.json",
+      "recovery_sha256": "d9e464c311de65589ec3f16460b4b964e3eef487d769a43d518618799f3d5f85",
+      "run_id": "web-claude-sonnet-5-f8f540cb1847",
+      "model": "claude-sonnet-5",
+      "recipe": "participant-v8-revised",
+      "review_type": "infrastructure_compatibility",
+      "reviewed_by": "Codex provenance review",
+      "reviewed_at": "2026-09-08",
+      "reason": "Quota wait accounting repair only; unchanged simulation conditions and accepted decisions; completed event prefixes verified.",
+      "review_path": "docs/reviews/claude-v81-provenance-20260908.md",
+      "review_sha256": "ea0baabaec4167a96714164c9de122217a3aa6cc0cb670214d93c6f6667bc11a"
+    },
+    {
+      "report_path": "runs/managed/web-claude-haiku-4-5-20251001-cdc35c0408ed/seed-11/run-report.json",
+      "report_sha256": "8e2a7dcd5b557e18e7717beeaa112ae6f3497ed5ac183ab637c8fabf785b4f90",
+      "run_id": "web-claude-haiku-4-5-20251001-cdc35c0408ed",
+      "seed": 11,
+      "model": "claude-haiku-4-5-20251001",
+      "recipe": "participant-v8-revised",
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "approved_by": "Repository owner",
+      "approved_at": "2026-09-08",
+      "reason": "Owner approved standard admission with disclosed quota-recovery source migration and regeneration of eight unfinished decisions per seed. Completed ticks and original evidence preserved.",
+      "review_path": "docs/reviews/haiku-v81-admission-20260908.md"
+    },
+    {
+      "report_path": "runs/managed/web-claude-haiku-4-5-20251001-cdc35c0408ed/seed-41/run-report.json",
+      "report_sha256": "7db9a708d12f5940667a5033831ce10377ff1e06a7a7256135b21033a8723373",
+      "run_id": "web-claude-haiku-4-5-20251001-cdc35c0408ed",
+      "seed": 41,
+      "model": "claude-haiku-4-5-20251001",
+      "recipe": "participant-v8-revised",
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "approved_by": "Repository owner",
+      "approved_at": "2026-09-08",
+      "reason": "Owner approved standard admission with disclosed quota-recovery source migration and regeneration of eight unfinished decisions per seed. Completed ticks and original evidence preserved.",
+      "review_path": "docs/reviews/haiku-v81-admission-20260908.md"
     }
   ],
   "pricing_updates": [

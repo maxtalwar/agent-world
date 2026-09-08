@@ -232,12 +232,35 @@ class LaunchService:
                    (self.root / "runs/jobs" / request["run_id"] / "job.json").exists(),
                    "supervisor_state": ("attention_required" if request.get("state") == "needs_attention" and owned
                                         else request.get("supervisor_state"))}
+        # Assignment is not evidence that an agent is currently executing.
+        request["monitor_event_state"] = "idle"
+        event_path = request.get("monitor_event_path")
+        if event_path:
+            try:
+                import time
+                event = read(self.root / event_path)
+                state = event.get("status", "idle")
+                if state == "working" and time.time() - event.get("heartbeat_unix", 0) > 90:
+                    state = "interrupted"
+                request["monitor_event_state"] = state
+            except (OSError, ValueError):
+                request["monitor_event_state"] = "interrupted"
         return {k: v for k, v in request.items() if k in {
             "id", "run_id", "state", "recipe_id", "recipe_title", "model", "model_name", "lab", "brain", "seeds", "defaults",
             "commit", "created_at", "updated_at", "error", "supervisor_thread_id",
             "supervisor_state", "supervisor_message", "supervisor_model", "supervisor_effort", "can_reconnect",
-            "monitor_reviewed", "monitor_resolution", "monitor_resolution_reason", "run_kind", "startup_pending",
+            "monitor_reviewed", "monitor_resolution", "monitor_resolution_reason", "monitor_event_state", "run_kind", "startup_pending",
         }}
+
+    @staticmethod
+    def monitoring_incident(job):
+        # Only meaningful run transitions invalidate an acknowledgement.
+        readiness = job.get("analysis_readiness") or {}
+        return {"status": (job.get("controller") or {}).get("status"),
+                "readiness": readiness.get("status"), "blockers": sorted(readiness.get("blockers", [])),
+                "cells": [{k: c.get(k) for k in ("id", "controller_state", "controller_attention",
+                            "resume_count", "last_launched_at_utc")}
+                          for c in job.get("cells", [])]}
 
     def monitoring_worklist(self):
         with self.connection() as db:
@@ -245,10 +268,21 @@ class LaunchService:
         work = []
         for row in rows:
             request = self.reconcile_monitoring(self.get(row["id"]))
-            if request.get("monitor_reviewed"):
-                continue
             path = self.root / "runs/jobs" / request["run_id"] / "job.json"
             job = read(path) if path.exists() else {}
+            if request.get("monitor_reviewed") and request.get("monitor_reviewed_incident") == self.monitoring_incident(job):
+                continue
+            # Preserve old explicit external decisions until their first scoped review.
+            if request.get("monitor_reviewed") and "monitor_reviewed_incident" not in request:
+                self.update(request["id"], monitor_reviewed_incident=self.monitoring_incident(job))
+                continue
+            if request.get("monitor_reviewed"):
+                healthy = all(c.get("controller_state") in {"running", "waiting_quota", "completed", "waiting_startup_gate"}
+                              for c in job.get("cells", []))
+                self.update(request["id"], monitor_reviewed=False, monitor_resolution=None,
+                            monitor_resolution_reason=None,
+                            state="supervising" if healthy else request["state"])
+                request = self.get(request["id"])
             work.append({"request_id": request["id"], "run_id": request["run_id"],
                          "model": request["model"], "recipe": request["recipe_id"],
                          "source": request["source"], "state": request["state"],
@@ -262,7 +296,7 @@ class LaunchService:
                          "seeds": request.get("seeds"), "defaults": request.get("defaults"),
                          "controller_status": (job.get("controller") or {}).get("status"),
                          "readiness": job.get("analysis_readiness"),
-                         "cells": [{k: c.get(k) for k in ["id", "controller_state", "controller_attention"]}
+                         "cells": [{k: c.get(k) for k in ["id", "controller_state", "controller_attention", "resume_count", "last_launched_at_utc"]}
                                    for c in job.get("cells", [])]})
         return work
 
@@ -305,7 +339,7 @@ class LaunchService:
             raise LaunchError("Repairable faults stay on the worklist; an unresolved handoff requires a named external blocker or evidence decision")
         self.update(identifier, monitor_reviewed=True, state="completed" if ready else "needs_attention",
                     monitor_resolution="verified_complete" if ready else resolution,
-                    monitor_resolution_reason=reason)
+                    monitor_resolution_reason=reason, monitor_reviewed_incident=self.monitoring_incident(job))
 
     def recent(self):
         with self.connection() as db:

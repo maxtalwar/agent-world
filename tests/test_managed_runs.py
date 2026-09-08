@@ -277,12 +277,14 @@ class ManagedRunControllerLaunchTests(unittest.TestCase):
             cell = {
                 "id": "seed-11",
                 "resume_count": 2,
+                "controller_last_progress_at_utc": "2020-01-01T00:00:00+00:00",
                 "run_manifest": str(manifest),
                 "log": str(job_dir / "seed-11.log"),
             }
 
             _launch_cell(job, cell, resume=True)
 
+            self.assertGreater(cell["controller_last_progress_at_utc"], "2020-01-01T00:00:00+00:00")
             archived = output_dir / "run-manifest.before-resume-2.json"
             self.assertFalse(manifest.exists())
             self.assertTrue(archived.exists())
