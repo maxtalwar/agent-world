@@ -24,6 +24,11 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+
+## 2026-09-07 - Completed Gemini recovery narrows the Sol gap
+
+**More restored health did not imply a higher final population-health score.** Sol restored 382 HP versus Gemini 357 across seeds 11/41, yet Gemini finished at 70.95% original-population health with 20 survivors versus Sol 68.60% with 19. Regeneration narrowed the full-horizon Gemini-minus-Sol gap from 5.0533 to 2.6067 points. All eight comparison reports are clean with complete usage coverage; nonconcurrent controls, stochastic decisions and Gemini requested-only identity limit attribution. See [final comparison](health-regeneration-final-comparison.md) and its exact per-tick evidence.
+
 ## 2026-09-07 - Regeneration separates survival from health discrimination
 
 **Healing narrowed the Sol-Terra health gap while widening the Sol-Luna and Sol-Mini gaps; better survival did not always raise full-horizon health.**
