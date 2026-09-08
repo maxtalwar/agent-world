@@ -1,0 +1,417 @@
+{
+  "study": "gpt-6-astra-v8-revised-20260907",
+  "method": "Retrospective manual episode audit, not a benchmark rescore. Goods-procurement episodes collapse repeated messages and revised terms by requester, counterparty/market, and objective. Unpriced shared-access and maintenance arrangements are separate. Fully quantified requires numeric quantities on both material legs.",
+  "sources": [
+    {
+      "seed": 11,
+      "path": "runs/managed/gpt-6-astra-v8-revised-20260907/seed-11/run.jsonl",
+      "sha256": "ab07aaf6cd1d88c5b737fa1734969b210b664f02b2eebf2bdeec52fe6eaed678"
+    },
+    {
+      "seed": 41,
+      "path": "runs/managed/gpt-6-astra-v8-revised-20260907/seed-41/run.jsonl",
+      "sha256": "f4efb12e32fa0ac3764775c541d6f458261d9545dd8430755c2573b461dfb2dd"
+    }
+  ],
+  "procurement_episodes": [
+    {
+      "id": "11-stone-agent2",
+      "seed": 11,
+      "requester": "agent-2",
+      "counterparty": "open",
+      "ticks": [
+        24,
+        37
+      ],
+      "return": "food plus access; 4 food/2 stone, then 3 food/2 stone",
+      "fully_quantified": true,
+      "committed": false,
+      "settled": false,
+      "evidence_lines": [
+        1678,
+        2159,
+        2161,
+        2522,
+        2526,
+        2599
+      ],
+      "outcome": "No commitment or delivery; formal offer and contract expire; later self-build is not settlement."
+    },
+    {
+      "id": "11-stone-agent8",
+      "seed": 11,
+      "requester": "agent-8",
+      "counterparty": "agent-3",
+      "ticks": [
+        27,
+        28
+      ],
+      "return": "4 coins for 2 stone; food alternative",
+      "fully_quantified": true,
+      "committed": false,
+      "settled": false,
+      "evidence_lines": [
+        1875,
+        1940,
+        1964
+      ],
+      "outcome": "Recipient retains own stone and supplies directions, not goods."
+    },
+    {
+      "id": "41-stone-agent7",
+      "seed": 41,
+      "requester": "agent-7",
+      "counterparty": "agent-9",
+      "ticks": [
+        14,
+        21
+      ],
+      "return": "wood then fiber for stone; return quantity unspecified",
+      "fully_quantified": false,
+      "committed": false,
+      "settled": false,
+      "evidence_lines": [
+        974,
+        1412,
+        1483
+      ],
+      "outcome": "Recipient has only one stone and supplies directions; later agent-6 cooperative delivery is a different episode."
+    },
+    {
+      "id": "41-stone-agent6",
+      "seed": 41,
+      "requester": "agent-6",
+      "counterparty": "agent-9",
+      "ticks": [
+        16,
+        17
+      ],
+      "return": "fiber for stone; quantities unspecified",
+      "fully_quantified": false,
+      "committed": false,
+      "settled": false,
+      "evidence_lines": [
+        1092,
+        1170
+      ],
+      "outcome": "Recipient explicitly keeps own stone."
+    },
+    {
+      "id": "41-stone-agent5",
+      "seed": 41,
+      "requester": "agent-5",
+      "counterparty": "agent-3",
+      "ticks": [
+        28,
+        37
+      ],
+      "return": "4 coins for 2 stone plus shelter access",
+      "fully_quantified": true,
+      "committed": true,
+      "settled": true,
+      "evidence_lines": [
+        1942,
+        2407,
+        2447,
+        2519,
+        2521,
+        2522,
+        2530,
+        2532,
+        2607
+      ],
+      "outcome": "Stone contributed tick 36; payment tick 37. Prior cooperative relationship exists; price announcement and delivery announcement share tick 35, so price-induced delivery is not established."
+    },
+    {
+      "id": "41-food-agent9",
+      "seed": 41,
+      "requester": "agent-9",
+      "counterparty": "open",
+      "ticks": [
+        43,
+        44
+      ],
+      "return": "wood for food; food quantity unspecified",
+      "fully_quantified": false,
+      "committed": false,
+      "settled": false,
+      "evidence_lines": [
+        3033,
+        3099
+      ],
+      "outcome": "No evidenced commitment or exchange."
+    },
+    {
+      "id": "41-water-agent9",
+      "seed": 41,
+      "requester": "agent-9",
+      "counterparty": "open",
+      "ticks": [
+        49,
+        50
+      ],
+      "return": "food for water; quantities unspecified",
+      "fully_quantified": false,
+      "committed": false,
+      "settled": false,
+      "evidence_lines": [
+        3423,
+        3530
+      ],
+      "outcome": "No evidenced commitment or exchange; distinct from earlier water rescue."
+    }
+  ],
+  "collaboration_projects": [
+    {
+      "seed": 11,
+      "structure_id": "structure-9",
+      "project": "shelter",
+      "first_tick": 11,
+      "outcome": "cooperative_complete",
+      "completion_tick": 15
+    },
+    {
+      "seed": 11,
+      "structure_id": "structure-15",
+      "project": "storage",
+      "first_tick": 20,
+      "outcome": "cooperative_complete",
+      "completion_tick": 24
+    },
+    {
+      "seed": 41,
+      "structure_id": "structure-4",
+      "project": "shelter",
+      "first_tick": 14,
+      "outcome": "cooperative_complete",
+      "completion_tick": 18
+    },
+    {
+      "seed": 41,
+      "structure_id": "structure-7",
+      "project": "storage",
+      "first_tick": 18,
+      "outcome": "cooperative_complete",
+      "completion_tick": 19
+    },
+    {
+      "seed": 41,
+      "structure_id": "structure-14",
+      "project": "shelter",
+      "first_tick": 17,
+      "outcome": "cooperative_complete",
+      "completion_tick": 36
+    },
+    {
+      "seed": 41,
+      "structure_id": "structure-11",
+      "project": "shelter",
+      "first_tick": 26,
+      "outcome": "cooperative_complete",
+      "completion_tick": 38
+    },
+    {
+      "seed": 41,
+      "structure_id": "structure-12",
+      "project": "storage",
+      "first_tick": 26,
+      "outcome": "owner_completed_before_partner",
+      "completion_tick": 27
+    },
+    {
+      "seed": 41,
+      "structure_id": "structure-20",
+      "project": "well",
+      "first_tick": 56,
+      "outcome": "owner_completed_before_partner",
+      "completion_tick": 56
+    },
+    {
+      "seed": 41,
+      "structure_id": null,
+      "project": "well at (10,13)",
+      "first_tick": 55,
+      "outcome": "partial_at_horizon",
+      "completion_tick": null
+    },
+    {
+      "seed": 11,
+      "structure_id": "structure-20",
+      "project": "well",
+      "first_tick": 58,
+      "outcome": "unfilled_late_solicitation",
+      "completion_tick": null
+    }
+  ],
+  "transfers": [
+    {
+      "seed": 11,
+      "line": 664,
+      "tick": 9,
+      "giver": "agent-5",
+      "recipient": "agent-1",
+      "items": {
+        "fiber": 2
+      },
+      "recorded_kind": "payment",
+      "submitted_kind": "payment"
+    },
+    {
+      "seed": 11,
+      "line": 1797,
+      "tick": 26,
+      "giver": "agent-6",
+      "recipient": "agent-1",
+      "items": {
+        "fiber": 2
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": null
+    },
+    {
+      "seed": 11,
+      "line": 3295,
+      "tick": 47,
+      "giver": "agent-10",
+      "recipient": "agent-4",
+      "items": {
+        "fiber": 1
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": "gift"
+    },
+    {
+      "seed": 11,
+      "line": 3577,
+      "tick": 51,
+      "giver": "agent-6",
+      "recipient": "agent-1",
+      "items": {
+        "water": 2
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": "gift"
+    },
+    {
+      "seed": 11,
+      "line": 4008,
+      "tick": 57,
+      "giver": "agent-4",
+      "recipient": "agent-1",
+      "items": {
+        "fiber": 2
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": "gift"
+    },
+    {
+      "seed": 41,
+      "line": 1393,
+      "tick": 20,
+      "giver": "agent-3",
+      "recipient": "agent-5",
+      "items": {
+        "food": 2
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": null
+    },
+    {
+      "seed": 41,
+      "line": 1584,
+      "tick": 23,
+      "giver": "agent-4",
+      "recipient": "agent-10",
+      "items": {
+        "fiber": 1
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": null
+    },
+    {
+      "seed": 41,
+      "line": 2012,
+      "tick": 29,
+      "giver": "agent-4",
+      "recipient": "agent-10",
+      "items": {
+        "fiber": 1
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": null
+    },
+    {
+      "seed": 41,
+      "line": 2203,
+      "tick": 32,
+      "giver": "agent-4",
+      "recipient": "agent-10",
+      "items": {
+        "fiber": 1
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": null
+    },
+    {
+      "seed": 41,
+      "line": 2494,
+      "tick": 36,
+      "giver": "agent-7",
+      "recipient": "agent-9",
+      "items": {
+        "water": 4
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": "gift"
+    },
+    {
+      "seed": 41,
+      "line": 2607,
+      "tick": 37,
+      "giver": "agent-5",
+      "recipient": "agent-3",
+      "items": {
+        "coin": 4
+      },
+      "recorded_kind": "payment",
+      "submitted_kind": "payment"
+    },
+    {
+      "seed": 41,
+      "line": 3576,
+      "tick": 51,
+      "giver": "agent-5",
+      "recipient": "agent-3",
+      "items": {
+        "water": 1
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": null
+    },
+    {
+      "seed": 41,
+      "line": 4057,
+      "tick": 58,
+      "giver": "agent-4",
+      "recipient": "agent-10",
+      "items": {
+        "wood": 2
+      },
+      "recorded_kind": "gift",
+      "submitted_kind": null
+    }
+  ],
+  "counts": {
+    "broad_procurement": 7,
+    "fully_quantified_procurement": 3,
+    "procurement_with_commitment": 1,
+    "procurement_settled": 1,
+    "transfers": 13,
+    "explicit_payment": 2,
+    "explicit_gift": 4,
+    "omitted_kind_defaulted_gift": 7,
+    "cooperative_completed_projects": 6,
+    "owner_substituted_projects": 2,
+    "late_unfinished_projects": 2
+  }
+}
