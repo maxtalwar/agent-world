@@ -1,0 +1,1521 @@
+{
+  "batch_id": "grok-low-ledger-20260905",
+  "evidence_class": "diagnostic_only",
+  "source_commit": "0b3173cdb60ae036ec702843d8577f20a7b68081",
+  "conditions": {
+    "on": {
+      "cells": [
+        {
+          "seed": 11,
+          "report": "/home/maxtalwar/agent-world/runs/managed/grok-4-6-low-ledger-on-20260905/seed-11/run-report.json",
+          "report_sha256": "eb31aaeaecb98488ce88592d132c57c5a83c68e028ab1d43bf561ba594b293cd",
+          "raw": {
+            "action_point_overruns": 7,
+            "contention_failures": 7,
+            "decision_failures": 0,
+            "decisions": 467,
+            "endpoint_health_capacity": 1000,
+            "endpoint_health_points": 52.0,
+            "engine_invalid_proposals": 225,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 15.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 15.0,
+            "external_decision_failures": 0,
+            "informal_transfer_value": 2.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 225,
+            "living_agents": 3,
+            "living_terminal_economic_value": 72.5,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 500,
+            "own_capital_output_value": 82.0,
+            "possible_agent_ticks": 500,
+            "purposeful_agent_ticks": 413,
+            "submitted_actions": 1533,
+            "submitted_actions_excluding_contention": 1526,
+            "terminal_economic_value": 260.0,
+            "venture_initiatives": 25,
+            "venture_initiatives_by_type": {
+              "build": 3,
+              "offer_trade": 22
+            }
+          },
+          "scores": {
+            "economic_productivity": {
+              "components": {
+                "initial_endowment_value": 135.0,
+                "living_terminal_economic_value": 72.5,
+                "net_value_created": 0.0,
+                "net_value_created_per_100_agent_ticks": 0.0
+              },
+              "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "effective_execution": {
+              "components": {
+                "action_feasibility_pct": 85.26,
+                "action_point_overruns": 7,
+                "contention_excluded": 7,
+                "decision_opportunities": 467,
+                "engine_invalid_proposals": 225,
+                "invalid_proposals": 225,
+                "model_output_failures": 0,
+                "purposeful_agent_tick_pct": 88.44,
+                "purposeful_agent_ticks": 413,
+                "submitted_actions": 1533
+              },
+              "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)",
+              "score": 86.84
+            },
+            "entrepreneurial_agency": {
+              "components": {
+                "enterprise_supply_by_source": {
+                  "net_goods_supplied_to_others": 15.0,
+                  "net_service_income": 0.0
+                },
+                "enterprise_supply_per_100_agent_ticks": 3.0,
+                "enterprise_supply_score": 15.0,
+                "enterprise_supply_value": 15.0,
+                "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+                "informal_transfer_value": 2.0,
+                "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score.",
+                "initiative_score": 100.0,
+                "net_value_created": 0.0,
+                "net_value_created_per_100_agent_ticks": 0.0,
+                "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+                "own_capital_output_value": 82.0,
+                "value_creation_score": 0.0,
+                "venture_initiatives": 25,
+                "venture_initiatives_per_100_agent_ticks": 5.0
+              },
+              "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "sustained_competence": {
+              "components": {
+                "effective_execution": 86.84,
+                "endpoint_population_health_pct": 5.2,
+                "initial_agents": 10,
+                "initial_endowment_value": 135.0,
+                "living_agents": 3,
+                "living_terminal_economic_value": 72.5,
+                "material_outcome_pct": 17.9,
+                "material_target_value": 405.0,
+                "survival_continuity_pct": 22.04,
+                "survival_exposure_pct": 93.4,
+                "total_terminal_economic_value": 260.0
+              },
+              "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)",
+              "score": 32.48
+            }
+          },
+          "reliability": {
+            "action_failure_rate_pct": 9.8,
+            "ambiguous_boundary_failure_events": 0,
+            "benchmark_integrity_status": "clean",
+            "contention_failure_rate_pct": 0.3,
+            "decision_attempts": 467,
+            "decision_failure_rate_pct": 0.0,
+            "harness_failure_events": 0,
+            "invalid_action_rate_pct": 9.5,
+            "llm_failure_events": 0,
+            "llm_failures_by_agent": {},
+            "llm_provider_failure_events": 0,
+            "llm_quota_failure_events": 0,
+            "missing_usage_decisions": [],
+            "model_output_failure_events": 0,
+            "quality_flags": [],
+            "quality_status": "clean",
+            "usage_coverage_basis": "distinct_tick_and_agent",
+            "usage_record_coverage_pct": 100.0
+          },
+          "recovery_audit": {
+            "archived_hashes_valid": true,
+            "event_and_usage_prefix_preserved": true,
+            "cached_decisions_preserved": 2
+          },
+          "usage": {
+            "calls": 467,
+            "reasoning_tokens": 334610,
+            "attempts_without_usage": 27,
+            "discarded_calls": 0,
+            "unknown_charge_exposure": true,
+            "estimated_cost": {
+              "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+              "available": true,
+              "basis": "token_derived_api_list_price",
+              "cache_write_tokens": 0,
+              "cached_input_tokens": 2977920,
+              "calls": 467,
+              "cost_usd": {
+                "cache_write": 0.0,
+                "cached_input": 1.48896,
+                "output": 2.543106,
+                "total": 10.587924,
+                "uncached_input": 6.555858
+              },
+              "models": {
+                "grok-4.6": {
+                  "cache_write_tokens": 0,
+                  "cached_input_tokens": 2977920,
+                  "calls": 467,
+                  "cost_usd": 10.587924,
+                  "output_tokens": 423851,
+                  "rates_per_million_tokens": {
+                    "cache_write": 2.0,
+                    "cached_input": 0.5,
+                    "input": 2.0,
+                    "output": 6.0
+                  },
+                  "uncached_input_tokens": 3277929
+                }
+              },
+              "output_tokens": 423851,
+              "provider_cost_coverage": {
+                "available": true,
+                "reported_calls": 467,
+                "reported_subtotal_usd": 1.804947,
+                "total_cost_usd": 1.804947,
+                "unreported_calls": 0
+              },
+              "provider_reported_cost_usd": 1.804947,
+              "rate_card": {
+                "effective_date": "2026-09-05",
+                "sources": {
+                  "anthropic": "https://platform.claude.com/docs/en/pricing",
+                  "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                  "openai": "https://developers.openai.com/api/docs/pricing",
+                  "openrouter": "https://openrouter.ai/models",
+                  "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                  "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+                },
+                "unit": "usd_per_million_tokens"
+              },
+              "reasoning_output_tokens": 334610,
+              "uncached_input_tokens": 3277929,
+              "unknown_models": []
+            },
+            "attempted_token_cost": {
+              "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+              "available": true,
+              "basis": "token_derived_api_list_price",
+              "cache_write_tokens": 0,
+              "cached_input_tokens": 2977920,
+              "calls": 467,
+              "cost_usd": {
+                "cache_write": 0.0,
+                "cached_input": 1.48896,
+                "output": 2.543106,
+                "total": 10.587924,
+                "uncached_input": 6.555858
+              },
+              "models": {
+                "grok-4.6": {
+                  "cache_write_tokens": 0,
+                  "cached_input_tokens": 2977920,
+                  "calls": 467,
+                  "cost_usd": 10.587924,
+                  "output_tokens": 423851,
+                  "rates_per_million_tokens": {
+                    "cache_write": 2.0,
+                    "cached_input": 0.5,
+                    "input": 2.0,
+                    "output": 6.0
+                  },
+                  "uncached_input_tokens": 3277929
+                }
+              },
+              "output_tokens": 423851,
+              "provider_cost_coverage": {
+                "available": true,
+                "reported_calls": 467,
+                "reported_subtotal_usd": 1.804947,
+                "total_cost_usd": 1.804947,
+                "unreported_calls": 0
+              },
+              "provider_reported_cost_usd": 1.804947,
+              "rate_card": {
+                "effective_date": "2026-09-05",
+                "sources": {
+                  "anthropic": "https://platform.claude.com/docs/en/pricing",
+                  "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                  "openai": "https://developers.openai.com/api/docs/pricing",
+                  "openrouter": "https://openrouter.ai/models",
+                  "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                  "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+                },
+                "unit": "usd_per_million_tokens"
+              },
+              "reasoning_output_tokens": 334610,
+              "uncached_input_tokens": 3277929,
+              "unknown_models": []
+            },
+            "provider_cost_coverage": {
+              "available": true,
+              "reported_calls": 467,
+              "reported_subtotal_usd": 1.804947,
+              "total_cost_usd": 1.804947,
+              "unreported_calls": 0
+            }
+          },
+          "actions": {
+            "accept_trade": 2,
+            "agent_spawned": 10,
+            "broadcast": 11,
+            "build": 3,
+            "chop": 32,
+            "claimed_item_taken": 4,
+            "consume": 151,
+            "contention_failure": 7,
+            "craft": 2,
+            "death": 7,
+            "drop": 61,
+            "equip": 2,
+            "expire_trade": 20,
+            "farm": 11,
+            "fish": 12,
+            "food_spoilage": 43,
+            "gather": 182,
+            "gift": 1,
+            "grant_access": 1,
+            "harvest": 25,
+            "inspect": 1,
+            "invalid_action": 225,
+            "ledger_note": 221,
+            "maintain_structure": 6,
+            "mine": 9,
+            "move": 305,
+            "offer_trade": 22,
+            "pick_up": 14,
+            "run_completed": 1,
+            "run_health_check": 1,
+            "run_paused": 1,
+            "run_phase_timing": 50,
+            "run_quota_retry": 26,
+            "run_quota_wait": 27,
+            "run_resumed": 1,
+            "run_started": 1,
+            "say": 423,
+            "structure_upkeep_missed": 8,
+            "structure_upkeep_paid": 1,
+            "survival_damage": 193,
+            "tool_broken": 2,
+            "wait": 234,
+            "world_created": 1
+          },
+          "diagnostics": {
+            "contract_default_rate_pct": 0.0,
+            "contracts_defaulted": 0,
+            "contracts_proposed": 0,
+            "contracts_settled": 0,
+            "ledger_note_count": 221
+          }
+        },
+        {
+          "seed": 41,
+          "report": "/home/maxtalwar/agent-world/runs/managed/grok-4-6-low-ledger-on-20260905/seed-41/run-report.json",
+          "report_sha256": "62964453dba374413ea91343d6b99e16ff58af207d5a1f9e7bfb698db04b6235",
+          "raw": {
+            "action_point_overruns": 11,
+            "contention_failures": 5,
+            "decision_failures": 0,
+            "decisions": 439,
+            "endpoint_health_capacity": 1000,
+            "endpoint_health_points": 58.0,
+            "engine_invalid_proposals": 233,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 7.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 7.0,
+            "external_decision_failures": 0,
+            "informal_transfer_value": 7.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 233,
+            "living_agents": 2,
+            "living_terminal_economic_value": 66.0,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 500,
+            "own_capital_output_value": 90.0,
+            "possible_agent_ticks": 500,
+            "purposeful_agent_ticks": 387,
+            "submitted_actions": 1449,
+            "submitted_actions_excluding_contention": 1444,
+            "terminal_economic_value": 290.0,
+            "venture_initiatives": 21,
+            "venture_initiatives_by_type": {
+              "build": 3,
+              "build_started": 1,
+              "offer_trade": 17
+            }
+          },
+          "scores": {
+            "economic_productivity": {
+              "components": {
+                "initial_endowment_value": 135.0,
+                "living_terminal_economic_value": 66.0,
+                "net_value_created": 0.0,
+                "net_value_created_per_100_agent_ticks": 0.0
+              },
+              "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "effective_execution": {
+              "components": {
+                "action_feasibility_pct": 83.86,
+                "action_point_overruns": 11,
+                "contention_excluded": 5,
+                "decision_opportunities": 439,
+                "engine_invalid_proposals": 233,
+                "invalid_proposals": 233,
+                "model_output_failures": 0,
+                "purposeful_agent_tick_pct": 88.15,
+                "purposeful_agent_ticks": 387,
+                "submitted_actions": 1449
+              },
+              "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)",
+              "score": 85.98
+            },
+            "entrepreneurial_agency": {
+              "components": {
+                "enterprise_supply_by_source": {
+                  "net_goods_supplied_to_others": 7.0,
+                  "net_service_income": 0.0
+                },
+                "enterprise_supply_per_100_agent_ticks": 1.4,
+                "enterprise_supply_score": 7.0,
+                "enterprise_supply_value": 7.0,
+                "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+                "informal_transfer_value": 7.0,
+                "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score.",
+                "initiative_score": 84.0,
+                "net_value_created": 0.0,
+                "net_value_created_per_100_agent_ticks": 0.0,
+                "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+                "own_capital_output_value": 90.0,
+                "value_creation_score": 0.0,
+                "venture_initiatives": 21,
+                "venture_initiatives_per_100_agent_ticks": 4.2
+              },
+              "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "sustained_competence": {
+              "components": {
+                "effective_execution": 85.98,
+                "endpoint_population_health_pct": 5.8,
+                "initial_agents": 10,
+                "initial_endowment_value": 135.0,
+                "living_agents": 2,
+                "living_terminal_economic_value": 66.0,
+                "material_outcome_pct": 16.3,
+                "material_target_value": 405.0,
+                "survival_continuity_pct": 22.57,
+                "survival_exposure_pct": 87.8,
+                "total_terminal_economic_value": 290.0
+              },
+              "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)",
+              "score": 31.63
+            }
+          },
+          "reliability": {
+            "action_failure_rate_pct": 10.9,
+            "ambiguous_boundary_failure_events": 0,
+            "benchmark_integrity_status": "clean",
+            "contention_failure_rate_pct": 0.2,
+            "decision_attempts": 439,
+            "decision_failure_rate_pct": 0.0,
+            "harness_failure_events": 0,
+            "invalid_action_rate_pct": 10.7,
+            "llm_failure_events": 0,
+            "llm_failures_by_agent": {},
+            "llm_provider_failure_events": 0,
+            "llm_quota_failure_events": 0,
+            "missing_usage_decisions": [],
+            "model_output_failure_events": 0,
+            "quality_flags": [],
+            "quality_status": "clean",
+            "usage_coverage_basis": "distinct_tick_and_agent",
+            "usage_record_coverage_pct": 100.0
+          },
+          "recovery_audit": {},
+          "usage": {
+            "calls": 439,
+            "reasoning_tokens": 309194,
+            "attempts_without_usage": 0,
+            "discarded_calls": 0,
+            "unknown_charge_exposure": false,
+            "estimated_cost": {
+              "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+              "available": true,
+              "basis": "token_derived_api_list_price",
+              "cache_write_tokens": 0,
+              "cached_input_tokens": 2761600,
+              "calls": 439,
+              "cost_usd": {
+                "cache_write": 0.0,
+                "cached_input": 1.3808,
+                "output": 2.368098,
+                "total": 9.968554,
+                "uncached_input": 6.219656
+              },
+              "models": {
+                "grok-4.6": {
+                  "cache_write_tokens": 0,
+                  "cached_input_tokens": 2761600,
+                  "calls": 439,
+                  "cost_usd": 9.968554,
+                  "output_tokens": 394683,
+                  "rates_per_million_tokens": {
+                    "cache_write": 2.0,
+                    "cached_input": 0.5,
+                    "input": 2.0,
+                    "output": 6.0
+                  },
+                  "uncached_input_tokens": 3109828
+                }
+              },
+              "output_tokens": 394683,
+              "provider_cost_coverage": {
+                "available": true,
+                "reported_calls": 439,
+                "reported_subtotal_usd": 1.704654,
+                "total_cost_usd": 1.704654,
+                "unreported_calls": 0
+              },
+              "provider_reported_cost_usd": 1.704654,
+              "rate_card": {
+                "effective_date": "2026-09-05",
+                "sources": {
+                  "anthropic": "https://platform.claude.com/docs/en/pricing",
+                  "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                  "openai": "https://developers.openai.com/api/docs/pricing",
+                  "openrouter": "https://openrouter.ai/models",
+                  "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                  "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+                },
+                "unit": "usd_per_million_tokens"
+              },
+              "reasoning_output_tokens": 309194,
+              "uncached_input_tokens": 3109828,
+              "unknown_models": []
+            },
+            "attempted_token_cost": {
+              "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+              "available": true,
+              "basis": "token_derived_api_list_price",
+              "cache_write_tokens": 0,
+              "cached_input_tokens": 2761600,
+              "calls": 439,
+              "cost_usd": {
+                "cache_write": 0.0,
+                "cached_input": 1.3808,
+                "output": 2.368098,
+                "total": 9.968554,
+                "uncached_input": 6.219656
+              },
+              "models": {
+                "grok-4.6": {
+                  "cache_write_tokens": 0,
+                  "cached_input_tokens": 2761600,
+                  "calls": 439,
+                  "cost_usd": 9.968554,
+                  "output_tokens": 394683,
+                  "rates_per_million_tokens": {
+                    "cache_write": 2.0,
+                    "cached_input": 0.5,
+                    "input": 2.0,
+                    "output": 6.0
+                  },
+                  "uncached_input_tokens": 3109828
+                }
+              },
+              "output_tokens": 394683,
+              "provider_cost_coverage": {
+                "available": true,
+                "reported_calls": 439,
+                "reported_subtotal_usd": 1.704654,
+                "total_cost_usd": 1.704654,
+                "unreported_calls": 0
+              },
+              "provider_reported_cost_usd": 1.704654,
+              "rate_card": {
+                "effective_date": "2026-09-05",
+                "sources": {
+                  "anthropic": "https://platform.claude.com/docs/en/pricing",
+                  "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                  "openai": "https://developers.openai.com/api/docs/pricing",
+                  "openrouter": "https://openrouter.ai/models",
+                  "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                  "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+                },
+                "unit": "usd_per_million_tokens"
+              },
+              "reasoning_output_tokens": 309194,
+              "uncached_input_tokens": 3109828,
+              "unknown_models": []
+            },
+            "provider_cost_coverage": {
+              "available": true,
+              "reported_calls": 439,
+              "reported_subtotal_usd": 1.704654,
+              "total_cost_usd": 1.704654,
+              "unreported_calls": 0
+            }
+          },
+          "actions": {
+            "accept_trade": 1,
+            "agent_spawned": 10,
+            "broadcast": 44,
+            "build": 4,
+            "build_started": 1,
+            "chop": 61,
+            "claim_tile": 2,
+            "claimed_item_taken": 2,
+            "consume": 140,
+            "contention_failure": 5,
+            "contribute": 1,
+            "death": 8,
+            "drop": 82,
+            "expire_trade": 15,
+            "farm": 13,
+            "fish": 7,
+            "food_spoilage": 42,
+            "gather": 173,
+            "gift": 4,
+            "harvest": 32,
+            "inspect": 9,
+            "invalid_action": 233,
+            "ledger_note": 186,
+            "maintain_structure": 8,
+            "mine": 6,
+            "move": 242,
+            "offer_trade": 17,
+            "pick_up": 13,
+            "run_completed": 1,
+            "run_health_check": 1,
+            "run_phase_timing": 50,
+            "run_started": 1,
+            "say": 371,
+            "structure_upkeep_missed": 12,
+            "structure_upkeep_paid": 2,
+            "survival_damage": 174,
+            "wait": 208,
+            "world_created": 1
+          },
+          "diagnostics": {
+            "contract_default_rate_pct": 0.0,
+            "contracts_defaulted": 0,
+            "contracts_proposed": 0,
+            "contracts_settled": 0,
+            "ledger_note_count": 186
+          }
+        }
+      ],
+      "pooled_raw": {
+        "action_point_overruns": 18,
+        "contention_failures": 12,
+        "decision_failures": 0,
+        "decisions": 906,
+        "endpoint_health_capacity": 2000,
+        "endpoint_health_points": 110.0,
+        "engine_invalid_proposals": 458,
+        "enterprise_supply_by_source": {
+          "net_goods_supplied_to_others": 22.0,
+          "net_service_income": 0.0
+        },
+        "enterprise_supply_value": 22.0,
+        "external_decision_failures": 0,
+        "informal_transfer_value": 9.0,
+        "initial_agents": 20,
+        "initial_endowment_value": 270.0,
+        "invalid_proposals": 458,
+        "living_agents": 5,
+        "living_terminal_economic_value": 138.5,
+        "model_output_failures": 0,
+        "observed_agent_ticks": 1000,
+        "own_capital_output_value": 172.0,
+        "possible_agent_ticks": 1000,
+        "purposeful_agent_ticks": 800,
+        "submitted_actions": 2982,
+        "submitted_actions_excluding_contention": 2970,
+        "terminal_economic_value": 550.0,
+        "venture_initiatives": 46,
+        "venture_initiatives_by_type": {
+          "build": 6,
+          "offer_trade": 39,
+          "build_started": 1
+        }
+      },
+      "pooled_scores": {
+        "effective_execution": {
+          "score": 86.42,
+          "components": {
+            "submitted_actions": 2982,
+            "contention_excluded": 12,
+            "invalid_proposals": 458,
+            "engine_invalid_proposals": 458,
+            "model_output_failures": 0,
+            "action_point_overruns": 18,
+            "action_feasibility_pct": 84.58,
+            "purposeful_agent_ticks": 800,
+            "decision_opportunities": 906,
+            "purposeful_agent_tick_pct": 88.3
+          },
+          "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)"
+        },
+        "sustained_competence": {
+          "score": 32.07,
+          "components": {
+            "effective_execution": 86.42,
+            "survival_exposure_pct": 90.6,
+            "endpoint_population_health_pct": 5.5,
+            "survival_continuity_pct": 22.32,
+            "living_agents": 5,
+            "initial_agents": 20,
+            "material_outcome_pct": 17.1,
+            "living_terminal_economic_value": 138.5,
+            "total_terminal_economic_value": 550.0,
+            "initial_endowment_value": 270.0,
+            "material_target_value": 810.0
+          },
+          "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)"
+        },
+        "entrepreneurial_agency": {
+          "score": 0.0,
+          "components": {
+            "enterprise_supply_value": 22.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 22.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_per_100_agent_ticks": 2.2,
+            "enterprise_supply_score": 11.0,
+            "own_capital_output_value": 172.0,
+            "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+            "informal_transfer_value": 9.0,
+            "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+            "net_value_created": 0.0,
+            "net_value_created_per_100_agent_ticks": 0.0,
+            "value_creation_score": 0.0,
+            "venture_initiatives": 46,
+            "venture_initiatives_per_100_agent_ticks": 4.6,
+            "initiative_score": 92.0,
+            "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score."
+          },
+          "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+          "scale": {
+            "minimum": 0.0,
+            "maximum": null,
+            "reference_target": 100.0,
+            "higher_is_better": true
+          }
+        },
+        "economic_productivity": {
+          "score": 0.0,
+          "components": {
+            "living_terminal_economic_value": 138.5,
+            "initial_endowment_value": 270.0,
+            "net_value_created": 0.0,
+            "net_value_created_per_100_agent_ticks": 0.0
+          },
+          "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+          "scale": {
+            "minimum": 0.0,
+            "maximum": null,
+            "reference_target": 100.0,
+            "higher_is_better": true
+          }
+        }
+      }
+    },
+    "off": {
+      "cells": [
+        {
+          "seed": 11,
+          "report": "/home/maxtalwar/agent-world/runs/managed/grok-4-6-low-ledger-off-20260905/seed-11/run-report.json",
+          "report_sha256": "c21fe2a2034d9e2d193d81019aea86458c9a8284119344dca0bac613e5c39c56",
+          "raw": {
+            "action_point_overruns": 8,
+            "contention_failures": 4,
+            "decision_failures": 0,
+            "decisions": 475,
+            "endpoint_health_capacity": 1000,
+            "endpoint_health_points": 117.0,
+            "engine_invalid_proposals": 250,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 13.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 13.0,
+            "external_decision_failures": 0,
+            "informal_transfer_value": 1.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 250,
+            "living_agents": 5,
+            "living_terminal_economic_value": 149.5,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 500,
+            "own_capital_output_value": 168.0,
+            "possible_agent_ticks": 500,
+            "purposeful_agent_ticks": 439,
+            "submitted_actions": 1486,
+            "submitted_actions_excluding_contention": 1482,
+            "terminal_economic_value": 283.5,
+            "venture_initiatives": 24,
+            "venture_initiatives_by_type": {
+              "build": 3,
+              "build_started": 2,
+              "offer_trade": 19
+            }
+          },
+          "scores": {
+            "economic_productivity": {
+              "components": {
+                "initial_endowment_value": 135.0,
+                "living_terminal_economic_value": 149.5,
+                "net_value_created": 14.5,
+                "net_value_created_per_100_agent_ticks": 2.9
+              },
+              "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 14.5
+            },
+            "effective_execution": {
+              "components": {
+                "action_feasibility_pct": 83.13,
+                "action_point_overruns": 8,
+                "contention_excluded": 4,
+                "decision_opportunities": 475,
+                "engine_invalid_proposals": 250,
+                "invalid_proposals": 250,
+                "model_output_failures": 0,
+                "purposeful_agent_tick_pct": 92.42,
+                "purposeful_agent_ticks": 439,
+                "submitted_actions": 1486
+              },
+              "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)",
+              "score": 87.65
+            },
+            "entrepreneurial_agency": {
+              "components": {
+                "enterprise_supply_by_source": {
+                  "net_goods_supplied_to_others": 13.0,
+                  "net_service_income": 0.0
+                },
+                "enterprise_supply_per_100_agent_ticks": 2.6,
+                "enterprise_supply_score": 13.0,
+                "enterprise_supply_value": 13.0,
+                "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+                "informal_transfer_value": 1.0,
+                "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score.",
+                "initiative_score": 96.0,
+                "net_value_created": 14.5,
+                "net_value_created_per_100_agent_ticks": 2.9,
+                "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+                "own_capital_output_value": 168.0,
+                "value_creation_score": 14.5,
+                "venture_initiatives": 24,
+                "venture_initiatives_per_100_agent_ticks": 4.8
+              },
+              "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 13.73
+            },
+            "sustained_competence": {
+              "components": {
+                "effective_execution": 87.65,
+                "endpoint_population_health_pct": 11.7,
+                "initial_agents": 10,
+                "initial_endowment_value": 135.0,
+                "living_agents": 5,
+                "living_terminal_economic_value": 149.5,
+                "material_outcome_pct": 36.91,
+                "material_target_value": 405.0,
+                "survival_continuity_pct": 33.34,
+                "survival_exposure_pct": 95.0,
+                "total_terminal_economic_value": 283.5
+              },
+              "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)",
+              "score": 47.6
+            }
+          },
+          "reliability": {
+            "action_failure_rate_pct": 11.1,
+            "ambiguous_boundary_failure_events": 0,
+            "benchmark_integrity_status": "clean",
+            "contention_failure_rate_pct": 0.2,
+            "decision_attempts": 475,
+            "decision_failure_rate_pct": 0.0,
+            "harness_failure_events": 0,
+            "invalid_action_rate_pct": 10.9,
+            "llm_failure_events": 0,
+            "llm_failures_by_agent": {},
+            "llm_provider_failure_events": 0,
+            "llm_quota_failure_events": 0,
+            "missing_usage_decisions": [],
+            "model_output_failure_events": 0,
+            "quality_flags": [],
+            "quality_status": "clean",
+            "usage_coverage_basis": "distinct_tick_and_agent",
+            "usage_record_coverage_pct": 100.0
+          },
+          "recovery_audit": {
+            "archived_hashes_valid": true,
+            "event_and_usage_prefix_preserved": true
+          },
+          "usage": {
+            "calls": 475,
+            "reasoning_tokens": 303655,
+            "attempts_without_usage": 0,
+            "discarded_calls": 20,
+            "unknown_charge_exposure": false,
+            "estimated_cost": {
+              "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+              "available": true,
+              "basis": "token_derived_api_list_price",
+              "cache_write_tokens": 0,
+              "cached_input_tokens": 2634880,
+              "calls": 475,
+              "cost_usd": {
+                "cache_write": 0.0,
+                "cached_input": 1.31744,
+                "output": 2.26923,
+                "total": 10.40618,
+                "uncached_input": 6.81951
+              },
+              "models": {
+                "grok-4.6": {
+                  "cache_write_tokens": 0,
+                  "cached_input_tokens": 2634880,
+                  "calls": 475,
+                  "cost_usd": 10.40618,
+                  "output_tokens": 378205,
+                  "rates_per_million_tokens": {
+                    "cache_write": 2.0,
+                    "cached_input": 0.5,
+                    "input": 2.0,
+                    "output": 6.0
+                  },
+                  "uncached_input_tokens": 3409755
+                }
+              },
+              "output_tokens": 378205,
+              "provider_cost_coverage": {
+                "available": true,
+                "reported_calls": 475,
+                "reported_subtotal_usd": 1.774051,
+                "total_cost_usd": 1.774051,
+                "unreported_calls": 0
+              },
+              "provider_reported_cost_usd": 1.774051,
+              "rate_card": {
+                "effective_date": "2026-09-05",
+                "sources": {
+                  "anthropic": "https://platform.claude.com/docs/en/pricing",
+                  "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                  "openai": "https://developers.openai.com/api/docs/pricing",
+                  "openrouter": "https://openrouter.ai/models",
+                  "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                  "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+                },
+                "unit": "usd_per_million_tokens"
+              },
+              "reasoning_output_tokens": 303655,
+              "uncached_input_tokens": 3409755,
+              "unknown_models": []
+            },
+            "attempted_token_cost": {
+              "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+              "available": true,
+              "basis": "token_derived_api_list_price",
+              "cache_write_tokens": 0,
+              "cached_input_tokens": 2752768,
+              "calls": 495,
+              "cost_usd": {
+                "cache_write": 0.0,
+                "cached_input": 1.376384,
+                "output": 2.358216,
+                "total": 10.787526,
+                "uncached_input": 7.052926
+              },
+              "models": {
+                "grok-4.6": {
+                  "cache_write_tokens": 0,
+                  "cached_input_tokens": 2752768,
+                  "calls": 495,
+                  "cost_usd": 10.787526,
+                  "output_tokens": 393036,
+                  "rates_per_million_tokens": {
+                    "cache_write": 2.0,
+                    "cached_input": 0.5,
+                    "input": 2.0,
+                    "output": 6.0
+                  },
+                  "uncached_input_tokens": 3526463
+                }
+              },
+              "output_tokens": 393036,
+              "provider_cost_coverage": {
+                "available": true,
+                "reported_calls": 495,
+                "reported_subtotal_usd": 1.845977,
+                "total_cost_usd": 1.845977,
+                "unreported_calls": 0
+              },
+              "provider_reported_cost_usd": 1.845977,
+              "rate_card": {
+                "effective_date": "2026-09-05",
+                "sources": {
+                  "anthropic": "https://platform.claude.com/docs/en/pricing",
+                  "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                  "openai": "https://developers.openai.com/api/docs/pricing",
+                  "openrouter": "https://openrouter.ai/models",
+                  "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                  "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+                },
+                "unit": "usd_per_million_tokens"
+              },
+              "reasoning_output_tokens": 315652,
+              "uncached_input_tokens": 3526463,
+              "unknown_models": []
+            },
+            "provider_cost_coverage": {
+              "available": true,
+              "reported_calls": 475,
+              "reported_subtotal_usd": 1.774051,
+              "total_cost_usd": 1.774051,
+              "unreported_calls": 0
+            }
+          },
+          "actions": {
+            "accept_trade": 3,
+            "agent_spawned": 10,
+            "broadcast": 32,
+            "build": 5,
+            "build_started": 2,
+            "chop": 50,
+            "claim_tile": 3,
+            "claimed_item_taken": 1,
+            "consume": 162,
+            "contention_failure": 4,
+            "contest_claim": 1,
+            "contribute": 2,
+            "death": 5,
+            "drop": 107,
+            "expire_trade": 14,
+            "farm": 20,
+            "fish": 5,
+            "food_spoilage": 50,
+            "gather": 199,
+            "gift": 1,
+            "harvest": 43,
+            "inspect": 4,
+            "invalid_action": 250,
+            "maintain_structure": 13,
+            "mine": 3,
+            "move": 279,
+            "offer_trade": 19,
+            "pick_up": 41,
+            "reject_trade": 1,
+            "run_completed": 1,
+            "run_health_check": 1,
+            "run_paused": 2,
+            "run_phase_timing": 50,
+            "run_quota_wait": 1,
+            "run_resumed": 3,
+            "run_started": 1,
+            "run_stopped": 1,
+            "say": 439,
+            "structure_upkeep_missed": 11,
+            "structure_upkeep_paid": 5,
+            "survival_damage": 172,
+            "wait": 269,
+            "world_created": 1
+          },
+          "diagnostics": {
+            "contract_default_rate_pct": 0.0,
+            "contracts_defaulted": 0,
+            "contracts_proposed": 0,
+            "contracts_settled": 0,
+            "ledger_note_count": 0
+          }
+        },
+        {
+          "seed": 41,
+          "report": "/home/maxtalwar/agent-world/runs/managed/grok-4-6-low-ledger-off-20260905/seed-41/run-report.json",
+          "report_sha256": "8364abe7b71c943d1c5d8b98a0e984f49c0bf5d5cc22924bebdd45964675d733",
+          "raw": {
+            "action_point_overruns": 6,
+            "contention_failures": 2,
+            "decision_failures": 0,
+            "decisions": 486,
+            "endpoint_health_capacity": 1000,
+            "endpoint_health_points": 140.0,
+            "engine_invalid_proposals": 226,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 0.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_value": 0.0,
+            "external_decision_failures": 0,
+            "informal_transfer_value": 0.0,
+            "initial_agents": 10,
+            "initial_endowment_value": 135.0,
+            "invalid_proposals": 226,
+            "living_agents": 6,
+            "living_terminal_economic_value": 191.0,
+            "model_output_failures": 0,
+            "observed_agent_ticks": 500,
+            "own_capital_output_value": 180.0,
+            "possible_agent_ticks": 500,
+            "purposeful_agent_ticks": 452,
+            "submitted_actions": 1530,
+            "submitted_actions_excluding_contention": 1528,
+            "terminal_economic_value": 285.25,
+            "venture_initiatives": 11,
+            "venture_initiatives_by_type": {
+              "build": 5,
+              "offer_trade": 6
+            }
+          },
+          "scores": {
+            "economic_productivity": {
+              "components": {
+                "initial_endowment_value": 135.0,
+                "living_terminal_economic_value": 191.0,
+                "net_value_created": 56.0,
+                "net_value_created_per_100_agent_ticks": 11.2
+              },
+              "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 56.0
+            },
+            "effective_execution": {
+              "components": {
+                "action_feasibility_pct": 85.21,
+                "action_point_overruns": 6,
+                "contention_excluded": 2,
+                "decision_opportunities": 486,
+                "engine_invalid_proposals": 226,
+                "invalid_proposals": 226,
+                "model_output_failures": 0,
+                "purposeful_agent_tick_pct": 93.0,
+                "purposeful_agent_ticks": 452,
+                "submitted_actions": 1530
+              },
+              "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)",
+              "score": 89.02
+            },
+            "entrepreneurial_agency": {
+              "components": {
+                "enterprise_supply_by_source": {
+                  "net_goods_supplied_to_others": 0.0,
+                  "net_service_income": 0.0
+                },
+                "enterprise_supply_per_100_agent_ticks": 0.0,
+                "enterprise_supply_score": 0.0,
+                "enterprise_supply_value": 0.0,
+                "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+                "informal_transfer_value": 0.0,
+                "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score.",
+                "initiative_score": 44.0,
+                "net_value_created": 56.0,
+                "net_value_created_per_100_agent_ticks": 11.2,
+                "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+                "own_capital_output_value": 180.0,
+                "value_creation_score": 56.0,
+                "venture_initiatives": 11,
+                "venture_initiatives_per_100_agent_ticks": 2.2
+              },
+              "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+              "scale": {
+                "higher_is_better": true,
+                "maximum": null,
+                "minimum": 0.0,
+                "reference_target": 100.0
+              },
+              "score": 0.0
+            },
+            "sustained_competence": {
+              "components": {
+                "effective_execution": 89.02,
+                "endpoint_population_health_pct": 14.0,
+                "initial_agents": 10,
+                "initial_endowment_value": 135.0,
+                "living_agents": 6,
+                "living_terminal_economic_value": 191.0,
+                "material_outcome_pct": 47.16,
+                "material_target_value": 405.0,
+                "survival_continuity_pct": 36.89,
+                "survival_exposure_pct": 97.2,
+                "total_terminal_economic_value": 285.25
+              },
+              "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)",
+              "score": 53.7
+            }
+          },
+          "reliability": {
+            "action_failure_rate_pct": 9.6,
+            "ambiguous_boundary_failure_events": 0,
+            "benchmark_integrity_status": "clean",
+            "contention_failure_rate_pct": 0.1,
+            "decision_attempts": 486,
+            "decision_failure_rate_pct": 0.0,
+            "harness_failure_events": 0,
+            "invalid_action_rate_pct": 9.5,
+            "llm_failure_events": 0,
+            "llm_failures_by_agent": {},
+            "llm_provider_failure_events": 0,
+            "llm_quota_failure_events": 0,
+            "missing_usage_decisions": [],
+            "model_output_failure_events": 0,
+            "quality_flags": [],
+            "quality_status": "clean",
+            "usage_coverage_basis": "distinct_tick_and_agent",
+            "usage_record_coverage_pct": 100.0
+          },
+          "recovery_audit": {
+            "archived_hashes_valid": true,
+            "event_and_usage_prefix_preserved": true,
+            "cached_decisions_preserved": 7
+          },
+          "usage": {
+            "calls": 486,
+            "reasoning_tokens": 297862,
+            "attempts_without_usage": 27,
+            "discarded_calls": 10,
+            "unknown_charge_exposure": true,
+            "estimated_cost": {
+              "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+              "available": true,
+              "basis": "token_derived_api_list_price",
+              "cache_write_tokens": 0,
+              "cached_input_tokens": 2768384,
+              "calls": 486,
+              "cost_usd": {
+                "cache_write": 0.0,
+                "cached_input": 1.384192,
+                "output": 2.238252,
+                "total": 10.31523,
+                "uncached_input": 6.692786
+              },
+              "models": {
+                "grok-4.6": {
+                  "cache_write_tokens": 0,
+                  "cached_input_tokens": 2768384,
+                  "calls": 486,
+                  "cost_usd": 10.31523,
+                  "output_tokens": 373042,
+                  "rates_per_million_tokens": {
+                    "cache_write": 2.0,
+                    "cached_input": 0.5,
+                    "input": 2.0,
+                    "output": 6.0
+                  },
+                  "uncached_input_tokens": 3346393
+                }
+              },
+              "output_tokens": 373042,
+              "provider_cost_coverage": {
+                "available": true,
+                "reported_calls": 486,
+                "reported_subtotal_usd": 1.763589,
+                "total_cost_usd": 1.763589,
+                "unreported_calls": 0
+              },
+              "provider_reported_cost_usd": 1.763589,
+              "rate_card": {
+                "effective_date": "2026-09-05",
+                "sources": {
+                  "anthropic": "https://platform.claude.com/docs/en/pricing",
+                  "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                  "openai": "https://developers.openai.com/api/docs/pricing",
+                  "openrouter": "https://openrouter.ai/models",
+                  "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                  "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+                },
+                "unit": "usd_per_million_tokens"
+              },
+              "reasoning_output_tokens": 297862,
+              "uncached_input_tokens": 3346393,
+              "unknown_models": []
+            },
+            "attempted_token_cost": {
+              "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+              "available": true,
+              "basis": "token_derived_api_list_price",
+              "cache_write_tokens": 0,
+              "cached_input_tokens": 2844800,
+              "calls": 496,
+              "cost_usd": {
+                "cache_write": 0.0,
+                "cached_input": 1.4224,
+                "output": 2.294154,
+                "total": 10.5097,
+                "uncached_input": 6.793146
+              },
+              "models": {
+                "grok-4.6": {
+                  "cache_write_tokens": 0,
+                  "cached_input_tokens": 2844800,
+                  "calls": 496,
+                  "cost_usd": 10.5097,
+                  "output_tokens": 382359,
+                  "rates_per_million_tokens": {
+                    "cache_write": 2.0,
+                    "cached_input": 0.5,
+                    "input": 2.0,
+                    "output": 6.0
+                  },
+                  "uncached_input_tokens": 3396573
+                }
+              },
+              "output_tokens": 382359,
+              "provider_cost_coverage": {
+                "available": true,
+                "reported_calls": 496,
+                "reported_subtotal_usd": 1.796649,
+                "total_cost_usd": 1.796649,
+                "unreported_calls": 0
+              },
+              "provider_reported_cost_usd": 1.796649,
+              "rate_card": {
+                "effective_date": "2026-09-05",
+                "sources": {
+                  "anthropic": "https://platform.claude.com/docs/en/pricing",
+                  "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                  "openai": "https://developers.openai.com/api/docs/pricing",
+                  "openrouter": "https://openrouter.ai/models",
+                  "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                  "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+                },
+                "unit": "usd_per_million_tokens"
+              },
+              "reasoning_output_tokens": 305682,
+              "uncached_input_tokens": 3396573,
+              "unknown_models": []
+            },
+            "provider_cost_coverage": {
+              "available": true,
+              "reported_calls": 486,
+              "reported_subtotal_usd": 1.763589,
+              "total_cost_usd": 1.763589,
+              "unreported_calls": 0
+            }
+          },
+          "actions": {
+            "agent_spawned": 10,
+            "broadcast": 37,
+            "build": 5,
+            "chop": 49,
+            "claim_tile": 2,
+            "claimed_item_taken": 6,
+            "consume": 181,
+            "contention_failure": 2,
+            "craft": 2,
+            "death": 4,
+            "drop": 127,
+            "equip": 1,
+            "expire_trade": 5,
+            "farm": 17,
+            "fish": 7,
+            "food_spoilage": 55,
+            "gather": 232,
+            "harvest": 47,
+            "inspect": 5,
+            "invalid_action": 226,
+            "maintain_structure": 10,
+            "mine": 8,
+            "move": 288,
+            "offer_trade": 6,
+            "pick_up": 30,
+            "run_completed": 1,
+            "run_health_check": 1,
+            "run_paused": 2,
+            "run_phase_timing": 50,
+            "run_quota_retry": 26,
+            "run_quota_wait": 27,
+            "run_resumed": 3,
+            "run_started": 1,
+            "run_stopped": 1,
+            "say": 423,
+            "structure_upkeep_missed": 12,
+            "structure_upkeep_paid": 2,
+            "survival_damage": 180,
+            "tool_broken": 1,
+            "wait": 279,
+            "world_created": 1
+          },
+          "diagnostics": {
+            "contract_default_rate_pct": 0.0,
+            "contracts_defaulted": 0,
+            "contracts_proposed": 0,
+            "contracts_settled": 0,
+            "ledger_note_count": 0
+          }
+        }
+      ],
+      "pooled_raw": {
+        "action_point_overruns": 14,
+        "contention_failures": 6,
+        "decision_failures": 0,
+        "decisions": 961,
+        "endpoint_health_capacity": 2000,
+        "endpoint_health_points": 257.0,
+        "engine_invalid_proposals": 476,
+        "enterprise_supply_by_source": {
+          "net_goods_supplied_to_others": 13.0,
+          "net_service_income": 0.0
+        },
+        "enterprise_supply_value": 13.0,
+        "external_decision_failures": 0,
+        "informal_transfer_value": 1.0,
+        "initial_agents": 20,
+        "initial_endowment_value": 270.0,
+        "invalid_proposals": 476,
+        "living_agents": 11,
+        "living_terminal_economic_value": 340.5,
+        "model_output_failures": 0,
+        "observed_agent_ticks": 1000,
+        "own_capital_output_value": 348.0,
+        "possible_agent_ticks": 1000,
+        "purposeful_agent_ticks": 891,
+        "submitted_actions": 3016,
+        "submitted_actions_excluding_contention": 3010,
+        "terminal_economic_value": 568.75,
+        "venture_initiatives": 35,
+        "venture_initiatives_by_type": {
+          "build": 8,
+          "build_started": 2,
+          "offer_trade": 25
+        }
+      },
+      "pooled_scores": {
+        "effective_execution": {
+          "score": 88.35,
+          "components": {
+            "submitted_actions": 3016,
+            "contention_excluded": 6,
+            "invalid_proposals": 476,
+            "engine_invalid_proposals": 476,
+            "model_output_failures": 0,
+            "action_point_overruns": 14,
+            "action_feasibility_pct": 84.19,
+            "purposeful_agent_ticks": 891,
+            "decision_opportunities": 961,
+            "purposeful_agent_tick_pct": 92.72
+          },
+          "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)"
+        },
+        "sustained_competence": {
+          "score": 50.73,
+          "components": {
+            "effective_execution": 88.35,
+            "survival_exposure_pct": 96.1,
+            "endpoint_population_health_pct": 12.85,
+            "survival_continuity_pct": 35.14,
+            "living_agents": 11,
+            "initial_agents": 20,
+            "material_outcome_pct": 42.04,
+            "living_terminal_economic_value": 340.5,
+            "total_terminal_economic_value": 568.75,
+            "initial_endowment_value": 270.0,
+            "material_target_value": 810.0
+          },
+          "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)"
+        },
+        "entrepreneurial_agency": {
+          "score": 15.14,
+          "components": {
+            "enterprise_supply_value": 13.0,
+            "enterprise_supply_by_source": {
+              "net_goods_supplied_to_others": 13.0,
+              "net_service_income": 0.0
+            },
+            "enterprise_supply_per_100_agent_ticks": 1.3,
+            "enterprise_supply_score": 6.5,
+            "own_capital_output_value": 348.0,
+            "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+            "informal_transfer_value": 1.0,
+            "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+            "net_value_created": 70.5,
+            "net_value_created_per_100_agent_ticks": 7.05,
+            "value_creation_score": 35.25,
+            "venture_initiatives": 35,
+            "venture_initiatives_per_100_agent_ticks": 3.5,
+            "initiative_score": 70.0,
+            "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score."
+          },
+          "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+          "scale": {
+            "minimum": 0.0,
+            "maximum": null,
+            "reference_target": 100.0,
+            "higher_is_better": true
+          }
+        },
+        "economic_productivity": {
+          "score": 35.25,
+          "components": {
+            "living_terminal_economic_value": 340.5,
+            "initial_endowment_value": 270.0,
+            "net_value_created": 70.5,
+            "net_value_created_per_100_agent_ticks": 7.05
+          },
+          "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+          "scale": {
+            "minimum": 0.0,
+            "maximum": null,
+            "reference_target": 100.0,
+            "higher_is_better": true
+          }
+        }
+      }
+    }
+  }
+}

@@ -26,6 +26,12 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+
+## 2026-09-08 - Grok's ledger activity did not translate into survival
+
+**Grok low posted 407 ledger notes yet retained only 5/20 agents; disabling the feature retained 11/20 and doubled own-capital output from 172 to 348.** Both matched seeds improved in sustained competence (+15.12 and +22.07), while ledger-on made more trade offers (39 versus 25) but completed the same three trades. This is a diagnostic combined-feature effect, not proof that posting itself caused harm. Quota recovery preserved archived histories, usage prefixes and all nine cached decisions; all four cells have clean decision integrity and full accepted-decision usage coverage. See [the comparison and hashed evidence](grok-low-ledger-results-2026-09-08.md). Medium-effort Grok remains deferred.
+
+
 ## 2026-09-08 - More ledger posting did not imply more formal trade
 
 **In matched v6.1 worlds Astra posted 498 notes to Sol's 87 and built 30 structures to Sol's 13, yet Sol completed 15 formal trade events to Astra's zero.** All ten agents posted in each seed. Both have concrete note-followed-by-construction episodes: Astra's three-agent shelter at seed 41 tick 13 and Sol's two-agent shelter at tick 47 after a tick-45 stone-delivery direction. Astra retained 20/20 agents and 80.8 health per original agent versus Sol's 19/20 and 48.65. These are observed model differences under v6.1 affordances, not proof that note volume caused survival or that historical v6 had a board. Original source differences remain documented. See [the comparison and hashed evidence](v61-ledger-comparison-20260908.md). No leaderboard admission is made.
