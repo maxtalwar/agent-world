@@ -921,6 +921,29 @@
           "acceptance": "explicit_owner_provenance_override"
         }
       ]
+    },
+    {
+      "model_key": "gpt-6-astra-participant-v8-revised",
+      "label": "GPT-6 Astra",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "model_id": "gpt-6-astra",
+      "leaderboard_eligible": true,
+      "notes": "Completed seeds 11/41, medium, 60 ticks; job analysis_readiness ready, clean integrity, complete usage and declared transfer accounting. Requested-only native CLI identity. Operational CLI update preserved pinned simulation source and decisions. API-equivalent cost backfilled from all 1,220 recorded attempts using verified Astra rates; original reports unchanged.",
+      "runs": [
+        {
+          "run_id": "gpt-6-astra-v8-revised-20260907:seed-11",
+          "seed": 11,
+          "kind": "benchmark_trial",
+          "report_path": "runs/managed/gpt-6-astra-v8-revised-20260907/seed-11/run-report.json"
+        },
+        {
+          "run_id": "gpt-6-astra-v8-revised-20260907:seed-41",
+          "seed": 41,
+          "kind": "benchmark_trial",
+          "report_path": "runs/managed/gpt-6-astra-v8-revised-20260907/seed-41/run-report.json"
+        }
+      ]
     }
   ],
   "benchmark_acceptances": [
@@ -992,6 +1015,25 @@
         "output_including_thinking": 3.75
       },
       "valid_through": "2026-12-31"
+    },
+    {
+      "verified_at": "2026-09-07",
+      "source": "https://developers.openai.com/api/docs/models/gpt-6-astra",
+      "models": [
+        "gpt-6-astra"
+      ],
+      "basis": "Standard API-equivalent token cost including discarded attempts; original reports preserved",
+      "rates_usd_per_million": {
+        "input": 10,
+        "cached_input": 1,
+        "cache_write": 12.5,
+        "output_including_reasoning": 50
+      },
+      "long_context": {
+        "input_tokens_above": 272000,
+        "input_multiplier": 2,
+        "output_multiplier": 1.5
+      }
     }
   ],
   "capability_reanalyses": [

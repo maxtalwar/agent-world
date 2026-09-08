@@ -9,6 +9,7 @@ before/after rate-limit snapshot.
 from __future__ import annotations
 
 from agent_world.io import fsync_directory
+from agent_world.astra_pricing import RATES as ASTRA_RATES, SOURCE as ASTRA_PRICING_SOURCE, rates_for_prompt as astra_rates_for_prompt
 from agent_world.gemini_pricing import RATES as GEMINI_RATES, SOURCE as GEMINI_PRICING_SOURCE
 
 from decimal import Decimal
@@ -42,6 +43,7 @@ CODEX_CREDIT_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
 
 USD_RATE_CARD_SOURCES = {
     "google": GEMINI_PRICING_SOURCE,
+    "openai_astra": ASTRA_PRICING_SOURCE,
     "openai": "https://developers.openai.com/api/docs/pricing",
     "anthropic": "https://platform.claude.com/docs/en/pricing",
     "openrouter": "https://openrouter.ai/models",
@@ -57,6 +59,7 @@ USD_RATE_CARD_EFFECTIVE_DATE = "2026-09-07"
 # ("gpt-5-6-luna-medium") and effort-tagged variants resolve to their base
 # model without collapsing "gpt-5.4-mini" into "gpt-5.4".
 MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
+    "gpt-6-astra": ASTRA_RATES,
     "grok-4.5": {
         "input": Decimal("2"), "cached_input": Decimal("0.3"),
         "cache_write": Decimal("2"), "output": Decimal("6"),
@@ -457,7 +460,8 @@ def summarize_usd_cost(records: list[dict[str, Any]]) -> dict[str, Any] | None:
         if rate_model is None:
             unknown_models.add(raw_model)
             continue
-        rates = MODEL_USD_RATES_PER_MILLION[rate_model]
+        rates = (astra_rates_for_prompt(prompt_tokens) if rate_model == "gpt-6-astra"
+                 else MODEL_USD_RATES_PER_MILLION[rate_model])
         model_row = models.setdefault(
             rate_model,
             {

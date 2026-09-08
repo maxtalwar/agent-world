@@ -25,12 +25,14 @@ try:
     from .leaderboard_launch import LaunchService, LaunchError
     from .benchmark_acceptance import accepted_report
     from .gemini_pricing import historical_cost
+    from .astra_pricing import historical_cost as astra_historical_cost
     from .world_viewer import WorldViewer, SnapshotUnavailable
     from .capability_reanalysis import policies as scoring_policies, rescore, formula as reanalysis_formula
 except ImportError:
     from leaderboard_launch import LaunchService, LaunchError
     from benchmark_acceptance import accepted_report
     from gemini_pricing import historical_cost
+    from astra_pricing import historical_cost as astra_historical_cost
     from world_viewer import WorldViewer, SnapshotUnavailable
     from capability_reanalysis import policies as scoring_policies, rescore, formula as reanalysis_formula
 
@@ -339,6 +341,10 @@ class LeaderboardStore:
                     raise ValueError("Report and job recipe fingerprints differ")
                 missing_costs[cell["seed"]] = historical_cost(
                     report.get("usage", {}).get("estimated_cost"), job["config"]["model"]["id"])
+                if missing_costs[cell["seed"]] is None:
+                    missing_costs[cell["seed"]] = astra_historical_cost(
+                        report.get("usage", {}).get("attempted_token_cost") or report.get("usage", {}).get("estimated_cost"),
+                        job["config"]["model"]["id"], report_path)
                 reports.append(report)
                 stat = report_path.stat()
                 signatures.append((str(report_path), stat.st_mtime_ns, stat.st_size))
