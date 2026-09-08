@@ -12,6 +12,8 @@ from agent_world.io import fsync_directory
 from agent_world.astra_pricing import RATES as ASTRA_RATES, SOURCE as ASTRA_PRICING_SOURCE, rates_for_prompt as astra_rates_for_prompt
 from agent_world.gemini_pricing import RATES as GEMINI_RATES, SOURCE as GEMINI_PRICING_SOURCE
 
+from agent_world.muse_pricing import RATES as MUSE_RATES, SOURCE as MUSE_PRICING_SOURCE
+
 from decimal import Decimal
 import json
 import os
@@ -42,6 +44,7 @@ CODEX_CREDIT_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
 }
 
 USD_RATE_CARD_SOURCES = {
+    "muse_spark_1_3": MUSE_PRICING_SOURCE,
     "google": GEMINI_PRICING_SOURCE,
     "openai_astra": ASTRA_PRICING_SOURCE,
     "openai": "https://developers.openai.com/api/docs/pricing",
@@ -64,6 +67,8 @@ MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
         "input": Decimal("2"), "cached_input": Decimal("0.3"),
         "cache_write": Decimal("2"), "output": Decimal("6"),
     },
+    **{model: {key: Decimal(str(rate)) for key, rate in rates.items()}
+       for model, rates in MUSE_RATES.items()},
     "muse-spark-1.2": {
         "input": Decimal("1.25"), "cached_input": Decimal("0.15"),
         "cache_write": Decimal("1.25"), "output": Decimal("4.25"),

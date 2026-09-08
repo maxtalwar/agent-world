@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, urlsplit
 try:
     from .leaderboard_launch import LaunchService, LaunchError
     from .benchmark_acceptance import accepted_report
+    from .muse_pricing import historical_cost as muse_historical_cost
     from .gemini_pricing import historical_cost
     from .astra_pricing import historical_cost as astra_historical_cost
     from .world_viewer import WorldViewer, SnapshotUnavailable
@@ -31,6 +32,7 @@ try:
 except ImportError:
     from leaderboard_launch import LaunchService, LaunchError
     from benchmark_acceptance import accepted_report
+    from muse_pricing import historical_cost as muse_historical_cost
     from gemini_pricing import historical_cost
     from astra_pricing import historical_cost as astra_historical_cost
     from world_viewer import WorldViewer, SnapshotUnavailable
@@ -362,6 +364,10 @@ class LeaderboardStore:
                     missing_costs[cell["seed"]] = astra_historical_cost(
                         report.get("usage", {}).get("attempted_token_cost") or report.get("usage", {}).get("estimated_cost"),
                         job["config"]["model"]["id"], report_path)
+                if missing_costs[cell["seed"]] is None:
+                    missing_costs[cell["seed"]] = muse_historical_cost(
+                        report.get("usage", {}).get("attempted_token_cost") or report.get("usage", {}).get("estimated_cost"),
+                        job["config"]["model"]["id"])
                 reports.append(report)
                 stat = report_path.stat()
                 signatures.append((str(report_path), stat.st_mtime_ns, stat.st_size))

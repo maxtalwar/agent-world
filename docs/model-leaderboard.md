@@ -20,3 +20,5 @@ See the [rescoring definition and evidence](v81-endpoint-winter-rescoring.md), [
 Astra cost/run is **$43.27**, averaging $43.799260 (seed 11) and $42.741980 (seed 41), including 20 discarded attempts. See [the cost evidence](astra-v81-cost.json). Standard API-equivalent pricing uses $10/M uncached input, $1/M cached input, $12.50/M cache writes and $50/M output from the [official Astra model page](https://developers.openai.com/api/docs/models/gpt-6-astra). Reasoning is already included in output. Maximum recorded request sizes were 16,210 and 15,923 input tokens, below the 272K long-context threshold. This is not a subscription charge.
 
 Haiku 4.5 includes the [owner-approved unfinished-tick recovery exception](reviews/haiku-v81-admission-20260908.md).
+
+Muse Spark 1.3 v8.1 costs **$20.25/run** at standard API-equivalent rates; [usage and pricing evidence](muse-spark-13-v81-cost.json). Original reports are preserved.
