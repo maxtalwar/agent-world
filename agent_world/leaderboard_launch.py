@@ -441,11 +441,20 @@ class LaunchService:
                 raise LaunchError("This review expired. Review the current settings again.")
             for other in db.execute("SELECT payload FROM requests WHERE state IN ('queued','launching','supervising')"):
                 p = json.loads(other["payload"])
-                if (p["recipe_key"], p["brain"], study_model_identity(p["model"])) == (request["recipe_key"], request["brain"], study_model_identity(request["model"])):
+                # Monitoring shares this table with portal reviews. Adopted
+                # studies can omit recipe_key; experiments are a separate scope.
+                if p.get("run_kind", p.get("kind")) == "experiment":
+                    continue
+                recipe = p.get("recipe_key") or p.get("recipe_id") or ""
+                recipe_id = recipe.split("@", 1)[0]
+                if (recipe_id, p.get("brain"), study_model_identity(p.get("model"))) == (
+                        request["recipe_id"], request["brain"], study_model_identity(request["model"])):
                     raise LaunchError("This model already has an active launch in this recipe: " + p["run_id"])
             for path in (self.root / "runs/jobs").glob("*/job.json"):
                 try:
                     job = read(path)
+                    if job.get("kind") == "experiment":
+                        continue
                     model = job.get("config", {}).get("model", {})
                     same = (job.get("protocol"), model.get("brain"), study_model_identity(model.get("id"))) == (
                         request["recipe_id"], request["brain"], study_model_identity(request["model"]))

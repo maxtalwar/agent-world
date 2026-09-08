@@ -87,6 +87,41 @@ class LaunchTests(unittest.TestCase):
         with self.assertRaisesRegex(LaunchError, "already has an active"):
             self.service.start({"request_id": self.identifier})
 
+    def test_sparse_monitor_records_do_not_break_portal_batch(self):
+        other = "b" * 32
+        with self.service.connection() as db:
+            db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
+                other, "monitored-experiment", "supervising", time.time(), time.time(),
+                json.dumps({"run_id": "monitored-experiment", "run_kind": "experiment",
+                            "brain": "codex", "model": "gpt-test"})))
+            db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
+                "c" * 32, "adopted-benchmark", "supervising", time.time(), time.time(),
+                json.dumps({"run_id": "adopted-benchmark", "run_kind": "benchmark",
+                            "brain": "claude", "model": "claude-test"})))
+        with patch.object(self.service, "validate_source"), patch.object(self.service, "ensure_worker"):
+            result = self.service.start_batch({"request_ids": [self.identifier]})
+        self.assertEqual(result["results"][0]["request"]["state"], "queued")
+        self.assertTrue(self.service.get(self.identifier)["dispatch_ready"])
+
+    def test_legacy_recipe_id_still_blocks_duplicate_benchmark(self):
+        with self.service.connection() as db:
+            db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
+                "b" * 32, "legacy-benchmark", "supervising", time.time(), time.time(),
+                json.dumps({"run_id": "legacy-benchmark", "recipe_id": "participant-test",
+                            "brain": "codex", "model": "gpt-test"})))
+        with self.assertRaisesRegex(LaunchError, "already has an active"):
+            self.service.start({"request_id": self.identifier})
+
+    def test_experiment_job_does_not_block_same_model_benchmark(self):
+        path = self.root / "runs/jobs/experiment/job.json"
+        path.parent.mkdir(parents=True)
+        job = {"run_id": "experiment", "kind": "experiment", "protocol": "participant-test",
+               "config": {"model": {"brain": "codex", "id": "gpt-test"}},
+               "controller": {"status": "running"}}
+        path.write_text(json.dumps(job))
+        with patch.object(self.service, "validate_source"), patch.object(self.service, "ensure_worker"):
+            self.assertEqual(self.service.start({"request_id": self.identifier})["state"], "queued")
+
     def test_muse_tiers_share_active_launch_and_job_identity(self):
         self.service.update(self.identifier, brain="muse", model="muse-spark-1.2-contributor")
         other = "b" * 32
