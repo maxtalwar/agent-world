@@ -82,7 +82,7 @@ class LaunchService:
             read(self.settings_path) if self.settings_path.exists() else {})
         self.cache = None
         self.cache_until = 0
-        self.lock = threading.Lock()
+        self.lock = threading.RLock()
         with self.connection() as db:
             db.execute("""CREATE TABLE IF NOT EXISTS requests (
                 id TEXT PRIMARY KEY, run_id TEXT UNIQUE NOT NULL, state TEXT NOT NULL,
@@ -96,8 +96,12 @@ class LaunchService:
     def sources(self):
         # Only reviewed, registered recipes are launchable. Old job worktrees
         # are evidence, never an alternate launch catalog with drifting defaults.
-        candidates = [(path.stem, None, str(self.root))
-                      for path in (self.root / "agent_world/recipes").glob("*.json")]
+        # Read the current committed release even while the working checkout is
+        # being edited. Never fall back to an older, different recipe snapshot.
+        commit = git(self.root, "rev-parse", "HEAD")
+        released = self.launch_checkout({"commit": commit})
+        candidates = [(path.stem, None, str(released))
+                      for path in (released / "agent_world/recipes").glob("*.json")]
         result = {}
         checked = set()
         for recipe, expected_digest, location in candidates:

@@ -50,6 +50,22 @@ class LaunchTests(unittest.TestCase):
         event.write_text(json.dumps({"status":"completed","heartbeat_unix":time.time()}))
         self.assertEqual(self.service.public_request(self.service.get(self.identifier))["monitor_event_state"], "completed")
 
+    def test_recipe_discovery_uses_committed_checkout_during_edits(self):
+        released=self.root/"released"
+        (released/"agent_world/recipes").mkdir(parents=True)
+        (released/"agent_world/recipes/participant-test.json").write_text("{}")
+        info={"digest":"hash","recipe":{"defaults":{},"replications":{"required_seeds":[11,41]}},"brains":["codex"]}
+        def git_result(path, *args):
+            if args[0]=="rev-parse": return "a"*40
+            return " M agent_world/engine.py" if Path(path)==self.root else ""
+        with patch.object(self.service,"launch_checkout",return_value=released) as checkout, \
+             patch("agent_world.leaderboard_launch.git",side_effect=git_result), \
+             patch("agent_world.leaderboard_launch.subprocess.check_output",return_value=json.dumps(info)):
+            options=self.service.sources()
+        self.assertIn("participant-test@hash",options)
+        self.assertEqual(options["participant-test@hash"]["source"],str(released))
+        checkout.assert_called_once_with({"commit":"a"*40})
+
     def test_retired_recipe_review_cannot_launch(self):
         self.request["digest"] = "retired-world"
         with self.assertRaisesRegex(LaunchError, "retired conditions"):
@@ -63,7 +79,7 @@ class LaunchTests(unittest.TestCase):
         old.mkdir(parents=True)
         (old / "job.json").write_text(json.dumps({"kind":"benchmark", "protocol":"participant-test", "recipe_fingerprint_sha256":"retired", "execution_root":str(self.root/"old-source"), "cells":[]}))
         info = {"digest":"current", "brains":["codex"], "recipe":{"defaults":{}, "replications":{"required_seeds":[11,41]}}}
-        with patch("agent_world.leaderboard_launch.git", side_effect=lambda root,*args: "a"*40 if args[0]=="rev-parse" else ""), patch("agent_world.leaderboard_launch.subprocess.check_output", return_value=json.dumps(info)) as query:
+        with patch.object(self.service, "launch_checkout", return_value=self.root), patch("agent_world.leaderboard_launch.git", side_effect=lambda root,*args: "a"*40 if args[0]=="rev-parse" else ""), patch("agent_world.leaderboard_launch.subprocess.check_output", return_value=json.dumps(info)) as query:
             sources = self.service.sources()
         self.assertEqual(list(sources), ["participant-test@current"])
         self.assertEqual(query.call_count, 1)

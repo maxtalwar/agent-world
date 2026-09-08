@@ -55,6 +55,18 @@ LABS = {
 }
 
 
+def mean_decision_time(reports):
+    """Pool recorded decision durations, not rounded per-seed averages."""
+    durations = []
+    for report in reports:
+        latency = report.get("usage", {}).get("decision_latency") or {}
+        values = latency.get("decision_seconds")
+        if not values or latency.get("complete") is False:
+            return None
+        durations.extend(values)
+    return sum(durations) / len(durations) if durations else None
+
+
 def quota_schedule(path: Path) -> dict:
     """Read recent quota timing without loading a simulation's entire event log."""
     try:
@@ -216,6 +228,7 @@ class LeaderboardStore:
                     "reasoning": r["reasoning_tokens_per_decision"],
                     "reasoning_estimated": bool(r["reasoning_tokens_estimated"]),
                     "latency": r["latency_median_seconds"],
+                    "mean_decision_seconds": r["latency_mean_seconds"],
                     "seed_scores": [], "commit": None, "reanalysis": reanalysis,
                     "evidence_paths": [str(within(self.root, x[0])) for x in conn.execute(
                         "SELECT DISTINCT r.source_report FROM runs r JOIN run_cohorts c USING(run_id) "
@@ -381,7 +394,8 @@ class LeaderboardStore:
                     "cost": sum(costs) / len(costs) if costs and all(x is not None for x in costs) else None,
                     "reasoning": r.get("mean_reasoning_tokens_per_call"),
                     "reasoning_estimated": r.get("reasoning_tokens_estimated", False),
-                    "latency": None, "commit": job.get("launch_commit"),
+                    "latency": None, "mean_decision_seconds": mean_decision_time(reports),
+                    "commit": job.get("launch_commit"),
                     "seed_scores": [{"seed": s["seed"], "scores": {
                         k: v.get("score") for k, v in s["scores"].items()
                     }} for s in r["required_replications"]],

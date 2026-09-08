@@ -238,3 +238,11 @@ class LeaderboardTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DecisionTimingTests(unittest.TestCase):
+    def test_pools_decisions_instead_of_seed_means(self):
+        from agent_world.leaderboard import mean_decision_time
+        reports=[{"usage":{"decision_latency":{"complete":True,"decision_seconds":v}}} for v in [[1,3,5],[11]]]
+        self.assertEqual(mean_decision_time(reports),5)
+        self.assertIsNone(mean_decision_time(reports+[{}]))
