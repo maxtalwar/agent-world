@@ -159,3 +159,13 @@ ledger hashes are retained in [the detailed output](regeneration-damage-analysis
 Nominal damage, per-agent deaths, live exposure and all health/damage/healing
 curves remain available there. Cause counts can overlap within one damage event;
 they are not mutually exclusive damage amounts.
+
+
+## User decision — 2026-09-07
+
+Retain the current v8.1 capability formula: equally weighted population health
+across all 60 ticks, with dead original agents contributing zero. Keep the
+current v8.1 world without healing. Conditional healing remains an undecided
+candidate for the next iteration (v8.2 or v9); it is not approved for inclusion.
+Preserve the implementation and paired experimental evidence for that future
+review. This decision authorizes no new recipe, scoring change or experiment.
