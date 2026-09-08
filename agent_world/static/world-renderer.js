@@ -3,6 +3,7 @@
 (function (global) {
   const C = {grass:['#a8bd79','#aec37e','#a6bc77','#b3c682'], forest:['#829e65','#8ba66b','#91ac70'], mountain:['#a4ac8c','#abb295','#b2b79b'], water:['#79b7ba','#7dbbbd','#80bdbf']};
   const hash = (x,y,n=0) => {let v=Math.imul(x+71,374761393)^Math.imul(y+37,668265263)^Math.imul(n+11,1274126177);v=Math.imul(v^(v>>>13),1274126177);return ((v^(v>>>16))>>>0)/4294967295;};
+  const SHELTER_SCALE=0.54; // Shelters keep the same footprint on every tile.
   const colors=['#c97b55','#69879a','#b8849f','#c8a653','#7d9671','#b76b64','#7e80a4','#5c9690','#d19b6b','#8e9dba'];
   class WorldRenderer {
     constructor(canvas,{preview=false,onInspect=()=>{},onRotate=()=>{}}={}) {
@@ -308,7 +309,9 @@
       for(const s of this.structures){const key=s.position.x+','+s.position.y;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(s);}
       for(const group of grouped.values())group.forEach((s,i)=>objects.push({...s.position,order:1,draw:()=>{
         const tile=this.snapshot.tiles[s.position.y]?.[s.position.x];if(!tile)return;
-        if(group.length>1){this.c.translate((i-(group.length-1)/2)*18,0);this.c.scale(Math.max(.45,1/group.length+.2),Math.max(.45,1/group.length+.2));}
+        if(group.length>1)this.c.translate((i-(group.length-1)/2)*18,0);
+        const scale=s.type==='shelter'?SHELTER_SCALE:group.length>1?Math.max(.45,1/group.length+.2):1;
+        this.c.scale(scale,scale);
         this.structure(s,tile,time);
       }}));
       Object.values(this.snapshot.item_piles||{}).forEach(p=>objects.push({...p.position,order:2,draw:()=>{this.rect(-4,3,8,5,'#bba06b');this.line([[-4,5],[4,5]],'#8b7b58',1);}}));
