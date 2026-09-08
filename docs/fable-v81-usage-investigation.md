@@ -1,9 +1,11 @@
 # Fable 5 v8.1 usage investigation — 2026-09-07
 
-The observed quota exhaustion is consistent with a substantial parallel workload
-and a recorded plan difference, with no evidence of runaway retries or a large
-increase in per-decision token usage. The precise subscription accounting remains
-unresolved; token telemetry does not measure percentage of a subscription quota.
+The observed quota exhaustion followed a substantial parallel workload, with no
+evidence of runaway retries or a large increase in per-decision token usage.
+The initial apparent Max-to-Pro plan difference was subsequently traced to stale
+CLI metadata: a fresh sign-in changed the reported tier to Max. Whether stale
+metadata affected server-side quota enforcement remains unresolved; token
+telemetry does not measure percentage of a subscription quota.
 
 ## Evidence
 
@@ -62,8 +64,9 @@ V6 seed 11 completed 500 decisions in about 56 minutes on the recorded Max plan.
 ## Subscription limits and uncertainty
 
 [Anthropic's Max overview](https://support.claude.com/en/articles/11049741-what-is-the-max-plan)
-describes 5x/20x usage tiers relative to Pro. That supports the plan difference
-as a material explanation, but does not establish the exact historical allowance.
+describes 5x/20x usage tiers relative to Pro. This describes potential tier differences, but the successful authentication
+refresh below means the initial Pro label is not evidence of a real downgrade
+in current entitlement. The exact historical allowance remains unknown.
 [The current Fable policy](https://support.claude.com/en/articles/15424964-claude-fable-models-on-your-plan)
 says Fable draws on Max limits and uses usage credits on Pro. That conflicts with
 combining this CLI's Pro metadata and the observed session-limit refusal into a
@@ -87,3 +90,25 @@ the observed quota sleep. No run settings or pinned source were changed.
 Reducing workers would spread consumption over time; it would not eliminate the
 remaining benchmark workload. No extra usage, plan upgrade, or model substitution
 was requested or enabled by this investigation.
+
+## Correction: paid Max and successful authentication refresh
+
+The user clarified that they paid for one month of Max and immediately scheduled
+a downgrade to Pro for the following billing cycle. They explicitly authorized
+publishing this clarification in the repository.
+[Anthropic's pricing FAQ](https://claude.com/pricing) says downgrades take effect
+at the end of the current billing period. The initial Pro CLI label therefore
+was not sufficient evidence that their paid Max entitlement had ended.
+
+On September 7, `claude update` found version 2.1.263 already current, and
+`claude auth status` still reported Pro. A fresh `claude auth login --claudeai`
+was then completed through the user's existing browser sign-in. The CLI returned
+`Login successful`; a subsequent `claude auth status` reported authenticated
+first-party subscription access with `subscriptionType: max`.
+
+This verifies that the prior CLI plan metadata was stale. It does not establish
+that scheduling the downgrade caused it, that the server enforced Pro limits,
+or that refreshing the login restored any quota allowance. No subscription
+change, purchase, extra-usage enablement, or model request was made to test that
+hypothesis. The benchmark retained its checkpoint and recorded quota wait;
+Run Monitoring received the verified authentication result.
