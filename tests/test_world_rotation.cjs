@@ -72,3 +72,54 @@ const preview=new Renderer(canvas(),{preview:true});preview.setSnapshot(snapshot
 viewer.pointerDown(pointer);viewer.destroy();preview.destroy();flush();
 assert.equal(surface.listeners.size,0);assert.equal(surface.captured.size,0);
 console.log('Full-circle projection, fixed elevation, hit testing, bounds, input, refresh and cleanup passed.');
+
+
+// Grouped residents must stay at the same ground points throughout an orbit.
+const crowdCanvas=canvas(),crowd=new Renderer(crowdCanvas),crowdSnapshot=JSON.parse(JSON.stringify(snapshot));
+crowdSnapshot.agents=Object.fromEntries(Object.values(crowdSnapshot.agents).slice(0,4).map((agent,i)=>{
+  const id='resident-'+i;return [id,{...agent,id,position:{x:8,y:8}}];
+}));
+const crowdOriginal=JSON.stringify(crowdSnapshot);
+crowd.setSnapshot(crowdSnapshot);
+let groundAt,drawn=[];
+const nativeAt=crowd.at,nativeAgent=crowd.agent;
+crowd.at=function(x,y,draw){groundAt={x:x+.5,y:y+.5};nativeAt.call(this,x,y,draw);};
+crowd.agent=function(agent){drawn.push({id:agent.id,...groundAt});};
+const anchors=new Map();
+let forwardOrder;
+for(const angle of [0,Math.PI/4,Math.PI/2,Math.PI,Math.PI*1.5]){
+  crowd.setYaw(angle);flush();drawn=[];crowd.paint(0);
+  assert.equal(drawn.length,4);
+  for(const point of drawn){
+    assert.ok(point.x>8&&point.x<9&&point.y>8&&point.y<9,'Feet must stay within the occupied tile');
+    if(!anchors.has(point.id))anchors.set(point.id,point);
+    const fixed=anchors.get(point.id);close(point.x,fixed.x);close(point.y,fixed.y);
+  }
+  const depths=drawn.map(point=>crowd.project(point.x,point.y)[1]);
+  for(let i=1;i<depths.length;i++)assert.ok(depths[i]>=depths[i-1]-1e-8);
+  if(angle===Math.PI/2)forwardOrder=drawn.map(point=>point.id);
+  if(angle===Math.PI*1.5)assert.deepEqual(drawn.map(point=>point.id),forwardOrder.slice().reverse());
+}
+assert.equal(JSON.stringify(crowdSnapshot),crowdOriginal);
+// Reordering JSON and another resident departing/arriving cannot shuffle bystanders.
+const reordered=JSON.parse(JSON.stringify(crowdSnapshot));
+reordered.agents=Object.fromEntries(Object.entries(reordered.agents).reverse());
+delete reordered.agents['resident-0'];
+reordered.agents.newcomer={...Object.values(reordered.agents)[0],id:'newcomer'};
+crowd.setSnapshot(reordered);drawn=[];crowd.paint(0);
+for(const point of drawn.filter(point=>point.id!=='newcomer')){
+  close(point.x,anchors.get(point.id).x);close(point.y,anchors.get(point.id).y);
+}
+// Idle animation can move the torso but not the feet.
+crowd.agent=nativeAgent;
+const nativeRect=crowd.rect,feet=[];
+let translateY=0;
+crowd.c=new Proxy({},{get:(_target,key)=>key==='translate'?(x,y)=>{translateY+=y;}:()=>{}});
+crowd.rect=function(x,y,w,h,color){if(color==='#4c5953')feet.push(y+h+translateY);};
+reduced.matches=false;
+for(const time of [0,3,11]){
+  translateY=0;crowd.agent(Object.values(reordered.agents)[0],0,time);
+}
+assert.equal(feet.length,6);feet.forEach(value=>close(value,0));
+crowd.rect=nativeRect;crowd.destroy();reduced.matches=true;
+console.log('World-anchored crowd positions, occlusion order, stable slots and planted feet passed.');

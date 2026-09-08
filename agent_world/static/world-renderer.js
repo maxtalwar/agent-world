@@ -6,7 +6,7 @@
   const colors=['#c97b55','#69879a','#b8849f','#c8a653','#7d9671','#b76b64','#7e80a4','#5c9690','#d19b6b','#8e9dba'];
   class WorldRenderer {
     constructor(canvas,{preview=false,onInspect=()=>{},onRotate=()=>{}}={}) {
-      this.canvas=canvas;this.ctx=canvas.getContext('2d');this.preview=preview;this.onInspect=onInspect;this.onRotate=onRotate;this.yaw=0;this.drag=null;this.rotationFrame=0;
+      this.canvas=canvas;this.ctx=canvas.getContext('2d');this.preview=preview;this.onInspect=onInspect;this.onRotate=onRotate;this.yaw=0;this.agentSlots=new Map();this.drag=null;this.rotationFrame=0;
       this.reduced=matchMedia('(prefers-reduced-motion: reduce)');this.snapshot=null;this.frame=0;this.lastPaint=0;
       this.resizeObserver=new ResizeObserver(()=>this.resize());this.resizeObserver.observe(canvas);
       this.motionListener=()=>this.restart();this.reduced.addEventListener('change',this.motionListener);
@@ -27,7 +27,34 @@
       this.snapshot=snapshot;this.structures=Object.values(snapshot.structures||{});
       this.agents=Object.values(snapshot.agents||{});this.occupied=new Map();
       for(const a of this.agents){const k=a.position.x+','+a.position.y;if(!this.occupied.has(k))this.occupied.set(k,[]);this.occupied.get(k).push(a);}
+      // Keep each resident's display slot while they remain on the same tile.
+      // Sub-tile positions are presentation only; the native snapshot is untouched.
+      const nextSlots=new Map();
+      for(const [tile,party] of this.occupied){
+        const used=new Set();
+        for(const agent of party){
+          const previous=this.agentSlots.get(agent.id);
+          if(previous?.tile===tile){nextSlots.set(agent.id,previous);used.add(previous.slot);}
+        }
+        for(const agent of party.slice().sort((a,b)=>a.id.localeCompare(b.id))){
+          if(nextSlots.has(agent.id))continue;
+          let slot=[1,2,0,3].find(candidate=>!used.has(candidate));
+          if(slot===undefined){slot=4;while(used.has(slot))slot++;}
+          used.add(slot);nextSlots.set(agent.id,{tile,slot});
+        }
+      }
+      this.agentSlots=nextSlots;
       this.resize();
+    }
+    agentAnchor(agent){
+      const slot=this.agentSlots.get(agent.id).slot;
+      if(slot<4){
+        // A short diagonal row in world space, initially horizontal on screen.
+        const dx=(slot-1.5)*12,dy=4;
+        return {x:dx/76+dy/38,y:dy/38-dx/76};
+      }
+      const angle=slot*2.399963229728653,radius=.32;
+      return {x:Math.cos(angle)*radius,y:Math.sin(angle)*radius};
     }
     resize(){
       const box=this.canvas.getBoundingClientRect();if(!box.width||!box.height)return;
@@ -219,13 +246,11 @@
     }
     agent(a,index,time){
       if(!a.alive){this.ellipse(0,2,7,3,'#6a725c');this.rect(-4,-5,8,7,'#b0b3a0');return;}
-      const party=this.occupied.get(a.position.x+','+a.position.y),slot=party.indexOf(a);
-      const dx=party.length>1?(slot-(party.length-1)/2)*12:10,dy=party.length>1?10:11;
-      this.c.translate(dx,dy);
-      this.ellipse(1,2,7,3,'#344b413c');
+      this.ellipse(0,1,7,3,'#344b413c');
+      // Feet stay on the ground; only the torso participates in idle breathing.
+      this.rect(-4,-5,3,5,'#4c5953');this.rect(1,-5,3,5,'#4c5953');
       const breath=this.reduced.matches?0:Math.sin(time*1.7+index*2)*.45;
       this.c.translate(0,breath);
-      this.rect(-4,-3,3,5,'#4c5953');this.rect(1,-3,3,5,'#4c5953');
       this.rect(-5,-13,10,11,colors[index%colors.length]);
       this.rect(-7,-11,2,6,'#dab68d');this.rect(5,-11,2,6,'#dab68d');
       this.rect(-4,-22,8,9,index%3===0?'#bc8d65':'#e5c09a');
@@ -287,7 +312,10 @@
         this.structure(s,tile,time);
       }}));
       Object.values(this.snapshot.item_piles||{}).forEach(p=>objects.push({...p.position,order:2,draw:()=>{this.rect(-4,3,8,5,'#bba06b');this.line([[-4,5],[4,5]],'#8b7b58',1);}}));
-      this.agents.forEach((a,i)=>objects.push({...a.position,order:3,draw:()=>this.agent(a,i,time)}));
+      this.agents.forEach((a,i)=>{
+        const anchor=this.agentAnchor(a);
+        objects.push({x:a.position.x+anchor.x,y:a.position.y+anchor.y,order:3,draw:()=>this.agent(a,i,time)});
+      });
       objects.sort((a,b)=>this.project(a.x,a.y)[1]-this.project(b.x,b.y)[1]||a.order-b.order||a.x-b.x);
       for(const obj of objects)this.at(obj.x,obj.y,obj.draw);
       this.c=null;

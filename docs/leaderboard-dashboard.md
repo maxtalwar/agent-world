@@ -32,6 +32,9 @@ tilts the scene. Focus the canvas and use Left/Right to rotate in 15° steps,
 or Home to restore the original angle. Buildings have projected sides and roofs;
 foliage and residents remain upright. Terrain, shorelines, draw order, inspection,
 and the compass follow the camera. The current angle survives snapshot refreshes.
+Residents use stable display positions within their native tile, so their feet stay
+anchored during rotation, snapshot refreshes, and changes in neighboring occupancy.
+The sprite bodies remain upright; occlusion follows their actual ground positions.
 The homepage illustration stays at its original angle.
 
 The read-only `/api/worlds` endpoint discovers saved cells from managed jobs;
