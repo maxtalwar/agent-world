@@ -26,6 +26,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-07 — Fable's fast quota exhaustion was not a token-use explosion
+
+**Fable 5 exhausted a session allowance after 134 decisions in about eight minutes, while comparable v8.1 decisions used only 7.1% more input and 0.9% more output than v6.** The historical study recorded Max; the current CLI reports Pro. V8.1 also overlaps two four-worker cells, whereas the historical seeds ran separately. Cache reads cover 67.7% of current input, and 140 started requests resolve to 134 distinct successful decisions plus six quota refusals, with no retry storm. Both worlds then froze until the stated reset. Subscription metadata and current published Fable entitlement rules do not fully agree, so the exact quota conversion and the user's reported 8% weekly attribution remain unverified. This is an operational/entitlement finding, not a change in model capability. See [counts, source artifacts, plan evidence, and caveats](fable-v81-usage-investigation.md).
+
 ## 2026-09-07 — Winter resilience and terminal food buffers disagree
 
 **Gemini 3.7 retains more endpoint health than Sol, but Sol carries more food in both matched worlds and loses far less health during the final spring.** In the no-healing v8.1 seeds 11/41, winter health loss per original agent is 24.15 for Gemini versus 38.45 for Sol; final-spring loss reverses to 8.30 versus 2.75. All three Gemini deaths occur during that final spring. Sol carries 57 food across the two worlds versus Gemini's 10 and operates eight farms versus two. Another 104 food is concentrated in two private Sol stores in seed 41, so a pooled stockpile comparison exaggerates the breadth of that buffer. Gemini survivors have better water reserves. These are observed world outcomes, not a connector-effect claim or evidence of what an unrun extension would do. See [evidence and caveats](sol-gemini-terminal-supplies.md) and [endpoint/winter rescoring](v81-endpoint-winter-rescoring.md).
