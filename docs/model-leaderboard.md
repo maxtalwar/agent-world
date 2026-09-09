@@ -7,6 +7,7 @@ Capability rescoring: Final original-population health minus 10% of health lost 
 | Model | Capability | Execution | Production | Cost/run | Mean time/decision |
 |---|---:|---:|---:|---:|---:|
 | GPT-6 Astra | 80.1 | 96.7 | 244.7 | $43.27 | 10.98s |
+| Grok 4.6 | 33.0 | 92.6 | 216.3 | $27.21 | 95.24s |
 | Sonnet 5 | 29.0 | 86.2 | 177.2 | $19.61 | 20.85s |
 | GPT-5.6 Terra | 10.1 | 90.1 | 165.0 | $8.50 | 11.61s |
 | GPT-5.4 Mini | 4.5 | 88.4 | 86.8 | $3.90 | 23.25s |
