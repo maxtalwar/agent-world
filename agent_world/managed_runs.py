@@ -478,6 +478,8 @@ def _launch_cell(job: dict[str, Any], cell: dict[str, Any], *, resume: bool = Fa
             cell.setdefault("previous_run_manifests", []).append(str(archived))
     cell["session"] = session
     cell["launch_state"] = "launching"
+    log_path = Path(cell["log"])
+    cell["launch_log_offset"] = log_path.stat().st_size if log_path.exists() else 0
     cell["last_launched_at_utc"] = utc_now()
     # A paused interval is not stalled execution in the new attempt.
     cell["controller_last_progress_at_utc"] = cell["last_launched_at_utc"]

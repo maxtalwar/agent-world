@@ -141,12 +141,30 @@ def _backoff(cell: dict[str, Any], policy: ControllerPolicy) -> float:
     return policy.resume_backoff_seconds[min(attempts, len(policy.resume_backoff_seconds) - 1)]
 
 
+def _startup_environment_mismatch(cell: dict[str, Any]) -> bool:
+    """Inspect only this launch's bounded log tail, never a previous failure."""
+    offset = cell.get("launch_log_offset")
+    if not isinstance(offset, int) or isinstance(offset, bool) or offset < 0:
+        return False
+    try:
+        with Path(cell["log"]).open("rb") as stream:
+            stream.seek(0, 2)
+            end = stream.tell()
+            stream.seek(max(offset, end - 16384))
+            text = stream.read().decode("utf-8", errors="replace")
+    except (OSError, KeyError):
+        return False
+    return "ValueError: Execution environment changed for " in text and "an explicit migration is required" in text
+
+
 def _retryable(
     cell: dict[str, Any], status: dict[str, Any], policy: ControllerPolicy
 ) -> tuple[bool, str]:
     state = status["state"]
     reason = status.get("stop_reason")
     attempts = int(cell.get("auto_resume_count") or 0)
+    if state == "interrupted" and _startup_environment_mismatch(cell):
+        return False, "execution_environment_mismatch"
     if _requires_authentication(cell):
         return False, "authentication_required"
     if reason == "insufficient_quota":
@@ -428,6 +446,7 @@ def reconcile_once(
             else:
                 cell["controller_state"] = "needs_attention"
                 cell["controller_attention"] = reason
+                cell.pop("next_auto_resume_at_utc", None)
 
         completed_signature = tuple(
             sorted(status["seed"] for status in statuses if status["state"] == "completed")
