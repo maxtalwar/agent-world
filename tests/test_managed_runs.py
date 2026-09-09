@@ -90,6 +90,17 @@ class ManagedRunConfigTests(unittest.TestCase):
             path.write_text(json.dumps(value), encoding="utf-8")
             return load_run_config(path)
 
+    def test_fable_benchmark_default_and_explicit_seed_override(self):
+        value = _config("benchmark")
+        value["model"] = {"brain": "claude", "id": "claude-fable-5-1"}
+        value.pop("seeds")
+        self.assertEqual(self._load(value)["seeds"], [41])
+        value["seeds"] = [11, 41]
+        self.assertEqual(self._load(value)["seeds"], [11, 41])
+        value.pop("seeds")
+        value["model"]["id"] = "claude-sonnet-5"
+        self.assertEqual(self._load(value)["seeds"], [11, 41])
+
     def test_experiment_defaults_to_seed_11(self) -> None:
         value = _config()
         value.pop("seeds")

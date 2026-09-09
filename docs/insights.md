@@ -27,6 +27,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-09 - A single seed reverses the Sol–Gemini comparison
+
+**Gemini 3.7 beats Sol 70.37 to 32.80 on seed 11, but loses 30.20 to 43.01 on seed 41 under the current v8.1 capability score.** Across 13 accepted paired models, seed 41 reverses four pairwise rankings relative to the pooled leaderboard and seed 11 reverses eight. This is observed run/seed sensitivity, not evidence that a connector caused the difference; single runs per seed cannot distinguish world difficulty from response randomness. The result motivates a consistent, disclosed seed-41 budget exception for Fable, not a claim that seed 41 is unbiased. [Analysis and hashed evidence](fable-seed-selection.md).
+
 ## 2026-09-08 - Informal commerce changes the Astra comparison differently in each recipe
 
 **Restored v6 Astra settled two formal offers to historical Sol's one, while v6.1 Astra had zero formal settlements but 15 already-classified service-payment transfers to matched Sol's nine.** A 24-world channel audit links all 20 Astra v6/v6.1 classified payment legs to observed access, construction, storage or upkeep benefits, without treating installments or shared benefits as separate trades. The v6.1 shelter funded by two tick-10 handoffs only became active and publicly accessible at tick 28; fulfilled eventually does not mean prompt settlement. Opus 5 also has 16 commercially classified transfer legs behind just three historical v6 formal settlements. Thus the misleading headline is not solely an Astra classifier failure: formal-event accounting, transferred payment legs and completed bargains measure different things. V8.1's separate omitted-kind default and Astra's one-of-seven procurement result remain as previously documented. See [the comparison, definitions and limitations](trade-channel-audit-20260909.md) and [hashed evidence and event annotations](trade-channel-audit-20260909.json). This is retrospective analysis, with original scores and admission unchanged.

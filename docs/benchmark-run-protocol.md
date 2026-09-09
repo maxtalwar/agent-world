@@ -32,7 +32,8 @@ When a user says “run the benchmark on MODEL” without narrowing the request:
 
 - use the current standardized participant protocol declared in
   `docs/model-benchmarks.md`;
-- run the protocol's required certification seeds (currently 11 and 41);
+- run the protocol's required certification seeds (currently 11 and 41),
+  except Fable defaults to provisional seed 41 under the standing usage policy;
 - use a uniform population of the requested model and every locked trial
   setting, including the suite's reasoning policy;
 - treat a requested single seed as provisional evidence; and

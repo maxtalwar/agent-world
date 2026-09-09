@@ -18,9 +18,11 @@ import threading
 import time
 
 try:
+    from .benchmark_defaults import benchmark_seeds
     from .leaderboard_models import model_catalog, for_recipe, recipe_label
     from .leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
 except ImportError:
+    from benchmark_defaults import benchmark_seeds
     from leaderboard_models import model_catalog, for_recipe, recipe_label
     from leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
 
@@ -411,6 +413,7 @@ class LaunchService:
         brain, model = values["brain"], values["model"]
         if brain not in source["brains"] or not isinstance(model, str) or not MODEL_ID.fullmatch(model):
             raise LaunchError("Invalid connector or model ID")
+        seeds = benchmark_seeds(model, source["seeds"])
         origin_source = source["source"]
         source = {**source, "source": str(self.launch_checkout(source))}
         token = secrets.token_hex(16)
@@ -421,7 +424,7 @@ class LaunchService:
             "schema_version": 1, "run_id": run_id, "kind": "benchmark",
             "protocol": source["recipe_id"], "model": {
                 "brain": brain, "id": model, "reasoning_effort": source["defaults"]["reasoning_effort"],
-            }, "seeds": source["seeds"], "source": {"commit": source["commit"]},
+            }, "seeds": seeds, "source": {"commit": source["commit"]},
         }
         config_path = request_dir / "config.json"
         config_path.write_text(json.dumps(config, indent=2))
@@ -443,7 +446,7 @@ class LaunchService:
             "digest": source["digest"], "source": source["source"], "origin_source": origin_source, "commit": source["commit"],
             "brain": brain, "model": model, "model_name": selected["name"] if selected else model,
             "lab": selected["lab"] if selected else "unknown", "recipe_title": recipe_label(source["recipe_id"]),
-            "seeds": source["seeds"], "defaults": source["defaults"],
+            "seeds": seeds, "defaults": source["defaults"],
             "config_path": str(config_path), "config_hash": hashlib.sha256(config_path.read_bytes()).hexdigest(),
             "created_at": now(), "updated_at": now(), "supervisor_model": MODEL,
             "supervisor_effort": EFFORT, "supervisor_state": "pending",

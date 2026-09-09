@@ -197,6 +197,20 @@ class LaunchTests(unittest.TestCase):
             self.service.start({"request_id": self.identifier})
         self.assertEqual(self.service.get(self.identifier)["model"], "muse-spark-1.2-contributor")
 
+    def test_fable_preview_records_single_seed_without_changing_recipe(self):
+        source = {"id": "test", "recipe_id": "participant-v8-revised", "digest": "hash",
+                  "source": str(self.root), "commit": "abc", "brains": ["claude"],
+                  "seeds": [11, 41], "defaults": {"reasoning_effort": "medium"}}
+        checked = Mock(stdout=json.dumps({"launch_commit": "abc", "orchestrator_commit": "abc"}))
+        with patch.object(self.service, "catalog", return_value={"blocker": None, "sources": {"test": source}}), \
+             patch.object(self.service, "launch_checkout", return_value=self.root), \
+             patch("agent_world.leaderboard_launch.subprocess.run", return_value=checked):
+            result = self.service.preview({"recipe": "test", "brain": "claude", "model": "claude-fable-5-1"})
+        self.assertEqual(result["seeds"], [41])
+        saved = self.service.get(result["id"])
+        self.assertEqual(json.loads(Path(saved["config_path"]).read_text())["seeds"], [41])
+        self.assertEqual(source["seeds"], [11, 41])
+
     def test_review_expiry_and_extra_parameters(self):
         with self.service.connection() as db:
             db.execute("UPDATE requests SET created=?", (time.time() - 601,))

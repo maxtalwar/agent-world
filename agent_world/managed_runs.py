@@ -22,6 +22,7 @@ from agent_world.benchmarks import (
 )
 from agent_world.protocols import RECIPES, get_recipe, recipe_from_dict
 from agent_world.jsonl_tail import tail_for
+from agent_world.benchmark_defaults import benchmark_seeds
 from agent_world.io import atomic_write_json
 
 
@@ -138,7 +139,7 @@ def load_run_config(path: Path) -> dict[str, Any]:
             raise ValueError(f"Unsupported model.reasoning_effort: {effort!r}")
 
     benchmark_recipe = get_recipe(value.get("protocol")) if kind == "benchmark" else None
-    seeds = value.get("seeds", list(benchmark_recipe.required_seeds) if benchmark_recipe else [11])
+    seeds = value.get("seeds", benchmark_seeds(model.get("id"), benchmark_recipe.required_seeds) if benchmark_recipe else [11])
     if not isinstance(seeds, list) or not seeds or not all(
         isinstance(seed, int) and not isinstance(seed, bool) for seed in seeds
     ):

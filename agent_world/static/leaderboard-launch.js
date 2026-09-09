@@ -13,7 +13,7 @@ function launchRecipe() {
 function launchConditions() {
   const r=launchRecipe();
   launchEl('launch-conditions').textContent=r
-    ? r.defaults.agents+' agents · '+r.defaults.ticks+' ticks · seeds '+r.seeds.join(' + ')+' · '+r.defaults.reasoning_effort+' reasoning'
+    ? r.defaults.agents+' agents · '+r.defaults.ticks+' ticks · seeds '+r.seeds.join(' + ')+' · '+r.defaults.reasoning_effort+' reasoning · Fable defaults to seed 41 only (provisional)'
     : 'No clean launch source is available for this recipe.';
 }
 function pickerOpen(open) {
@@ -104,8 +104,8 @@ function renderReview() {
     '<div class="review-models">'+previews.map(p=>{
       const outcome=launchState.outcomes.get(p.id);
       return '<div class="review-model">'+modelLogo(p.lab,'')+'<div><strong>'+esc(p.model_name||p.model)+'</strong>'+
-        '<p class="small muted">'+esc(p.brain)+' · '+esc(outcome?.error||outcome?.label||'Ready to start')+'</p></div></div>';
-    }).join('')+'</div><dl><div><dt>Population</dt><dd>'+first.defaults.agents+' agents per run</dd></div><div><dt>Duration</dt><dd>'+first.defaults.ticks+' ticks per seed</dd></div><div><dt>Required seeds</dt><dd>'+esc(first.seeds.join(', '))+'</dd></div><div><dt>Model reasoning</dt><dd>'+esc(first.defaults.reasoning_effort)+'</dd></div><div><dt>Each supervisor</dt><dd>GPT-6 Astra · Low</dd></div></dl>';
+        '<p class="small muted">'+esc(p.brain)+' · Seeds '+esc(p.seeds.join(', '))+(p.seeds.length===1?' · Provisional':'')+' · '+esc(outcome?.error||outcome?.label||'Ready to start')+'</p></div></div>';
+    }).join('')+'</div><dl><div><dt>Population</dt><dd>'+first.defaults.agents+' agents per run</dd></div><div><dt>Duration</dt><dd>'+first.defaults.ticks+' ticks per seed</dd></div><div><dt>Model reasoning</dt><dd>'+esc(first.defaults.reasoning_effort)+'</dd></div><div><dt>Each supervisor</dt><dd>GPT-6 Astra · Low</dd></div></dl>';
   const pending=previews.filter(p=>!launchState.outcomes.get(p.id)?.ok).length;
   launchEl('confirm-launch').textContent=launchState.outcomes.size?'Retry remaining ('+pending+')':'Start '+previews.length+' benchmark'+(previews.length===1?'':'s');
 }

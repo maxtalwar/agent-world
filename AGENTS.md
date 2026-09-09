@@ -32,7 +32,11 @@ authorization for multiple replications. Non-Codex models require an explicit
 request for additional experimental seeds. Codex-based models may use two
 seeds (11 and 41) when replication helps answer the question; use one for
 expensive Astra experiments unless additional replication is requested.
-Benchmarks retain the required two seeds in their versioned recipes.
+Fable benchmarks default to seed 41 only, including Fable 5.1, because of
+subscription constraints (user decision 2026-09-09). Explicit seeds override
+this default. Single-seed evidence is provisional; keep the recipe and its
+two-seed replication requirement unchanged. See docs/fable-seed-selection.md.
+Other benchmarks retain the required two seeds in their versioned recipes.
 Explicit user scope overrides these defaults. The already-launched
 September 5 Grok/Luna ledger factorial experiment is authorized to finish
 both seeds; this policy does not cancel those runs.
