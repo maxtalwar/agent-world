@@ -28,3 +28,20 @@ completed-seed hashes are recorded locally under the job's
 environment-recovery-20260909/recovery.json. The completed seed41 finalization
 signature is retained so controller replacement does not repeat finalization.
 Fable runs are outside this recovery and were not resumed.
+
+## Verified outcome
+
+The restored old CLI auto-updated itself during invocation. The final recovery
+therefore retains an independent job-local copy of the original hash and uses
+an explicitly recorded wrapper setting `AGY_CLI_DISABLE_AUTO_UPDATE=1`.
+Checkpoint executable-path/hash evidence identifies that wrapper, while the
+recovery record separately verifies its original binary payload. No guard was
+removed and all nine cached decisions remain identical.
+
+Native `--print /usage` reports Gemini weekly allowance0%, resetting
+2026-09-12T01:52:37Z. Seed11 is verified in a live managed quota sleep until
+2026-09-12T01:53:37Z (September11 18:53:37 Pacific). The operational wait
+allowance is extended to77 hours to preserve historical wait telemetry, cover
+the known reset, and retain twelve hours afterward. This is confirmed waiting,
+not claimed tick advancement. Completed seed41 primary artifact hashes match.
+The original simulation source remains pinned; only controller routing changes.
