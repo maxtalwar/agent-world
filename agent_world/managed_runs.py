@@ -567,6 +567,7 @@ def _launch_job_controller(job: dict[str, Any]) -> None:
     )
     script.chmod(0o700)
     job["controller"] = {
+        **existing,  # Preserve finalization receipts and retry history on revival.
         "schema_version": 1,
         "status": "running",
         "session": session,

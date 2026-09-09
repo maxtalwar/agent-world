@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -590,12 +591,25 @@ class LaunchService:
     def recover(self):
         with self.connection() as db:
             rows = db.execute("SELECT id FROM requests WHERE state IN ('queued','launching')").fetchall()
-        if rows:
+        # This runs in the independently supervised portal, outside tmux.
+        # A lost tmux server must not also remove its own recovery mechanism.
+        result = subprocess.run(
+            [sys.executable, "-m", "agent_world.controller_watchdog", str(self.root)],
+            cwd=self.root, env=env(), capture_output=True, text=True, timeout=25,
+        )
+        if result.returncode:
+            raise RuntimeError("Controller watchdog failed: " + result.stderr[-1000:])
+        if result.stderr:
+            logging.getLogger(__name__).warning("%s", result.stderr[-2000:])
+        if rows or json.loads(result.stdout).get("active") or self.settings.get("event_monitor_enabled"):
             self.ensure_worker()
 
     def recovery_loop(self):
         while True:
-            self.recover()
+            try:
+                self.recover()
+            except Exception:
+                logging.getLogger(__name__).exception("Portal recovery check failed; will retry")
             time.sleep(30)
 
 

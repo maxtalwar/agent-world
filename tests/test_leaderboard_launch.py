@@ -40,6 +40,14 @@ class LaunchTests(unittest.TestCase):
             db.execute("INSERT INTO requests VALUES(?,?,?,?,?,?)", (
                 self.identifier, "web-test", "review", time.time(), time.time(), json.dumps(self.request)))
 
+    @patch("agent_world.leaderboard_launch.subprocess.run")
+    def test_recovery_checks_controllers_without_queued_requests(self, run):
+        run.return_value = Mock(returncode=0, stdout='{"active": true}', stderr="")
+        with patch.object(self.service, "ensure_worker") as ensure:
+            self.service.recover()
+        ensure.assert_called_once()
+        self.assertIn("agent_world.controller_watchdog", run.call_args.args[0])
+
     def test_working_indicator_requires_recent_event_heartbeat(self):
         event=self.service.folder/"event.json"
         event.write_text(json.dumps({"status":"working","heartbeat_unix":time.time()}))

@@ -302,3 +302,20 @@ and telemetry limits, see [native model connectors](native-model-connectors.md).
 For experiments, town_ledger_output_mode may be "disabled": this removes the
 board from observations, action listings, and prompts and rejects posting.
 It requires town_ledger_seed_mode "none". Existing defaults are unchanged.
+
+### Lost controller sessions
+
+The portal's independently supervised background service checks controller
+liveness every 30 seconds with ordinary local code (no model calls). If an
+active job loses its entire tmux controller session, it recreates that controller
+under the job lock. The controller keeps the original pinned source and handles
+quota deadlines and checkpoint recovery. Completed, deferred, operator-paused,
+and attention-only studies are excluded. Finalization receipts survive restart.
+Failed recovery attempts use a cooldown, recorded in the job's
+`controller-recovery.json`; errors also go to the portal log. The dispatcher is
+recreated when needed even if there are no newly queued requests. This protects
+against tmux session loss while the portal service is available; it cannot run
+while the computer is shut down.
+
+Stop an unwanted worker by its exact tmux session only. Do not terminate a
+process descendant tree: a shared tmux server may own unrelated run sessions.
