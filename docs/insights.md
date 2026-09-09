@@ -27,6 +27,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-08 - Informal commerce changes the Astra comparison differently in each recipe
+
+**Restored v6 Astra settled two formal offers to historical Sol's one, while v6.1 Astra had zero formal settlements but 15 already-classified service-payment transfers to matched Sol's nine.** A 24-world channel audit links all 20 Astra v6/v6.1 classified payment legs to observed access, construction, storage or upkeep benefits, without treating installments or shared benefits as separate trades. The v6.1 shelter funded by two tick-10 handoffs only became active and publicly accessible at tick 28; fulfilled eventually does not mean prompt settlement. Opus 5 also has 16 commercially classified transfer legs behind just three historical v6 formal settlements. Thus the misleading headline is not solely an Astra classifier failure: formal-event accounting, transferred payment legs and completed bargains measure different things. V8.1's separate omitted-kind default and Astra's one-of-seven procurement result remain as previously documented. See [the comparison, definitions and limitations](trade-channel-audit-20260909.md) and [hashed evidence and event annotations](trade-channel-audit-20260909.json). This is retrospective analysis, with original scores and admission unchanged.
+
 ## 2026-09-08 - Grok's ledger activity did not translate into survival
 
 **Grok low posted 407 ledger notes yet retained only 5/20 agents; disabling the feature retained 11/20 and doubled own-capital output from 172 to 348.** Both matched seeds improved in sustained competence (+15.12 and +22.07), while ledger-on made more trade offers (39 versus 25) but completed the same three trades. This is a diagnostic combined-feature effect, not proof that posting itself caused harm. Quota recovery preserved archived histories, usage prefixes and all nine cached decisions; all four cells have clean decision integrity and full accepted-decision usage coverage. See [the comparison and hashed evidence](grok-low-ledger-results-2026-09-08.md). Medium-effort Grok remains deferred.
