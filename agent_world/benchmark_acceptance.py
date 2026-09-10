@@ -42,3 +42,32 @@ def accepted_report(root, path, report):
         c["protocol_compliant"] = True
     result["benchmarks"]["trial"]["certification"] = "eligible_replication"
     return result
+
+
+def single_seed_admission(root, paths):
+    """An exact, hash-bound owner exception; never waives trial integrity."""
+    root = Path(root).resolve()
+    if len(paths) != 1:
+        return None
+    path = Path(paths[0])
+    path = path.resolve() if path.is_absolute() else (root / path).resolve()
+    catalog = root / "data/run-sources.json"
+    if not catalog.exists():
+        return None
+    relative = str(path.relative_to(root))
+    entry = next((e for e in json.loads(catalog.read_text()).get("single_seed_admissions", [])
+                  if e["report_path"] == relative), None)
+    if entry is None:
+        return None
+    report = json.loads(path.read_text())
+    trial = report["benchmarks"]["trial"]
+    protocol = report["benchmarks"]["protocol"]
+    if (hashlib.sha256(path.read_bytes()).hexdigest() != entry["report_sha256"]
+            or not report["run"]["completed"] or not trial["protocol_compliant"]
+            or trial.get("quality_flags") or trial["seed"] != entry["seed"]
+            or protocol["id"] != entry["recipe"]
+            or protocol["recipe_fingerprint_sha256"] != entry["recipe_sha256"]
+            or any(c["model"] != entry["model"] or not c["protocol_compliant"] or c.get("quality_flags")
+                   for c in report["benchmarks"]["cohorts"].values())):
+        raise ValueError("Single-seed admission does not match clean completed evidence")
+    return entry

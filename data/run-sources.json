@@ -1013,6 +1013,24 @@
           "report_path": "runs/managed/web-grok-4-6-a51352e7c42b/seed-41/run-report.json"
         }
       ]
+    },
+    {
+      "model_key": "claude-fable-5-participant-v8-revised",
+      "model_id": "claude-fable-5",
+      "label": "Fable 5",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": true,
+      "variant_note": "Owner-approved single-seed admission due to Fable subscription limits; seed 11 remains paused and preserved. Provisional, not replicated.",
+      "notes": "Owner-approved single-seed admission due to Fable subscription limits; seed 11 remains paused and preserved. Provisional, not replicated.",
+      "runs": [
+        {
+          "run_id": "claude-fable-5-v81-20260907:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/claude-fable-5-v81-20260907/seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
     }
   ],
   "benchmark_acceptances": [
@@ -1216,6 +1234,18 @@
       "approved_at": "2026-09-07",
       "note": "Post-hoc endpoint score with a 10% extra penalty for actual health lost during winter, floored at zero. Original trial identity, frozen scores and certification remain unchanged.",
       "season_damage_multiplier": 1.1
+    }
+  ],
+  "single_seed_admissions": [
+    {
+      "report_path": "runs/managed/claude-fable-5-v81-20260907/seed-41/run-report.json",
+      "report_sha256": "c1556ded49a9c765710880d3770324b2631bf877c2c4ab44eefa625262bb7d17",
+      "model": "claude-fable-5",
+      "recipe": "participant-v8-revised",
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "seed": 41,
+      "approved_at": "2026-09-10",
+      "reason": "Owner-approved single-seed admission due to Fable subscription limits; seed 11 remains paused and preserved. Provisional, not replicated."
     }
   ]
 }

@@ -23,7 +23,7 @@ from urllib.parse import parse_qs, urlsplit
 
 try:
     from .leaderboard_launch import LaunchService, LaunchError
-    from .benchmark_acceptance import accepted_report
+    from .benchmark_acceptance import accepted_report, single_seed_admission
     from .muse_pricing import historical_cost as muse_historical_cost
     from .gemini_pricing import historical_cost
     from .astra_pricing import historical_cost as astra_historical_cost
@@ -31,7 +31,7 @@ try:
     from .capability_reanalysis import policies as scoring_policies, rescore, formula as reanalysis_formula
 except ImportError:
     from leaderboard_launch import LaunchService, LaunchError
-    from benchmark_acceptance import accepted_report
+    from benchmark_acceptance import accepted_report, single_seed_admission
     from muse_pricing import historical_cost as muse_historical_cost
     from gemini_pricing import historical_cost
     from astra_pricing import historical_cost as astra_historical_cost
@@ -224,7 +224,7 @@ class LeaderboardStore:
                     "lab": model_lab(r["model_key"]),
                     "scores": {k: v.get("score") for k, v in scores.items()},
                     "formulas": {k: v.get("formula", "") for k, v in scores.items()},
-                    "status": "Controlled variant" if r["controlled_variant"] else "Replicated",
+                    "status": "Provisional · 1 seed" if len(seeds) == 1 else "Controlled variant" if r["controlled_variant"] else "Replicated",
                     "note": r["variant_note"], "seeds": seeds,
                     "cost": r["api_list_cost_per_run_usd"],
                     "reasoning": r["reasoning_tokens_per_decision"],
@@ -384,7 +384,8 @@ class LeaderboardStore:
             for rejected in aggregate.get("rejected", []):
                 run["warnings"].append(rejected.get("reason", "Evidence excluded").replace("_", " "))
             for r in aggregate["results"]:
-                if not r.get("certified"):
+                admission = single_seed_admission(self.root, [s[0] for s in signatures])
+                if not r.get("certified") and not admission:
                     run["warnings"].append("Awaiting a complete, unique set of required seeds; no replicated rank yet.")
                     continue
                 costs = [x.get("api_list_cost_usd") if x.get("api_list_cost_usd") is not None
@@ -395,8 +396,8 @@ class LeaderboardStore:
                     "lab": model_lab(r["model"]),
                     "scores": {k: v.get("score") for k, v in r["scores"].items()},
                     "formulas": {k: v.get("formula", "") for k, v in r["scores"].items()},
-                    "status": "Certified" if run.get("provenance_acceptance") else r["status"].replace("_", " ").capitalize(),
-                    "seeds": r["required_seeds"], "note": (run["provenance_acceptance"]["reason"] if run.get("provenance_acceptance") else "; ".join(r.get("certification_flags", []))),
+                    "status": "Provisional · 1 seed" if admission else "Certified" if run.get("provenance_acceptance") else r["status"].replace("_", " ").capitalize(),
+                    "seeds": r["required_seeds"], "note": (admission["reason"] if admission else run["provenance_acceptance"]["reason"] if run.get("provenance_acceptance") else "; ".join(r.get("certification_flags", []))),
                     "cost": sum(costs) / len(costs) if costs and all(x is not None for x in costs) else None,
                     "reasoning": r.get("mean_reasoning_tokens_per_call"),
                     "reasoning_estimated": r.get("reasoning_tokens_estimated", False),
