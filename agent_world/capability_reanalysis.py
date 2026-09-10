@@ -166,7 +166,10 @@ def rescore(root, report_paths, spec):
         siblings = [path, path.with_name("run-snapshot.json"), path.with_name("run.jsonl")]
         signatures = tuple((p.stat().st_mtime_ns, p.stat().st_size) for p in siblings)
         results.append(_cell(str(root), str(path.relative_to(root)), json.dumps(spec, sort_keys=True), signatures))
-    from agent_world.benchmark_acceptance import single_seed_admission
+    try:
+        from .benchmark_acceptance import single_seed_admission
+    except ImportError:
+        from benchmark_acceptance import single_seed_admission
     admission = single_seed_admission(root, report_paths)
     required = [admission["seed"]] if admission else spec["required_seeds"]
     if sorted(r["seed"] for r in results) != sorted(required):
