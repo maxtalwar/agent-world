@@ -64,9 +64,9 @@ function renderTable() {
 const stateLabel = state => ({running:'Running',completed:'Completed',status_stale:'Status out of date',waiting_quota:'Quota paused',paused_provider:'Provider paused',waiting_startup_gate:'Waiting for startup',blocked_startup_gate:'Startup blocked',needs_attention:'Needs attention',not_started:'Queued',unknown:'Status unavailable'})[state] || state.replaceAll('_',' ');
 function quotaTiming(cell) {
   const date=new Date(cell.retry_at);
-  if(!cell.retry_at||!Number.isFinite(date.getTime()))return cell.quota_wait_exhausted?'Waiting for quota. Continuation is not yet scheduled.':'Continuation time not yet reported.';
+  if(!cell.retry_at||!Number.isFinite(date.getTime()))return cell.quota_wait_exhausted?'Waiting for quota. Continuation is not yet scheduled.':'Reset time unknown; retry check not yet scheduled.';
   const today=new Date().toDateString()===date.toDateString();
-  return 'Continues '+date.toLocaleString(undefined,{...(today?{}:{month:'short',day:'numeric'}),hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+  return (cell.reset_at?'Continuation scheduled for ':'Reset time unknown; retry check at ')+date.toLocaleString(undefined,{...(today?{}:{month:'short',day:'numeric'}),hour:'numeric',minute:'2-digit',timeZoneName:'short'});
 }
 function studyMarkup(run, grouped=false) {
   const request=(data?.launches||[]).find(r=>r.run_id===run.id);

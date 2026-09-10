@@ -27,6 +27,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-10 - A generic credit error concealed a model-specific weekly cap
+
+**Claude refused Fable calls at 100% model-weekly usage while the same account still had 54% session and 45% general-weekly capacity.** Native OAuth usage exposed the exhausted window only in the structured `limits` array, while the CLI said “out of usage credits” without a reset. This connector observability gap caused repeated backoff checks and misleading continuation labels, not simulated agent behavior: the Fable 5.1 seed-41 world stayed frozen at tick 12. The native reset was 21:00 UTC September 10, and the recovery scheduled 21:01 UTC without changing simulation source. [Evidence and recovery](claude-fable-weekly-reset-20260910.md).
+
 ## 2026-09-09 - A single seed reverses the Sol–Gemini comparison
 
 **Gemini 3.7 beats Sol 70.37 to 32.80 on seed 11, but loses 30.20 to 43.01 on seed 41 under the current v8.1 capability score.** Across 13 accepted paired models, seed 41 reverses four pairwise rankings relative to the pooled leaderboard and seed 11 reverses eight. This is observed run/seed sensitivity, not evidence that a connector caused the difference; single runs per seed cannot distinguish world difficulty from response randomness. The result motivates a consistent, disclosed seed-41 budget exception for Fable, not a claim that seed 41 is unbiased. [Analysis and hashed evidence](fable-seed-selection.md).
