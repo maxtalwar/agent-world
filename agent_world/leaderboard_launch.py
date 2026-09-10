@@ -339,7 +339,11 @@ class LaunchService:
         path = self.root / "runs/jobs" / request["run_id"] / "job.json"
         job = read(path) if path.exists() else {}
         status = (job.get("controller") or {}).get("status")
-        if status not in {"completed", "completed_with_blockers", "needs_attention", "failed", "stopped", "cancelled"} and request["state"] != "needs_attention":
+        cell_attention = any(
+            cell.get("controller_state") == "needs_attention"
+            for cell in job.get("cells", [])
+        )
+        if status not in {"completed", "completed_with_blockers", "needs_attention", "failed", "stopped", "cancelled"} and request["state"] != "needs_attention" and not cell_attention:
             raise LaunchError("A healthy active run cannot leave the monitoring worklist")
         ready = status == "completed" and (job.get("analysis_readiness") or {}).get("status") == "ready"
         if not ready and (resolution not in {"external_blocker", "evidence_decision"} or not reason or not reason.strip()):

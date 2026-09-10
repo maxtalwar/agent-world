@@ -371,6 +371,26 @@ class LaunchTests(unittest.TestCase):
         self.service.monitoring_ack(self.identifier, "external_blocker", "User must renew expired provider login")
         self.assertEqual(self.service.monitoring_worklist(), [])
 
+    def test_cell_attention_can_record_external_blocker_with_running_controller(self):
+        self.service.update(self.identifier, state="supervising")
+        path = self.root / "runs/jobs/web-test/job.json"
+        path.parent.mkdir(parents=True)
+        job = {"controller": {"status": "running"}, "cells": [
+            {"id": "seed-11", "controller_state": "needs_attention",
+             "controller_attention": "decisions_unusable"},
+            {"id": "seed-41", "controller_state": "waiting_startup_gate"},
+        ]}
+        path.write_text(json.dumps(job))
+        with self.assertRaisesRegex(LaunchError, "Repairable faults"):
+            self.service.monitoring_ack(self.identifier)
+        self.service.monitoring_ack(
+            self.identifier, "external_blocker", "Required provider interface unavailable")
+        request = self.service.get(self.identifier)
+        self.assertEqual(request["monitor_resolution"], "external_blocker")
+        self.assertEqual(request["monitor_reviewed_incident"],
+                         self.service.monitoring_incident(job))
+        self.assertEqual(self.service.monitoring_worklist(), [])
+
     def test_batch_holds_requests_until_all_are_accepted(self):
         with patch.object(self.service, "validate_source"), patch.object(self.service, "ensure_worker") as start:
             result = self.service.start_batch({"request_ids": [self.identifier, "missing"]})
