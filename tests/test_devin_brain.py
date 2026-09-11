@@ -82,7 +82,7 @@ class DevinBrainTests(unittest.TestCase):
         )
         with patch(
             "agent_world.devin_brain.run_process",
-            side_effect=[status, models],
+            side_effect=[status, models, subprocess.CompletedProcess([], 0, stdout="Usage: devin acp", stderr="")],
         ) as run:
             brain = DevinBrain(executable="devin", model="swe-1-6-fast")
             error = brain.preflight()
@@ -94,6 +94,19 @@ class DevinBrainTests(unittest.TestCase):
             run.call_args_list[1].args[0],
             ["devin", "models", "list", "--format", "json"],
         )
+
+    def test_preflight_rejects_incompatible_custom_agent_interface(self) -> None:
+        replies = [
+            subprocess.CompletedProcess([], 0, stdout="Logged in", stderr=""),
+            subprocess.CompletedProcess([], 0, stdout='{"models":[{"id":"kimi-k2-7"}]}', stderr=""),
+            subprocess.CompletedProcess([], 2, stdout="", stderr="unexpected argument '--agent-config'"),
+        ]
+        with patch("agent_world.devin_brain.run_process", side_effect=replies) as run:
+            error = DevinBrain(executable="devin", model="kimi-k2-7").preflight()
+        self.assertIn("custom-agent interface", error)
+        self.assertIn("--agent-config", error)
+        self.assertEqual(run.call_args_list[-1].args[0][-1], "--help")
+        self.assertNotIn("--print", run.call_args_list[-1].args[0])
 
     def test_preflight_rejects_missing_login(self) -> None:
         status = subprocess.CompletedProcess(
