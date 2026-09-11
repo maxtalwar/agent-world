@@ -27,6 +27,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-10 - Devin's built-in summarizer did not honor Kimi selection
+
+**A tool-less Devin summarizer accepted `--model kimi-k2-7` but stored the diagnostic session as `swe-2-high`.** The bounded validation returned the requested JSON and zero tool calls, which alone would have looked successful; ACP labeled the model only “Summarizer”. Native session metadata exposed the mismatch. This is a connector model-selection effect, not evidence about Kimi's capabilities. The benchmark remains at tick 0 and the unsupported catalog option was removed. [Validation evidence](kimi-devin-interface-blocker-20260910.md).
+
 ## 2026-09-09 - A single seed reverses the Sol–Gemini comparison
 
 **Gemini 3.7 beats Sol 70.37 to 32.80 on seed 11, but loses 30.20 to 43.01 on seed 41 under the current v8.1 capability score.** Across 13 accepted paired models, seed 41 reverses four pairwise rankings relative to the pooled leaderboard and seed 11 reverses eight. This is observed run/seed sensitivity, not evidence that a connector caused the difference; single runs per seed cannot distinguish world difficulty from response randomness. The result motivates a consistent, disclosed seed-41 budget exception for Fable, not a claim that seed 41 is unbiased. [Analysis and hashed evidence](fable-seed-selection.md).

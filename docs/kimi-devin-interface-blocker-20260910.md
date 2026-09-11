@@ -42,3 +42,9 @@ Preserved artifact SHA256 values:
   "run-usage.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
 }
 ```
+
+## Authorized alternative validation and catalog removal
+
+The user approved testing the summarizer variation and requested removal of Kimi K2.7 from the launch catalog. A first setup attempt timed out fetching team settings; one bounded retry returned the requested diagnostic JSON with zero tool calls. ACP described its model only as “Summarizer”. A read-only query of that diagnostic session (`candle-nutmeg`) in the native session store revealed `model=swe-2-high`, `backend_type=windsurf`, despite `--model kimi-k2-7`. Therefore this built-in variant does not validate Kimi and must not resume the Kimi study. The existing checkpoint is unchanged.
+
+The catalog now excludes `devin:kimi-k2-7` during discovery, including subsequent refreshes. Historical runs remain visible. Validation evidence is saved in the existing job's `connector-validation-20260910/` directory. The catalog and Devin tests pass (23 tests).
