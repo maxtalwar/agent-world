@@ -239,6 +239,26 @@ class DevinBrain:
                 "available on this account; run `devin models list`."
             )
         self.resolved_model = resolved
+        # Model availability does not imply that this CLI supports our custom
+        # system instructions and empty tool set. Validate the exact argument
+        # shape with help only, before spending any inference or launching cells.
+        try:
+            with tempfile.TemporaryDirectory(prefix="agent-world-devin-preflight-") as directory:
+                config = _write_agent_config(Path(directory))
+                interface = run_process(
+                    [*self._command(config), "--help"],
+                    text=True, capture_output=True,
+                    timeout=min(self.timeout_seconds, 30),
+                    env=_subscription_environment(), check=False,
+                )
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return f"Devin provider unavailable: connector interface preflight failed: {exc}"
+        if interface.returncode != 0:
+            return (
+                "Devin provider unavailable: installed CLI rejects the custom-agent "
+                "interface required for system instructions and an empty tool set: "
+                + _failure_detail(interface.stdout, interface.stderr)
+            )
         return None
 
     def copy_preflight_state_from(self, other: Any) -> None:
