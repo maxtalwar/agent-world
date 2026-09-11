@@ -9,6 +9,12 @@ from tests import test_leaderboard_launch
 
 
 class CatalogTests(unittest.TestCase):
+    def test_unsupported_kimi_devin_is_excluded_from_discovery(self):
+        with patch("agent_world.leaderboard_models.command_models", return_value=[
+            ("kimi-k2-7", "Kimi K2.7", None), ("kimi-k2-6", "Kimi K2.6", None)]):
+            entries, _ = model_catalog({"x": {"brains": ["devin"]}})
+        self.assertEqual(entries, [])  # The later user decision disconnects all Devin models.
+
     def test_live_catalog_defaults_and_recipe_effort(self):
         sources = {"x": {"brains": ["codex", "claude", "antigravity", "muse"],
             "models": [{"brain": "codex", "id": "gpt-5.6-luna-max"},

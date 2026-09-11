@@ -231,6 +231,11 @@ def model_catalog(sources, client=None, environment=None):
     def add(brain, model, name=None, efforts=None, variants=None):
         if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/+\[\]\-]{0,127}", model):
             return
+        # The native Devin catalog advertises Kimi, but our required custom
+        # agent interface is unsupported. Keep it out until a replacement
+        # connector is validated; historical evidence remains untouched.
+        if brain == "devin" and model == "kimi-k2-7":
+            return
         if not decision_model_identity(model, name):
             return
         entries[brain + ":" + model] = {
