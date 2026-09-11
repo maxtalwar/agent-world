@@ -165,6 +165,14 @@ def board_title(recipe: str) -> str:
     return {"participant-v8-revised": "v8.1", "participant-v6-1": "v6.1"}.get(recipe) or recipe.replace("participant-", "").replace("-", " ")
 
 
+def quota_retry_at(schedule, latest, cell, attention):
+    # The current wait event supersedes a controller deadline left from an
+    # earlier quota episode (e.g. weekly reset followed by five-hour exhaustion).
+    if schedule.get("retry_at") and attention != "quota_wait_budget_exhausted":
+        return schedule["retry_at"]
+    return latest.get("next_auto_resume_at_utc") or cell.get("next_auto_resume_at_utc")
+
+
 def new_board(recipe: str, digest: str = "") -> dict:
     return {
         "id": recipe + ("@" + digest if digest else ""),
@@ -334,8 +342,7 @@ class LeaderboardStore:
                 "state": display_state, "operational_state": state,
                 "attention": attention,
                 "quota_wait_exhausted": attention == "quota_wait_budget_exhausted",
-                "retry_at": ((latest.get("next_auto_resume_at_utc") or cell.get("next_auto_resume_at_utc")
-                              or (schedule.get("retry_at") if attention != "quota_wait_budget_exhausted" else None)) if state == "waiting_quota" else None),
+                "retry_at": (quota_retry_at(schedule, latest, cell, attention) if state == "waiting_quota" else None),
                 "reset_at": schedule.get("reset_at"),
             })
             if job.get("kind") == "experiment":

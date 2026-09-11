@@ -66,7 +66,7 @@ function quotaTiming(cell) {
   const date=new Date(cell.retry_at);
   if(!cell.retry_at||!Number.isFinite(date.getTime()))return cell.quota_wait_exhausted?'Waiting for quota. Continuation is not yet scheduled.':'Continuation time not yet reported.';
   const today=new Date().toDateString()===date.toDateString();
-  return 'Continues '+date.toLocaleString(undefined,{...(today?{}:{month:'short',day:'numeric'}),hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+  return (cell.reset_at?'Continues ':'Reset time unknown; retry check at ')+date.toLocaleString(undefined,{...(today?{}:{month:'short',day:'numeric'}),hour:'numeric',minute:'2-digit',timeZoneName:'short'});
 }
 function studyMarkup(run, grouped=false) {
   const request=(data?.launches||[]).find(r=>r.run_id===run.id);
