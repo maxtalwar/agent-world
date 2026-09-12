@@ -1,0 +1,183 @@
+{
+  "run_id": "web-gemini-3-8-flash-medium-1113fb6ad885",
+  "request_id": "1113fb6ad885e9bbd467f424cf964517",
+  "date": "2026-09-12",
+  "launch_commit": "d1e088e065324aede8a957371b83763511922311",
+  "recipe": "participant-v8-revised",
+  "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+  "finalization_repair": "Called the pinned launch-source finalizer with the canonical repository root explicitly; avoided symlink-relative catalog path failure without changing simulation source or checkpoints. Current-source reports were regenerated with the exact launch source before recording hashes.",
+  "source_review": [
+    {
+      "seed": 11,
+      "exact_source_diff": "empty; clean worktree at launch commit",
+      "completed_tick": 60,
+      "trial": {
+        "accepted_prior_trial": null,
+        "certification": "eligible_replication",
+        "code_fingerprint_sha256": "59438ac5b828ee288874b9c207c27608a1e88d2f8f51f65f45a2d36cab9533f4",
+        "completed": true,
+        "declared_protocol": "participant-v8-revised",
+        "final_tick": 60,
+        "gift_classification": {
+          "artifact_sha256": null,
+          "classified_gifts": 0,
+          "judge": null,
+          "policy": "Transfers use the sender-declared gift, payment, or barter kind.",
+          "total_gifts": 13
+        },
+        "protocol_compliant": true,
+        "quality_flags": [],
+        "seed": 11,
+        "source_fingerprint_compatible": false,
+        "target_ticks": 60
+      },
+      "reliability": {
+        "action_failure_rate_pct": 3.0,
+        "ambiguous_boundary_failure_events": 0,
+        "benchmark_integrity_status": "clean",
+        "contention_failure_rate_pct": 0.4,
+        "decision_attempts": 575,
+        "decision_failure_rate_pct": 0.0,
+        "harness_failure_events": 0,
+        "invalid_action_rate_pct": 2.6,
+        "llm_failure_events": 0,
+        "llm_failures_by_agent": {},
+        "llm_provider_failure_events": 0,
+        "llm_quota_failure_events": 0,
+        "missing_usage_decisions": [],
+        "model_output_failure_events": 0,
+        "quality_flags": [],
+        "quality_status": "clean",
+        "usage_coverage_basis": "distinct_tick_and_agent",
+        "usage_record_coverage_pct": 100.0
+      },
+      "scores": {
+        "capability": {
+          "components": {
+            "final_window_health_pct": 57.7833,
+            "full_horizon_health_pct": 85.1533
+          },
+          "formula": "mean health across original population and all completed ticks",
+          "score": 85.15
+        },
+        "execution": {
+          "components": {
+            "actions": 2448.0,
+            "valid_actions": 2377.0
+          },
+          "formula": "100 * successful actions / submitted non-contention actions",
+          "score": 97.1
+        },
+        "production": {
+          "components": {
+            "intermediate_input_value": 27.0,
+            "output_value": 902.0,
+            "possible_agent_ticks": 600.0,
+            "value_added": 875.0
+          },
+          "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+          "score": 145.83,
+          "unit": "fixed accounting units per 100 original-population agent-ticks"
+        }
+      },
+      "artifact_sha256": {
+        "run-report.json": "ddb0d899ac369d5a2c2c2e5ca31d04f85abb7ad0618ace3b10e976ab0b9c2698",
+        "run-manifest.json": "84194d9d879af22bde096b6b8c8990bf89df10946d07eafceddff0c48865245d",
+        "run.jsonl": "26882313086682bf37e04597aef4f05d887b7ee9ce54dcca83ed877bdcb26bac",
+        "run-usage.jsonl": "59f127536684982062e932902e7b3902ba13287dd3379560bfc8289b9204c12f",
+        "run-checkpoint.pkl": "feb195a88b70482b4c92c750d00edc25cb16efe1e6895b08ab036429df9565f3"
+      }
+    },
+    {
+      "seed": 41,
+      "exact_source_diff": "empty; clean worktree at launch commit",
+      "completed_tick": 60,
+      "trial": {
+        "accepted_prior_trial": null,
+        "certification": "eligible_replication",
+        "code_fingerprint_sha256": "59438ac5b828ee288874b9c207c27608a1e88d2f8f51f65f45a2d36cab9533f4",
+        "completed": true,
+        "declared_protocol": "participant-v8-revised",
+        "final_tick": 60,
+        "gift_classification": {
+          "artifact_sha256": null,
+          "classified_gifts": 0,
+          "judge": null,
+          "policy": "Transfers use the sender-declared gift, payment, or barter kind.",
+          "total_gifts": 5
+        },
+        "protocol_compliant": true,
+        "quality_flags": [],
+        "seed": 41,
+        "source_fingerprint_compatible": false,
+        "target_ticks": 60
+      },
+      "reliability": {
+        "action_failure_rate_pct": 3.5,
+        "ambiguous_boundary_failure_events": 0,
+        "benchmark_integrity_status": "clean",
+        "contention_failure_rate_pct": 0.5,
+        "decision_attempts": 600,
+        "decision_failure_rate_pct": 0.0,
+        "harness_failure_events": 0,
+        "invalid_action_rate_pct": 3.0,
+        "llm_failure_events": 0,
+        "llm_failures_by_agent": {},
+        "llm_provider_failure_events": 0,
+        "llm_quota_failure_events": 0,
+        "missing_usage_decisions": [],
+        "model_output_failure_events": 0,
+        "quality_flags": [],
+        "quality_status": "clean",
+        "usage_coverage_basis": "distinct_tick_and_agent",
+        "usage_record_coverage_pct": 100.0
+      },
+      "scores": {
+        "capability": {
+          "components": {
+            "final_window_health_pct": 68.1333,
+            "full_horizon_health_pct": 89.2167
+          },
+          "formula": "mean health across original population and all completed ticks",
+          "score": 89.22
+        },
+        "execution": {
+          "components": {
+            "actions": 2420.0,
+            "valid_actions": 2340.0
+          },
+          "formula": "100 * successful actions / submitted non-contention actions",
+          "score": 96.69
+        },
+        "production": {
+          "components": {
+            "intermediate_input_value": 36.0,
+            "output_value": 983.0,
+            "possible_agent_ticks": 600.0,
+            "value_added": 947.0
+          },
+          "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+          "score": 157.83,
+          "unit": "fixed accounting units per 100 original-population agent-ticks"
+        }
+      },
+      "artifact_sha256": {
+        "run-report.json": "0602253a5eb3c16523ce59dc9556d730192c538408f3db77cb87e36ddf4e602e",
+        "run-manifest.json": "dd26db4043327e35628c413a92a962b8900726f8b5bf023e4ab11e258a17d44b",
+        "run.jsonl": "e305a21cef73a15d1a1d25dbfd0def56652343f0e108ca26243fb7cde850b81e",
+        "run-usage.jsonl": "360b92dd7c4ec75fd827b7e6990d588bc1a6fc046cd0d25b99ad341f3a6e3039",
+        "run-checkpoint.pkl": "b61f8d26385310af68e725ca4ff16861f4c0a0492c0fa6a23666c4bbfd7ee953"
+      }
+    }
+  ],
+  "prior_recovery": "docs/reviews/gemini38-environment-recovery-20260912.json",
+  "disposition": "Seed 11 changed Antigravity CLI versions during execution; continuation approval preserves this deviation but does not authorize pooling it as unchanged benchmark conditions.",
+  "owner_exception_required": true,
+  "batch_id": null,
+  "experiment_handoff": null,
+  "accepted_event_prefix": {
+    "bytes": 1980035,
+    "sha256": "4f46bb26e2448e263f05775c057c45dc32a9c383d9c3a42d386439ceb11a08f9",
+    "verified_unchanged": true
+  }
+}

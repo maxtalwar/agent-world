@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-09-12T00:29:00Z",
+  "updated_at_utc": "2026-09-12T19:33:00Z",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -1070,6 +1070,34 @@
           "seed": 41,
           "report_path": "runs/managed/web-claude-opus-4-5-fef651c24aa4/seed-41/run-report.json",
           "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gemini-3.8-flash-medium-participant-v8-revised",
+      "model_id": "gemini-3.8-flash-medium",
+      "label": "Gemini 3.8 Flash Medium",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "Seed 11 changed Antigravity CLI versions during execution; continuation approval preserves this deviation but does not authorize pooling it as unchanged benchmark conditions.",
+      "notes": "See docs/reviews/gemini38-completion-20260912.md. Seed 41 is clean; seed 11 retains changed CLI conditions and is not pooled.",
+      "runs": [
+        {
+          "run_id": "web-gemini-3-8-flash-medium-1113fb6ad885:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/web-gemini-3-8-flash-medium-1113fb6ad885/seed-11/run-report.json",
+          "kind": "diagnostic",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Seed 11 changed Antigravity CLI versions during execution; continuation approval preserves this deviation but does not authorize pooling it as unchanged benchmark conditions."
+        },
+        {
+          "run_id": "web-gemini-3-8-flash-medium-1113fb6ad885:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/web-gemini-3-8-flash-medium-1113fb6ad885/seed-41/run-report.json",
+          "kind": "benchmark_trial",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Clean seed 41 retained separately; no qualifying seed 11 for the required paired score, and no seed-41-only admission exception."
         }
       ]
     }
