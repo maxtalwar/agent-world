@@ -176,10 +176,12 @@ async function refresh(){
     const nextData=await response.json();
     received=true;data=nextData;render();
     $('error').hidden=!data.warnings.length;$('error').textContent=data.warnings.join(' ');
-    $('sync-status').textContent='Updated '+relative(data.updated_at)+' · refreshes every '+data.refresh_seconds+'s';
+    $('sync-status').textContent='';
+    $('sync-status').hidden=true;
   }catch(error){
     console.error(received?'Leaderboard rendering failed':'Leaderboard request failed',error);
     $('error').hidden=false;$('error').textContent=received?'The leaderboard data loaded, but the page could not display it. Retrying automatically.':data?'Connection interrupted. Showing the last successful update; retrying automatically.':'Could not reach the leaderboard. Check that the host is awake and Tailscale is connected.';
+    $('sync-status').hidden=false;
     $('loading').hidden=true;$('sync-status').textContent=received?'Display error':'Connection interrupted';
   }finally{$('refresh').disabled=false;}
 }
