@@ -411,7 +411,10 @@
         this.poly([[a[0],a[1]+17],[b[0],b[1]+17],[b[0],b[1]+22],[a[0],a[1]+22]],'#7a89714d');
       }
       for(let y=0;y<height;y++)for(let x=0;x<width;x++){
-        const tile=this.snapshot.tiles[y][x],terrain=tile.terrain,palette=C[terrain==='plains'?'grass':terrain]||C.grass;
+        const tile=this.snapshot.tiles[y][x],terrain=tile.terrain;
+        // Buildings clear the tree, so their forest floor should read as open grass too.
+        const clearedForest=terrain==='forest'&&tile.structures?.length;
+        const palette=C[terrain==='plains'||clearedForest?'grass':terrain]||C.grass;
         this.tile(x,y,palette[Math.floor(hash(x,y)*palette.length)]);
         if(terrain==='water'){
           // Shorelines remain attached to their native tile edges at every yaw.
