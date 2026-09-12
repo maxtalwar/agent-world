@@ -53,3 +53,18 @@ context.run.cells=[{seed:11,tick:27,target:60,state:'needs_attention',attention:
 html=vm.runInContext('studyMarkup(run)',context);
 assert.match(html,/Continuation needs approval/);
 assert.doesNotMatch(html,/Quota paused|Continues/);
+
+// An incomplete run is not an admission decision. Keep meaningful warnings,
+// and retain diagnostic classification once all seeds have actually completed.
+context.run.warnings=['diagnostic only','diagnostic only','Specific evidence concern'];
+context.run.cells=[{seed:11,tick:54,target:60,state:'running'}, {seed:41,tick:60,target:60,state:'completed'}];
+html=vm.runInContext('studyMarkup(run)',context);
+assert.doesNotMatch(html,/diagnostic only/);
+assert.match(html,/Specific evidence concern/);
+context.run.cells[0].state='waiting_quota';
+html=vm.runInContext('studyMarkup(run)',context);
+assert.doesNotMatch(html,/diagnostic only/);
+context.run.cells[0].state='completed';context.run.cells[0].tick=60;
+html=vm.runInContext('studyMarkup(run)',context);
+assert.equal((html.match(/diagnostic only/g)||[]).length,1);
+console.log('Diagnostic labels distinguish unfinished and completed studies');

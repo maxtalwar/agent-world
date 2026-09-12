@@ -199,12 +199,17 @@ class LaunchService:
         return {
             "enabled": not c["blocker"], "blocker": c["blocker"],
             "supervisor": {"model": MODEL, "effort": EFFORT},
-            "warnings": [("Some optional Claude variants could not be verified at the last catalog refresh. Listed models remain available." if w.startswith("Some Claude model availability checks failed") else w) for w in c.get("warnings", [])],
+            # These cached warnings came from the retired speculative /model probes,
+            # not the native catalog. Actual harness discovery failures still show.
+            "warnings": [w for w in c.get("warnings", []) if not w.startswith((
+                "Some Claude model availability checks failed", "Some optional Claude variants could not be verified"))],
             "recipes": [{**{k: v for k, v in s.items() if k not in {"source", "models", "execution_blocker"}},
                          "title": recipe_label(s["recipe_id"]),
                          "models": [{k: v for k, v in m.items() if k not in {"model", "variants", "efforts"}}
                                     for m in for_recipe(c.get("models", []), s)]}
-                        for s in c["sources"].values()],
+                        for s in sorted(c["sources"].values(), key=lambda s: tuple(
+                            int(n) for n in re.findall(r"\d+", recipe_label(s["recipe_id"]))), reverse=True)
+                        if s["recipe_id"] != "participant-v8-action-review"],
         }
 
     def get(self, identifier):

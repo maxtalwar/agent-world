@@ -81,7 +81,8 @@ function studyMarkup(run, grouped=false) {
   const repairing=affected&&agentWorking;
   const provenanceReview=run.readiness_status==='needs_provenance_review';
   const reviewedEvidence=provenanceReview&&request?.monitor_reviewed&&request?.monitor_resolution==='evidence_decision';
-  const finishedExperiment=run.is_experiment&&run.cells.length&&run.cells.every(c=>cellState(c)==='completed');
+  const allCompleted=run.cells.length>0&&run.cells.every(c=>cellState(c)==='completed');
+  const finishedExperiment=run.is_experiment&&allCompleted;
   const status=executionReview?'Continuation needs approval':finishedExperiment?'Completed':run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':provenanceReview?(agentWorking?'Review in progress':reviewedEvidence?'Review needs a decision':'Review pending'):quota?'Quota paused':'In study';
   const message=executionReview?'The harness updated during recovery. Continuing with that change needs approval.':repairing?'Run paused after an issue. The monitoring agent is working on a fix.':
     affected?'Run paused after an issue. Monitoring follow-up is pending.' : provenanceReview?(agentWorking?'The monitoring agent is reviewing the completed results.':reviewedEvidence?'Recovery review is complete; admission needs a decision.':'Completed results are awaiting a provenance review.') : '';
@@ -94,7 +95,7 @@ function studyMarkup(run, grouped=false) {
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
     (!sharedTiming?[...new Set(run.cells.filter(c=>cellState(c)==='waiting_quota').map(c=>quotaTiming(c)))].map(t=>'<p class="study-note">'+esc(t)+'</p>').join(''):'')+
     (sharedTiming&&!grouped?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
-    [...new Set(run.warnings)].filter(w=>!provenanceReview||w!=='diagnostic only').map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
+    [...new Set(run.warnings)].filter(w=>w!=='diagnostic only'||(allCompleted&&!provenanceReview)).map(w=>'<p class="attention">'+esc(w)+'</p>').join('')+
     (diagnostics.length?'<details class="study-diagnostics"><summary>Technical details</summary>'+diagnostics.map(d=>'<p>'+esc(d)+'</p>').join('')+'</details>':'')+
     '<p class="study-note">'+(affected?'Last run update ':'Controller updated ')+esc(relative(run.checked_at))+'</p></article>';
 }

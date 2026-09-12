@@ -80,17 +80,30 @@ class CatalogTests(unittest.TestCase):
                 self.assertEqual(command_models("zcode", {"ZCODE_CONFIG_PATH": str(config)}),
                                  [("glm-5.3", "GLM-5.3", ["max"])])
 
-    def test_explicit_claude_versions_require_native_validation(self):
+    def test_claude_catalog_does_not_probe_other_providers_models(self):
         def catalog(brain, env):
-            return [("claude-opus-5", "Claude Opus 5", None)] if brain == "claude" else [
+            return [("claude-opus-5[1m]", "Claude Opus 5[1M]", None)] if brain == "claude" else [
                 ("anthropic/claude-opus-4.8", "Anthropic: Claude Opus 4.8", None),
                 ("anthropic/claude-opus-9", "Anthropic: Claude Opus 9", None)]
         with patch("agent_world.leaderboard_models.command_models", side_effect=catalog), \
-             patch("agent_world.leaderboard_models.claude_explicit_model", side_effect=lambda m,e:m=='claude-opus-4-8'):
-            entries, _ = model_catalog({"x": {"brains": ["claude", "openrouter"]}})
-        chosen=for_recipe(entries, {"brains": ["claude", "openrouter"], "defaults": {"reasoning_effort": "medium"}})
-        self.assertEqual(next(m for m in chosen if m["name"]=='Claude Opus 4.8')["brain"], "claude")
-        self.assertFalse(any(m["brain"]=='claude' and m["model"]=='claude-opus-9' for m in entries))
+             patch("agent_world.leaderboard_models.subprocess.run") as probe:
+            entries, warnings = model_catalog({"x": {"brains": ["claude", "openrouter"]}})
+        probe.assert_not_called()
+        self.assertEqual(warnings, [])
+        self.assertEqual([m["model"] for m in entries if m["brain"] == "claude"], ["claude-opus-5[1m]"])
+
+    def test_single_claude_context_variant_has_simple_name_and_exact_launch_id(self):
+        def entry(model, name):
+            return {"key": "claude:"+model, "model": model, "name": name,
+                    "brain": "claude", "lab": "anthropic", "efforts": None, "variants": None}
+        extended = entry("claude-opus-5[1m]", "Claude Opus 5[1M]")
+        source = {"brains": ["claude"], "defaults": {"reasoning_effort": "medium"}}
+        result = for_recipe([extended], source)
+        self.assertEqual(result[0]["name"], "Claude Opus 5")
+        self.assertEqual(result[0]["model"], "claude-opus-5[1m]")
+        self.assertEqual(extended["name"], "Claude Opus 5[1M]")
+        variants = for_recipe([extended, entry("claude-opus-5", "Claude Opus 5")], source)
+        self.assertEqual({m["name"] for m in variants}, {"Claude Opus 5", "Claude Opus 5[1M]"})
 
     def test_decision_catalog_rejects_media_and_requires_capabilities(self):
         from agent_world.leaderboard_models import openrouter_decision_model, decision_model_identity

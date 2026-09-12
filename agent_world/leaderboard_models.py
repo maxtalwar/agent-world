@@ -6,9 +6,6 @@ the managed startup gate still verifies account access before model calls.
 import re
 import json
 import os
-import time
-import tempfile
-import threading
 import shutil
 import subprocess
 from pathlib import Path
@@ -43,39 +40,6 @@ def lab_for(model):
             return lab
     return "unknown"
 
-
-
-_NATIVE_CHECKS = {}
-_NATIVE_LOCK = threading.Lock()
-
-def claude_explicit_model(model, environment):
-    """Validate a current connector candidate with Claude's zero-inference /model command."""
-    binary = shutil.which("claude", path=environment.get("PATH"))
-    if not binary:
-        return False
-    key = (str(Path(binary).resolve()), Path(binary).stat().st_mtime_ns, model)
-    with _NATIVE_LOCK:
-        cached = _NATIVE_CHECKS.get(key)
-        if cached and time.monotonic() - cached[0] < 600:
-            return cached[1]
-    child = dict(environment)
-    for name in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
-                 "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY", "CLAUDECODE"):
-        child.pop(name, None)
-    with tempfile.TemporaryDirectory(prefix="aw-model-check-") as cwd:
-        result = subprocess.run([binary, "-p", "--output-format", "json", "--no-session-persistence",
-            "--settings", '{"disableAllHooks":true}', "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}'],
-            input="/model " + model, cwd=cwd, env=child, capture_output=True, text=True, timeout=25, check=True)
-    response = json.loads(result.stdout)
-    if response.get("result", "").startswith("API error:"):
-        raise ValueError("Claude model availability check is temporarily unavailable")
-    selected = re.search(r"^Set model to `([^`]+)` for this session only", response.get("result", ""))
-    expected = friendly(model).removeprefix("Claude ").lower()
-    valid = (not response.get("is_error") and response.get("num_turns") == 0
-             and bool(selected) and selected[1].lower() == expected)
-    with _NATIVE_LOCK:
-        _NATIVE_CHECKS[key] = (time.monotonic(), valid)
-    return valid
 
 
 def decision_model_identity(model, name=""):
@@ -286,23 +250,9 @@ def model_catalog(sources, client=None, environment=None):
                     add(brain, model, group["name"], list(group["variants"]), group["variants"])
             except Exception:
                 warnings.append(CONNECTORS.get(brain, brain) + " catalog unavailable; no historical models substituted.")
-    # The short Claude menu contains aliases, not every supported version.
-    # Other live catalogs provide candidates only; Claude must accept each exact version.
-    if "claude" in brains and any(m["brain"] == "claude" for m in entries.values()):
-        candidates = set()
-        for entry in list(entries.values()):
-            model = re.sub(r"\[1m\]$", "", entry["model"].split("/")[-1], flags=re.I).replace(".", "-")
-            if re.fullmatch(r"claude-(?:opus|sonnet|haiku|fable)-[0-9]+(?:-[0-9]+){0,3}", model):
-                if "claude:" + model not in entries:
-                    candidates.add(model)
-        with ThreadPoolExecutor(max_workers=4) as pool:
-            checks = {pool.submit(claude_explicit_model, model, environment): model for model in candidates}
-            for future in as_completed(checks):
-                try:
-                    if future.result():
-                        add("claude", checks[future], efforts=["low", "medium", "high"])
-                except (OSError, ValueError, subprocess.SubprocessError):
-                    warnings.append("Some optional Claude variants could not be verified at the last catalog refresh. Listed models remain available.")
+    # Use each harness's own advertised catalog. Models listed by another
+    # provider are not evidence of native availability; probing every guessed
+    # Claude version caused unnecessary requests and stale availability warnings.
     return sorted(entries.values(), key=lambda m: (m["lab"], m["name"], m["brain"])), sorted(set(warnings))
 
 
@@ -320,6 +270,17 @@ def for_recipe(entries, source):
             continue
         result.append({**m, "model": m["variants"].get(effort) if m["variants"] else m["model"],
                        "price_note": ("No published API-equivalent price" if m["model"] == "gpt-5.3-codex-spark" else m.get("price_note"))})
+    # A lone context variant needs no qualifier in the picker. Preserve the
+    # exact advertised ID for launch and keep qualifiers when variants coexist.
+    claude_variants = {}
+    for m in result:
+        if m["brain"] == "claude":
+            base = re.sub(r"\[1m\]$", "", m["model"], flags=re.I)
+            claude_variants.setdefault(base, set()).add(m["model"])
+    for m in result:
+        base = re.sub(r"\[1m\]$", "", m["model"], flags=re.I)
+        if m["brain"] == "claude" and len(claude_variants[base]) == 1:
+            m["name"] = re.sub(r"\s*\[1m\]$", "", m["name"], flags=re.I)
     native = {"openai": "codex", "anthropic": "claude", "google": "antigravity",
               "meta": "muse", "xai": "grok", "zai": "zcode"}
     result.sort(key=lambda m: (m["brain"] != native.get(m["lab"]), m["brain"] == "openrouter", m["name"]))

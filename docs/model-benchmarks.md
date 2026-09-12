@@ -92,5 +92,7 @@ The [v6 leaderboard](model-leaderboard-v6.md),
 Their formulas and evidence are unchanged. Historical 50-tick runs and offline
 counterfactual scores are not v8 benchmark results.
 
-Original participant-v8 and participant-v8-action-review remain selectable,
-immutable historical recipes. Their results are not pooled with revised v8.
+Original participant-v8 remains selectable in the benchmark portal. The immutable
+participant-v8-action-review recipe is retained for historical scoring review and
+CLI use, but is excluded from the portal launch picker. Their results are not
+pooled with revised v8.

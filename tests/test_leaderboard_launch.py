@@ -94,9 +94,23 @@ class LaunchTests(unittest.TestCase):
             options = self.service.public_options()
             self.assertEqual(options["recipes"][0]["models"][0]["name"], "Claude Sonnet 5")
             self.assertNotIn("execution_blocker", options["recipes"][0])
-            self.assertNotIn("rate limit", options["warnings"][0])
+            self.assertEqual(options["warnings"], [])
             with self.assertRaisesRegex(LaunchError, "compatibility review"):
                 self.service.preview({"recipe": source["id"], "brain": "claude", "model": "claude-sonnet-5"})
+
+    def test_public_recipes_are_descending_and_exclude_internal_review(self):
+        recipes = ["participant-v6-1", "participant-v8-action-review", "participant-v7",
+                   "participant-v8", "participant-v6", "participant-v8-revised"]
+        catalog = {"sources": {r: {"id": r, "recipe_id": r, "defaults": {"reasoning_effort": "medium"},
+                                  "brains": []} for r in recipes}, "models": [], "blocker": None,
+                   "warnings": ["Some optional Claude variants could not be verified at the last catalog refresh.",
+                                "Claude Code catalog unavailable; no historical models substituted."]}
+        with patch.object(self.service, "catalog", return_value=catalog):
+            options = self.service.public_options()
+        self.assertEqual([r["title"] for r in options["recipes"]], [
+            "Participant v8.1", "Participant v8", "Participant v7", "Participant v6.1", "Participant v6"])
+        self.assertEqual(options["warnings"], ["Claude Code catalog unavailable; no historical models substituted."])
+        self.assertIn("participant-v8-action-review", catalog["sources"])
 
     def test_empty_recipe_catalog_has_an_explicit_blocker(self):
         self.service.settings.update(launch_enabled=True, supervisor_binary=__file__)
