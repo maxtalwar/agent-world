@@ -300,17 +300,81 @@
       ]);
       this.line([[0,-31],[0,-10]],'#8c7957',1);this.rect(-3,-14,6,5,'#c5ac7a');
     }
-    construction(){
-      this.groundPatch('#b4a783',32);
-      this.groundPoly([[-24,0],[0,12],[24,0],[0,-12]],'#c4b794','#8f8b71');
-      for(const [x,y] of [[-24,0],[0,12],[24,0],[0,-12]]){
-        const [px,py]=this.groundPoint(x,y);this.rect(px-1.5,py-29,3,30,'#b28d5e');this.rect(px-1.5,py-29,3,3,'#d9be89');
+    construction(type,ground=true){
+      // Use the finished structure's footprint and materials, with visible missing work.
+      const beam=(points,color='#c8a573',width=2)=>this.line(points.map(p=>this.project(...p)),color,width);
+      const board=(points,fill='#c5a574')=>this.mesh([{points,fill}]);
+      if(type==='well'){
+        if(ground)this.groundPatch('#b4a783',26);
+        // Excavated shaft and a partly laid stone ring; no house-sized scaffolding.
+        this.ellipse(0,0,13,7,'#776a50');this.ellipse(0,-1,9,4,'#474b3b');
+        const faces=[],point=(r,a,z)=>[r*Math.cos(a),r*Math.sin(a),z];
+        for(let i=0;i<10;i++){
+          const a=i*Math.PI/6+.025,b=(i+1)*Math.PI/6-.025,h=i<7?5:2;
+          faces.push({points:[point(.24,a,0),point(.24,b,0),point(.24,b,h),point(.24,a,h)],fill:'#a7af9e'},
+            {points:[point(.17,b,0),point(.17,a,0),point(.17,a,h),point(.17,b,h)],fill:'#788575'},
+            {points:[point(.24,a,h),point(.24,b,h),point(.17,b,h),point(.17,a,h)],fill:'#d0ceaf'});
+        }
+        this.mesh(faces);
+        for(const [x,y] of [[.3,.08],[.29,.2]])board([[x-.045,y-.045,0],[x+.045,y-.045,0],[x+.045,y+.045,2],[x-.045,y+.045,2]],'#b9bea8');
+        return;
       }
-      this.groundLine([[-24,0,29],[0,12,29],[24,0,29],[0,-12,29],[-24,0,29]],'#c8a573',3);
-      this.groundLine([[-20,0],[-4,8]],'#d4b785',3);this.groundLine([[-20,-4],[-4,4]],'#d4b785',3);
+      if(type==='storage'){
+        if(ground)this.groundPatch('#b7ae82',25);
+        board([[-.24,-.24,1],[.24,-.24,1],[.24,.24,1],[-.24,.24,1]],'#b99060');
+        const faces=[];
+        for(const z of [2,7])for(const side of ['x','y']){
+          const p=(u,h)=>side==='x'?[-.24,u,h]:[u,-.24,h];
+          faces.push({points:[p(-.24,z),p(.24,z),p(.24,z+4),p(-.24,z+4)],fill:side==='x'?'#b08d5e':'#c5a574'});
+        }
+        this.mesh(faces);
+        for(const [x,y] of [[-.21,-.21],[.21,-.21],[-.21,.21],[.21,.21]])beam([[x,y,0],[x,y,18]],'#879186',2);
+        beam([[-.16,.04,2],[.18,.04,2]],'#dbc293',3);
+        beam([[-.16,.14,2],[.18,.14,2]],'#dbc293',3);
+        return;
+      }
+      if(type==='farm_plot'){
+        this.groundPatch('#927557',34);
+        for(let row=0;row<4;row++)beam([[row*.19-.3,-.32,0],[row*.19-.3,.35,0]],row<2?'#6e5b45':'#aa8a61',2);
+        for(const [x,y] of [[-.32,-.32],[.32,.32]])beam([[x,y,0],[x,y,5]],'#d4b98c',2);
+        return;
+      }
+      if(type==='road'){
+        this.groundPatch('#a79878',38);
+        this.groundPoly([[-34,0],[0,-17],[5,-8],[-18,6]],'#c8bea0');
+        for(const [x,y] of [[-11,-4],[-4,-8],[3,-3],[10,2],[-5,6]])this.groundPoly([[x-2,y],[x,y-1],[x+3,y],[x,y+2]],'#d4c9a6');
+        return;
+      }
+      if(type==='irrigation'){
+        this.groundPatch('#bcb68b');
+        this.groundLine([[-25,0],[0,12],[25,0]],'#a38c67',9);
+        this.groundLine([[-25,0],[0,12],[25,0]],'#6f624b',5);
+        this.groundLine([[-25,-3],[-5,7]],'#cbc5a3',2);
+        this.groundLine([[-25,3],[-5,13]],'#cbc5a3',2);
+        return;
+      }
+      if(['shelter','house','workshop'].includes(type)){
+        const r=.36,h=type==='shelter'?22:30,peak=h+(type==='shelter'?18:22);
+        if(ground)this.groundPatch('#b7ae82',34);
+        board([[-r,-r,0],[r,-r,0],[r,r,0],[-r,r,0]],'#c4b794');
+        // Low wall courses and an open gabled frame at the finished building's dimensions.
+        this.mesh([{points:[[-r,-r,0],[r,-r,0],[r,-r,7],[-r,-r,7]],fill:'#ddd0b3'},
+          {points:[[-r,-r,0],[-r,r,0],[-r,r,7],[-r,-r,7]],fill:'#e5d8bc'}]);
+        for(const [x,y] of [[-r,-r],[r,-r],[r,r],[-r,r]])beam([[x,y,0],[x,y,h]],'#b28d5e',3);
+        for(const y of [-r,r])beam([[-r,y,h],[0,y,peak],[r,y,h]],'#d9be89',3);
+        for(const x of [-r,r])beam([[x,-r,h],[x,r,h]],'#c8a573',3);
+        beam([[0,-r,peak],[0,r,peak]],'#c8a573',3);
+        if(type==='workshop'){
+          board([[.13,-.23,0],[.27,-.23,0],[.27,-.23,16],[.13,-.23,16]],'#889083');
+          board([[.27,-.23,0],[.27,-.09,0],[.27,-.09,16],[.27,-.23,16]],'#a3a794');
+        }
+        return;
+      }
+      // Unknown future types get a neutral ground marker, never a misleading building.
+      if(ground)this.groundPatch('#b4a783',20);
     }
     structure(s,tile,time=0,shared=false){
-      if(s.status&&s.status!=='complete'){this.construction();return;}
+      if(s.status&&s.status!=='complete'){this.construction(s.type,!shared);return;}
       if(s.type==='farm_plot'){this.farm(tile,hash(s.position.x,s.position.y),time);return;}
       if(s.type==='well'){this.well();return;}
       if(s.type==='storage'){this.storage(hash(s.position.x,s.position.y),!shared);return;}
