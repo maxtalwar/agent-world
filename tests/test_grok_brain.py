@@ -65,6 +65,22 @@ class GrokBrainTests(unittest.TestCase):
             error = GrokBrain(executable="grok", model="grok-4.6").preflight()
         self.assertIsNotNone(error)
 
+    def test_preflight_rechecks_transient_failure_without_new_login(self):
+        failed = subprocess.CompletedProcess(["grok", "models"], 1, stdout="", stderr="session temporarily unavailable")
+        ready = subprocess.CompletedProcess(["grok", "models"], 0, stdout="Logged in with grok.com\n- grok-4.5\n", stderr="")
+        with patch("agent_world.grok_brain.run_process", side_effect=[failed, ready]) as call:
+            self.assertIsNone(GrokBrain(executable="grok", model="grok-4.5").preflight())
+        self.assertEqual(call.call_count, 2)
+
+    def test_catalog_failure_is_not_misreported_as_logged_out(self):
+        failed = subprocess.CompletedProcess(["grok", "models"], 1, stdout="", stderr="connection reset")
+        with patch("agent_world.grok_brain.run_process", return_value=failed) as call:
+            error = GrokBrain(executable="grok", model="grok-4.5").preflight()
+        self.assertEqual(call.call_count, 2)
+        self.assertNotIn("authentication", error)
+        self.assertNotIn("login", error)
+        self.assertIn("catalog check failed", error)
+
     def test_user_turn_contains_rulebook_even_if_system_override_is_ignored(self) -> None:
         from agent_world.grok_brain import build_grok_prompts
         system, user = build_grok_prompts("UNIQUE WORLD RULEBOOK", '{"tick":0}')

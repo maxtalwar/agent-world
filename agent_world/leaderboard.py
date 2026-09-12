@@ -164,6 +164,7 @@ def model_label(model: str) -> str:
     display_model = re.sub(r"-20\d{6}$", "", model) if model.startswith("claude-") else model
     if display_model.lower().startswith("gemini-"):
         display_model = re.sub(r"-(?:low|medium|high|max)$", "", display_model, flags=re.IGNORECASE)
+    display_model = re.sub(r"\s*\[1m\]$", "", display_model, flags=re.IGNORECASE) if display_model.startswith("claude-") else display_model
     name = re.sub(r"(?<=\d)-(?=\d)", ".", display_model.removeprefix("claude-"))
     return name.replace("-", " ").title().replace("Gpt ", "GPT-").replace("Glm", "GLM")
 

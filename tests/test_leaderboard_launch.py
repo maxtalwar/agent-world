@@ -433,6 +433,24 @@ class LaunchTests(unittest.TestCase):
         self.service.monitoring_ack(self.identifier, "external_blocker", "User must renew expired provider login")
         self.assertEqual(self.service.monitoring_worklist(), [])
 
+    def test_grok_external_auth_blocker_requires_native_confirmation(self):
+        self.service.update(self.identifier, state="needs_attention", brain="grok", model="grok-4.5")
+        path = self.root / "runs/jobs/web-test/job.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps({"controller": {"status": "running"}, "cells": [
+            {"id": "seed-11", "controller_state": "needs_attention", "controller_attention": "authentication_required"}]}))
+        for result in [Mock(returncode=0, stdout='{"error":null}'),
+                       Mock(returncode=0, stdout='{"error":"catalog unavailable"}'),
+                       Mock(returncode=1, stdout='')]:
+            with patch("agent_world.leaderboard_launch.subprocess.run", return_value=result):
+                with self.assertRaises(LaunchError):
+                    self.service.monitoring_ack(self.identifier, "external_blocker", "Please sign in")
+            self.assertFalse(self.service.get(self.identifier).get("monitor_reviewed"))
+        with patch("agent_world.leaderboard_launch.subprocess.run", return_value=Mock(
+                returncode=0, stdout='{"error":"Grok authentication required"}')):
+            self.service.monitoring_ack(self.identifier, "external_blocker", "Native login verification failed")
+        self.assertTrue(self.service.get(self.identifier)["monitor_reviewed"])
+
     def test_cell_attention_can_record_external_blocker_with_running_controller(self):
         self.service.update(self.identifier, state="supervising")
         path = self.root / "runs/jobs/web-test/job.json"

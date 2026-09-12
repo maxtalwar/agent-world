@@ -7,7 +7,7 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
-from agent_world.leaderboard import LeaderboardStore, make_server, within, new_board
+from agent_world.leaderboard import LeaderboardStore, make_server, within, new_board, model_label
 
 
 class LeaderboardTests(unittest.TestCase):
@@ -128,6 +128,10 @@ class LeaderboardTests(unittest.TestCase):
         gemini = next(r for r in board["rows"] if r["model"] == "Gemini 3.8 Flash")
         self.assertEqual(gemini["subtitle"], "")
         self.assertIn("CLI update", gemini["note"])
+
+    def test_opus_context_suffix_is_not_a_display_name(self):
+        self.assertEqual(model_label("claude-opus-5[1m]"), "Opus 5")
+        self.assertEqual(model_label("claude-opus-5[1M]"), "Opus 5")
 
     def test_partial_reports_never_reach_scorer(self):
         job, path = self.fixture(complete=False)

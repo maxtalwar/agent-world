@@ -376,6 +376,21 @@ class LaunchService:
         ready = status == "completed" and (job.get("analysis_readiness") or {}).get("status") == "ready"
         if not ready and (resolution not in {"external_blocker", "evidence_decision"} or not reason or not reason.strip()):
             raise LaunchError("Repairable faults stay on the worklist; an unresolved handoff requires a named external blocker or evidence decision")
+        if (resolution == "external_blocker" and request.get("brain") == "grok"
+                and any(c.get("controller_attention") == "authentication_required" for c in job.get("cells", []))):
+            # Require a native check, not a repeated interpretation of the same
+            # historical error. No prompt/model invocation is made here.
+            probe = subprocess.run(
+                [sys.executable, "-c", "from agent_world.grok_brain import GrokBrain; "
+                 "import sys,json; print(json.dumps({\"error\": GrokBrain(model=sys.argv[1]).preflight()}))", request["model"]],
+                cwd=self.root, env=env(), capture_output=True, text=True, timeout=70)
+            if probe.returncode != 0:
+                raise LaunchError("Grok authentication verification could not run; repair the native check before declaring a sign-in blocker.")
+            native_error = json.loads(probe.stdout).get("error")
+            if not native_error:
+                raise LaunchError("Grok saved login and requested model are available. Resume the existing managed run and verify progress before closing this incident.")
+            if not any(term in native_error.lower() for term in ("authentication", "not logged in", "not authenticated")):
+                raise LaunchError("Native Grok check did not confirm a sign-in failure; diagnose its provider/catalog error before escalating.")
         self.update(identifier, monitor_reviewed=True, state="completed" if ready else "needs_attention",
                     monitor_resolution="verified_complete" if ready else resolution,
                     monitor_resolution_reason=reason, monitor_reviewed_incident=self.monitoring_incident(job))

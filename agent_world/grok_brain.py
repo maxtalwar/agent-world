@@ -104,24 +104,33 @@ class GrokBrain:
         )
 
     def preflight(self) -> str | None:
-        try:
-            listed = run_process(
-                [self.executable, "models"],
-                text=True,
-                capture_output=True,
-                timeout=min(self.timeout_seconds, 30),
-                env=_subscription_environment(),
-                check=False,
-            )
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            return f"Grok provider unavailable: authentication/model preflight failed: {exc}"
-        detail = f"{listed.stdout}\n{listed.stderr}".strip()
-        if listed.returncode != 0 or any(marker in detail.lower() for marker in ("not logged in", "not authenticated")):
-            return "Grok provider unavailable: Grok CLI is not logged in; run grok login."
-        if self.model not in parse_grok_model_list(listed.stdout):
-            return f"Grok provider unavailable: model {self.model!r} is not available on this account"
-        self.resolved_model = self.model
-        return None
+        # Native catalog lookup also exercises the saved subscription login.
+        # Retry once: an expired session/cache or transient catalog failure must
+        # not immediately become an instruction to sign in again.
+        for attempt in range(2):
+            try:
+                listed = run_process(
+                    [self.executable, "models"], text=True, capture_output=True,
+                    timeout=min(self.timeout_seconds, 30),
+                    env=_subscription_environment(), check=False,
+                )
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                error = f"Grok provider unavailable: model preflight failed: {type(exc).__name__}"
+            else:
+                detail = f"{listed.stdout}\n{listed.stderr}".strip()
+                auth = _is_auth_error(detail) or "not authenticated" in detail.lower()
+                if listed.returncode == 0 and not auth:
+                    if self.model not in parse_grok_model_list(listed.stdout):
+                        return f"Grok provider unavailable: model {self.model!r} is not available on this account"
+                    self.resolved_model = self.model
+                    return None
+                if auth:
+                    error = "Grok authentication required: saved login could not be verified after a native catalog check."
+                elif _is_quota_error(detail):
+                    return f"Grok quota unavailable: {detail}"
+                else:
+                    error = f"Grok provider unavailable: model catalog check failed (exit {listed.returncode})."
+        return error
 
     def copy_preflight_state_from(self, other: Any) -> None:
         if not isinstance(other, GrokBrain):

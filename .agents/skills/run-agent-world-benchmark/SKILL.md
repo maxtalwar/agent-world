@@ -38,6 +38,13 @@ Read the relevant section of docs/benchmark-run-protocol.md for attention or
 finalization blockers. A quota wait preserves the world; it is not a reason
 to restart. Recover the existing study only after resolving its blocker.
 
+For a Grok authentication blocker, verify `grok models` in the run's WSL user
+session before requesting a new sign-in. The saved login may still be valid;
+older preflight code mislabeled any catalog failure as logged out. If the native
+check lists the exact requested model, resume the existing managed checkpoint
+and verify progress. Do not close it as an external blocker from the stored
+error alone. The portal enforces a native check before that acknowledgment.
+
 Report readiness from the job manifest, not elapsed time or process exit.
 Include remaining seeds/blockers and artifact location. Readiness requires
 completion, integrity, usage, provenance and recipe-specific accounting.

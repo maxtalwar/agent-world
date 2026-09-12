@@ -68,3 +68,12 @@ context.run.cells[0].state='completed';context.run.cells[0].tick=60;
 html=vm.runInContext('studyMarkup(run)',context);
 assert.equal((html.match(/diagnostic only/g)||[]).length,1);
 console.log('Diagnostic labels distinguish unfinished and completed studies');
+
+context.data.launches=[{run_id:'test',monitor_reviewed:true,monitor_resolution:'external_blocker',monitor_event_state:'completed'}];
+context.run.cells=[{seed:11,tick:0,target:60,state:'stopped',operational_state:'needs_attention',attention:'authentication_required'},
+ {seed:41,tick:null,target:60,state:'waiting_startup_gate'}];
+html=vm.runInContext('studyMarkup(run)',context);
+assert.equal((html.match(/Startup blocked/g)||[]).length,2);
+assert.doesNotMatch(html,/follow-up is pending|working on a fix/);
+assert.match(html,/Monitoring review stopped/);
+console.log('Shared startup blocker and completed monitor review render correctly');

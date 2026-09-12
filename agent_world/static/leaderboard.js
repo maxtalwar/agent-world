@@ -90,19 +90,21 @@ function studyMarkup(run, grouped=false) {
   const sharedTiming=allQuota&&new Set(run.cells.map(quotaTiming)).size===1;
   const agentWorking=request?.monitor_event_state==='working';
   const repairing=affected&&agentWorking;
+  const externalBlocker=affected&&request?.monitor_reviewed&&request?.monitor_resolution==='external_blocker';
+  const blockedStartup=affected&&run.cells.some(c=>cellState(c)==='waiting_startup_gate');
   const provenanceReview=run.readiness_status==='needs_provenance_review';
   const reviewedEvidence=provenanceReview&&request?.monitor_reviewed&&request?.monitor_resolution==='evidence_decision';
   const allCompleted=run.cells.length>0&&run.cells.every(c=>cellState(c)==='completed');
   const finishedExperiment=run.is_experiment&&allCompleted;
-  const status=executionReview?'Continuation needs approval':finishedExperiment?'Completed':run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':provenanceReview?(agentWorking?'Review in progress':reviewedEvidence?'Review needs a decision':'Review pending'):quota?'Quota paused':'In study';
+  const status=executionReview?'Continuation needs approval':finishedExperiment?'Completed':run.ranked?'Ranked':repairing?'Repair in progress':externalBlocker?'Needs attention':affected?'Run paused':provenanceReview?(agentWorking?'Review in progress':reviewedEvidence?'Review needs a decision':'Review pending'):quota?'Quota paused':'In study';
   const message=executionReview?'The harness updated during recovery. Continuing with that change needs approval.':repairing?'Run paused after an issue. The monitoring agent is working on a fix.':
-    affected?'Run paused after an issue. Monitoring follow-up is pending.' : provenanceReview?(agentWorking?'The monitoring agent is reviewing the completed results.':reviewedEvidence?'Recovery review is complete; admission needs a decision.':'Completed results are awaiting a provenance review.') : '';
+    externalBlocker?'Monitoring review stopped at a reported external blocker. See technical details.':affected?'Run paused after an issue. Monitoring follow-up is pending.' : provenanceReview?(agentWorking?'The monitoring agent is reviewing the completed results.':reviewedEvidence?'Recovery review is complete; admission needs a decision.':'Completed results are awaiting a provenance review.') : '';
   const diagnostics=run.cells.filter(c=>c.attention).map(c=>'Seed '+c.seed+': '+c.attention);
   if(affected&&request?.error)diagnostics.push(request.error);
   if(request?.monitor_resolution_reason)diagnostics.push(request.monitor_resolution_reason);
   if(affected&&run.cells.some(c=>c.state==='status_stale'))diagnostics.push('Controller updates are paused while the run is stopped.');
   return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+(grouped?'':status)+'</span></div>'+
-    run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>').join('')+
+    run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(blockedStartup&&(issue(c)||cellState(c)==='waiting_startup_gate')?'Startup blocked':issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>').join('')+
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
     (!sharedTiming?[...new Set(run.cells.filter(c=>cellState(c)==='waiting_quota').map(c=>quotaTiming(c)))].map(t=>'<p class="study-note">'+esc(t)+'</p>').join(''):'')+
     (sharedTiming&&!grouped?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
