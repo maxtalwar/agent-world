@@ -254,8 +254,10 @@ class LeaderboardStore:
                json.dumps([r.get("provenance_acceptance") for r in reports], sort_keys=True))
         if key in self.aggregates:
             return self.aggregates[key]
-        candidates = [job.get("execution_root")]
+        # Recovery tooling may differ; score the evidence with its original source.
+        candidates = [job.get("source_root")]
         candidates += [cell.get("worktree") for cell in job["cells"]]
+        candidates += [job.get("execution_root")]
         candidates += [str(self.root)]
         errors = []
         for candidate in dict.fromkeys(x for x in candidates if x):
@@ -428,6 +430,11 @@ class LeaderboardStore:
                         k: v.get("score") for k, v in s["scores"].items()
                     }} for s in r["required_replications"]],
                 })
+        admission_note = job.get("leaderboard_admission", {}).get("note")
+        if admission_note:
+            for row in rows:
+                row["note"] = admission_note
+                row["status"] = "Reviewed recovery"
         run["ranked"] = bool(rows)
         return run, rows, aggregate
 

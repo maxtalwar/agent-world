@@ -6,6 +6,7 @@ Capability rescoring: Final original-population health minus 10% of health lost 
 |---|---:|---:|---:|---:|---:|
 | Fable 5.1 | 85.0 | 94.1 | 200.0 | $53.99 | 12.61s |
 | GPT-6 Astra | 80.1 | 96.7 | 244.7 | $43.27 | 10.98s |
+| Gemini 3.8 Flash | 57.6 | 96.9 | 151.8 | unavailable | 21.49s |
 | Fable 5 | 56.3 | 91.2 | 188.5 | $76.90 | 20.89s |
 | Grok 4.6 | 33.0 | 92.6 | 216.3 | $27.21 | 95.24s |
 | Sonnet 5 | 29.0 | 86.2 | 177.2 | $13.07 | 20.85s |

@@ -334,6 +334,37 @@ def _audit_report(
     }
 
 
+def _evidence_root(job: dict[str, Any]) -> Path:
+    """Use the catalog beside the real job file, not a symlinked source checkout."""
+    job_dir = Path(job["job_dir"]).resolve()
+    if job_dir.parent.name == "jobs" and job_dir.parent.parent.name == "runs":
+        return job_dir.parent.parent.parent
+    return Path(job["source_root"]).resolve()
+
+
+def _write_job_report(job: dict[str, Any], cell: dict[str, Any], stem: Path) -> dict[str, Any]:
+    """Score with the original simulation source even after orchestration recovery."""
+    source = Path(job.get("source_root") or Path(__file__).resolve().parent.parent).resolve()
+    if source != Path(__file__).resolve().parent.parent:
+        if not (source / "agent_world/run_report.py").is_file():
+            raise ValueError(f"Original report source is unavailable: {source}")
+        script = """
+import json, sys
+from pathlib import Path
+from agent_world.run_report import load_run_files, write_report
+stem = Path(sys.argv[1])
+events, snapshot, usage = load_run_files(stem)
+report = write_report(events, snapshot, usage, stem, target_ticks=json.loads(sys.argv[2]))
+print(json.dumps(report))
+"""
+        result = subprocess.run([sys.executable, "-c", script, str(stem.resolve()),
+                                 json.dumps(cell.get("target_ticks"))], cwd=source,
+                                capture_output=True, text=True, check=True, timeout=120)
+        return json.loads(result.stdout)
+    events, snapshot, usage = load_run_files(stem)
+    return write_report(events, snapshot, usage, stem, target_ticks=cell.get("target_ticks"))
+
+
 def finalize_job(
     run_id: str,
     *,
@@ -343,7 +374,7 @@ def finalize_job(
 ) -> dict[str, Any]:
     if root is None:
         job = load_job(run_id)
-        root = Path(job["source_root"]).resolve()
+        root = _evidence_root(job)
     else:
         root = root.resolve()
         job = load_job(run_id, root)
@@ -405,14 +436,7 @@ def finalize_job(
             transfer_modes.append("unsupported_protocol")
         stem = events_path.with_suffix("")
         if not dry_run and transfer_complete:
-            loaded_events, snapshot, usage = load_run_files(stem)
-            report = write_report(
-                loaded_events,
-                snapshot,
-                usage,
-                stem,
-                target_ticks=cell.get("target_ticks"),
-            )
+            report = _write_job_report(job, cell, stem)
         else:
             report_path = stem.with_name(stem.name + "-report.json")
             report = (
@@ -534,6 +558,17 @@ def finalize_job(
                 fresh["finalization_supervisor"].update(
                     {"status": "completed", "ended_at_utc": utc_now()}
                 )
+            if readiness_status == "ready":
+                # A successful manual recovery supersedes failed automatic
+                # attempts; let the controller reconcile terminal completion.
+                supervisor = fresh.get("finalization_supervisor") or {}
+                supervisor.pop("error", None)
+                controller = fresh.get("controller")
+                if controller is not None:
+                    controller["last_finalization_signature"] = sorted(completed_seeds)
+                    controller["finalization_retry_count"] = 0
+                    for key in ("finalization_error", "finalization_retry_at", "finalization_in_progress_signature"):
+                        controller.pop(key, None)
             atomic_write_json(job_path, fresh)
     return result
 

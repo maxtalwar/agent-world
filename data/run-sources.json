@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-09-12T19:33:00Z",
+  "updated_at_utc": "2026-09-12T19:37:36.054572+00:00",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -1076,30 +1076,30 @@
     {
       "model_key": "gemini-3.8-flash-medium-participant-v8-revised",
       "model_id": "gemini-3.8-flash-medium",
-      "label": "Gemini 3.8 Flash Medium",
+      "label": "Gemini 3.8 Flash",
       "suite": "participant-v8-revised",
       "kind": "benchmark_trial",
-      "leaderboard_eligible": false,
-      "leaderboard_exclusion_reason": "Seed 11 changed Antigravity CLI versions during execution; continuation approval preserves this deviation but does not authorize pooling it as unchanged benchmark conditions.",
-      "notes": "See docs/reviews/gemini38-completion-20260912.md. Seed 41 is clean; seed 11 retains changed CLI conditions and is not pooled.",
+      "leaderboard_eligible": true,
+      "notes": "Admitted at owner request on 2026-09-12 with the approved Antigravity CLI update during seed 11 disclosed. Both seeds completed 60 ticks with clean integrity and 100% usage coverage; original simulation source and accepted decisions preserved. See docs/reviews/gemini38-completion-20260912.md.",
       "runs": [
         {
           "run_id": "web-gemini-3-8-flash-medium-1113fb6ad885:seed-11",
           "seed": 11,
           "report_path": "runs/managed/web-gemini-3-8-flash-medium-1113fb6ad885/seed-11/run-report.json",
-          "kind": "diagnostic",
-          "included_in_model_result": false,
-          "run_exclusion_reason": "Seed 11 changed Antigravity CLI versions during execution; continuation approval preserves this deviation but does not authorize pooling it as unchanged benchmark conditions."
+          "kind": "controlled_variant",
+          "included_in_model_result": true
         },
         {
           "run_id": "web-gemini-3-8-flash-medium-1113fb6ad885:seed-41",
           "seed": 41,
           "report_path": "runs/managed/web-gemini-3-8-flash-medium-1113fb6ad885/seed-41/run-report.json",
           "kind": "benchmark_trial",
-          "included_in_model_result": false,
-          "run_exclusion_reason": "Clean seed 41 retained separately; no qualifying seed 11 for the required paired score, and no seed-41-only admission exception."
+          "included_in_model_result": true
         }
-      ]
+      ],
+      "admission_review": "docs/reviews/gemini38-completion-20260912.json",
+      "controlled_variant": true,
+      "variant_note": "Admitted at owner request on 2026-09-12 with the approved Antigravity CLI update during seed 11 disclosed. Both seeds completed 60 ticks with clean integrity and 100% usage coverage; original simulation source and accepted decisions preserved."
     }
   ],
   "benchmark_acceptances": [

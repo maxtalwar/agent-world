@@ -62,6 +62,56 @@ class V6ClassificationValidationTests(unittest.TestCase):
             _validate_v6_rows(output, [self.gift], [self.gift])
 
 
+class FinalizationRootTests(unittest.TestCase):
+    def test_shared_job_uses_canonical_evidence_catalog(self):
+        from agent_world.run_finalization import _evidence_root
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            job_dir = root / "runs/jobs/test"
+            job_dir.mkdir(parents=True)
+            source = root / "source"
+            source.mkdir()
+            (source / "runs").symlink_to(root / "runs", target_is_directory=True)
+            self.assertEqual(_evidence_root({"source_root": str(source),
+                "job_dir": str(source / "runs/jobs/test")}), root)
+
+    def test_report_generation_uses_original_source_not_recovery_source(self):
+        from agent_world.run_finalization import _write_job_report
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp)
+            (source / "agent_world").mkdir()
+            (source / "agent_world/run_report.py").write_text("")
+            stem = source / "runs/test/run"
+            with patch("agent_world.run_finalization.subprocess.run", return_value=Mock(stdout='{"run":{"completed":true}}')) as run:
+                report = _write_job_report({"source_root": str(source), "execution_root": "/different/recovery"},
+                                           {"target_ticks": 60}, stem)
+            self.assertTrue(report["run"]["completed"])
+            self.assertEqual(run.call_args.kwargs["cwd"], source)
+            self.assertEqual(run.call_args.args[0][-2:], [str(stem), "60"])
+
+    def test_leaderboard_uses_simulation_source_before_recovery_tooling(self):
+        from agent_world.leaderboard import LeaderboardStore
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            original = root / "original"
+            (original / "agent_world").mkdir(parents=True)
+            (original / "agent_world/benchmarks.py").write_text("")
+            store = LeaderboardStore(root)
+            job = {"run_id": "test", "protocol": "participant-v8-revised", "cells": [],
+                   "source_root": str(original), "execution_root": str(root / "recovery")}
+            with patch("agent_world.leaderboard.subprocess.run", return_value=Mock(stdout='{"results":[],"rejected":[]}')) as run:
+                store.aggregate(job, [], ())
+            self.assertEqual(run.call_args.kwargs["cwd"], original)
+
+    def test_missing_original_source_is_not_silently_replaced(self):
+        from agent_world.run_finalization import _write_job_report
+        with tempfile.TemporaryDirectory() as temp:
+            with self.assertRaisesRegex(ValueError, "Original report source is unavailable"):
+                _write_job_report({"source_root": temp}, {"target_ticks": 60}, Path(temp)/"run")
+
+
 class ManagedFinalizationTests(unittest.TestCase):
     @patch("agent_world.run_finalization.subprocess.run")
     @patch("agent_world.run_finalization.shutil.which", return_value="/usr/bin/tmux")
@@ -179,6 +229,8 @@ class ManagedFinalizationTests(unittest.TestCase):
                 "launch_commit": "a" * 40,
                 "job_dir": str(job_dir),
                 "config": {"model": {"id": "glm-5.3"}},
+                "controller": {"finalization_retry_count": 3, "finalization_error": "old path error"},
+                "finalization_supervisor": {"status": "failed", "error": "old path error"},
                 "cells": cells,
             }
             status.return_value = {
@@ -199,6 +251,10 @@ class ManagedFinalizationTests(unittest.TestCase):
             self.assertEqual(result["analysis_readiness"]["completed_seeds"], [11, 41])
             saved = json.loads((job_dir / "job.json").read_text(encoding="utf-8"))
             self.assertEqual(saved["analysis_readiness"]["status"], "ready")
+            self.assertEqual(saved["controller"]["last_finalization_signature"], [11, 41])
+            self.assertEqual(saved["controller"]["finalization_retry_count"], 0)
+            self.assertNotIn("finalization_error", saved["controller"])
+            self.assertNotIn("error", saved["finalization_supervisor"])
 
     @patch("agent_world.run_finalization._classify_v6_gifts")
     @patch("agent_world.run_finalization.cell_status")

@@ -5,7 +5,7 @@
   "launch_commit": "d1e088e065324aede8a957371b83763511922311",
   "recipe": "participant-v8-revised",
   "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
-  "finalization_repair": "Called the pinned launch-source finalizer with the canonical repository root explicitly; avoided symlink-relative catalog path failure without changing simulation source or checkpoints. Current-source reports were regenerated with the exact launch source before recording hashes.",
+  "finalization_repair": "Canonical evidence root plus original pinned report generation and aggregation; infrastructure fix in agent_world/run_finalization.py and leaderboard.py. Original report, events, snapshots, usage, manifests and checkpoint evidence preserved.",
   "source_review": [
     {
       "seed": 11,
@@ -171,13 +171,19 @@
     }
   ],
   "prior_recovery": "docs/reviews/gemini38-environment-recovery-20260912.json",
-  "disposition": "Seed 11 changed Antigravity CLI versions during execution; continuation approval preserves this deviation but does not authorize pooling it as unchanged benchmark conditions.",
-  "owner_exception_required": true,
+  "disposition": "Admitted at owner request on 2026-09-12 with the approved Antigravity CLI update during seed 11 disclosed. Both seeds completed 60 ticks with clean integrity and 100% usage coverage; original simulation source and accepted decisions preserved.",
+  "owner_exception_required": false,
   "batch_id": null,
   "experiment_handoff": null,
   "accepted_event_prefix": {
     "bytes": 1980035,
     "sha256": "4f46bb26e2448e263f05775c057c45dc32a9c383d9c3a42d386439ceb11a08f9",
     "verified_unchanged": true
-  }
+  },
+  "owner_admission": {
+    "date": "2026-09-12",
+    "request": "It has not been added to the leaderboard despite finishing. Please fix.",
+    "scope": "Include the completed pair with the previously approved CLI change disclosed; preserve changed-harness classification."
+  },
+  "prior_disposition": "Seed 11 changed Antigravity CLI versions during execution; continuation approval preserves this deviation but does not authorize pooling it as unchanged benchmark conditions."
 }
