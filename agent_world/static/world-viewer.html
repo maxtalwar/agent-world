@@ -13,8 +13,14 @@
 <body>
 <header class="viewer-nav">
 <nav aria-label="Main navigation"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true">◉</span><span>Agent World</span></a><span class="nav-divider" aria-hidden="true">/</span><span class="current">World viewer</span><span class="rotation-hint">Drag ↔ to rotate</span></nav>
-<div class="world-navigation"><label class="sr-only" for="world-select">Navigate to a world</label><select id="world-select"><option value="demo">Willowbank · Demo</option></select><a class="back-link" href="/laboratory"><span aria-hidden="true">↖</span> Laboratory</a></div>
+<div class="world-navigation"><button id="world-picker-open" aria-haspopup="dialog"><span id="world-selection">Willowbank · Demo</span><span aria-hidden="true">⌄</span></button><a class="back-link" href="/laboratory"><span aria-hidden="true">↖</span> Laboratory</a></div>
 </header>
+<dialog id="world-picker" aria-labelledby="picker-title">
+<div class="picker-header"><h2 id="picker-title">Choose a world</h2><button id="world-picker-close" aria-label="Close world picker">×</button></div>
+<label class="sr-only" for="world-search">Search worlds</label><input id="world-search" type="search" placeholder="Search models or studies…" autocomplete="off">
+<div class="picker-filters" role="group" aria-label="World status"><button data-filter="all" aria-pressed="true">All worlds</button><button data-filter="active" aria-pressed="false">In progress</button><button data-filter="completed" aria-pressed="false">Completed</button></div>
+<p id="world-picker-status" role="status"></p><div id="world-options"></div>
+</dialog>
 <main class="world-stage" id="world-stage">
 <div class="world-heading"><p class="eyebrow">A WINDOW INTO THE WORLD</p><h1 id="world-title">World viewer</h1><p id="world-subtitle">Opening saved world…</p></div>
 <div class="world-status"><span class="source-badge" id="source-badge">CONNECTING</span><p id="tick-label">Saved state</p><p id="population-label"></p></div>

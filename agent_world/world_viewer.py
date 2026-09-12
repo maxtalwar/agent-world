@@ -98,16 +98,21 @@ class WorldViewer:
             "run_id": job["run_id"], "cell_id": cell["id"],
             "title": job.get("config", {}).get("model", {}).get("id") or job["run_id"],
             "seed": cell.get("seed"), "target_ticks": cell.get("target_ticks"),
+            "recipe": job.get("config", {}).get("protocol", ""),
             "state": state, "demo": False, "checked_at": checked,
             "created_at": job.get("created_at_utc", ""),
         }
 
     def worlds(self) -> dict:
         worlds = []
+        archive = _optional(STATIC / "leaderboard-activity-archive.json")
         for job_path in (self.root / "runs/jobs").glob("*/job.json"):
             try:
                 job = _read(_contained(self.root, str(job_path)))
                 if not IDENTIFIER.fullmatch(job.get("run_id", "")):
+                    continue
+                archived = archive.get(job["run_id"], {})
+                if isinstance(archived, dict) and archived.get("hidden"):
                     continue
                 for cell in job.get("cells", []):
                     if not IDENTIFIER.fullmatch(cell.get("id", "")) or not cell.get("snapshot"):

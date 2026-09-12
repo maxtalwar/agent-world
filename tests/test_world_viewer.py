@@ -46,6 +46,17 @@ class WorldViewerTests(unittest.TestCase):
         self.addCleanup(server.shutdown)
         return "http://127.0.0.1:" + str(server.server_port)
 
+    def test_discovery_includes_recipe_and_honors_hidden_studies(self):
+        from unittest.mock import patch
+        _, path, job = self.fixture()
+        job["config"]["protocol"] = "participant-v8-revised"
+        path.write_text(json.dumps(job))
+        self.assertEqual(self.viewer.worlds()["worlds"][0]["recipe"], "participant-v8-revised")
+        with patch("agent_world.world_viewer.STATIC", self.root):
+            (self.root / "leaderboard-activity-archive.json").write_text(json.dumps({"test": {"hidden": True}}))
+            self.assertEqual(self.viewer.worlds()["worlds"], [])
+            self.assertEqual(self.viewer.snapshot("test")["world"]["run_id"], "test")
+
     def test_demo_is_native_standard_world_with_valid_settlement(self):
         result = self.viewer.snapshot()
         self.assertTrue(result["world"]["demo"])
