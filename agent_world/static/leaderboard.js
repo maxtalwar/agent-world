@@ -32,8 +32,9 @@ function render() {
 function renderAdditionalStudies() {
   const groups=board().study_groups||[];
   $('additional-studies').hidden=!groups.length;
-  $('additional-study-list').innerHTML='<p class="muted">These studies retain separate recipe evidence and rankings. They do not replace the established table above.</p>'+groups.map(g=>
-    '<section><h3>'+esc(g.rows.map(r=>r.model).join(', ')||'Ongoing studies')+'</h3><p class="small muted">'+esc(g.recipe)+' · '+esc(g.digest?.slice(0,8)||'Historical evidence')+'</p><div class="table-scroll"><table><thead><tr><th>Model</th>'+g.columns.map(c=>'<th>'+esc(c[1])+'</th>').join('')+'<th>Cost / run</th></tr></thead><tbody>'+g.rows.map(r=>'<tr><td><button class="model-button" data-model="'+esc(r.id)+'">'+esc(r.model)+'</button></td>'+g.columns.map(c=>'<td>'+number(r.scores[c[0]])+'</td>').join('')+'<td>'+money(r.cost)+'</td>'+(showTime?'<td title="Mean elapsed seconds per decision across both seeds; includes retries within a decision.">'+(r.mean_decision_seconds==null?'—':number(r.mean_decision_seconds,2)+' s')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>'+g.runs.filter(r=>!r.archived&&!r.ranked).map(r=>studyMarkup(r)).join('')+'</section>').join('');
+  $('additional-study-list').innerHTML='<p class="muted">These studies retain separate recipe evidence and rankings. They do not replace the established table above.</p>'+groups.map(g=>{
+    const showTime=g.recipe==='participant-v8-revised';
+    return '<section><h3>'+esc(g.rows.map(r=>r.model).join(', ')||'Ongoing studies')+'</h3><p class="small muted">'+esc(g.recipe)+' · '+esc(g.digest?.slice(0,8)||'Historical evidence')+'</p><div class="table-scroll"><table><thead><tr><th>Model</th>'+g.columns.map(c=>'<th>'+esc(c[1])+'</th>').join('')+'<th>Cost / run</th>'+(showTime?'<th>Time / decision</th>':'')+'</tr></thead><tbody>'+g.rows.map(r=>'<tr><td><button class="model-button" data-model="'+esc(r.id)+'">'+esc(r.model)+'</button></td>'+g.columns.map(c=>'<td>'+number(r.scores[c[0]])+'</td>').join('')+'<td>'+money(r.cost)+'</td>'+(showTime?'<td title="Mean elapsed seconds per decision across both seeds; includes retries within a decision.">'+(r.mean_decision_seconds==null?'—':number(r.mean_decision_seconds,2)+' s')+'</td>':'')+'</tr>').join('')+'</tbody></table></div>'+g.runs.filter(r=>!r.archived&&!r.ranked).map(r=>studyMarkup(r)).join('')+'</section>';}).join('');
   $('additional-study-list').querySelectorAll('[data-model]').forEach(el=>el.onclick=()=>showModel(el.dataset.model));
 }
 function renderTable() {
@@ -124,15 +125,18 @@ function showModel(id) {
 }
 async function refresh(){
   $('refresh').disabled=true;
+  let received=false;
   try{
     const response=await fetch(experimentsPage?'/api/experiments':'/api/leaderboards',{cache:'no-store',signal:AbortSignal.timeout(120000)});
     if(!response.ok)throw new Error('Unavailable');
-    data=await response.json();render();
+    const nextData=await response.json();
+    received=true;data=nextData;render();
     $('error').hidden=!data.warnings.length;$('error').textContent=data.warnings.join(' ');
     $('sync-status').textContent='Updated '+relative(data.updated_at)+' · refreshes every '+data.refresh_seconds+'s';
   }catch(error){
-    $('error').hidden=false;$('error').textContent=data?'Connection interrupted. Showing the last successful update; retrying automatically.':'Could not reach the leaderboard. Check that the host is awake and Tailscale is connected.';
-    $('loading').hidden=true;$('sync-status').textContent='Connection interrupted';
+    console.error(received?'Leaderboard rendering failed':'Leaderboard request failed',error);
+    $('error').hidden=false;$('error').textContent=received?'The leaderboard data loaded, but the page could not display it. Retrying automatically.':data?'Connection interrupted. Showing the last successful update; retrying automatically.':'Could not reach the leaderboard. Check that the host is awake and Tailscale is connected.';
+    $('loading').hidden=true;$('sync-status').textContent=received?'Display error':'Connection interrupted';
   }finally{$('refresh').disabled=false;}
 }
 const experimentDetailState = new Map();
