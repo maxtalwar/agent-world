@@ -180,3 +180,65 @@ yard.setSnapshot(yardState);
 for(const a of yard.agents.filter(a=>a.id!=='aaa-new'))assert.deepEqual({...yard.agentAnchor(a)},yardAnchors.get(a.id));
 yard.destroy();
 console.log('Residents clear both buildings and retain their places after rotation, refresh, and arrivals.');
+
+// Mountain geometry is shared, deterministic, and display-only.
+let mountainInspection;
+const mountains=new Renderer(canvas(),{onInspect:value=>mountainInspection=value}),mountainSnapshot=JSON.parse(JSON.stringify(snapshot));
+const savedSnapshot=JSON.stringify(mountainSnapshot);
+mountains.setSnapshot(mountainSnapshot);
+const geometry=JSON.stringify(mountains.mountainFaces),terrainKey=mountains.mountainKey;
+assert.ok(mountains.mountainFaces.length>100);
+const vertexHeights=new Map();
+for(const face of mountains.mountainFaces){
+  for(const [x,y,z] of face.points){
+    const key=x+','+y;
+    if(vertexHeights.has(key))close(vertexHeights.get(key),z);
+    vertexHeights.set(key,z);assert.ok(z>=0&&Number.isFinite(z));
+  }
+  const [a,b,c]=face.points,cx=(a[0]+b[0]+c[0])/3,cy=(a[1]+b[1]+c[1])/3;
+  close(mountains.terrainHeight(cx,cy),(a[2]+b[2]+c[2])/3);
+}
+close(mountains.terrainHeight(0.5,0.5),0);
+mountainSnapshot.agents={};
+for(const [i,x,y] of [[0,10,4],[1,13,2],[2,8,4]]){
+  mountainSnapshot.agents['climber-'+i]={id:'climber-'+i,name:'Climber '+i,position:{x,y},alive:true};
+}
+mountains.setSnapshot(mountainSnapshot);
+const nativeMountainAgent=mountains.agent,nativeMountainAt=mountains.at;
+let drawnClimbers=[],objectPosition,vertical;
+mountains.at=function(x,y,draw){
+  objectPosition={x:x+.5,y:y+.5};
+  return nativeMountainAt.call(this,x,y,()=>{
+    vertical=0;const context=this.c;
+    this.c=new Proxy(context,{get(target,key){
+      if(key==='translate')return (dx,dy)=>{vertical+=dy;target.translate(dx,dy);};
+      return target[key];
+    }});
+    draw();this.c=context;
+  });
+};
+mountains.agent=function(a){
+  const height=this.terrainHeight(objectPosition.x,objectPosition.y);
+  close(vertical,-height);
+  drawnClimbers.push({id:a.id,...objectPosition,height});
+};
+for(let step=0;step<24;step++){
+  mountains.setYaw(step*Math.PI/12);flush();drawnClimbers=[];mountains.paint(0);
+  assert.equal(drawnClimbers.length,3);
+  assert.equal(JSON.stringify(mountains.mountainFaces),geometry,'Orbit cannot regenerate the range');
+  for(const climber of drawnClimbers){
+    const p=mountains.project(climber.x,climber.y,climber.height);
+    assert.ok(Number.isFinite(p[0])&&Number.isFinite(p[1]));
+    mountains.inspect({clientX:mountains.ox+p[0]*mountains.scale,clientY:mountains.oy+(p[1]-12)*mountains.scale});
+    assert.ok(mountainInspection.agents.some(a=>a.id===climber.id),'Raised residents remain inspectable');
+  }
+  assert.ok(drawnClimbers.some(a=>a.height>30),'Peak residents are lifted to the visible terrain');
+}
+mountains.agent=nativeMountainAgent;mountains.at=nativeMountainAt;
+mountains.setSnapshot(snapshot);
+assert.equal(JSON.stringify(snapshot),savedSnapshot,'Rendering never changes simulation terrain or positions');
+const otherSeed=JSON.parse(JSON.stringify(snapshot));otherSeed.config.seed=42;mountains.setSnapshot(otherSeed);
+assert.notEqual(mountains.mountainKey,terrainKey);
+assert.notEqual(JSON.stringify(mountains.mountainFaces),geometry);
+mountains.destroy();
+console.log('Connected mountain seams, exact surface heights, seeded geometry, residents and full-circle stability passed.');

@@ -46,6 +46,7 @@
       }
       this.agentSlots=nextSlots;
       this.placeResidents();
+      this.buildMountains();
       this.resize();
     }
     agentAnchor(agent){
@@ -95,6 +96,84 @@
           record.anchor={...best};placed.push(record.anchor);
         }
       }
+    }
+    buildMountains(){
+      const {width,height,seed=0}=this.snapshot.config,tiles=this.snapshot.tiles;
+      const key=seed+':'+width+':'+height+':'+tiles.map(row=>row.map(t=>t.terrain==='mountain'?'1':'0').join('')).join('');
+      if(key===this.mountainKey)return;
+      this.mountainKey=key;this.mountainFaces=[];this.mountainTiles=new Map();
+      const isMountain=(x,y)=>tiles[y]?.[x]?.terrain==='mountain';
+      const visited=new Set();
+      for(let y=0;y<height;y++)for(let x=0;x<width;x++){
+        const id=x+','+y;if(!isMountain(x,y)||visited.has(id))continue;
+        const cluster=[[x,y]];visited.add(id);
+        for(let i=0;i<cluster.length;i++){
+          const [cx,cy]=cluster[i];
+          for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+            const nx=cx+dx,ny=cy+dy,k=nx+','+ny;
+            if(isMountain(nx,ny)&&!visited.has(k)){visited.add(k);cluster.push([nx,ny]);}
+          }
+        }
+        const minX=Math.min(...cluster.map(p=>p[0])),maxX=Math.max(...cluster.map(p=>p[0]))+1;
+        const minY=Math.min(...cluster.map(p=>p[1])),maxY=Math.max(...cluster.map(p=>p[1]))+1;
+        const w=maxX-minX,h=maxY-minY,size=Math.min(w,h);
+        // Broad connected ranges, with repeatable variation derived from the world seed.
+        const amplitude=Math.min(1,size/7),jitter=(hash(minX,minY,seed)-.5)*.12;
+        const peaks=[[.375,.286,103,.571],[.75,.286,132,.614],[.625,.714,77,.429]]
+          .map(([px,py,z,r])=>[minX+(px+jitter)*w,minY+py*h,z*amplitude,Math.max(1,r*size)]);
+        const vertices=new Map();
+        const elevation=(px,py)=>{
+          const k=px+','+py;if(vertices.has(k))return vertices.get(k);
+          if(![[px-1,py-1],[px,py-1],[px-1,py],[px,py]].every(([vx,vy])=>isMountain(vx,vy))){vertices.set(k,0);return 0;}
+          let distance=2;
+          for(let ny=py-2;ny<=py+1;ny++)for(let nx=px-2;nx<=px+1;nx++){
+            if(!isMountain(nx,ny))distance=Math.min(distance,Math.hypot(Math.max(nx-px,0,px-nx-1),Math.max(ny-py,0,py-ny-1)));
+          }
+          const ridge=Math.max(...peaks.map(([a,b,z,r])=>z*Math.max(0,1-Math.hypot(px-a,py-b)/r)));
+          const z=ridge*Math.min(1,distance/1.7);vertices.set(k,z);return z;
+        };
+        for(const [cx,cy] of cluster){
+          const corners=[[cx,cy],[cx+1,cy],[cx+1,cy+1],[cx,cy+1]].map(([vx,vy])=>[vx,vy,elevation(vx,vy)]);
+          const middle=[cx+.5,cy+.5,Math.max(cluster.length===1?20:10,corners.reduce((sum,p)=>sum+p[2],0)/4)];
+          const faces=corners.map((p,i)=>({points:[p,corners[(i+1)%4],middle],tile:{x:cx,y:cy}}));
+          for(const face of faces)face.fill=this.mountainColor(face.points);
+          this.mountainTiles.set(cx+','+cy,faces);this.mountainFaces.push(...faces);
+        }
+      }
+    }
+    mountainColor(points){
+      const [a,b,d]=points,u=[(b[0]-a[0])*48,(b[1]-a[1])*48,b[2]-a[2]],v=[(d[0]-a[0])*48,(d[1]-a[1])*48,d[2]-a[2]];
+      let n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+      if(n[2]<0)n=n.map(value=>-value);
+      const norm=Math.hypot(...n),z=points.reduce((sum,p)=>sum+p[2],0)/3;
+      const light=Math.max(0,(n[0]*-.4+n[1]*-.55+n[2]*.73)/norm),shade=.70+light*.37;
+      const grass=[133,157,106],stone=[182,185,165],amount=Math.min(1,z/62);
+      const lower=grass.map((value,i)=>Math.round((value+(stone[i]-value)*amount)*shade));
+      const pale=Math.max(0,Math.min(1,((n[0]*-.65+n[1]*-.35+n[2]*.65)/norm+.28)/1.28));
+      const dark=[138,150,134],bright=[220,224,204],upper=dark.map((value,i)=>Math.round(value+(bright[i]-value)*pale));
+      const t=Math.max(0,Math.min(1,(z-18)/52)),blend=t*t*(3-2*t);
+      return '#'+lower.map((value,i)=>Math.round(value+(upper[i]-value)*blend).toString(16).padStart(2,'0')).join('');
+    }
+    triangleWeights(x,y,points){
+      const [a,b,c]=points,den=(b[1]-c[1])*(a[0]-c[0])+(c[0]-b[0])*(a[1]-c[1]);
+      if(Math.abs(den)<1e-9)return null;
+      const u=((b[1]-c[1])*(x-c[0])+(c[0]-b[0])*(y-c[1]))/den;
+      const v=((c[1]-a[1])*(x-c[0])+(a[0]-c[0])*(y-c[1]))/den,w=1-u-v;
+      return Math.min(u,v,w)>=-1e-8?[u,v,w]:null;
+    }
+    terrainHeight(x,y){
+      for(const face of this.mountainTiles?.get(Math.floor(x)+','+Math.floor(y))||[]){
+        const weights=this.triangleWeights(x,y,face.points);
+        if(weights)return weights.reduce((sum,w,i)=>sum+w*face.points[i][2],0);
+      }
+      return 0;
+    }
+    terrainHit(sx,sy){
+      for(let i=(this.projectedMountains?.length||0)-1;i>=0;i--){
+        const face=this.projectedMountains[i];
+        if(this.triangleWeights(sx,sy,face.screen))return face.tile;
+      }
+      const [x,y]=this.unproject(sx,sy);return {x:Math.floor(x),y:Math.floor(y)};
     }
     resize(){
       const box=this.canvas.getBoundingClientRect();if(!box.width||!box.height)return;
@@ -431,6 +510,9 @@
           if(hash(x,y,41)>.91&&!tile.structures?.length)this.at(x,y,()=>{this.rect(10,0,2,3,'#708c59');this.rect(9,-1,4,2,'#ede1a9');});
         }
       }
+      this.projectedMountains=(this.mountainFaces||[]).map(face=>({...face,screen:face.points.map(p=>this.project(...p)),
+        depth:face.points.reduce((sum,p)=>sum+this.project(p[0],p[1])[1],0)/3})).sort((a,b)=>a.depth-b.depth);
+      for(const face of this.projectedMountains)this.poly(face.screen,face.fill,face.fill);
       this.c=null;
     }
     paint(time=0){
@@ -443,8 +525,8 @@
         if(tile.terrain==='water'){
           this.at(x,y,()=>{const shift=Math.sin(time*.45+hash(x,y)*8)*3;this.line([[-12+shift,-2],[0+shift,-2]],'#c4e3d367',1.5);if(hash(x,y)>.6)this.line([[5-shift,5],[12-shift,5]],'#e5efd84d',1);});
         }
-        if(!tile.structures?.length && (tile.terrain==='forest'||tile.terrain==='mountain'))
-          objects.push({x,y,order:0,draw:()=>tile.terrain==='forest'?this.tree(x,y,Math.floor(hash(x,y)*7)):this.rock(x,y,hash(x,y))});
+        if(!tile.structures?.length && tile.terrain==='forest')
+          objects.push({x,y,order:0,draw:()=>this.tree(x,y,Math.floor(hash(x,y)*7))});
       }
       const grouped=new Map();
       for(const s of this.structures){const key=s.position.x+','+s.position.y;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(s);}
@@ -462,7 +544,11 @@
         objects.push({x:a.position.x+anchor.x,y:a.position.y+anchor.y,order:3,draw:()=>this.agent(a,i,time)});
       });
       objects.sort((a,b)=>this.project(a.x,a.y)[1]-this.project(b.x,b.y)[1]||a.order-b.order||a.x-b.x);
-      for(const obj of objects)this.at(obj.x,obj.y,obj.draw);
+      // Terrain is a separate layer. Residents remain legible at every camera angle;
+      // their feet follow the exact displayed surface without camera-relative movement.
+      for(const obj of objects)this.at(obj.x,obj.y,()=>{
+        this.c.translate(0,-this.terrainHeight(obj.x+.5,obj.y+.5));obj.draw();
+      });
       this.c=null;
     }
     restart(){
@@ -474,7 +560,13 @@
     inspect(event){
       if(!this.snapshot)return;
       const box=this.canvas.getBoundingClientRect(),sx=(event.clientX-box.left-this.ox)/this.scale,sy=(event.clientY-box.top-this.oy)/this.scale;
-      const [wx,wy]=this.unproject(sx,sy),x=Math.floor(wx),y=Math.floor(wy),tile=this.snapshot.tiles[y]?.[x];
+      // Pick visible raised residents before the terrain behind them.
+      const resident=this.agents.slice().reverse().find(a=>{
+        const anchor=this.agentAnchor(a),wx=a.position.x+.5+anchor.x,wy=a.position.y+.5+anchor.y;
+        const [px,py]=this.project(wx,wy,this.terrainHeight(wx,wy));
+        return Math.abs(sx-px)<=8&&sy>=py-29&&sy<=py+3;
+      });
+      const {x,y}=resident?resident.position:this.terrainHit(sx,sy),tile=this.snapshot.tiles[y]?.[x];
       if(!tile){this.onInspect(null);return;}
       const structures=this.structures.filter(s=>s.position.x===x&&s.position.y===y),agents=this.agents.filter(a=>a.position.x===x&&a.position.y===y);
       this.onInspect({x,y,tile,structures,agents});
