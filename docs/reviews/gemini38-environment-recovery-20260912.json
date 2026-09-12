@@ -1,7 +1,7 @@
 {
   "run_id": "web-gemini-3-8-flash-medium-1113fb6ad885",
   "request_id": "1113fb6ad885e9bbd467f424cf964517",
-  "resolution": "evidence_decision",
+  "resolution": "approved_continuation",
   "reason": "Restored exact saved wrapper routing and verified progress beyond tick 25, but its payload self-updated despite AGY_CLI_DISABLE_AUTO_UPDATE=1 from 93eb2118 to 38f130cd before recovered calls. Stopped seed and controller; owner must decide whether to retain continuation as changed-condition evidence before any further resume or admission.",
   "launch_commit": "d1e088e065324aede8a957371b83763511922311",
   "recipe": "participant-v8-revised",
@@ -21,5 +21,72 @@
   },
   "process_stop_verified": true,
   "seed41": "completed, unchanged",
-  "owner_approval": false
+  "owner_approval": true,
+  "owner_approval_at_utc": "2026-09-12T18:41:17.481609+00:00",
+  "approval_scope": "User approved continuing seed 11 from tick 27 with the Antigravity CLI update recorded. No model, seed, simulation source or recipe change; final evidence retains the declared harness deviation.",
+  "approved_checkpoint_sha256": "06af1b3241395fdf847166ff863fa4543e16e92e8748a31363761e1014caa835",
+  "approved_event_bytes": 1980035,
+  "approved_event_sha256": "4f46bb26e2448e263f05775c057c45dc32a9c383d9c3a42d386439ceb11a08f9",
+  "cli_version_migration": {
+    "from": "1.1.27",
+    "to": "1.2.1",
+    "agents": [
+      "agent-1",
+      "agent-10",
+      "agent-2",
+      "agent-3",
+      "agent-4",
+      "agent-5",
+      "agent-6",
+      "agent-7",
+      "agent-8",
+      "agent-9"
+    ],
+    "changed_fields": "extra.brain_states.AGENT.cli_version only",
+    "archive": "/home/maxtalwar/agent-world/.local/leaderboard-sources/d1e088e065324aede8a957371b83763511922311/runs/managed/web-gemini-3-8-flash-medium-1113fb6ad885/seed-11/run-checkpoint.before-approved-cli-1.2.1.pkl",
+    "before_sha256": "c1cd390895a2c809312a38836f0848d42215bd2fb812b69630296b4f5e7f2921",
+    "after_sha256": "d73670c0756b6382608786b6a4f0e750dfe1c4a05d2de7b79d6a4494bd309ef0",
+    "all_other_checkpoint_fields_verified_identical": true
+  },
+  "second_auto_update": {
+    "sha256": "e8f90ef67943b56c1148d73bc0e102d0b44d18935ffb11d49a2d870a095f416b",
+    "observed_tick": 28,
+    "archive": "/home/maxtalwar/agent-world/runs/jobs/web-gemini-3-8-flash-medium-1113fb6ad885/environment-recovery-20260909/agy-unexpected-update-20260912",
+    "resolution": "Preserved the accepted tick and archived the unexpected payload. Restored the approved 1.2.1 payload and set its filesystem immutable flag, preventing further self-replacement."
+  },
+  "payload_pin": {
+    "path": "/home/maxtalwar/agent-world/runs/jobs/web-gemini-3-8-flash-medium-1113fb6ad885/environment-recovery-20260909/agy-original",
+    "sha256": "38f130cdd0757e1d22e151baa48ace4074a5bd3d960eb2dcc7f44bdf2ad4c0fd",
+    "immutable": true,
+    "cleanup": "Remove immutable flag with chattr -i after completion, only if the retained payload needs maintenance."
+  },
+  "cached_state_version_migration": {
+    "tick": 28,
+    "prior_versions": {
+      "agent-1": "1.1.27",
+      "agent-10": "1.1.27",
+      "agent-2": "1.1.27",
+      "agent-3": "1.1.27",
+      "agent-4": "1.1.27",
+      "agent-5": "1.1.27",
+      "agent-6": "1.1.27",
+      "agent-7": "1.1.27",
+      "agent-8": "1.1.27",
+      "agent-9": "1.2.1"
+    },
+    "to": "1.2.1",
+    "archive": "/home/maxtalwar/agent-world/.local/leaderboard-sources/d1e088e065324aede8a957371b83763511922311/runs/managed/web-gemini-3-8-flash-medium-1113fb6ad885/seed-11/run-checkpoint.tick28-before-approved-cli.pkl",
+    "before_sha256": "d8332656f1b5c8bcd0583ea0fa5a57b1f8f56651344d07affa9a480e6f8a7739",
+    "after_sha256": "f0d9ac7d059fcbfe1e544241bee13362a210f90f84546530084b8d18bfe663e1",
+    "all_other_fields_identical": true,
+    "reason": "Replayed accepted decisions restored their historical runtime version metadata; migrate it after completing that tick, without modifying any decision."
+  },
+  "continuation_verified": {
+    "tick": 29,
+    "at_utc": "2026-09-12T18:53:23.797071+00:00",
+    "controller_state": "running",
+    "approved_payload_unchanged": true,
+    "pre_approval_event_prefix_unchanged": true,
+    "seed41_tick": 60
+  }
 }
