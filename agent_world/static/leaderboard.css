@@ -72,3 +72,7 @@ h1,h2,p{margin:0}h2{font-size:16px;font-weight:500}small,.small{font-size:13px}.
 .column-picker fieldset{position:absolute;right:0;top:100%;z-index:10;min-width:255px;margin:8px 0 0;padding:14px;border:1px solid #dfe5e9;border-radius:16px;background:#fff;box-shadow:0 8px 28px #24324720}
 .column-picker label{display:flex;align-items:center;gap:8px;padding:8px;cursor:pointer;white-space:nowrap}
 .column-picker input{accent-color:#579bb3;width:16px;height:16px;margin:0}
+
+/* Wrap the long metric heading instead of allocating a mostly empty column. */
+th[data-column="reasoning"]{width:110px;white-space:normal;line-height:1.35}
+th[data-column="reasoning"] button{max-width:110px;white-space:normal;text-align:right;line-height:1.35}

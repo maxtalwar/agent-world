@@ -23,7 +23,6 @@ function render() {
   $('versions').innerHTML=data.boards.map(item => '<button class="version-button" aria-current="'+(item.id===b.id)+'" data-board="'+esc(item.id)+'">'+esc(item.title)+(item.source==='Canonical metrics database'?' <span class="version-count">Established</span>':' <span class="version-count">'+item.rows.length+' models</span>')+'</button>').join('');
   $('versions').querySelectorAll('button').forEach(el => el.onclick=()=>changeBoard(el.dataset.board));
   const primary=b.columns[0];
-  $('ranking-caption').textContent='Ranked by '+primary[1].toLowerCase()+' · '+(b.scoring_caption || b.source.toLowerCase());
   $('table-note').textContent='Select a model for evidence and seed details.';
   $('updated').textContent='Evidence updated '+relative(b.updated_at);
   $('methodology').innerHTML='<p>'+esc(b.method || 'Final reports are scored using their original recipe. Incomplete studies remain in the activity panel.')+'</p><p>Versions and recipe fingerprints are kept separate. New studies are ranked only when the original scorer accepts a complete set of required seeds. Rankings within different versions are not directly comparable.</p><p>Cost / run is a token-derived API-list-price equivalent, not a subscription charge. A dash means unavailable. Reasoning estimates are marked with ~.</p><p>Recipe: <code>'+esc(b.recipe)+'</code>'+(b.digest?' · Fingerprint: <code>'+esc(b.digest)+'</code>':'')+'</p>'+b.warnings.map(w=>'<p class="warning">'+esc(w)+'</p>').join('');
@@ -74,7 +73,7 @@ function renderAdditionalStudies() {
   $('additional-studies').hidden=!groups.length;
   $('additional-study-list').innerHTML='<p class="muted">These studies retain separate recipe evidence and rankings. They do not replace the established table above.</p>'+groups.map(g=>{
     const columns=visibleColumns(g).filter(([k])=>k!=='rank'),max=Math.max(100,...g.rows.map(r=>r.scores[g.columns[0][0]]||0));
-    return '<section><h3>'+esc(g.rows.map(r=>r.model).join(', '))+'</h3><p class="small muted">'+esc(g.recipe)+' · '+esc(g.digest?.slice(0,8)||'Historical evidence')+'</p><div class="table-scroll"><table><thead><tr>'+columns.map(([,title])=>'<th>'+esc(title)+'</th>').join('')+'</tr></thead><tbody>'+g.rows.map(r=>'<tr>'+columns.map(([k])=>tableCell(r,k,g,max)).join('')+'</tr>').join('')+'</tbody></table></div></section>';}).join('');
+    return '<section><h3>'+esc(g.rows.map(r=>r.model).join(', '))+'</h3><p class="small muted">'+esc(g.recipe)+' · '+esc(g.digest?.slice(0,8)||'Historical evidence')+'</p><div class="table-scroll"><table><thead><tr>'+columns.map(([k,title])=>'<th data-column="'+esc(k)+'">'+esc(title)+'</th>').join('')+'</tr></thead><tbody>'+g.rows.map(r=>'<tr>'+columns.map(([k])=>tableCell(r,k,g,max)).join('')+'</tr>').join('')+'</tbody></table></div></section>';}).join('');
   $('additional-study-list').querySelectorAll('[data-model]').forEach(el=>el.onclick=()=>showModel(el.dataset.model));
 }
 function renderTable() {
@@ -84,7 +83,7 @@ function renderTable() {
   if(sortKey&&hiddenColumns.has(sortKey)){sortKey=null;sortAsc=false;}
   const key=sortKey||(!hiddenColumns.has(primary)?primary:columns[0][0]);
   if(!sortKey)sortAsc=['rank','model'].includes(key);
-  $('table-head').innerHTML='<tr>'+columns.map(([k,title])=>'<th scope="col"'+(k===key?' aria-sort="'+(sortAsc?'ascending':'descending')+'"':'')+'><button data-sort="'+esc(k)+'">'+esc(title)+(k===key?(sortAsc?' ↑':' ↓'):'')+'</button></th>').join('')+'</tr>';
+  $('table-head').innerHTML='<tr>'+columns.map(([k,title])=>'<th scope="col" data-column="'+esc(k)+'"'+(k===key?' aria-sort="'+(sortAsc?'ascending':'descending')+'"':'')+'><button data-sort="'+esc(k)+'">'+esc(title)+(k===key?(sortAsc?' ↑':' ↓'):'')+'</button></th>').join('')+'</tr>';
   $('table-head').querySelectorAll('button').forEach(button=>button.onclick=()=>{
     sortAsc=key===button.dataset.sort?!sortAsc:['model','rank','cost','mean_decision_seconds','reasoning'].includes(button.dataset.sort);
     sortKey=button.dataset.sort;renderTable();
