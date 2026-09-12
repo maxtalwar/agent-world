@@ -3,7 +3,7 @@
 (function (global) {
   const C = {grass:['#a8bd79','#aec37e','#a6bc77','#b3c682'], forest:['#829e65','#8ba66b','#91ac70'], mountain:['#a4ac8c','#abb295','#b2b79b'], water:['#79b7ba','#7dbbbd','#80bdbf']};
   const hash = (x,y,n=0) => {let v=Math.imul(x+71,374761393)^Math.imul(y+37,668265263)^Math.imul(n+11,1274126177);v=Math.imul(v^(v>>>13),1274126177);return ((v^(v>>>16))>>>0)/4294967295;};
-  const SHELTER_SCALE=0.54; // Shelters keep the same footprint on every tile.
+  const SHELTER_SCALE=0.54,STORAGE_SCALE=0.54; // Fixed sizes, including on shared tiles.
   const colors=['#c97b55','#69879a','#b8849f','#c8a653','#7d9671','#b76b64','#7e80a4','#5c9690','#d19b6b','#8e9dba'];
   class WorldRenderer {
     constructor(canvas,{preview=false,onInspect=()=>{},onRotate=()=>{}}={}) {
@@ -247,24 +247,24 @@
     structureLayout(group){
       if(!group.length)return [];
       const sorted=group.slice().sort((a,b)=>a.type.localeCompare(b.type)||String(a.id).localeCompare(String(b.id)));
-      const nominal=s=>s.type==='shelter'?SHELTER_SCALE:s.type==='storage'?.8:1;
+      const nominal=s=>s.type==='shelter'?SHELTER_SCALE:s.type==='storage'?STORAGE_SCALE:1;
       if(sorted.length===1)return [{structure:sorted[0],dx:0,dy:0,scale:nominal(sorted[0])}];
       const pair=sorted.length===2&&sorted.some(s=>s.type==='shelter')&&sorted.some(s=>s.type==='storage');
       const {x,y}=sorted[0].position;
       const variant=Math.min(3,Math.floor(hash(x,y,this.snapshot.config.seed||0)*4));
       const turn=([dx,dy])=>variant===0?[dx,dy]:variant===1?[-dy,dx]:variant===2?[-dx,-dy]:[dy,-dx];
       return sorted.map((s,index)=>{
-        let point,scale;
+        let point;
         if(pair){
           // Four fixed courtyard arrangements. Keep the hut and crate footprints separate.
-          point=s.type==='shelter'?[-.22,-.12]:[.26,.18];scale=nominal(s);
+          point=s.type==='shelter'?[-.22,-.12]:[.26,.18];
         }else{
           const columns=Math.ceil(Math.sqrt(sorted.length)),rows=Math.ceil(sorted.length/columns),step=.94/columns;
           point=[(index%columns-(columns-1)/2)*step,(Math.floor(index/columns)-(rows-1)/2)*step];
-          scale=Math.min(nominal(s),step/.86);
+          // Crowding changes placement, never the apparent capacity of a building.
         }
         const [dx,dy]=turn(point);
-        return {structure:s,dx,dy,scale};
+        return {structure:s,dx,dy,scale:nominal(s)};
       });
     }
     farm(tile,seed,time=0){
