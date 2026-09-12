@@ -257,6 +257,10 @@ class LeaderboardStore:
                     "latency": r["latency_median_seconds"],
                     "mean_decision_seconds": r["latency_mean_seconds"],
                     "seed_scores": [], "commit": None, "reanalysis": reanalysis,
+                    "worlds": [WorldViewer(self.root).evidence_reference(x[0], x[1]) for x in conn.execute(
+                        "SELECT DISTINCT r.source_report, r.seed FROM runs r JOIN run_cohorts c USING(run_id) "
+                        "JOIN benchmark_trials t USING(run_id) WHERE c.model=? AND t.included_in_model_result=1 ORDER BY r.seed",
+                        (r["model_key"],))],
                     "evidence_paths": [str(within(self.root, x[0])) for x in conn.execute(
                         "SELECT DISTINCT r.source_report FROM runs r JOIN run_cohorts c USING(run_id) "
                         "JOIN benchmark_trials t USING(run_id) WHERE c.model=? AND t.included_in_model_result=1",
@@ -367,7 +371,7 @@ class LeaderboardStore:
                 except ValueError:
                     pass
             run["cells"].append({
-                "seed": cell["seed"], "tick": tick, "target": cell.get("target_ticks"),
+                "id": cell["id"], "seed": cell["seed"], "tick": tick, "target": cell.get("target_ticks"),
                 "state": display_state, "operational_state": state,
                 "attention": attention,
                 "quota_wait_exhausted": attention == "quota_wait_budget_exhausted",
@@ -432,6 +436,9 @@ class LeaderboardStore:
                 rows.append({
                     "id": job["run_id"] + ":" + r["model"], "model": model_label(r["model"]),
                     "report_paths": [signature[0] for signature in signatures],
+                    "worlds": [{"run_id": job["run_id"], "cell_id": c["id"], "seed": c["seed"]}
+                               for c in job["cells"] if str(within(self.root, c["output_dir"]) / "run-report.json")
+                               in {signature[0] for signature in signatures}],
                     "lab": model_lab(r["model"]),
                     "scores": {k: v.get("score") for k, v in r["scores"].items()},
                     "formulas": {k: v.get("formula", "") for k, v in r["scores"].items()},

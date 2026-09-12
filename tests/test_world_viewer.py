@@ -57,6 +57,37 @@ class WorldViewerTests(unittest.TestCase):
             self.assertEqual(self.viewer.worlds()["worlds"], [])
             self.assertEqual(self.viewer.snapshot("test")["world"]["run_id"], "test")
 
+
+    def test_archived_world_uses_catalog_evidence_and_checks_boundaries(self):
+        import sqlite3
+        path, _, _ = self.fixture()
+        report = path.with_name("run-report.json").relative_to(self.root).as_posix()
+        (self.root / "data").mkdir()
+        with sqlite3.connect(self.root / "data/model-benchmarks.sqlite") as conn:
+            conn.executescript("""
+                CREATE TABLE runs (run_id TEXT, source_report TEXT, seed INTEGER, target_ticks INTEGER, completed INTEGER);
+                CREATE TABLE models (model_key TEXT, label TEXT);
+                CREATE TABLE run_cohorts (run_id TEXT, model TEXT);
+                INSERT INTO models VALUES ('model', 'Historical model');
+                INSERT INTO run_cohorts VALUES ('original', 'model');
+            """)
+            conn.execute("INSERT INTO runs VALUES (?, ?, 11, 120, 1)", ("original", report))
+        ref = self.viewer.evidence_reference(report, 11)
+        result = self.viewer.snapshot(ref["run_id"], ref["cell_id"])
+        self.assertEqual(result["world"]["title"], "Historical model")
+        self.assertFalse(result["world"]["demo"])
+        self.assertEqual(result["snapshot"]["tick"], 48)
+        self.assertNotIn("memory", next(iter(result["snapshot"]["agents"].values())))
+        with self.assertRaises(FileNotFoundError):
+            self.viewer.snapshot(ref["run_id"], "seed-41")
+        with self.assertRaises(FileNotFoundError):
+            self.viewer.snapshot("archive-unknown")
+        with self.assertRaises(FileNotFoundError):
+            self.viewer.evidence_reference("../outside/run-report.json", 11)
+        path.unlink()
+        with self.assertRaises(SnapshotUnavailable):
+            self.viewer.snapshot(ref["run_id"], ref["cell_id"])
+
     def test_demo_is_native_standard_world_with_valid_settlement(self):
         result = self.viewer.snapshot()
         self.assertTrue(result["world"]["demo"])

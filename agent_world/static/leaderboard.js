@@ -23,7 +23,7 @@ function render() {
   $('versions').innerHTML=data.boards.map(item => '<button class="version-button" aria-current="'+(item.id===b.id)+'" data-board="'+esc(item.id)+'">'+esc(item.title)+(item.source==='Canonical metrics database'?' <span class="version-count">Established</span>':' <span class="version-count">'+item.rows.length+' models</span>')+'</button>').join('');
   $('versions').querySelectorAll('button').forEach(el => el.onclick=()=>changeBoard(el.dataset.board));
   const primary=b.columns[0];
-  $('table-note').textContent='Select a model for evidence and seed details.';
+  $('table-note').textContent='Select a model to explore its worlds.';
   $('updated').textContent='Evidence updated '+relative(b.updated_at);
   $('methodology').innerHTML='<p>'+esc(b.method || 'Final reports are scored using their original recipe. Incomplete studies remain in the activity panel.')+'</p><p>Versions and recipe fingerprints are kept separate. New studies are ranked only when the original scorer accepts a complete set of required seeds. Rankings within different versions are not directly comparable.</p><p>Cost / run is a token-derived API-list-price equivalent, not a subscription charge. A dash means unavailable. Reasoning estimates are marked with ~.</p><p>Recipe: <code>'+esc(b.recipe)+'</code>'+(b.digest?' · Fingerprint: <code>'+esc(b.digest)+'</code>':'')+'</p>'+b.warnings.map(w=>'<p class="warning">'+esc(w)+'</p>').join('');
   renderAdditionalStudies();renderTable();renderActivity();if(typeof renderLaunches==='function')renderLaunches(data.launches||[]);
@@ -136,7 +136,7 @@ function studyMarkup(run, grouped=false) {
   if(request?.monitor_resolution_reason)diagnostics.push(request.monitor_resolution_reason);
   if(affected&&run.cells.some(c=>c.state==='status_stale'))diagnostics.push('Controller updates are paused while the run is stopped.');
   return '<article class="study"><div class="study-head"><span>'+esc(run.model)+'</span><span class="study-status">'+(grouped?'':status)+'</span></div>'+
-    run.cells.map(c=>'<div class="study-state"><span>Seed '+esc(c.seed)+(allQuota?'':' · '+esc(blockedStartup&&(issue(c)||cellState(c)==='waiting_startup_gate')?'Startup blocked':issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>').join('')+
+    run.cells.map(c=>'<div class="study-state"><span><a class="study-world" href="/world?run='+encodeURIComponent(run.id)+'&amp;cell='+encodeURIComponent(c.id||('seed-'+c.seed))+'">Seed '+esc(c.seed)+'</a>'+(allQuota?'':' · '+esc(blockedStartup&&(issue(c)||cellState(c)==='waiting_startup_gate')?'Startup blocked':issue(c)?'Paused after an issue':stateLabel(cellState(c)==='waiting_quota'?'waiting_quota':c.state)))+'</span><span>'+number(c.tick,0)+' / '+esc(c.target??'—')+'</span></div><progress class="cell-progress" value="'+Math.max(0,Math.min(c.tick||0,c.target||1))+'" max="'+(c.target||1)+'" aria-label="'+esc(run.model)+' seed '+esc(c.seed)+' progress"></progress>').join('')+
     (message?'<p class="study-repair">'+esc(message)+'</p>':'')+
     (!sharedTiming?[...new Set(run.cells.filter(c=>cellState(c)==='waiting_quota').map(c=>quotaTiming(c)))].map(t=>'<p class="study-note">'+esc(t)+'</p>').join(''):'')+
     (sharedTiming&&!grouped?'<p class="study-note">'+esc(quotaTiming(run.cells[0]))+'</p>':'')+
@@ -162,10 +162,54 @@ function renderActivity(){
   const runs=activityRuns(board()), open=runs.filter(r=>!r.ranked&&!r.archived), complete=runs.filter(r=>r.ranked&&!r.archived), archived=runs.filter(r=>r.archived);
   $('activity-list').innerHTML=(open.length?activityMarkup(open):'<div><p class="activity-empty">All quiet in<br>the laboratory.</p><p class="small muted">No pending studies in this leaderboard.</p></div>')+(complete.length?'<details class="completed-studies"><summary>'+complete.length+' completed studies</summary>'+complete.map(r=>studyMarkup(r)).join('')+'</details>':'')+(archived.length?'<details class="completed-studies"><summary>'+archived.length+' archived studies</summary>'+archived.map(r=>studyMarkup(r)).join('')+'</details>':'');
 }
+let previewRenderers=[], previewRequest;
+function clearModelPreviews(){
+  previewRequest?.abort();previewRequest=null;
+  previewRenderers.forEach(renderer=>renderer.destroy());previewRenderers=[];
+}
+function worldURL(world,api=false){
+  return (api?'/api/world?':'/world?')+new URLSearchParams({run:world.run_id,cell:world.cell_id});
+}
+function showScoringInfo(){
+  const primary=board();if(!primary)return;
+  const seen=new Set(),sections=[];
+  for(const group of [primary,...(primary.study_groups||[])]){
+    for(const row of group.rows){
+      const formulas=group.columns.map(([key,title])=>[title,row.formulas?.[key]||'Formula unavailable.']);
+      const signature=JSON.stringify(formulas);if(seen.has(signature))continue;seen.add(signature);
+      sections.push('<section class="scoring-section"><h3>'+esc(group.title)+(group!==primary?' · Additional study':'')+'</h3>'+
+        formulas.map(([title,formula])=>'<p class="detail-line"><strong>'+esc(title)+'</strong><br>'+esc(formula)+'</p>').join('')+'</section>');
+    }
+  }
+  $('scoring-details').innerHTML=sections.join('')||'<p class="detail-line">Scoring details will appear when results are available.</p>';
+  $('scoring-dialog').showModal();
+}
 function showModel(id) {
   const primary=board(),b=[primary,...(primary.study_groups||[])].find(g=>g.rows.some(row=>row.id===id));if(!b)return;const r=b.rows.find(row=>row.id===id);
-  $('model-details').innerHTML='<p class="eyebrow">PARTICIPANT '+esc(b.title.toUpperCase())+' · RANK '+r.rank+'</p><h2 class="detail-title">'+esc(r.model)+'</h2>'+(modelSubtitle(r)?'<span class="badge">'+esc(modelSubtitle(r))+'</span>':'')+'<div class="detail-scores">'+b.columns.map(([k,title])=>'<div><span>'+esc(title)+'</span><strong>'+number(r.scores[k])+'</strong></div>').join('')+'</div>'+b.columns.map(([k,title])=>'<p class="detail-line"><strong>'+esc(title)+':</strong> '+esc(r.formulas[k])+'</p>').join('')+(r.reanalysis?'<p class="detail-line">Final population health: '+number(r.reanalysis.capability.endpoint)+' · Winter health lost: '+number(r.reanalysis.capability.winter_damage)+' · Extra winter penalty: '+number(r.reanalysis.capability.winter_surcharge)+' · Original full-run average: '+number(r.reanalysis.capability.original_full_horizon)+'</p>':'')+'<p class="detail-line">Seeds '+esc(r.seeds.join(', '))+' · '+money(r.cost)+' / run</p><p class="detail-line">Reasoning / decision: '+(r.reasoning_estimated?'~':'')+number(r.reasoning,0)+' tokens'+(r.latency!=null?' · Median response: '+number(r.latency)+'s':'')+'</p>'+(r.note?'<p class="detail-line warning">'+esc(r.note)+'</p>':'')+'<div class="detail-seeds">'+r.seed_scores.map(s=>'<div><p class="detail-line">Seed '+s.seed+'</p>'+b.columns.map(([k,title])=>'<p>'+esc(title)+' '+number(s.scores[k])+'</p>').join('')+'</div>').join('')+'</div>'+(r.commit?'<p class="detail-line muted">Launch commit · '+esc(r.commit.slice(0,12))+'</p>':'<p class="detail-line muted">Source · canonical model metrics database</p>');
+  clearModelPreviews();
+  const worlds=r.worlds||[],provisional=/provisional/i.test(r.status||'');
+  $('model-details').innerHTML='<p class="eyebrow">PARTICIPANT '+esc(b.title.toUpperCase())+' · RANK '+r.rank+'</p><h2 id="model-title" class="detail-title">'+esc(r.model)+'</h2>'+
+    (modelSubtitle(r)?'<span class="badge">'+esc(modelSubtitle(r))+'</span>':'')+
+    '<div class="detail-scores">'+b.columns.map(([k,title])=>'<div><span>'+esc(title)+'</span><strong>'+number(r.scores[k])+'</strong></div>').join('')+'</div>'+
+    '<div class="run-previews">'+worlds.map((world,index)=>'<a class="run-preview" href="'+esc(worldURL(world))+'" aria-label="View '+esc(r.model)+' seed '+esc(world.seed)+' in the observatory"><div class="run-preview-scene"><canvas id="run-preview-'+index+'" aria-hidden="true"></canvas><span class="preview-message" role="status">Loading saved world…</span></div><div class="run-preview-caption"><strong>Seed '+esc(world.seed)+'</strong><span>Open observatory <span aria-hidden="true">↗</span></span></div></a>').join('')+'</div>'+
+    (!worlds.length?'<p class="detail-line muted">No saved world is available for this result.</p>':'')+
+    (provisional?'<p class="detail-line provisional-note">'+(r.seeds?.length===1?'Only one seed completed; result is provisional.':'Result is provisional; replication is incomplete.')+'</p>':
+      /controlled/i.test(r.status||'')&&r.note?'<p class="detail-line muted">'+esc(r.note)+'</p>':'');
   $('model-dialog').showModal();
+  const request=new AbortController();previewRequest=request;
+  worlds.forEach(async(world,index)=>{
+    const canvas=$('run-preview-'+index),message=canvas.parentElement.querySelector('.preview-message');
+    try{
+      const response=await fetch(worldURL(world,true),{cache:'no-store',signal:AbortSignal.any([request.signal,AbortSignal.timeout(20000)])});
+      if(!response.ok)throw new Error('Snapshot unavailable');
+      const payload=await response.json();if(request.signal.aborted)return;
+      const renderer=new WorldRenderer(canvas,{preview:true});previewRenderers.push(renderer);renderer.setSnapshot(payload.snapshot);
+      message.textContent='Tick '+payload.snapshot.tick;message.classList.add('preview-tick');
+    }catch(error){
+      if(request.signal.aborted)return;
+      message.textContent='Snapshot unavailable · Open observatory to retry';
+    }
+  });
 }
 async function refresh(){
   $('refresh').disabled=true;
@@ -230,6 +274,9 @@ $('experiment-search').addEventListener('input',()=>{if(data)renderExperiments()
 $('experiment-filter').addEventListener('change',()=>{if(data)renderExperiments();});
 $('search').addEventListener('input',renderTable);
 $('refresh').onclick=refresh;
+$('scoring-info').onclick=showScoringInfo;
+$('close-scoring').onclick=()=>$('scoring-dialog').close();
+$('model-dialog').addEventListener('close',clearModelPreviews);
 $('close-dialog').onclick=()=>$('model-dialog').close();
 $('model-dialog').addEventListener('click',event=>{if(event.target===$('model-dialog')&&event.offsetX<0)$('model-dialog').close();});
 if(!laboratoryPage)refresh();

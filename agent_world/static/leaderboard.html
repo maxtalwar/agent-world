@@ -29,7 +29,7 @@
 <div id="experiment-list" class="experiment-grid"></div>
 </section>
 <div class="content-grid">
-<section class="card rankings"><div class="section-heading"><div><h2>Model rankings</h2></div><div class="ranking-controls"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a model" aria-label="Find a model"></label><details class="column-picker"><summary>Columns</summary><fieldset id="column-options" aria-label="Visible leaderboard columns"></fieldset></details></div></div><div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div><p id="no-results" class="empty" hidden>No models match your search.</p><div class="table-footer"><span id="table-note"></span><span>Higher scores are better ↗</span></div></section>
+<section class="card rankings"><div class="section-heading"><div class="rankings-title"><h2>Model rankings</h2><button id="scoring-info" class="scoring-info" aria-label="How model rankings are calculated" aria-haspopup="dialog" title="Scoring information">i</button></div><div class="ranking-controls"><label class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Find a model" aria-label="Find a model"></label><details class="column-picker"><summary>Columns</summary><fieldset id="column-options" aria-label="Visible leaderboard columns"></fieldset></details></div></div><div class="table-scroll"><table><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div><p id="no-results" class="empty" hidden>No models match your search.</p><div class="table-footer"><span id="table-note"></span><span>Higher scores are better ↗</span></div></section>
 <aside class="card activity"><div class="section-heading"><div><h2>Study activity</h2></div><span class="activity-icon" aria-hidden="true">◷</span></div><div id="activity-list"></div></aside>
 </div>
 <details id="additional-studies" class="card methodology" hidden><summary>Additional studies <span aria-hidden="true">+</span></summary><div id="additional-study-list"></div></details>
@@ -37,7 +37,8 @@
 <footer><span>Agent World <span class="muted">/ A living record of agent capabilities</span></span><span id="updated"></span></footer>
 </div>
 </main>
-<dialog id="model-dialog"><button id="close-dialog" class="icon-button close" aria-label="Close model details">×</button><div id="model-details"></div></dialog>
+<dialog id="scoring-dialog" aria-labelledby="scoring-title"><button id="close-scoring" class="icon-button close" aria-label="Close scoring information">×</button><p class="eyebrow">MODEL RANKINGS</p><h2 id="scoring-title" class="detail-title">How scores are calculated</h2><div id="scoring-details"></div></dialog>
+<dialog id="model-dialog" aria-labelledby="model-title"><button id="close-dialog" class="icon-button close" aria-label="Close model details">×</button><div id="model-details"></div></dialog>
 <dialog id="launch-dialog" aria-labelledby="launch-title">
 <button id="close-launch" class="icon-button close" aria-label="Close launch form">×</button>
 <p class="eyebrow">NEW BENCHMARK</p><h2 id="launch-title" class="detail-title">Add to the field.</h2>

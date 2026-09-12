@@ -6,6 +6,8 @@ The demo and managed cells expose the same WorldEngine.snapshot() shape.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import hashlib
+import sqlite3
 import json
 from pathlib import Path
 import re
@@ -72,6 +74,39 @@ class WorldViewer:
     def __init__(self, root: Path):
         self.root = root.resolve()
 
+    def evidence_reference(self, report: str, seed: int) -> dict:
+        relative = _contained(self.root, report).relative_to(self.root).as_posix()
+        return {"run_id": "archive-" + hashlib.sha256(relative.encode()).hexdigest(),
+                "cell_id": "seed-" + str(seed), "seed": seed}
+
+    def _archived_snapshot(self, run_id: str, cell_id: str | None) -> dict:
+        database = self.root / "data/model-benchmarks.sqlite"
+        try:
+            with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as conn:
+                conn.row_factory = sqlite3.Row
+                for record in conn.execute("SELECT * FROM runs"):
+                    ref = self.evidence_reference(record["source_report"], record["seed"])
+                    if ref["run_id"] != run_id:
+                        continue
+                    if cell_id and ref["cell_id"] != cell_id:
+                        raise FileNotFoundError("World not found.")
+                    path = _contained(self.root, str(Path(record["source_report"]).with_name("run-snapshot.json")))
+                    try:
+                        snapshot = display_snapshot(_read(path))
+                    except (OSError, ValueError, KeyError, TypeError) as exc:
+                        raise SnapshotUnavailable("The archived world snapshot is unavailable.") from exc
+                    title = conn.execute(
+                        "SELECT m.label FROM models m JOIN run_cohorts c ON c.model=m.model_key "
+                        "WHERE c.run_id=? LIMIT 1", (record["run_id"],)).fetchone()
+                    return {"world": {**ref, "title": title[0] if title else "Archived world",
+                                      "target_ticks": record["target_ticks"], "demo": False,
+                                      "state": "completed" if record["completed"] else "unknown",
+                                      "snapshot_at": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat()},
+                            "snapshot": snapshot, "refresh_seconds": 30}
+        except sqlite3.Error as exc:
+            raise SnapshotUnavailable("Archived worlds are temporarily unavailable.") from exc
+        raise FileNotFoundError("World not found.")
+
     def _job(self, run_id: str) -> tuple[dict, Path]:
         if not IDENTIFIER.fullmatch(run_id):
             raise FileNotFoundError("World not found.")
@@ -128,6 +163,8 @@ class WorldViewer:
         if run_id == "demo":
             result = _read(STATIC / "world-demo.json")
             return {**result, "snapshot": display_snapshot(result["snapshot"])}
+        if run_id.startswith("archive-"):
+            return self._archived_snapshot(run_id, cell_id)
         job, job_path = self._job(run_id)
         cells = job.get("cells", [])
         cell = next((c for c in cells if c.get("id") == cell_id), None) if cell_id else next(iter(cells), None)

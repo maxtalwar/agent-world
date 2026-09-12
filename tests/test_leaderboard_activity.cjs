@@ -34,7 +34,7 @@ html=vm.runInContext('studyMarkup(run)',context);
 assert.equal((html.match(/Continues/g)||[]).length,2);
 context.run.cells[1].operational_state='running';context.run.cells[1].state='running';
 html=vm.runInContext('studyMarkup(run)',context);
-assert.match(html,/Seed 11 · Quota paused/);assert.match(html,/Seed 41 · Running/);
+assert.match(html,/Seed 11<\/a> · Quota paused/);assert.match(html,/Seed 41<\/a> · Running/);
 context.run.cells[0].retry_at=null;context.run.cells[0].reset_at=null;
 html=vm.runInContext('studyMarkup(run)',context);
 assert.match(html,/Continuation time not yet reported/);
@@ -77,3 +77,7 @@ assert.equal((html.match(/Startup blocked/g)||[]).length,2);
 assert.doesNotMatch(html,/follow-up is pending|working on a fix/);
 assert.match(html,/Monitoring review stopped/);
 console.log('Shared startup blocker and completed monitor review render correctly');
+
+context.run.cells[0].id="custom-cell";
+html=vm.runInContext("studyMarkup(run)",context);
+assert.match(html,/cell=custom-cell/);
