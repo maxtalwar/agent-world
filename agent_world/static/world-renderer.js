@@ -153,21 +153,13 @@
       this.poly([[-16,-h+10],[0,-h],[10,-h+8],[1,-h+5],[-5,-h+12]],'#dce0cc');
       this.line([[-17,-9],[-11,-18],[-8,-18]],'#d0d0b8',2);
     }
-    house(type,seed){
-      const storage=type==='storage',workshop=type==='workshop',shelter=type==='shelter';
-      const r=storage ? .29 : .36,h=storage?22:30,peak=h+22;
-      this.groundPatch('#b7ae82',34);this.ellipse(9,10,32,10,'#59614230');
-      if(shelter){
-        this.mesh([
-          {points:[[-r,-r,0],[r,-r,0],[0,-r,37]],fill:'#c7aa73'},
-          {points:[[-r,r,0],[r,r,0],[0,r,37]],fill:'#d8bd80',
-           details:[{points:[[-.15,r,0],[.15,r,0],[0,r,27]],fill:'#655b42'}]},
-          {points:[[-r,-r,0],[-r,r,0],[0,r,37],[0,-r,37]],fill:'#d8bd80'},
-          {points:[[r,-r,0],[r,r,0],[0,r,37],[0,-r,37]],fill:'#a48151'}
-        ]);return;
-      }
-      const roof=workshop?'#687e81':storage?'#909867':seed>.5?'#b56f52':'#bb7c56';
-      const lightRoof=workshop?'#84999a':storage?'#a8ae77':'#d3956a';
+    house(type,seed,ground=true){
+      const workshop=type==='workshop',shelter=type==='shelter';
+      const r=.36,h=shelter?22:30,peak=h+(shelter?18:22);
+      if(ground)this.groundPatch('#b7ae82',34);
+      if(!shelter)this.ellipse(9,10,32,10,'#59614230');
+      const roof=workshop?'#687e81':shelter?'#ac915e':seed>.5?'#b56f52':'#bb7c56';
+      const lightRoof=workshop?'#84999a':shelter?'#d2b57a':'#d3956a';
       const window=(axis,side)=>({points:axis==='x'?[[side,-.13,9],[side,.13,9],[side,.13,20],[side,-.13,20]]:[[-.13,side,9],[.13,side,9],[.13,side,20],[-.13,side,20]],fill:'#68898a'});
       const faces=[
         {points:[[-r,-r,0],[r,-r,0],[r,-r,h],[-r,-r,h]],fill:'#ddd0b3',details:[window('y',-r)]},
@@ -193,6 +185,47 @@
           {points:[[-.07,-.07,21],[.07,-.07,21],[.07,.07,21],[-.07,.07,21]],fill:'#626f62'}
         ]);this.c.restore();
       }
+    }
+    storage(seed,ground=true){
+      // A low, reinforced timber crate: no roof, door, or house silhouette.
+      const r=.24,h=18,wood=seed>.5?'#b99060':'#bd9d6b';
+      if(ground)this.groundPatch('#b7ae82',25);
+      const side=(axis,edge,fill)=>{
+        const point=(u,z)=>axis==='x'?[edge,u,z]:[u,edge,z];
+        const panel=(a,b,low,high,color)=>({points:[point(a,low),point(b,low),point(b,high),point(a,high)],fill:color});
+        return {points:[point(-r,0),point(r,0),point(r,h),point(-r,h)],fill,
+          details:[panel(-.19,.19,3,15,'#99774f'),
+            panel(-.18,.18,4,8,wood),panel(-.18,.18,10,14,wood),
+            panel(-.21,-.16,0,h,'#68746b'),panel(.16,.21,0,h,'#68746b'),
+            panel(-r,r,0,2,'#d1b584'),panel(-r,r,16,18,'#d8bc8c')]};
+      };
+      const lid={points:[[-r,-r,h],[r,-r,h],[r,r,h],[-r,r,h]],fill:'#dbc293',details:[]};
+      for(const y of [-.12,0,.12])lid.details.push({points:[[-r,y,h],[r,y,h],[r,y+.014,h],[-r,y+.014,h]],fill:'#a38b63'});
+      for(const x of [-.21,.16])lid.details.push({points:[[x,-r,h],[x+.05,-r,h],[x+.05,r,h],[x,r,h]],fill:'#879186'});
+      this.mesh([side('x',-r,'#b08d5e'),side('y',-r,'#b99a68'),
+        side('x',r,'#a48257'),side('y',r,'#c5a574'),lid]);
+    }
+    structureLayout(group){
+      const sorted=group.slice().sort((a,b)=>a.type.localeCompare(b.type)||String(a.id).localeCompare(String(b.id)));
+      const nominal=s=>s.type==='shelter'?SHELTER_SCALE:s.type==='storage'?.8:1;
+      if(sorted.length===1)return [{structure:sorted[0],dx:0,dy:0,scale:nominal(sorted[0])}];
+      const pair=sorted.length===2&&sorted.some(s=>s.type==='shelter')&&sorted.some(s=>s.type==='storage');
+      const {x,y}=sorted[0].position;
+      const variant=Math.min(3,Math.floor(hash(x,y,this.snapshot.config.seed||0)*4));
+      const turn=([dx,dy])=>variant===0?[dx,dy]:variant===1?[-dy,dx]:variant===2?[-dx,-dy]:[dy,-dx];
+      return sorted.map((s,index)=>{
+        let point,scale;
+        if(pair){
+          // Four fixed courtyard arrangements. Keep the hut and crate footprints separate.
+          point=s.type==='shelter'?[-.22,-.12]:[.26,.18];scale=nominal(s);
+        }else{
+          const columns=Math.ceil(Math.sqrt(sorted.length)),rows=Math.ceil(sorted.length/columns),step=.94/columns;
+          point=[(index%columns-(columns-1)/2)*step,(Math.floor(index/columns)-(rows-1)/2)*step];
+          scale=Math.min(nominal(s),step/.86);
+        }
+        const [dx,dy]=turn(point);
+        return {structure:s,dx,dy,scale};
+      });
     }
     farm(tile,seed,time=0){
       this.groundPatch('#927557',34);
@@ -236,11 +269,12 @@
       this.groundLine([[-24,0,29],[0,12,29],[24,0,29],[0,-12,29],[-24,0,29]],'#c8a573',3);
       this.groundLine([[-20,0],[-4,8]],'#d4b785',3);this.groundLine([[-20,-4],[-4,4]],'#d4b785',3);
     }
-    structure(s,tile,time=0){
+    structure(s,tile,time=0,shared=false){
       if(s.status&&s.status!=='complete'){this.construction();return;}
       if(s.type==='farm_plot'){this.farm(tile,hash(s.position.x,s.position.y),time);return;}
       if(s.type==='well'){this.well();return;}
-      if(['house','shelter','storage','workshop'].includes(s.type)){this.house(s.type,hash(s.position.x,s.position.y));return;}
+      if(s.type==='storage'){this.storage(hash(s.position.x,s.position.y),!shared);return;}
+      if(['house','shelter','workshop'].includes(s.type)){this.house(s.type,hash(s.position.x,s.position.y),!shared);return;}
       if(s.type==='road'){this.groundPatch('#c8bea0',38);return;}
       if(s.type==='irrigation'){this.groundPatch('#bcb68b');this.groundLine([[-25,0],[0,12],[25,0]],'#6f9d9e',5);return;}
       this.groundPatch();this.poly([[-12,0],[-12,-16],[0,-22],[12,-16],[12,0],[0,6]],'#bdab81');
@@ -307,13 +341,15 @@
       }
       const grouped=new Map();
       for(const s of this.structures){const key=s.position.x+','+s.position.y;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(s);}
-      for(const group of grouped.values())group.forEach((s,i)=>objects.push({...s.position,order:1,draw:()=>{
-        const tile=this.snapshot.tiles[s.position.y]?.[s.position.x];if(!tile)return;
-        if(group.length>1)this.c.translate((i-(group.length-1)/2)*18,0);
-        const scale=s.type==='shelter'?SHELTER_SCALE:group.length>1?Math.max(.45,1/group.length+.2):1;
-        this.c.scale(scale,scale);
-        this.structure(s,tile,time);
-      }}));
+      for(const group of grouped.values()){
+        if(group.length>1)this.at(group[0].position.x,group[0].position.y,()=>this.groundPatch('#b7ae82',35));
+        for(const {structure:s,dx,dy,scale} of this.structureLayout(group)){
+          objects.push({x:s.position.x+dx,y:s.position.y+dy,order:1,draw:()=>{
+            const tile=this.snapshot.tiles[s.position.y]?.[s.position.x];if(!tile)return;
+            this.c.scale(scale,scale);this.structure(s,tile,time,group.length>1);
+          }});
+        }
+      }
       Object.values(this.snapshot.item_piles||{}).forEach(p=>objects.push({...p.position,order:2,draw:()=>{this.rect(-4,3,8,5,'#bba06b');this.line([[-4,5],[4,5]],'#8b7b58',1);}}));
       this.agents.forEach((a,i)=>{
         const anchor=this.agentAnchor(a);

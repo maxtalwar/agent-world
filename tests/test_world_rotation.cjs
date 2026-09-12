@@ -123,3 +123,37 @@ for(const time of [0,3,11]){
 assert.equal(feet.length,6);feet.forEach(value=>close(value,0));
 crowd.rect=nativeRect;crowd.destroy();reduced.matches=true;
 console.log('World-anchored crowd positions, occlusion order, stable slots and planted feet passed.');
+
+// Shelter/storage arrangements are fixed in world space and preserve native structures.
+const buildings=new Renderer(canvas(),{preview:true});buildings.setSnapshot(snapshot);
+const pair=[{id:'hut',type:'shelter',status:'complete',position:{x:8,y:8}},
+  {id:'supplies',type:'storage',status:'complete',position:{x:8,y:8}}];
+const sourcePair=JSON.stringify(pair),layout=()=>JSON.stringify(buildings.structureLayout(pair));
+const fixedLayout=layout();
+for(let step=0;step<24;step++){
+  buildings.yaw=step*Math.PI/12;
+  assert.equal(layout(),fixedLayout);
+  assert.equal(JSON.stringify(buildings.structureLayout(pair.slice().reverse())),fixedLayout);
+}
+const variants=new Set();
+for(let x=0;x<16;x++){
+  const items=buildings.structureLayout(pair.map(s=>({...s,position:{x,y:8}})));
+  variants.add(JSON.stringify(items.map(({dx,dy})=>[dx,dy])));
+  const bounds=items.map(({structure,dx,dy,scale})=>{
+    const radius=(structure.type==='shelter'?.41:.24)*scale;
+    assert.ok(Math.abs(dx)+radius<.5&&Math.abs(dy)+radius<.5,'Footprints stay inside their tile');
+    return {dx,dy,radius};
+  });
+  assert.ok(Math.abs(bounds[0].dx-bounds[1].dx)>bounds[0].radius+bounds[1].radius||
+    Math.abs(bounds[0].dy-bounds[1].dy)>bounds[0].radius+bounds[1].radius,'Hut and crate footprints do not intersect');
+}
+assert.equal(variants.size,4);
+assert.equal(JSON.stringify(pair),sourcePair);
+assert.equal(buildings.structureLayout([pair[0]])[0].scale,buildings.structureLayout(pair).find(s=>s.structure.type==='shelter').scale);
+let icon;
+buildings.storage=()=>icon='crate';buildings.house=type=>icon=type;buildings.construction=()=>icon='construction';
+buildings.structure(pair[1],{});assert.equal(icon,'crate');
+buildings.structure(pair[0],{});assert.equal(icon,'shelter');
+buildings.structure({...pair[1],status:'under_construction'},{});assert.equal(icon,'construction');
+buildings.destroy();
+console.log('Distinct storage/shelter icons, four stable layouts, separate footprints and construction status passed.');
