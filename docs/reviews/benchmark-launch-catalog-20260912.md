@@ -19,9 +19,13 @@ Validation: 48 Python launch/catalog tests and the browser picker regression
 script pass. Coverage includes retained blocked recipes, rejection of their
 launch previews, empty-catalog errors, and stale-warning wording.
 
-The compatibility-lock update is a separate pending action requiring explicit
-owner approval from automatic approval review. Until it is applied and verified,
-launches remain blocked. Read-only review found only help-parser preflight and
-pricing changes; 35 connector, pricing, historical-v6, and v6.1 compatibility
-tests passed. The prepared update changes only the two expected hashes and adds
-the imported pricing constants module to the guarded file set.
+The owner explicitly approved the prepared compatibility-lock update on
+2026-09-12. Applied exactly the reviewed hashes for devin_brain.py and usage.py
+and added the imported main_harness_pricing.py constants module to the guarded
+file set. Recipe definitions, simulation mechanics, historical provenance, and
+launch verification remain unchanged. Read-only review found only help-parser
+preflight and pricing changes in the affected files.
+
+Post-update validation: all 85 recipe execution, connector, pricing, launch, and
+saved-catalog tests passed, including every registered recipe lock and historical
+v6/v6.1 compatibility checks.
