@@ -121,6 +121,14 @@ class LeaderboardTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.store.aggregate(job, [report], ("unknown",))
 
+    def test_recovery_disclosure_does_not_become_variant_subtitle_on_catalog_fallback(self):
+        root = Path(__file__).resolve().parents[1]
+        board = next(b for b in LeaderboardStore(root).canonical_boards()
+                     if b["recipe"] == "participant-v8-revised")
+        gemini = next(r for r in board["rows"] if r["model"] == "Gemini 3.8 Flash")
+        self.assertEqual(gemini["subtitle"], "")
+        self.assertIn("CLI update", gemini["note"])
+
     def test_partial_reports_never_reach_scorer(self):
         job, path = self.fixture(complete=False)
         with patch.object(self.store, "aggregate") as scorer:

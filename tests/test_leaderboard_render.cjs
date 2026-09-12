@@ -25,6 +25,36 @@ context.fetch=async()=>({ok:true,json:async()=>context.payload});
   assert.match(element('additional-study-list').innerHTML,/Time \/ decision/);
   assert.match(element('table-head').innerHTML,/Time \/ decision/);
   assert.equal(element('refresh').disabled,false);
+  assert.doesNotMatch(element('table-body').innerHTML,/model-meta|Reviewed recovery/);
+  for(const status of ['Certified','Replicated']){
+    row.status=status;
+    await vm.runInContext('refresh()',context);
+    assert.doesNotMatch(element('table-body').innerHTML,/model-meta/);
+  }
+  row.status='Provisional · 1 seed';
+  await vm.runInContext('refresh()',context);
+  assert.match(element('table-body').innerHTML,/Provisional · 1 seed/);
+  row.status='Controlled variant';
+  await vm.runInContext('refresh()',context);
+  assert.match(element('table-body').innerHTML,/Controlled variant/);
+  row.subtitle='';
+  await vm.runInContext('refresh()',context);
+  assert.doesNotMatch(element('table-body').innerHTML,/model-meta/);
+  delete row.subtitle;
+  row.status='Certified';
+  const pending={id:'opus-pending',model:'Opus 5',ranked:false,archived:false,
+    connector:'claude',warnings:[],checked_at:new Date().toISOString(),
+    cells:[{seed:11,tick:37,target:60,state:'waiting_quota',retry_at:'2026-09-13T00:31:00Z'}]};
+  // Catalog fallback must not hide active runs inside Additional studies.
+  group.runs=[pending];
+  await vm.runInContext('refresh()',context);
+  assert.match(element('activity-list').innerHTML,/Opus 5/);
+  assert.match(element('activity-list').innerHTML,/Quota paused/);
+  assert.doesNotMatch(element('additional-study-list').innerHTML,/opus-pending|Quota paused/);
+  board.runs=[pending];
+  await vm.runInContext('refresh()',context);
+  assert.equal((element('activity-list').innerHTML.match(/<article class="study">/g)||[]).length,1);
+  board.runs=[];group.runs=[];
   if(process.argv[2]){
     context.payload=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
     await vm.runInContext('refresh()',context);
@@ -39,6 +69,10 @@ context.fetch=async()=>({ok:true,json:async()=>context.payload});
     }
     assert.ok(live.rows.length>=17,'Previously admitted models must remain visible');
     assert.equal(element('error').hidden,true);
+    for(const run of vm.runInContext('activityRuns(board())',context).filter(r=>!r.ranked&&!r.archived)){
+      assert.ok(element('activity-list').innerHTML.includes(run.model),`${run.model} must be visible in Study activity`);
+    }
+    assert.doesNotMatch(element('table-body').innerHTML,/>Certified<|>Replicated<|>Reviewed recovery</);
   }
   context.payload=fixture;
   group.recipe='participant-v6';

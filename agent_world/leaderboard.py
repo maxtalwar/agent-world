@@ -204,6 +204,10 @@ class LeaderboardStore:
 
     def canonical_boards(self) -> list[dict]:
         database = self.root / "data/model-benchmarks.sqlite"
+        catalog_path = self.root / "data/run-sources.json"
+        display_subtitles = {m["model_key"]: m["display_subtitle"]
+                             for m in (read_json(catalog_path).get("models", []) if catalog_path.exists() else [])
+                             if isinstance(m.get("display_subtitle"), str)}
         # Open each refresh afresh: the builder atomically replaces the database.
         with sqlite3.connect(database.as_uri() + "?mode=ro", uri=True) as conn:
             conn.row_factory = sqlite3.Row
@@ -244,6 +248,7 @@ class LeaderboardStore:
                     "scores": {k: v.get("score") for k, v in scores.items()},
                     "formulas": {k: v.get("formula", "") for k, v in scores.items()},
                     "status": "Provisional · 1 seed" if len(seeds) == 1 else "Controlled variant" if r["controlled_variant"] else "Replicated",
+                    "subtitle": display_subtitles.get(r["model_key"]),
                     "note": r["variant_note"], "seeds": seeds,
                     "cost": r["api_list_cost_per_run_usd"],
                     "reasoning": r["reasoning_tokens_per_decision"],
@@ -444,7 +449,6 @@ class LeaderboardStore:
         if admission_note:
             for row in rows:
                 row["note"] = admission_note
-                row["status"] = "Reviewed recovery"
         run["ranked"] = bool(rows)
         return run, rows, aggregate
 
