@@ -18,6 +18,9 @@ CONNECTORS = {"codex": "Codex", "claude": "Claude Code", "antigravity": "Antigra
               "cursor": "Cursor", "devin": "Devin"}
 
 
+DISABLED_BENCHMARK_CONNECTORS = {"devin": "Devin is disconnected: its CLI does not support the required benchmark instructions and tool isolation."}
+
+
 def recipe_label(recipe):
     return "Participant " + ({"participant-v8-revised": "v8.1", "participant-v6-1": "v6.1"}.get(recipe) if recipe in {"participant-v8-revised", "participant-v6-1"}
                             else recipe.removeprefix("participant-").replace("-", " "))
@@ -64,6 +67,8 @@ def claude_explicit_model(model, environment):
             "--settings", '{"disableAllHooks":true}', "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}'],
             input="/model " + model, cwd=cwd, env=child, capture_output=True, text=True, timeout=25, check=True)
     response = json.loads(result.stdout)
+    if response.get("result", "").startswith("API error:"):
+        raise ValueError("Claude model availability check is temporarily unavailable")
     selected = re.search(r"^Set model to `([^`]+)` for this session only", response.get("result", ""))
     expected = friendly(model).removeprefix("Claude ").lower()
     valid = (not response.get("is_error") and response.get("num_turns") == 0
@@ -248,6 +253,7 @@ def model_catalog(sources, client=None, environment=None):
             warnings.append("Codex catalog unavailable; no historical models substituted.")
     brains = set().union(*(set(s["brains"]) for s in sources.values())) if sources else set()
     brains.discard("codex")
+    brains.difference_update(DISABLED_BENCHMARK_CONNECTORS)
     with ThreadPoolExecutor(max_workers=8) as pool:
         futures = {pool.submit(command_models, brain, environment): brain for brain in brains}
         for future in as_completed(futures):
@@ -279,7 +285,7 @@ def model_catalog(sources, client=None, environment=None):
     if "claude" in brains and any(m["brain"] == "claude" for m in entries.values()):
         candidates = set()
         for entry in list(entries.values()):
-            model = entry["model"].split("/")[-1].replace(".", "-")
+            model = re.sub(r"\[1m\]$", "", entry["model"].split("/")[-1], flags=re.I).replace(".", "-")
             if re.fullmatch(r"claude-(?:opus|sonnet|haiku|fable)-[0-9]+(?:-[0-9]+){0,3}", model):
                 if "claude:" + model not in entries:
                     candidates.add(model)
@@ -290,8 +296,8 @@ def model_catalog(sources, client=None, environment=None):
                     if future.result():
                         add("claude", checks[future], efforts=["low", "medium", "high"])
                 except (OSError, ValueError, subprocess.SubprocessError):
-                    pass
-    return sorted(entries.values(), key=lambda m: (m["lab"], m["name"], m["brain"])), sorted(warnings)
+                    warnings.append("Some Claude model availability checks failed; the catalog may be incomplete. Try refreshing after the rate limit clears.")
+    return sorted(entries.values(), key=lambda m: (m["lab"], m["name"], m["brain"])), sorted(set(warnings))
 
 
 def for_recipe(entries, source):
@@ -302,6 +308,8 @@ def for_recipe(entries, source):
         # substitute the Contributor data-use tier when Standard is unavailable.
         if re.search(r"muse[- ]spark", m["model"], re.I) and m["model"].endswith("-contributor"):
             continue
+        if m["brain"] in DISABLED_BENCHMARK_CONNECTORS:
+            continue
         if m["brain"] not in source["brains"] or (m["efforts"] is not None and effort not in m["efforts"]):
             continue
         result.append({**m, "model": m["variants"].get(effort) if m["variants"] else m["model"]})
@@ -311,5 +319,5 @@ def for_recipe(entries, source):
     chosen = {}
     for m in result:
         identity = re.sub(r"^[^:]+:\s*", "", m["name"]).lower()
-        chosen.setdefault(identity, m)
+        chosen.setdefault((m["brain"], identity), m)
     return sorted(chosen.values(), key=lambda m: (m["lab"], m["name"]))

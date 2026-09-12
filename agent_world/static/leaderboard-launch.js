@@ -23,24 +23,24 @@ function pickerOpen(open) {
 }
 const nativeConnectors={openai:'codex',anthropic:'claude',google:'antigravity',meta:'muse',xai:'grok',zai:'zcode'};
 const catalogIdentity=name=>(name||'').toLowerCase().replace(/^(?:anthropic: ?|claude )/,'').replace(/ (?:low|medium|high|xhigh|max)$/,'').replace(/[^a-z0-9]/g,'').replace(/^(?:meta)?(musespark[0-9]+)contributor$/,'$1');
-function browseModels(models,recipe,boards,{query='',lab='',mode='next'}={}) {
+function browseModels(models,recipe,boards,{query='',harness='',mode='next'}={}) {
   const study=boards.find(b=>b.recipe===recipe);
   const seen=new Set([...(study?.rows||[]),...(study?.runs||[])].map(r=>catalogIdentity(r.model)));
   const activeMuse=new Set((study?.runs||[]).filter(r=>!r.ranked&&r.cells?.some(c=>!['completed','failed','stopped','invalid','cancelled'].includes(c.operational_state||c.state))).map(r=>catalogIdentity(r.model)).filter(id=>id.startsWith('musespark')));
   const native=m=>nativeConnectors[m.lab]===m.brain;
-  return models.filter(m=>!activeMuse.has(catalogIdentity(m.name))&&(!lab||m.lab===lab)&&(!query||(m.name+' '+m.lab+' '+m.connector).toLowerCase().includes(query))&&
+  return models.filter(m=>!activeMuse.has(catalogIdentity(m.name))&&(!harness||m.brain===harness)&&(!query||(m.name+' '+m.lab+' '+m.connector).toLowerCase().includes(query))&&
     (query||mode==='all'||(native(m)&&!seen.has(catalogIdentity(m.name)))))
     .sort((a,b)=>Number(native(b))-Number(native(a))||Number(seen.has(catalogIdentity(a.name)))-Number(seen.has(catalogIdentity(b.name)))||a.name.localeCompare(b.name,undefined,{numeric:true}));
 }
 function launchModels() {
   const models=launchRecipe()?.models||[],query=launchEl('model-search').value.trim().toLowerCase();
   const mode=launchEl('model-browse').value||'next';
-  const visible=browseModels(models,launchRecipe()?.recipe_id,data?.boards||[],{query,mode,lab:launchEl('model-lab').value});
+  const visible=browseModels(models,launchRecipe()?.recipe_id,data?.boards||[],{query,mode,harness:launchEl('model-harness').value});
   launchEl('model-browse-note').textContent=visible.length+' models · '+(query?'Searching the full catalog.':mode==='all'?'Native connectors first.':'Native models without a result or study in this recipe. Search or choose All models for the full catalog.');
   launchEl('model-options').innerHTML=visible.map(m=>'<label class="model-option">'+
     '<input type="checkbox" value="'+esc(m.key)+'" '+(launchState.selected.has(m.key)?'checked':'')+'>'+
     modelLogo(m.lab,'')+'<span class="model-option-copy"><strong>'+esc(m.name)+'</strong><span>'+esc(m.connector)+'</span></span></label>').join('')||
-    '<p class="small muted">No matching models. Choose All models or adjust your search and lab filter.</p>';
+    '<p class="small muted">No matching models. Choose All models or adjust your search and harness filter.</p>';
   launchEl('model-options').querySelectorAll('input').forEach(input=>input.onchange=()=>{
     if(input.checked)launchState.selected.add(input.value);else launchState.selected.delete(input.value);
     updateSelected();
@@ -60,6 +60,10 @@ function updateSelected() {
   launchEl('review-launch').textContent='Review '+(count||'')+' benchmark'+(count===1?'':'s')+' →';
 }
 function chooseRecipe() {
+  const filter=launchEl('model-harness'),selected=filter.value;
+  const harnesses=new Map((launchRecipe()?.models||[]).map(m=>[m.brain,m.connector]));
+  filter.innerHTML='<option value="">All harnesses</option>'+[...harnesses].sort((a,b)=>a[1].localeCompare(b[1])).map(([id,name])=>'<option value="'+esc(id)+'">'+esc(name)+'</option>').join('');
+  filter.value=harnesses.has(selected)?selected:'';
   const allowed=new Set((launchRecipe()?.models||[]).map(m=>m.key));
   launchState.selected=new Set([...launchState.selected].filter(k=>allowed.has(k)));
   launchModels();launchConditions();
@@ -72,7 +76,7 @@ async function openLaunch() {
   launchEl('launch-loading').hidden=false;launchEl('review-launch').disabled=true;
   launchEl('launch-recipe').innerHTML='';launchEl('model-options').innerHTML='';
   launchEl('selected-models').innerHTML='';launchEl('model-picker-count').textContent='Choose models';
-  launchEl('model-search').value='';launchEl('model-browse').value='next';launchEl('model-lab').value='';pickerOpen(false);launchError('');
+  launchEl('model-search').value='';launchEl('model-browse').value='next';launchEl('model-harness').value='';pickerOpen(false);launchError('');
   try {
     const response=await fetch('/api/launch/options',{cache:'no-store',signal:AbortSignal.timeout(120000)});
     const options=await response.json();
@@ -192,4 +196,4 @@ launchEl('edit-launch').onclick=()=>{
 };
 
 launchEl('model-browse').onchange=launchModels;
-launchEl('model-lab').onchange=launchModels;
+launchEl('model-harness').onchange=launchModels;

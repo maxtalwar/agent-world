@@ -41,6 +41,21 @@ class CatalogTests(unittest.TestCase):
         recipe["brains"] = ["codex"]
         self.assertEqual([m["name"] for m in for_recipe(entries, recipe)], ["GPT-6 Astra"])
 
+    def test_disabled_devin_is_not_discovered(self):
+        with patch("agent_world.leaderboard_models.command_models") as discovery:
+            entries, _ = model_catalog({"x": {"brains": ["devin"]}})
+        discovery.assert_not_called()
+        self.assertEqual(entries, [])
+
+    def test_same_model_remains_available_per_harness(self):
+        entries = [{"key": brain+":claude-opus-5", "model": "claude-opus-5",
+                    "name": "Claude Opus 5", "brain": brain, "lab": "anthropic",
+                    "efforts": None, "variants": None}
+                   for brain in ["claude", "cursor", "devin"]]
+        recipe = {"brains": ["claude", "cursor", "devin"],
+                  "defaults": {"reasoning_effort": "medium"}}
+        self.assertEqual({m["brain"] for m in for_recipe(entries, recipe)}, {"claude", "cursor"})
+
     def test_failed_connector_does_not_fall_back_to_run_history(self):
         sources = {"x": {"brains": ["claude"], "models": [{"brain": "claude", "id": "claude-fable-5"}]}}
         with patch("agent_world.leaderboard_models.command_models", side_effect=RuntimeError("offline")):

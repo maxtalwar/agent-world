@@ -19,11 +19,11 @@ import time
 
 try:
     from .benchmark_defaults import benchmark_seeds
-    from .leaderboard_models import model_catalog, for_recipe, recipe_label
+    from .leaderboard_models import model_catalog, for_recipe, recipe_label, DISABLED_BENCHMARK_CONNECTORS
     from .leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
 except ImportError:
     from benchmark_defaults import benchmark_seeds
-    from leaderboard_models import model_catalog, for_recipe, recipe_label
+    from leaderboard_models import model_catalog, for_recipe, recipe_label, DISABLED_BENCHMARK_CONNECTORS
     from leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
 
 ACTIVE = {"queued", "launching", "supervising"}
@@ -415,6 +415,8 @@ class LaunchService:
         if not source:
             raise LaunchError("This recipe has no clean retained launch source")
         brain, model = values["brain"], values["model"]
+        if brain in DISABLED_BENCHMARK_CONNECTORS:
+            raise LaunchError(DISABLED_BENCHMARK_CONNECTORS[brain])
         if brain not in source["brains"] or not isinstance(model, str) or not MODEL_ID.fullmatch(model):
             raise LaunchError("Invalid connector or model ID")
         seeds = benchmark_seeds(model, source["seeds"])
@@ -564,6 +566,8 @@ class LaunchService:
         return self.public_request(self.get(identifier))
 
     def validate_source(self, request):
+        if request.get("brain") in DISABLED_BENCHMARK_CONNECTORS:
+            raise LaunchError(DISABLED_BENCHMARK_CONNECTORS[request["brain"]])
         locks_path = self.root / "agent_world/recipe-execution-locks.json"
         locks = read(locks_path) if locks_path.exists() else {}
         selected = locks.get("recipes", {}).get(request["recipe_id"], {})

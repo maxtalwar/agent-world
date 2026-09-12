@@ -21,7 +21,7 @@ assert.deepEqual(Array.from(browse(choices,'v8',history),m=>m.name),['Claude Opu
 assert.equal(browse(choices,'v6',history).length,2);
 assert.equal(browse(choices,'v8',history,{mode:'all'}).length,3);
 assert.equal(browse(choices,'v8',history,{query:'hosted'}).length,1);
-assert.equal(browse(choices,'v8',history,{mode:'all',lab:'anthropic'}).length,1);
+assert.equal(browse(choices,'v8',history,{mode:'all',harness:'claude'}).length,1);
 
 const muse=[{name:'Muse Spark 1.2',brain:'muse',lab:'meta',connector:'Muse'},
  {name:'Muse Spark 1.2 Contributor',brain:'muse',lab:'meta',connector:'Muse'},
@@ -53,8 +53,8 @@ assert.equal(browse(muse,'v8',museHistory).length,1);
   await vm.runInContext('confirmLaunch()',context);
   assert.deepEqual(JSON.parse(JSON.stringify(context.calls)),[['first','second'],['second']]);
   vm.runInContext(`
-    launchState.options={enabled:true,recipes:[{id:'v8',models:[{key:'astra'},{key:'gemini'}]},
-      {id:'v6',models:[{key:'astra'}]}]};
+    launchState.options={enabled:true,recipes:[{id:'v8',models:[{key:'astra',brain:'codex',connector:'Codex'},{key:'gemini',brain:'antigravity',connector:'Antigravity'}]},
+      {id:'v6',models:[{key:'astra',brain:'codex',connector:'Codex'}]}]};
     launchState.selected=new Set(['astra','gemini']);
     launchEl('launch-recipe').value='v6';
     launchModels=()=>{};launchConditions=()=>{};chooseRecipe();
