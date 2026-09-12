@@ -39,22 +39,54 @@ function modelSubtitle(row) {
   const status=String(row.status||'').trim();
   return /^(certified|replicated|reviewed recovery)$/i.test(status)?'':status;
 }
+const columnStorageKey='agent-world-hidden-columns-v1';
+let hiddenColumns=new Set();
+try { const saved=JSON.parse(localStorage.getItem(columnStorageKey)||'[]'); if(Array.isArray(saved))hiddenColumns=new Set(saved.filter(k=>typeof k==='string'&&k!=='model')); } catch {}
+function tableColumns(b) {
+  return [['rank','#'],['model','Model'],...b.columns,['cost','Cost / run'],['reasoning','Reasoning tokens / decision'],
+    ...(b.recipe==='participant-v8-revised'?[['mean_decision_seconds','Time / decision']]:[])];
+}
+function visibleColumns(b){return tableColumns(b).filter(([k])=>!hiddenColumns.has(k));}
+function setColumnVisible(key,visible){
+  if(key==='model')return;
+  if(visible)hiddenColumns.delete(key);else hiddenColumns.add(key);
+  try{localStorage.setItem(columnStorageKey,JSON.stringify([...hiddenColumns]));}catch{}
+  renderTable();renderAdditionalStudies();
+}
+function renderColumnPicker(b){
+  const options=$('column-options'), signature=JSON.stringify([tableColumns(b),[...hiddenColumns]]);
+  if(options.columnSignature===signature)return;
+  options.columnSignature=signature;
+  options.innerHTML=tableColumns(b).map(([k,title])=>'<label><input type="checkbox" data-column="'+esc(k)+'"'+(!hiddenColumns.has(k)?' checked':'')+(k==='model'?' disabled':'')+'> '+esc(title)+'</label>').join('');
+  options.querySelectorAll('input').forEach(input=>input.onchange=()=>setColumnVisible(input.dataset.column,input.checked));
+}
+function tableCell(r,k,b,max=100){
+  const primary=b.columns[0][0];
+  if(k==='rank')return '<td>'+r.rank+'</td>';
+  if(k==='model')return '<td><button class="model-button" data-model="'+esc(r.id)+'"><span class="model-avatar" title="'+esc(r.lab?.name||'Lab unspecified')+'"><img src="/labs/'+esc(r.lab?.id||'unknown')+'.svg" alt="'+esc(r.lab?.name||'Lab unspecified')+'" width="20" height="20"></span><span><span class="model-name">'+esc(r.model)+'</span>'+(modelSubtitle(r)?'<span class="model-meta">'+esc(modelSubtitle(r))+'</span>':'')+'</span></button></td>';
+  if(k==='cost')return '<td>'+money(r.cost)+'</td>';
+  if(k==='reasoning')return '<td title="Mean reasoning tokens per decision; ~ indicates an estimate.">'+(r.reasoning==null?'—':(r.reasoning_estimated?'~':'')+number(r.reasoning,0))+'</td>';
+  if(k==='mean_decision_seconds')return '<td title="Mean elapsed seconds per decision; includes retries within a decision.">'+(r.mean_decision_seconds==null?'—':number(r.mean_decision_seconds,2)+' s')+'</td>';
+  return '<td'+(k===primary?' class="primary-score"':'')+'>'+number(r.scores[k])+(k===primary&&r.scores[k]!=null?'<progress class="score-rail" value="'+r.scores[k]+'" max="'+max+'" aria-label="'+esc(r.model)+' '+esc(b.columns[0][1])+'"></progress>':'')+'</td>';
+}
 function renderAdditionalStudies() {
   const groups=(board().study_groups||[]).filter(g=>g.rows.length);
   $('additional-studies').hidden=!groups.length;
   $('additional-study-list').innerHTML='<p class="muted">These studies retain separate recipe evidence and rankings. They do not replace the established table above.</p>'+groups.map(g=>{
-    const showTime=g.recipe==='participant-v8-revised';
-    return '<section><h3>'+esc(g.rows.map(r=>r.model).join(', ')||'Ongoing studies')+'</h3><p class="small muted">'+esc(g.recipe)+' · '+esc(g.digest?.slice(0,8)||'Historical evidence')+'</p><div class="table-scroll"><table><thead><tr><th>Model</th>'+g.columns.map(c=>'<th>'+esc(c[1])+'</th>').join('')+'<th>Cost / run</th>'+(showTime?'<th>Time / decision</th>':'')+'</tr></thead><tbody>'+g.rows.map(r=>'<tr><td><button class="model-button" data-model="'+esc(r.id)+'">'+esc(r.model)+'</button></td>'+g.columns.map(c=>'<td>'+number(r.scores[c[0]])+'</td>').join('')+'<td>'+money(r.cost)+'</td>'+(showTime?'<td title="Mean elapsed seconds per decision across both seeds; includes retries within a decision.">'+(r.mean_decision_seconds==null?'—':number(r.mean_decision_seconds,2)+' s')+'</td>':'')+'</tr>').join('')+'</tbody></table></div></section>';}).join('');
+    const columns=visibleColumns(g).filter(([k])=>k!=='rank'),max=Math.max(100,...g.rows.map(r=>r.scores[g.columns[0][0]]||0));
+    return '<section><h3>'+esc(g.rows.map(r=>r.model).join(', '))+'</h3><p class="small muted">'+esc(g.recipe)+' · '+esc(g.digest?.slice(0,8)||'Historical evidence')+'</p><div class="table-scroll"><table><thead><tr>'+columns.map(([,title])=>'<th>'+esc(title)+'</th>').join('')+'</tr></thead><tbody>'+g.rows.map(r=>'<tr>'+columns.map(([k])=>tableCell(r,k,g,max)).join('')+'</tr>').join('')+'</tbody></table></div></section>';}).join('');
   $('additional-study-list').querySelectorAll('[data-model]').forEach(el=>el.onclick=()=>showModel(el.dataset.model));
 }
 function renderTable() {
   const b=board(); if(!b)return;
-  const primary=b.columns[0][0], key=sortKey || primary;
-  const showTime=b.recipe==='participant-v8-revised';
-  const columns=[['rank','#'],['model','Model'],...b.columns,['cost','Cost / run'],...(showTime?[['mean_decision_seconds','Time / decision']]:[])];
+  renderColumnPicker(b);
+  const columns=visibleColumns(b),primary=b.columns[0][0];
+  if(sortKey&&hiddenColumns.has(sortKey)){sortKey=null;sortAsc=false;}
+  const key=sortKey||(!hiddenColumns.has(primary)?primary:columns[0][0]);
+  if(!sortKey)sortAsc=['rank','model'].includes(key);
   $('table-head').innerHTML='<tr>'+columns.map(([k,title])=>'<th scope="col"'+(k===key?' aria-sort="'+(sortAsc?'ascending':'descending')+'"':'')+'><button data-sort="'+esc(k)+'">'+esc(title)+(k===key?(sortAsc?' ↑':' ↓'):'')+'</button></th>').join('')+'</tr>';
   $('table-head').querySelectorAll('button').forEach(button=>button.onclick=()=>{
-    sortAsc=key===button.dataset.sort?!sortAsc:['model','rank','cost','mean_decision_seconds'].includes(button.dataset.sort);
+    sortAsc=key===button.dataset.sort?!sortAsc:['model','rank','cost','mean_decision_seconds','reasoning'].includes(button.dataset.sort);
     sortKey=button.dataset.sort;renderTable();
   });
   const query=$('search').value.trim().toLowerCase();
@@ -67,11 +99,12 @@ function renderTable() {
     return (sortAsc?diff:-diff)||a.rank-c.rank;
   });
   const max=Math.max(100,...b.rows.map(r=>r.scores[primary]||0));
-  $('table-body').innerHTML=rows.map(r=>'<tr><td>'+r.rank+'</td><td><button class="model-button" data-model="'+esc(r.id)+'"><span class="model-avatar" title="'+esc(r.lab?.name||'Lab unspecified')+'"><img src="/labs/'+esc(r.lab?.id||'unknown')+'.svg" alt="'+esc(r.lab?.name||'Lab unspecified')+'" width="20" height="20"></span><span><span class="model-name">'+esc(r.model)+'</span>'+(modelSubtitle(r)?'<span class="model-meta">'+esc(modelSubtitle(r))+'</span>':'')+'</span></button></td>'+b.columns.map(([k])=>'<td'+(k===primary?' class="primary-score"':'')+'>'+number(r.scores[k])+(k===primary&&r.scores[k]!=null?'<progress class="score-rail" value="'+r.scores[k]+'" max="'+max+'" aria-label="'+esc(r.model)+' '+esc(b.columns[0][1])+'"></progress>':'')+'</td>').join('')+'<td>'+money(r.cost)+'</td>'+(showTime?'<td title="Mean elapsed seconds per decision across both seeds; includes retries within a decision.">'+(r.mean_decision_seconds==null?'—':number(r.mean_decision_seconds,2)+' s')+'</td>':'')+'</tr>').join('');
+  $('table-body').innerHTML=rows.map(r=>'<tr>'+columns.map(([k])=>tableCell(r,k,b,max)).join('')+'</tr>').join('');
   $('no-results').hidden=rows.length>0;
   $('no-results').textContent=b.rows.length?'No models match your search.':'Replicated rankings will appear here as studies finish.';
   $('table-body').querySelectorAll('button').forEach(el=>el.onclick=()=>showModel(el.dataset.model));
 }
+
 const stateLabel = state => ({running:'Running',completed:'Completed',status_stale:'Status out of date',waiting_quota:'Quota paused',paused_provider:'Provider paused',waiting_startup_gate:'Waiting for startup',blocked_startup_gate:'Startup blocked',needs_attention:'Needs attention',not_started:'Queued',unknown:'Status unavailable'})[state] || state.replaceAll('_',' ');
 function quotaTiming(cell) {
   const date=new Date(cell.retry_at);
