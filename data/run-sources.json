@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-09-12T19:37:36.054572+00:00",
+  "updated_at_utc": "2026-09-12T22:07:18.959297+00:00",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -1101,6 +1101,34 @@
       "controlled_variant": true,
       "variant_note": "Admitted at owner request on 2026-09-12 with the approved Antigravity CLI update during seed 11 disclosed. Both seeds completed 60 ticks with clean integrity and 100% usage coverage; original simulation source and accepted decisions preserved.",
       "display_subtitle": ""
+    },
+    {
+      "model_key": "grok-4.5-participant-v8-revised-review",
+      "model_id": "grok-4.5",
+      "label": "Grok 4.5 (admission pending)",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": false,
+      "leaderboard_exclusion_reason": "Seed 11 discarded nine completed model responses after one harness cancellation at completed tick 15; owner decision is required to accept regenerated decisions for standard leaderboard admission.",
+      "notes": "See docs/reviews/grok45-completion-20260912.md. Seed 41 is independently clean; required replication remains unadmitted.",
+      "runs": [
+        {
+          "run_id": "web-grok-4-5-6f85c90bf7d7:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-report.json",
+          "kind": "benchmark_trial",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Seed 11 discarded nine completed model responses after one harness cancellation at completed tick 15; owner decision is required to accept regenerated decisions for standard leaderboard admission."
+        },
+        {
+          "run_id": "web-grok-4-5-6f85c90bf7d7:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-41/run-report.json",
+          "kind": "benchmark_trial",
+          "included_in_model_result": false,
+          "run_exclusion_reason": "Clean seed 41; required seed-11 admission awaits evidence decision."
+        }
+      ]
     }
   ],
   "benchmark_acceptances": [

@@ -27,6 +27,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-12 - A clean final ledger concealed regenerated decisions
+
+**One Grok harness cancellation discarded nine other responses while the final report still reported clean integrity.** Grok 4.5 seed 11 paused at completed tick 15 with one affected agent, although the event text said every agent failed. The retained partial ledger contains nine nonzero-output responses and one zero-output attempt; the pinned session discarded the entire pending tick. Final accounting includes 543 attempts versus 533 committed decisions, so cost coverage is complete but decision continuity is not. This is a harness effect, not model unreliability. See [the completion review](reviews/grok45-completion-20260912.md).
+
 ## 2026-09-12 - A stable wrapper fingerprint concealed a CLI self-update
 
 **An unchanged executable wrapper hash did not guarantee an unchanged connector payload.** Gemini 3.8 seed 11 resumed beyond tick 25 with the exact saved wrapper, but its underlying agy binary changed from `93eb2118` to `38f130cd` despite the wrapper setting `AGY_CLI_DISABLE_AUTO_UPDATE=1`. Recovery was stopped, retaining the checkpoint and decisions for an explicit evidence decision. This is a harness provenance failure, not model behavior. See [the recovery review](reviews/gemini38-environment-recovery-20260912.md).

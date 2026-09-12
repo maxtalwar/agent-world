@@ -1,0 +1,161 @@
+{
+  "run_id": "web-grok-4-5-6f85c90bf7d7",
+  "reviewed_at_utc": "2026-09-12T22:07:18.959297+00:00",
+  "disposition": "evidence_decision",
+  "reason": "Seed 11 discarded nine completed model responses after one harness cancellation at completed tick 15; owner decision is required to accept regenerated decisions for standard leaderboard admission.",
+  "launch_commit": "3a0867cfaf6c598ce506485a93fbcaa660ddab0c",
+  "review_commit": "662e267bb94dd3ca685f8fcc198433ed450f30c5",
+  "source_migration": false,
+  "cells": [
+    {
+      "seed": 11,
+      "final_tick": 60,
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "code_fingerprint": "679867a75fdf7bca6824cec96d8546fa0b4bf49164d7e6d31b2f88b88abf814b",
+      "source": {
+        "dirty_worktree": false,
+        "git_sha": "3a0867cfaf6c598ce506485a93fbcaa660ddab0c"
+      },
+      "resumes": [
+        0,
+        15
+      ],
+      "reliability": {
+        "action_failure_rate_pct": 6.3,
+        "ambiguous_boundary_failure_events": 0,
+        "benchmark_integrity_status": "clean",
+        "contention_failure_rate_pct": 0.2,
+        "decision_attempts": 533,
+        "decision_failure_rate_pct": 0.0,
+        "harness_failure_events": 0,
+        "invalid_action_rate_pct": 6.1,
+        "llm_failure_events": 0,
+        "llm_failures_by_agent": {},
+        "llm_provider_failure_events": 0,
+        "llm_quota_failure_events": 0,
+        "missing_usage_decisions": [],
+        "model_output_failure_events": 0,
+        "quality_flags": [],
+        "quality_status": "clean",
+        "usage_coverage_basis": "distinct_tick_and_agent",
+        "usage_record_coverage_pct": 100.0
+      },
+      "scores": {
+        "capability": {
+          "components": {
+            "final_window_health_pct": 39.0417,
+            "full_horizon_health_pct": 69.7433
+          },
+          "formula": "mean health across original population and all completed ticks",
+          "score": 69.74
+        },
+        "execution": {
+          "components": {
+            "actions": 2300.0,
+            "valid_actions": 2139.0
+          },
+          "formula": "100 * successful actions / submitted non-contention actions",
+          "score": 93.0
+        },
+        "production": {
+          "components": {
+            "intermediate_input_value": 54.0,
+            "output_value": 1002.0,
+            "possible_agent_ticks": 600.0,
+            "value_added": 948.0
+          },
+          "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+          "score": 158.0,
+          "unit": "fixed accounting units per 100 original-population agent-ticks"
+        }
+      },
+      "usage_calls": 533,
+      "attempted_calls": 543,
+      "discarded_calls": 10,
+      "hashes": {
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-manifest.before-resume-1.json": "41c82706019ea87f03fabf2c2e0126f9bd9fe3fb55422680b0575ff0d8f5c3e2",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-manifest.json": "ee5e7c3bee9f2a547556a220706c666de9cdf97b9dfb586adb324e176c489beb",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-usage-partial-tick-15.jsonl": "db588437dc541edd5d8f2296d133b6513692ce96bad430dc98b7174088fe0520",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-manifest.before-resume-2.json": "2c580dcd0955ccd4dde1ee4957d553ec3be48f6abd0bca908856046461ed0d6f",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-checkpoint.commit.json": "0473270ad0ef5f9a26d9dac6ab306145101c72b13ccc30aabfa6fc70ede58782",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run.jsonl": "94f76412dc2f7222f6aecca22f7e51af4aa6ae301d4d8c0f6e2cd8920bc8ee14",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-report.json": "2beea1fb2fae47990f61ddb57cf8c9ae7795b04287b85261d6ea4f44181350d4",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-provider-events.jsonl": "6201db306e9726699d3c48986caa2c46da09ed1b6322aa466a948aeb1dfd50a8",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-snapshot.json": "e007052b47f571c4b5a87fc976c8bbed0c127dbff9c0ff643a1511d576b7ac7b",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-11/run-usage.jsonl": "c0e600662e3509ffd3585a8a0422b444f0368abf4b5847860326ff9085dc70c5"
+      }
+    },
+    {
+      "seed": 41,
+      "final_tick": 60,
+      "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "code_fingerprint": "679867a75fdf7bca6824cec96d8546fa0b4bf49164d7e6d31b2f88b88abf814b",
+      "source": {
+        "dirty_worktree": false,
+        "git_sha": "3a0867cfaf6c598ce506485a93fbcaa660ddab0c"
+      },
+      "resumes": [],
+      "reliability": {
+        "action_failure_rate_pct": 6.8,
+        "ambiguous_boundary_failure_events": 0,
+        "benchmark_integrity_status": "clean",
+        "contention_failure_rate_pct": 0.5,
+        "decision_attempts": 537,
+        "decision_failure_rate_pct": 0.0,
+        "harness_failure_events": 0,
+        "invalid_action_rate_pct": 6.3,
+        "llm_failure_events": 0,
+        "llm_failures_by_agent": {},
+        "llm_provider_failure_events": 0,
+        "llm_quota_failure_events": 0,
+        "missing_usage_decisions": [],
+        "model_output_failure_events": 0,
+        "quality_flags": [],
+        "quality_status": "clean",
+        "usage_coverage_basis": "distinct_tick_and_agent",
+        "usage_record_coverage_pct": 100.0
+      },
+      "scores": {
+        "capability": {
+          "components": {
+            "final_window_health_pct": 10.2417,
+            "full_horizon_health_pct": 66.87
+          },
+          "formula": "mean health across original population and all completed ticks",
+          "score": 66.87
+        },
+        "execution": {
+          "components": {
+            "actions": 2500.0,
+            "valid_actions": 2319.0
+          },
+          "formula": "100 * successful actions / submitted non-contention actions",
+          "score": 92.76
+        },
+        "production": {
+          "components": {
+            "intermediate_input_value": 36.0,
+            "output_value": 969.0,
+            "possible_agent_ticks": 600.0,
+            "value_added": 933.0
+          },
+          "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+          "score": 155.5,
+          "unit": "fixed accounting units per 100 original-population agent-ticks"
+        }
+      },
+      "usage_calls": 537,
+      "attempted_calls": 537,
+      "discarded_calls": 0,
+      "hashes": {
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-41/run-manifest.json": "2f21b595764d835c457c9c166d254b01e1b9aacf5f44d4f953ec5a9ac485cc9f",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-41/run-checkpoint.commit.json": "0de4e58a18b5ab783d0449dec2552dffb1a971a3f741475067d5e6479356c04d",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-41/run.jsonl": "dd7ae8c7e30f7b4dfc35ba0b0c7ccc4300e56b9ea2a31daa5b688cd45fc2a23d",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-41/run-report.json": "57f69465df1ef36d0983b01d1ebc7d3fd6a7f45c8379d1714c6fa9a6c75077a9",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-41/run-provider-events.jsonl": "306a217cb7213513df75da45a9f787cbd153d15ab04895a1bfc027000818bc1b",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-41/run-snapshot.json": "1c25bc598362323c40fd1c0632f28e36d7469a987bfaa3e819a13a7fac5c0c60",
+        "runs/managed/web-grok-4-5-6f85c90bf7d7/seed-41/run-usage.jsonl": "55dd01c2e78c2405c116698a9556cb60ce2e87aaac15f411de4f9c9e8757ec9f"
+      }
+    }
+  ]
+}
