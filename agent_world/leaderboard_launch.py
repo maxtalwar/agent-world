@@ -18,10 +18,12 @@ import threading
 import time
 
 try:
+    from .leaderboard_model_cache import saved_catalog
     from .benchmark_defaults import benchmark_seeds
     from .leaderboard_models import model_catalog, for_recipe, recipe_label, DISABLED_BENCHMARK_CONNECTORS
     from .leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
 except ImportError:
+    from leaderboard_model_cache import saved_catalog
     from benchmark_defaults import benchmark_seeds
     from leaderboard_models import model_catalog, for_recipe, recipe_label, DISABLED_BENCHMARK_CONNECTORS
     from leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
@@ -154,19 +156,26 @@ class LaunchService:
                     blocker = "The Astra supervisor runtime is not configured."
                 elif not shutil.which("tmux", path=env()["PATH"]):
                     blocker = "The detached run supervisor is unavailable."
-                else:
+                def discover():
                     client = None
+                    connection_warning = ["Codex catalog unavailable; using saved entries when available."]
                     try:
-                        client = AstraClient(binary, self.root)
-                        client.verify()
-                        models, warnings = model_catalog(sources, client, env())
-                    except (OSError, RuntimeError) as exc:
-                        blocker = str(exc)
+                        if binary and Path(binary).is_file():
+                            try:
+                                client = AstraClient(binary, self.root)
+                                client.verify()
+                                connection_warning = []
+                            except (OSError, RuntimeError):
+                                if client:
+                                    client.close()
+                                client = None
+                                connection_warning = ["Codex catalog unavailable; using saved entries when available."]
+                        discovered, notes = model_catalog(sources, client, env())
+                        return discovered, notes + connection_warning
                     finally:
                         if client:
                             client.close()
-                if not models:
-                    models, warnings = model_catalog(sources, environment=env())
+                models, warnings = saved_catalog(self.folder / "model-catalog.json", discover)
                 self.cache = {"sources": sources, "blocker": blocker, "models": models, "warnings": warnings}
                 self.cache_until = time.monotonic() + 60
             return self.cache

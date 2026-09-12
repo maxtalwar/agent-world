@@ -131,6 +131,16 @@ class CatalogTests(unittest.TestCase):
 
 class CatalogLaunchTests(unittest.TestCase):
     setUp = test_leaderboard_launch.LaunchTests.setUp
+    def test_forced_options_refresh_does_not_repeat_provider_discovery(self):
+        with patch.object(self.service, "sources", return_value={}), \
+             patch("agent_world.leaderboard_launch.model_catalog", return_value=([], [])) as discover:
+            self.service.catalog()
+            self.service.catalog(force=True)
+            other = LaunchService(self.root, settings=self.service.settings)
+            with patch.object(other, "sources", return_value={}):
+                other.catalog()
+        discover.assert_called_once()
+
     def test_catalog_selection_resolves_exact_id_on_server(self):
         source = {"id": "recipe@hash", "recipe_id": "participant-v8-revised",
                   "digest": "hash", "source": str(self.root), "commit": "a" * 40,
