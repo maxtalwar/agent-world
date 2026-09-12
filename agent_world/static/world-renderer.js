@@ -45,10 +45,13 @@
         }
       }
       this.agentSlots=nextSlots;
+      this.placeResidents();
       this.resize();
     }
     agentAnchor(agent){
-      const slot=this.agentSlots.get(agent.id).slot;
+      const record=this.agentSlots.get(agent.id);
+      if(record.anchor)return record.anchor;
+      const slot=record.slot;
       if(slot<4){
         // A short diagonal row in world space, initially horizontal on screen.
         const dx=(slot-1.5)*12,dy=4;
@@ -56,6 +59,42 @@
       }
       const angle=slot*2.399963229728653,radius=.32;
       return {x:Math.cos(angle)*radius,y:Math.sin(angle)*radius};
+    }
+    placeResidents(){
+      const solid=layout=>layout.filter(p=>!['farm_plot','road','irrigation'].includes(p.structure.type));
+      for(const [tile,party] of this.occupied){
+        const structures=this.structures.filter(s=>s.position.x+','+s.position.y===tile);
+        const obstacles=solid(this.structureLayout(structures));
+        if(!obstacles.length)continue;
+        const gap=p=>Math.min(...obstacles.map(o=>{
+          const radius=(o.structure.type==='storage'?.24:.41)*o.scale;
+          return Math.hypot(Math.max(0,Math.abs(p.x-o.dx)-radius),Math.max(0,Math.abs(p.y-o.dy)-radius));
+        }));
+        const candidates=[];
+        for(let y=0;y<=16;y++)for(let x=0;x<=16;x++){
+          const p={x:-.44+x*.055,y:-.44+y*.055};
+          if(gap(p)>=.065)candidates.push(p);
+        }
+        // Extremely dense tiles use their clearest corners, never camera-relative offsets.
+        if(!candidates.length)for(const x of [-.46,.46])for(const y of [-.46,.46])candidates.push({x,y});
+        const placed=[];
+        const ordered=party.slice().sort((a,b)=>a.id.localeCompare(b.id));
+        for(const agent of ordered){
+          const record=this.agentSlots.get(agent.id);
+          if(record.anchor&&gap(record.anchor)>=.065)placed.push(record.anchor);
+          else delete record.anchor;
+        }
+        for(const agent of ordered){
+          const record=this.agentSlots.get(agent.id);
+          if(record.anchor)continue;
+          const preferred=this.agentAnchor(agent);
+          const score=p=>Math.min(.3,gap(p))+
+            (placed.length?Math.min(...placed.map(q=>Math.hypot(p.x-q.x,p.y-q.y)))*2:0)-
+            Math.hypot(p.x-preferred.x,p.y-preferred.y)*.08;
+          const best=candidates.reduce((a,b)=>score(b)>score(a)?b:a);
+          record.anchor={...best};placed.push(record.anchor);
+        }
+      }
     }
     resize(){
       const box=this.canvas.getBoundingClientRect();if(!box.width||!box.height)return;
@@ -206,6 +245,7 @@
         side('x',r,'#a48257'),side('y',r,'#c5a574'),lid]);
     }
     structureLayout(group){
+      if(!group.length)return [];
       const sorted=group.slice().sort((a,b)=>a.type.localeCompare(b.type)||String(a.id).localeCompare(String(b.id)));
       const nominal=s=>s.type==='shelter'?SHELTER_SCALE:s.type==='storage'?.8:1;
       if(sorted.length===1)return [{structure:sorted[0],dx:0,dy:0,scale:nominal(sorted[0])}];
@@ -342,7 +382,6 @@
       const grouped=new Map();
       for(const s of this.structures){const key=s.position.x+','+s.position.y;if(!grouped.has(key))grouped.set(key,[]);grouped.get(key).push(s);}
       for(const group of grouped.values()){
-        if(group.length>1)this.at(group[0].position.x,group[0].position.y,()=>this.groundPatch('#b7ae82',35));
         for(const {structure:s,dx,dy,scale} of this.structureLayout(group)){
           objects.push({x:s.position.x+dx,y:s.position.y+dy,order:1,draw:()=>{
             const tile=this.snapshot.tiles[s.position.y]?.[s.position.x];if(!tile)return;

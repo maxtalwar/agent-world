@@ -97,8 +97,11 @@ for(const angle of [0,Math.PI/4,Math.PI/2,Math.PI,Math.PI*1.5]){
   }
   const depths=drawn.map(point=>crowd.project(point.x,point.y)[1]);
   for(let i=1;i<depths.length;i++)assert.ok(depths[i]>=depths[i-1]-1e-8);
-  if(angle===Math.PI/2)forwardOrder=drawn.map(point=>point.id);
-  if(angle===Math.PI*1.5)assert.deepEqual(drawn.map(point=>point.id),forwardOrder.slice().reverse());
+  if(angle===Math.PI/2)forwardOrder=drawn.map(point=>({...point,depth:crowd.project(point.x,point.y)[1]}));
+  if(angle===Math.PI*1.5)for(let i=0;i<forwardOrder.length;i++)for(let j=i+1;j<forwardOrder.length;j++){
+    if(Math.abs(forwardOrder[i].depth-forwardOrder[j].depth)>1e-8)
+      assert.ok(drawn.findIndex(p=>p.id===forwardOrder[i].id)>drawn.findIndex(p=>p.id===forwardOrder[j].id));
+  }
 }
 assert.equal(JSON.stringify(crowdSnapshot),crowdOriginal);
 // Reordering JSON and another resident departing/arriving cannot shuffle bystanders.
@@ -157,3 +160,23 @@ buildings.structure(pair[0],{});assert.equal(icon,'shelter');
 buildings.structure({...pair[1],status:'under_construction'},{});assert.equal(icon,'construction');
 buildings.destroy();
 console.log('Distinct storage/shelter icons, four stable layouts, separate footprints and construction status passed.');
+
+const yard=new Renderer(canvas(),{preview:true}),yardState=JSON.parse(JSON.stringify(crowdSnapshot));
+yardState.structures=Object.fromEntries(pair.map(s=>[s.id,s]));
+yard.setSnapshot(yardState);
+const yardAnchors=new Map(yard.agents.map(a=>[a.id,{...yard.agentAnchor(a)}]));
+for(const a of yard.agents){
+  const anchor=yard.agentAnchor(a);
+  for(const part of yard.structureLayout(pair)){
+    const radius=(part.structure.type==='storage'?.24:.41)*part.scale;
+    const clearance=Math.hypot(Math.max(0,Math.abs(anchor.x-part.dx)-radius),Math.max(0,Math.abs(anchor.y-part.dy)-radius));
+    assert.ok(clearance>=.065,'Residents need clearance from the hut and crate');
+  }
+}
+yard.yaw=1.7;yard.setSnapshot(yardState);
+for(const a of yard.agents)assert.deepEqual({...yard.agentAnchor(a)},yardAnchors.get(a.id));
+yardState.agents['aaa-new']={...yard.agents[0],id:'aaa-new'};
+yard.setSnapshot(yardState);
+for(const a of yard.agents.filter(a=>a.id!=='aaa-new'))assert.deepEqual({...yard.agentAnchor(a)},yardAnchors.get(a.id));
+yard.destroy();
+console.log('Residents clear both buildings and retain their places after rotation, refresh, and arrivals.');
