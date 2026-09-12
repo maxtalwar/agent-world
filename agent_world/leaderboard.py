@@ -22,6 +22,7 @@ import time
 from urllib.parse import parse_qs, urlsplit
 
 try:
+    from .leaderboard_pricing import historical_run_cost
     from .leaderboard_launch import LaunchService, LaunchError
     from .benchmark_acceptance import accepted_report, single_seed_admission
     from .muse_pricing import historical_cost as muse_historical_cost
@@ -30,6 +31,7 @@ try:
     from .world_viewer import WorldViewer, SnapshotUnavailable
     from .capability_reanalysis import policies as scoring_policies, rescore, formula as reanalysis_formula
 except ImportError:
+    from leaderboard_pricing import historical_run_cost
     from leaderboard_launch import LaunchService, LaunchError
     from benchmark_acceptance import accepted_report, single_seed_admission
     from muse_pricing import historical_cost as muse_historical_cost
@@ -309,6 +311,13 @@ class LeaderboardStore:
         missing_costs = {}
         for cell in job["cells"]:
             latest = heartbeat_cells.get(cell["id"], {})
+            # A stale heartbeat must not override a later explicit recovery stop.
+            explicit_attention = cell.get("controller_attention") if (
+                cell.get("controller_state") == "needs_attention"
+                and job.get("controller", {}).get("status") == "needs_attention") else None
+            if explicit_attention:
+                latest = {"controller_state": "needs_attention", "attention": explicit_attention,
+                          "tick": cell.get("controller_last_tick")}
             state = (latest.get("controller_state") or cell.get("controller_state")
                      or latest.get("state") or "unknown")
             tick = latest.get("tick", cell.get("controller_last_tick"))
@@ -327,7 +336,9 @@ class LeaderboardStore:
             quota_blocked = (state not in {"completed", "running"} and (
                 stop_reason in {"insufficient_quota", "quota_exhausted"}
                 or attention == "quota_wait_budget_exhausted"))
-            if quota_blocked:
+            if explicit_attention and explicit_attention != "quota_wait_budget_exhausted":
+                state = "needs_attention"
+            elif quota_blocked:
                 state = "waiting_quota"
             terminal = state in {"completed", "failed", "stopped", "invalid", "cancelled"}
             display_state = "status_stale" if stale and not terminal else state
@@ -375,6 +386,9 @@ class LeaderboardStore:
                     missing_costs[cell["seed"]] = muse_historical_cost(
                         report.get("usage", {}).get("attempted_token_cost") or report.get("usage", {}).get("estimated_cost"),
                         job["config"]["model"]["id"])
+                current_cost = historical_run_cost(self.root, report_path)
+                if current_cost is not None:
+                    missing_costs[cell["seed"]] = current_cost
                 reports.append(report)
                 stat = report_path.stat()
                 signatures.append((str(report_path), stat.st_mtime_ns, stat.st_size))
@@ -395,8 +409,8 @@ class LeaderboardStore:
                 if not r.get("certified") and not admission:
                     run["warnings"].append("Awaiting a complete, unique set of required seeds; no replicated rank yet.")
                     continue
-                costs = [x.get("api_list_cost_usd") if x.get("api_list_cost_usd") is not None
-                         else missing_costs.get(x["seed"]) for x in r["required_replications"]]
+                costs = [missing_costs.get(x["seed"]) if missing_costs.get(x["seed"]) is not None
+                         else x.get("api_list_cost_usd") for x in r["required_replications"]]
                 rows.append({
                     "id": job["run_id"] + ":" + r["model"], "model": model_label(r["model"]),
                     "report_paths": [signature[0] for signature in signatures],
@@ -432,6 +446,9 @@ class LeaderboardStore:
         for path in sorted((self.root / "runs/jobs").glob("*/job.json")):
             try:
                 job = read_json(path)
+                disposition = archived.get(job.get("run_id"))
+                if isinstance(disposition, dict) and disposition.get("hidden"):
+                    continue
                 recipe = job.get("recipe") or job.get("protocol")
                 if job.get("kind") == "experiment":
                     if job.get("deferral", {}).get("status") == "deferred":

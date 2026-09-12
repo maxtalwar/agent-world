@@ -17,6 +17,22 @@ class LeaderboardTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.store = LeaderboardStore(self.root)
 
+    def test_explicit_recovery_stop_overrides_old_quota_heartbeat(self):
+        job, path = self.fixture(complete=False)
+        cell = job["cells"][0]
+        Path(cell["run_manifest"]).write_text(json.dumps({"status": "paused_provider"}))
+        cell.update(controller_state="needs_attention", controller_last_tick=27,
+                    controller_attention="execution_payload_changed_evidence_decision",
+                    controller_stop_reason="insufficient_quota")
+        job["controller"] = {"status": "needs_attention"}
+        path.with_name("controller-heartbeat.json").write_text(json.dumps({"cells": [{
+            "id": "seed-11", "controller_state": "waiting_quota", "tick": 25,
+            "attention": "quota_wait_budget_exhausted", "next_auto_resume_at_utc": "2026-09-11T00:00:00Z"}]}))
+        run, _, _ = self.store.managed_run(job, path)
+        self.assertEqual(run["cells"][0]["operational_state"], "needs_attention")
+        self.assertEqual(run["cells"][0]["tick"], 27)
+        self.assertIsNone(run["cells"][0]["retry_at"])
+
     def fixture(self, *, complete=True, digest="abc", recipe="participant-test"):
         output = self.root / "runs/managed/test/seed-11"
         output.mkdir(parents=True)

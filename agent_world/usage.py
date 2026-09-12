@@ -14,6 +14,8 @@ from agent_world.gemini_pricing import RATES as GEMINI_RATES, SOURCE as GEMINI_P
 
 from agent_world.muse_pricing import RATES as MUSE_RATES, SOURCE as MUSE_PRICING_SOURCE
 
+from agent_world.main_harness_pricing import RATES as MAIN_HARNESS_RATES, UNPRICED
+
 from decimal import Decimal
 import json
 import os
@@ -54,7 +56,7 @@ USD_RATE_CARD_SOURCES = {
     "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5",
     "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
 }
-USD_RATE_CARD_EFFECTIVE_DATE = "2026-09-07"
+USD_RATE_CARD_EFFECTIVE_DATE = "2026-09-12"
 # List-price API rates. Cached reads use the published cached-input rate.
 # Models with a distinct cache-write tier bill writes at that published rate;
 # models without one fall back to ordinary input pricing. Rate keys are matched
@@ -199,6 +201,8 @@ MODEL_USD_RATES_PER_MILLION: dict[str, dict[str, Decimal]] = {
         "output": Decimal("5"),
     },
 }
+
+MODEL_USD_RATES_PER_MILLION.update(MAIN_HARNESS_RATES)
 
 _USAGE_LOG_LOCK = threading.Lock()
 
@@ -534,6 +538,8 @@ def summarize_usd_cost(records: list[dict[str, Any]]) -> dict[str, Any] | None:
 
 def _usd_rate_model(model: str) -> str | None:
     normalized = _normalize_model_id(model)
+    if normalized in {_normalize_model_id(m) for m in UNPRICED}:
+        return None
     for rate_model in sorted(MODEL_USD_RATES_PER_MILLION, key=len, reverse=True):
         candidate = _normalize_model_id(rate_model)
         if normalized == candidate or normalized.startswith(candidate + "-"):
@@ -544,7 +550,7 @@ def _usd_rate_model(model: str) -> str | None:
 def _normalize_model_id(model: str) -> str:
     """Collapse provider spelling variants: ``gpt-5-6-luna`` == ``gpt-5.6-luna``."""
 
-    return model.lower().replace(".", "-")
+    return model.lower().replace("[1m]", "").replace(".", "-")
 
 
 def _rate_model(model: str) -> str | None:

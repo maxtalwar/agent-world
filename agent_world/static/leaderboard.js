@@ -73,6 +73,7 @@ function studyMarkup(run, grouped=false) {
   const cellState=c=>c.operational_state||c.state;
   const issue=c=>!['completed','waiting_quota'].includes(cellState(c)) &&
     (Boolean(c.attention)||['needs_attention','paused_provider','paused','failed','invalid'].includes(cellState(c)));
+  const executionReview=run.cells.some(c=>c.attention==='execution_payload_changed_evidence_decision');
   const affected=run.cells.some(issue),quota=run.cells.some(c=>cellState(c)==='waiting_quota');
   const allQuota=run.cells.length>0&&run.cells.every(c=>cellState(c)==='waiting_quota');
   const sharedTiming=allQuota&&new Set(run.cells.map(quotaTiming)).size===1;
@@ -81,8 +82,8 @@ function studyMarkup(run, grouped=false) {
   const provenanceReview=run.readiness_status==='needs_provenance_review';
   const reviewedEvidence=provenanceReview&&request?.monitor_reviewed&&request?.monitor_resolution==='evidence_decision';
   const finishedExperiment=run.is_experiment&&run.cells.length&&run.cells.every(c=>cellState(c)==='completed');
-  const status=finishedExperiment?'Completed':run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':provenanceReview?(agentWorking?'Review in progress':reviewedEvidence?'Review needs a decision':'Review pending'):quota?'Quota paused':'In study';
-  const message=repairing?'Run paused after an issue. The monitoring agent is working on a fix.':
+  const status=executionReview?'Continuation needs approval':finishedExperiment?'Completed':run.ranked?'Ranked':repairing?'Repair in progress':affected?'Run paused':provenanceReview?(agentWorking?'Review in progress':reviewedEvidence?'Review needs a decision':'Review pending'):quota?'Quota paused':'In study';
+  const message=executionReview?'The harness updated during recovery. Continuing with that change needs approval.':repairing?'Run paused after an issue. The monitoring agent is working on a fix.':
     affected?'Run paused after an issue. Monitoring follow-up is pending.' : provenanceReview?(agentWorking?'The monitoring agent is reviewing the completed results.':reviewedEvidence?'Recovery review is complete; admission needs a decision.':'Completed results are awaiting a provenance review.') : '';
   const diagnostics=run.cells.filter(c=>c.attention).map(c=>'Seed '+c.seed+': '+c.attention);
   if(affected&&request?.error)diagnostics.push(request.error);

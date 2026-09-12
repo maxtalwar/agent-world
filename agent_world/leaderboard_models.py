@@ -242,7 +242,8 @@ def model_catalog(sources, client=None, environment=None):
             "key": brain + ":" + model, "name": name or friendly(model),
             "lab": lab_for(model.split("/")[-1].removeprefix("cursor-")),
             "brain": brain, "connector": CONNECTORS.get(brain, brain),
-            "model": model, "efforts": efforts, "variants": variants}
+            "model": model, "efforts": efforts, "variants": variants,
+            "price_note": ("No published API-equivalent price" if model == "gpt-5.3-codex-spark" else None)}
 
     if client:
         try:
@@ -317,7 +318,8 @@ def for_recipe(entries, source):
             continue
         if m["brain"] not in source["brains"] or (m["efforts"] is not None and effort not in m["efforts"]):
             continue
-        result.append({**m, "model": m["variants"].get(effort) if m["variants"] else m["model"]})
+        result.append({**m, "model": m["variants"].get(effort) if m["variants"] else m["model"],
+                       "price_note": ("No published API-equivalent price" if m["model"] == "gpt-5.3-codex-spark" else m.get("price_note"))})
     native = {"openai": "codex", "anthropic": "claude", "google": "antigravity",
               "meta": "muse", "xai": "grok", "zai": "zcode"}
     result.sort(key=lambda m: (m["brain"] != native.get(m["lab"]), m["brain"] == "openrouter", m["name"]))

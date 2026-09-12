@@ -235,7 +235,7 @@ class UsageTests(unittest.TestCase):
         self.assertEqual(summary["provider_cost_coverage"]["reported_subtotal_usd"], 1.25)
         self.assertEqual(summary["provider_cost_coverage"]["unreported_calls"], 1)
         # Known models are still priced even when others are unknown.
-        self.assertEqual(summary["models"]["gpt-5.6-sol"]["cost_usd"], 5.0)
+        self.assertEqual(summary["models"]["gpt-5.6-sol"]["cost_usd"], 4.0)
 
     def test_usd_cost_is_none_without_records(self) -> None:
         self.assertIsNone(summarize_usd_cost([]))

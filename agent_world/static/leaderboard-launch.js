@@ -39,7 +39,7 @@ function launchModels() {
   launchEl('model-browse-note').textContent=visible.length+' models · '+(query?'Searching the full catalog.':mode==='all'?'Native connectors first.':'Native models without a result or study in this recipe. Search or choose All models for the full catalog.');
   launchEl('model-options').innerHTML=visible.map(m=>'<label class="model-option">'+
     '<input type="checkbox" value="'+esc(m.key)+'" '+(launchState.selected.has(m.key)?'checked':'')+'>'+
-    modelLogo(m.lab,'')+'<span class="model-option-copy"><strong>'+esc(m.name)+'</strong><span>'+esc(m.connector)+'</span></span></label>').join('')||
+    modelLogo(m.lab,'')+'<span class="model-option-copy"><strong>'+esc(m.name)+'</strong><span>'+esc(m.connector)+(m.price_note?' · '+esc(m.price_note):'')+'</span></span></label>').join('')||
     '<p class="small muted">No matching models. Choose All models or adjust your search and harness filter.</p>';
   launchEl('model-options').querySelectorAll('input').forEach(input=>input.onchange=()=>{
     if(input.checked)launchState.selected.add(input.value);else launchState.selected.delete(input.value);

@@ -23,7 +23,7 @@ html=vm.runInContext('studyMarkup(run)',context);
 assert.doesNotMatch(html,/Repair in progress|internal error/);
 console.log('Repair copy, diagnostic disclosure and resolved-state checks passed');
 
-context.run.cells=[11,41].map(seed=>({seed,tick:12,target:60,state:'status_stale',operational_state:'waiting_quota',retry_at:'2026-09-07T01:22:11Z',reset_at:'2026-09-07T01:21:11Z'}));
+context.run.cells=[11,41].map(seed=>({seed,tick:12,target:60,state:'status_stale',operational_state:'waiting_quota',retry_at:'2026-09-07T01:22:11Z',reset_at:'2026-09-07T01:21:11Z',reset_at:'2026-09-07T01:21:11Z'}));
 html=vm.runInContext('studyMarkup(run)',context);
 assert.equal((html.match(/Quota paused/g)||[]).length,1);
 assert.equal((html.match(/Continues/g)||[]).length,1);
@@ -40,7 +40,7 @@ html=vm.runInContext('studyMarkup(run)',context);
 assert.match(html,/Continuation time not yet reported/);
 console.log('Shared, mixed, separate and unknown quota timing checks passed');
 
-context.run.cells=[11,41].map(seed=>({seed,tick:12,target:60,state:'waiting_quota',retry_at:'2026-09-07T01:22:11Z'}));
+context.run.cells=[11,41].map(seed=>({seed,tick:12,target:60,state:'waiting_quota',retry_at:'2026-09-07T01:22:11Z',reset_at:'2026-09-07T01:21:11Z'}));
 context.run.connector='antigravity';context.run.connector_label='Antigravity';
 html=vm.runInContext('activityMarkup([run,{...run,id:"second",model:"Gemini 3.7 Flash"}])',context);
 assert.equal((html.match(/Quota paused/g)||[]).length,1);
@@ -48,3 +48,8 @@ assert.equal((html.match(/Continues/g)||[]).length,1);
 assert.match(html,/Gemini 3.7 Flash/);
 html=vm.runInContext('activityMarkup([run,{...run,id:"second",connector:"muse"}])',context);
 assert.equal((html.match(/Quota paused/g)||[]).length,2);
+
+context.run.cells=[{seed:11,tick:27,target:60,state:'needs_attention',attention:'execution_payload_changed_evidence_decision'}];
+html=vm.runInContext('studyMarkup(run)',context);
+assert.match(html,/Continuation needs approval/);
+assert.doesNotMatch(html,/Quota paused|Continues/);
