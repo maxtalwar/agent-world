@@ -302,7 +302,7 @@ def model_catalog(sources, client=None, environment=None):
                     if future.result():
                         add("claude", checks[future], efforts=["low", "medium", "high"])
                 except (OSError, ValueError, subprocess.SubprocessError):
-                    warnings.append("Some Claude model availability checks failed; the catalog may be incomplete. Try refreshing after the rate limit clears.")
+                    warnings.append("Some optional Claude variants could not be verified at the last catalog refresh. Listed models remain available.")
     return sorted(entries.values(), key=lambda m: (m["lab"], m["name"], m["brain"])), sorted(set(warnings))
 
 

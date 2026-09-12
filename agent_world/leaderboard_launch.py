@@ -35,9 +35,13 @@ import json,sys
 from agent_world.protocols import get_recipe
 from agent_world.managed_runs import _MODEL_BACKED_BRAINS
 from agent_world.recipe_execution import verify_recipe_execution
-verify_recipe_execution(sys.argv[1])
 r=get_recipe(sys.argv[1])
-print(json.dumps({'recipe':r.to_dict(),'digest':r.digest,'brains':sorted(_MODEL_BACKED_BRAINS)}))
+blocker=None
+try:
+    verify_recipe_execution(sys.argv[1])
+except ValueError as exc:
+    blocker=str(exc)
+print(json.dumps({'recipe':r.to_dict(),'digest':r.digest,'brains':sorted(_MODEL_BACKED_BRAINS),'execution_blocker':blocker}))
 """
 
 
@@ -99,6 +103,7 @@ class LaunchService:
         return db
 
     def sources(self):
+        self.source_warnings = []
         # Only reviewed, registered recipes are launchable. Old job worktrees
         # are evidence, never an alternate launch catalog with drifting defaults.
         # Read the current committed release even while the working checkout is
@@ -134,10 +139,14 @@ class LaunchService:
                     "id": identifier, "recipe_id": recipe, "digest": info["digest"],
                     "source": str(source), "commit": commit, "brains": info["brains"],
                     "defaults": defaults,
+                    "launch_blocker": ("This recipe needs a launch compatibility review." if info.get("execution_blocker") else None),
+                    "execution_blocker": info.get("execution_blocker"),
                     "seeds": info["recipe"]["replications"]["required_seeds"],
                 }
                 checked.add((recipe, expected_digest))
             except (OSError, ValueError, sqlite3.Error, subprocess.SubprocessError):
+                logging.getLogger(__name__).exception("Cannot load benchmark recipe %s", recipe)
+                self.source_warnings.append("Some benchmark recipes could not be loaded. Check the launch service.")
                 continue
         return result
 
@@ -176,6 +185,11 @@ class LaunchService:
                         if client:
                             client.close()
                 models, warnings = saved_catalog(self.folder / "model-catalog.json", discover)
+                warnings = list(warnings) + getattr(self, "source_warnings", [])
+                if not sources:
+                    blocker = blocker or "Benchmark recipes could not be loaded. The launch service needs attention."
+                elif all(s.get("launch_blocker") for s in sources.values()):
+                    blocker = blocker or "Benchmark launches are paused for a source compatibility review. Recipes and models remain available to browse."
                 self.cache = {"sources": sources, "blocker": blocker, "models": models, "warnings": warnings}
                 self.cache_until = time.monotonic() + 60
             return self.cache
@@ -185,8 +199,8 @@ class LaunchService:
         return {
             "enabled": not c["blocker"], "blocker": c["blocker"],
             "supervisor": {"model": MODEL, "effort": EFFORT},
-            "warnings": c.get("warnings", []),
-            "recipes": [{**{k: v for k, v in s.items() if k not in {"source", "models"}},
+            "warnings": [("Some optional Claude variants could not be verified at the last catalog refresh. Listed models remain available." if w.startswith("Some Claude model availability checks failed") else w) for w in c.get("warnings", [])],
+            "recipes": [{**{k: v for k, v in s.items() if k not in {"source", "models", "execution_blocker"}},
                          "title": recipe_label(s["recipe_id"]),
                          "models": [{k: v for k, v in m.items() if k not in {"model", "variants", "efforts"}}
                                     for m in for_recipe(c.get("models", []), s)]}
@@ -423,6 +437,8 @@ class LaunchService:
         source = catalog["sources"].get(values["recipe"])
         if not source:
             raise LaunchError("This recipe has no clean retained launch source")
+        if source.get("launch_blocker"):
+            raise LaunchError(source["launch_blocker"])
         brain, model = values["brain"], values["model"]
         if brain in DISABLED_BENCHMARK_CONNECTORS:
             raise LaunchError(DISABLED_BENCHMARK_CONNECTORS[brain])

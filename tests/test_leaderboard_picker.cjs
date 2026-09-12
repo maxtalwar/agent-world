@@ -5,7 +5,7 @@ const elements=new Map();
 const element=id=>{
   if(!elements.has(id))elements.set(id,{hidden:false,disabled:false,textContent:'',value:'',
     innerHTML:'',addEventListener(){},setAttribute(){},querySelectorAll(){return []},
-    close(){this.closed=true},focus(){}});
+    close(){this.closed=true},showModal(){},focus(){}});
   return elements.get(id);
 };
 const context=vm.createContext({document:{getElementById:element},Set,Map,AbortSignal,
@@ -62,5 +62,17 @@ assert.equal(browse(muse,'v8',museHistory).length,1);
   assert.deepEqual(Array.from(vm.runInContext('[...launchState.selected]',context)),['astra']);
   vm.runInContext("renderLaunches([{run_id:'visible-run'}])",context);
   assert.equal(element('launch-history').hidden,true);
+  context.fetch=async()=>({ok:true,json:async()=>({enabled:true,recipes:[
+    {id:'first-recipe',title:'Participant v8.1',models:[],defaults:{},seeds:[11,41]}
+  ]})});
+  await vm.runInContext('openLaunch()',context);
+  assert.equal(element('launch-recipe').value,'first-recipe');
+  context.fetch=async()=>({ok:true,json:async()=>({enabled:false,recipes:[],blocker:'Recipes need attention.'})});
+  await vm.runInContext('openLaunch()',context);
+  assert.match(element('launch-recipe').innerHTML,/Recipes unavailable/);
+  assert.equal(element('launch-error').textContent,'Recipes need attention.');
+  vm.runInContext(`launchState.options={enabled:true,recipes:[{id:'blocked',launch_blocker:'Review needed',models:[{key:'model',name:'Test'}]}]};
+    launchEl('launch-recipe').value='blocked';launchState.selected=new Set(['model']);updateSelected();`,context);
+  assert.equal(element('review-launch').disabled,true);
   console.log('Batch retries, recipe selection and duplicate-card suppression passed');
 })().catch(error=>{console.error(error);process.exitCode=1});

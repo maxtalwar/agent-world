@@ -12,9 +12,9 @@ function launchRecipe() {
 }
 function launchConditions() {
   const r=launchRecipe();
-  launchEl('launch-conditions').textContent=r
+  launchEl('launch-conditions').textContent=r?.launch_blocker || (r
     ? r.defaults.agents+' agents · '+r.defaults.ticks+' ticks · seeds '+r.seeds.join(' + ')+' · '+r.defaults.reasoning_effort+' reasoning · Fable defaults to seed 41 only (provisional)'
-    : 'No clean launch source is available for this recipe.';
+    : 'No clean launch source is available for this recipe.');
 }
 function pickerOpen(open) {
   launchEl('model-picker-panel').hidden=!open;
@@ -56,7 +56,7 @@ function updateSelected() {
   launchEl('selected-models').querySelectorAll('button').forEach(button=>button.onclick=()=>{
     launchState.selected.delete(button.dataset.key);launchModels();
   });
-  launchEl('review-launch').disabled=launchState.busy||!launchState.options?.enabled||!count;
+  launchEl('review-launch').disabled=launchState.busy||!launchState.options?.enabled||!count||Boolean(launchRecipe()?.launch_blocker);
   launchEl('review-launch').textContent='Review '+(count||'')+' benchmark'+(count===1?'':'s')+' →';
 }
 function chooseRecipe() {
@@ -82,10 +82,14 @@ async function openLaunch() {
     const options=await response.json();
     if(!response.ok)throw new Error(options.error||'Could not load benchmark options.');
     launchState.options=options;
-    launchEl('launch-recipe').innerHTML=options.recipes.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.title||recipeName(r.recipe_id))+'</option>').join('');
+    if(!options.recipes?.length){
+      launchEl('launch-recipe').innerHTML='<option value="">Recipes unavailable</option>';
+      throw new Error(options.blocker||'Benchmark recipes could not be loaded. The launch service needs attention.');
+    }
+    launchEl('launch-recipe').innerHTML=options.recipes.map(r=>'<option value="'+esc(r.id)+'">'+esc(r.title||recipeName(r.recipe_id))+(r.launch_blocker?' · temporarily unavailable':'')+'</option>').join('');
     const current=board();
     const match=options.recipes.find(r=>r.id===current?.id)||options.recipes.find(r=>r.recipe_id===current?.recipe);
-    if(match)launchEl('launch-recipe').value=match.id;
+    launchEl('launch-recipe').value=(match||options.recipes[0]).id;
     chooseRecipe();
     if(options.blocker)launchError(options.blocker);
     else if(options.warnings?.length)launchError(options.warnings.join(' '));

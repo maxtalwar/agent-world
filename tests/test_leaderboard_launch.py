@@ -74,6 +74,54 @@ class LaunchTests(unittest.TestCase):
         self.assertEqual(options["participant-test@hash"]["source"],str(released))
         checkout.assert_called_once_with({"commit":"a"*40})
 
+    def test_blocked_recipe_remains_visible_but_cannot_preview(self):
+        recipes = self.root / "agent_world/recipes"
+        recipes.mkdir()
+        (recipes / "participant-test.json").write_text("{}")
+        info = {"digest": "hash", "brains": ["claude"],
+                "recipe": {"defaults": {}, "replications": {"required_seeds": [11, 41]}},
+                "execution_blocker": "implementation changed: agent_world/usage.py"}
+        with patch.object(self.service, "launch_checkout", return_value=self.root), \
+             patch("agent_world.leaderboard_launch.git", side_effect=lambda root, *args: "a"*40 if args[0] == "rev-parse" else ""), \
+             patch("agent_world.leaderboard_launch.subprocess.check_output", return_value=json.dumps(info)):
+            sources = self.service.sources()
+        source = sources["participant-test@hash"]
+        self.assertIn("compatibility review", source["launch_blocker"])
+        catalog = {"sources": sources, "blocker": None, "models": [],
+                   "warnings": ["Some Claude model availability checks failed; old rate limit warning"]}
+        with patch.object(self.service, "catalog", return_value=catalog), \
+             patch("agent_world.leaderboard_launch.for_recipe", return_value=[{"name": "Claude Sonnet 5", "brain": "claude"}]):
+            options = self.service.public_options()
+            self.assertEqual(options["recipes"][0]["models"][0]["name"], "Claude Sonnet 5")
+            self.assertNotIn("execution_blocker", options["recipes"][0])
+            self.assertNotIn("rate limit", options["warnings"][0])
+            with self.assertRaisesRegex(LaunchError, "compatibility review"):
+                self.service.preview({"recipe": source["id"], "brain": "claude", "model": "claude-sonnet-5"})
+
+    def test_empty_recipe_catalog_has_an_explicit_blocker(self):
+        self.service.settings.update(launch_enabled=True, supervisor_binary=__file__)
+        with patch.object(self.service, "sources", return_value={}), \
+             patch("agent_world.leaderboard_launch.shutil.which", return_value="tmux"), \
+             patch("agent_world.leaderboard_launch.saved_catalog", return_value=([], [])):
+            options = self.service.public_options()
+        self.assertFalse(options["enabled"])
+        self.assertIn("recipes could not be loaded", options["blocker"])
+
+    def test_info_preserves_metadata_when_execution_verification_fails(self):
+        from agent_world.leaderboard_launch import INFO
+        from contextlib import redirect_stdout
+        from io import StringIO
+        out = StringIO()
+        recipe = Mock(digest="hash")
+        recipe.to_dict.return_value = {"id": "participant-test"}
+        with patch("agent_world.protocols.get_recipe", return_value=recipe), \
+             patch("agent_world.recipe_execution.verify_recipe_execution", side_effect=ValueError("changed implementation")), \
+             patch("sys.argv", ["info", "participant-test"]), redirect_stdout(out):
+            exec(INFO, {})
+        info = json.loads(out.getvalue())
+        self.assertEqual(info["recipe"]["id"], "participant-test")
+        self.assertEqual(info["execution_blocker"], "changed implementation")
+
     def test_retired_recipe_review_cannot_launch(self):
         self.request["digest"] = "retired-world"
         with self.assertRaisesRegex(LaunchError, "retired conditions"):
