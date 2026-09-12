@@ -5,7 +5,7 @@ from agent_world.usage import summarize_usd_cost
 
 class GeminiPricingTests(unittest.TestCase):
     def test_names_and_effort_pricing(self):
-        for version in ("3.6", "3.7"):
+        for version in ("3.6", "3.7", "3.8"):
             model = f"gemini-{version}-flash-medium"
             self.assertEqual(model_label(model), f"Gemini {version} Flash")
             estimate = summarize_usd_cost([dict(model=model, prompt_tokens=1000000,

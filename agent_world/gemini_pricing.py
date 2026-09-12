@@ -2,10 +2,10 @@
 import re
 
 SOURCE = "https://ai.google.dev/gemini-api/docs/pricing"
-VERIFIED_DATE = "2026-09-07"
+VERIFIED_DATE = "2026-09-12"
 # Standard text rates through 2026-12-31. Output includes thinking tokens.
 RATES = {model: {"input": 0.75, "cached_input": 0.075, "cache_write": 0.75, "output": 3.75}
-         for model in ("gemini-3.6-flash", "gemini-3.7-flash")}
+         for model in ("gemini-3.6-flash", "gemini-3.7-flash", "gemini-3.8-flash")}
 
 
 def historical_cost(summary, model):

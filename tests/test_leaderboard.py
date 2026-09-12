@@ -88,6 +88,39 @@ class LeaderboardTests(unittest.TestCase):
         spark = next(r for r in board["rows"] if "Spark" in r["model"])
         self.assertIsNone(spark["cost"])
 
+    def test_report_fingerprint_routes_original_and_recovery_sources(self):
+        # Exercise the actual subprocess protocol, with distinct frozen sources.
+        sources = []
+        for name, fingerprint in [("launch", "old"), ("recovery", "new")]:
+            source = self.root / name
+            package = source / "agent_world"
+            package.mkdir(parents=True)
+            (package / "__init__.py").write_text("")
+            (package / "protocols.py").write_text(
+                "from types import SimpleNamespace\n"
+                "def get_recipe(recipe): return SimpleNamespace(id=recipe, digest='abc')\n")
+            (package / "benchmarks.py").write_text(
+                f"def benchmark_code_fingerprint(providers, recipe): return {fingerprint!r}\n"
+                "def _report_providers(benchmark): return ['antigravity_cli']\n"
+                f"def aggregate_benchmark_reports(reports, recipe): return {{'source': {name!r}, "
+                "'rejected': reports[0].get('rejected', [])}\n")
+            sources.append(source)
+        job = {"run_id": "routing", "recipe": "participant-test",
+               "recipe_fingerprint_sha256": "abc", "source_root": str(sources[0]),
+               "execution_root": str(sources[1]), "cells": []}
+        for fingerprint, expected in [("old", "launch"), ("new", "recovery")]:
+            report = {"benchmarks": {"protocol": {"id": "participant-test",
+                      "recipe_fingerprint_sha256": "abc", "code_fingerprint_sha256": fingerprint}}}
+            result = self.store.aggregate(job, [report], (fingerprint,))
+            self.assertEqual(result["source"], expected)
+        # An actual rejection from a matching source is authoritative.
+        report["rejected"] = [{"reason": "noncompliant"}]
+        result = self.store.aggregate(job, [report], ("rejected",))
+        self.assertEqual(result["rejected"], report["rejected"])
+        report["benchmarks"]["protocol"]["code_fingerprint_sha256"] = "unrecognized"
+        with self.assertRaises(ValueError):
+            self.store.aggregate(job, [report], ("unknown",))
+
     def test_partial_reports_never_reach_scorer(self):
         job, path = self.fixture(complete=False)
         with patch.object(self.store, "aggregate") as scorer:

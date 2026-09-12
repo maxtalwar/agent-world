@@ -119,7 +119,7 @@ CLASSIC_COLUMNS = [
 # different recipe's scoring implementation into the dashboard process.
 AGGREGATE_SCRIPT = """
 import json, sys
-from agent_world.benchmarks import aggregate_benchmark_reports
+from agent_world.benchmarks import aggregate_benchmark_reports, benchmark_code_fingerprint, _report_providers
 from agent_world.protocols import get_recipe
 p = json.load(sys.stdin)
 recipe = get_recipe(p['recipe'])
@@ -132,6 +132,15 @@ for r in reports:
         raise ValueError('Mixed recipes')
     if protocol.get('recipe_fingerprint_sha256') not in (None, recipe.digest):
         raise ValueError('Report recipe fingerprint mismatch')
+# Select the report's scoring source before assessing admission. A recovery
+# report may have been produced by a reviewed successor to the launch source.
+# Fingerprint mismatch here is source routing, not an evidence verdict.
+for r in reports:
+    benchmark = r['benchmarks']
+    stored = benchmark['protocol'].get('code_fingerprint_sha256')
+    expected = benchmark_code_fingerprint(_report_providers(benchmark), recipe.id)
+    if stored != expected:
+        raise ValueError('Scoring source does not match report fingerprint')
 print(json.dumps(aggregate_benchmark_reports(reports, recipe.id)))
 """
 
@@ -254,7 +263,8 @@ class LeaderboardStore:
                json.dumps([r.get("provenance_acceptance") for r in reports], sort_keys=True))
         if key in self.aggregates:
             return self.aggregates[key]
-        # Recovery tooling may differ; score the evidence with its original source.
+        # Match the recorded report fingerprint; neither launch nor recovery
+        # source is unconditionally authoritative for every historical report.
         candidates = [job.get("source_root")]
         candidates += [cell.get("worktree") for cell in job["cells"]]
         candidates += [job.get("execution_root")]

@@ -15,7 +15,7 @@ const row={id:'gemini',model:'Gemini 3.8 Flash',rank:1,scores:{capability:57.57}
 const group={id:'extra',recipe:'participant-v8-revised',digest:'reviewed',columns:[['capability','Capability']],rows:[row],runs:[]};
 const board={...group,id:'main',title:'v8.1',source:'Canonical metrics database',warnings:[],study_groups:[group]};
 const fixture={boards:[board],warnings:[],updated_at:new Date().toISOString(),refresh_seconds:30};
-context.payload=process.argv[2]?JSON.parse(fs.readFileSync(process.argv[2],'utf8')):fixture;
+context.payload=fixture;
 context.fetch=async()=>({ok:true,json:async()=>context.payload});
 (async()=>{
   await vm.runInContext('refresh()',context);
@@ -25,6 +25,21 @@ context.fetch=async()=>({ok:true,json:async()=>context.payload});
   assert.match(element('additional-study-list').innerHTML,/Time \/ decision/);
   assert.match(element('table-head').innerHTML,/Time \/ decision/);
   assert.equal(element('refresh').disabled,false);
+  if(process.argv[2]){
+    context.payload=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+    await vm.runInContext('refresh()',context);
+    assert.equal(errors.length,0,'Live payload must render without errors');
+    const live=context.payload.boards.find(b=>b.recipe==='participant-v8-revised');
+    for(const version of ['3.6','3.7','3.8']){
+      const name=`Gemini ${version} Flash`;
+      const matches=live.rows.filter(r=>r.model===name);
+      assert.equal(matches.length,1,`${name} must appear once on the main leaderboard`);
+      assert.ok(matches[0].cost>0,`${name} must have a cost/run`);
+      assert.ok(element('table-body').innerHTML.includes(name));
+    }
+    assert.ok(live.rows.length>=17,'Previously admitted models must remain visible');
+    assert.equal(element('error').hidden,true);
+  }
   context.payload=fixture;
   group.recipe='participant-v6';
   await vm.runInContext('refresh()',context);
