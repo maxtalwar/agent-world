@@ -523,6 +523,15 @@ class SimulationSession:
             ),
             None,
         )
+        # A generic CLI error may omit a model-specific weekly reset. Read the
+        # same connector account when scheduling a wait, never via inference.
+        from agent_world.claude_brain import ClaudeBrain
+        from agent_world.claude_usage import claude_quota_reset
+        usage_resets = [claude_quota_reset(model) for model in {
+            brain.model for brain in self.brains.values() if isinstance(brain, ClaudeBrain)
+        }]
+        known_resets = [value for value in [reset_at, *usage_resets] if value is not None]
+        reset_at = max(known_resets) if known_resets else None
         if reset_at is not None:
             # A minute of slack: provider clocks and ours are not identical,
             # and retrying one second early wastes the whole wait.

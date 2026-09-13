@@ -38,6 +38,9 @@ masqueraded as model behavior — append an entry.** Rules:
 ## 2026-09-10 - Devin's built-in summarizer did not honor Kimi selection
 
 **A tool-less Devin summarizer accepted `--model kimi-k2-7` but stored the diagnostic session as `swe-2-high`.** The bounded validation returned the requested JSON and zero tool calls, which alone would have looked successful; ACP labeled the model only “Summarizer”. Native session metadata exposed the mismatch. This is a connector model-selection effect, not evidence about Kimi's capabilities. The benchmark remains at tick 0 and the unsupported catalog option was removed. [Validation evidence](kimi-devin-interface-blocker-20260910.md).
+## 2026-09-10 - A generic credit error concealed a model-specific weekly cap
+
+**Claude refused Fable calls at 100% model-weekly usage while the same account still had 54% session and 45% general-weekly capacity.** Native OAuth usage exposed the exhausted window only in the structured `limits` array, while the CLI said “out of usage credits” without a reset. This connector observability gap caused repeated backoff checks and misleading continuation labels, not simulated agent behavior: the Fable 5.1 seed-41 world stayed frozen at tick 12. The native reset was 21:00 UTC September 10, and the recovery scheduled 21:01 UTC without changing simulation source. [Evidence and recovery](claude-fable-weekly-reset-20260910.md).
 
 ## 2026-09-09 - A single seed reverses the Sol–Gemini comparison
 

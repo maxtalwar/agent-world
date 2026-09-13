@@ -5,9 +5,9 @@ instead of the metered Anthropic API. They are session-less by default; the
 optional bounded-session boundary keeps one short, private conversation per
 simulated agent. Agent World remains the canonical source of memory and state.
 
-Unlike Codex, the Claude CLI has no stable headless endpoint for reading the
-plan's rate-limit windows, so there is no ``capture_plan_usage``; per-call
-token usage is still recorded from the CLI's JSON result.
+Plan reset windows are read from the account OAuth usage endpoint when a
+quota wait is scheduled. Per-call token usage is recorded from the CLI JSON
+result; these reset lookups do not constitute ``capture_plan_usage``.
 """
 
 from __future__ import annotations
