@@ -380,13 +380,39 @@
       for(const [x,y] of [[-31,1],[-17,8],[-2,16]]){const [px,py]=this.groundPoint(x,y);this.rect(px-1,py-6,2,9,'#d4b98c');this.rect(px-1,py-6,2,2,'#eee0b1');}
     }
     wellMasonry(complete=false){
-      // Both stages use the same stone ring; completion adds a second, staggered course.
+      if(complete){
+        // Keep the original low, round basin and open water surface; texture its exterior.
+        this.ellipse(0,0,13,7,'#a2aa95');this.rect(-13,-8,26,9,'#a7af9e');
+        const edge=(a,z)=>[13*Math.cos(a),7*Math.sin(a)-z];
+        for(let course=0;course<2;course++){
+          const low=course*4.5,high=low+4.5;
+          for(let i=0;i<6;i++){
+            const a=Math.max(0,(i-(course?.5:0))*Math.PI/5),b=Math.min(Math.PI,(i+1-(course?.5:0))*Math.PI/5);
+            if(a>=b)continue;
+            const arc=(z,reverse=false)=>Array.from({length:5},(_,j)=>edge(a+(b-a)*(reverse?4-j:j)/4,z));
+            this.poly([...arc(low),...arc(high,true)],i%3===0?'#b5bba8':'#a7af9e');
+            this.line([edge(a,low),edge(a,high)],'#8c9787',.65);
+          }
+        }
+        this.line(Array.from({length:17},(_,i)=>edge(i*Math.PI/16,4.5)),'#8c9787',.65);
+        this.ellipse(0,-9,13,7,'#d0ceaf');
+        for(let i=0;i<12;i++){
+          const a=i*Math.PI/6,b=(i+1)*Math.PI/6;
+          const point=(r,h,t)=>[r*Math.cos(t),h*Math.sin(t)-9];
+          this.poly([point(13,7,a),point(13,7,(a+b)/2),point(13,7,b),point(9,4,b),point(9,4,(a+b)/2),point(9,4,a)],i%3===0?'#dce0cc':'#d0ceaf');
+          this.line([point(9,4,a),point(13,7,a)],'#a0a58e',.65);
+        }
+        this.ellipse(0,-9,9,4,'#4d8485');
+        this.line([[-5,-9],[-1,-9]],'#a4c8bd',.7);
+        return;
+      }
+      // The unfinished ring has missing stones and an empty shaft.
       this.ellipse(0,0,13,7,'#776a50');
-      this.ellipse(0,complete?-4:-1,9,4,complete?'#4d8485':'#474b3b');
+      this.ellipse(0,-1,9,4,'#474b3b');
       const faces=[],point=(r,a,z)=>[r*Math.cos(a),r*Math.sin(a),z];
-      for(let course=0;course<(complete?2:1);course++)for(let i=0;i<(complete?12:10);i++){
-        const offset=course*Math.PI/12,a=i*Math.PI/6+offset+.025,b=(i+1)*Math.PI/6+offset-.025;
-        const low=course*4.6,high=complete?low+4.4:i<7?5:2;
+      for(let i=0;i<10;i++){
+        const a=i*Math.PI/6+.025,b=(i+1)*Math.PI/6-.025;
+        const low=0,high=i<7?5:2;
         faces.push({points:[point(.24,a,low),point(.24,b,low),point(.24,b,high),point(.24,a,high)],fill:i%3===0?'#b5bba8':'#a7af9e'},
           {points:[point(.17,b,low),point(.17,a,low),point(.17,a,high),point(.17,b,high)],fill:'#788575'},
           {points:[point(.24,a,high),point(.24,b,high),point(.17,b,high),point(.17,a,high)],fill:i%3===0?'#dce0cc':'#d0ceaf'});
