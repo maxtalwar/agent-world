@@ -1,0 +1,4770 @@
+{
+ "actions": {
+  "contention_failures": 29,
+  "contention_reasons": {
+   "Destination occupancy limit is full or terrain is impassable.": 2,
+   "Fishing requires fishable food in current or adjacent water.": 1,
+   "No fiber is available on this tile.": 8,
+   "No food is available on this tile.": 18
+  },
+  "counts": {
+   "accept_trade": 3,
+   "agent_spawned": 10,
+   "benchmark_checkpoint": 3,
+   "broadcast": 458,
+   "build": 3,
+   "build_started": 4,
+   "chop": 30,
+   "claim_tile": 2,
+   "claimed_item_taken": 3,
+   "consume": 184,
+   "contention_failure": 29,
+   "contribute": 15,
+   "drop": 11,
+   "expire_trade": 43,
+   "fish": 11,
+   "food_spoilage": 37,
+   "gather": 225,
+   "gift": 13,
+   "grant_access": 10,
+   "inspect": 17,
+   "invalid_action": 190,
+   "maintain_structure": 12,
+   "mine": 4,
+   "move": 627,
+   "offer_trade": 50,
+   "pick_up": 24,
+   "reject_trade": 3,
+   "revoke_access": 1,
+   "run_completed": 1,
+   "run_health_check": 1,
+   "run_started": 1,
+   "say": 376,
+   "structure_upkeep_missed": 2,
+   "structure_upkeep_paid": 4,
+   "survival_damage": 100,
+   "wait": 295,
+   "whisper": 12,
+   "world_created": 1
+  },
+  "failure_total": 219,
+  "invalid_proposals": 190,
+  "invalid_reasons": {
+   "A completed structure on the current tile is required.": 1,
+   "Agent lacks gifted items.": 1,
+   "Both parties must meet at (11, 13) to exchange the physical goods.": 1,
+   "Both parties must meet at (2, 1) to exchange the physical goods.": 1,
+   "Both parties must meet at (7, 2) to exchange the physical goods.": 1,
+   "Cannot inspect beyond visibility radius.": 8,
+   "Carrying capacity would be exceeded.": 7,
+   "Destination occupancy limit is full or terrain is impassable.": 2,
+   "Fishing requires fishable food in current or adjacent water.": 19,
+   "Item pile is already claimed by another agent.": 1,
+   "Moving into forest requires 2 action points.": 6,
+   "Moving into mountain requires 3 action points.": 1,
+   "No action points remain this tick.": 7,
+   "No fiber is available on this tile.": 2,
+   "No fiber is available.": 2,
+   "No food available to consume.": 3,
+   "No food is available on this tile.": 19,
+   "No food is available.": 2,
+   "No matching item pile on this tile.": 1,
+   "No matching structure is under construction on this tile.": 2,
+   "No water available to consume.": 7,
+   "No water is available on this tile, from an accessible well, or adjacent water.": 3,
+   "No water is available.": 15,
+   "No wood is available on this tile.": 1,
+   "No wood is available.": 12,
+   "Not enough source material or carrying capacity for the requested quantity.": 21,
+   "Nothing contributed: you lack those materials or the structure does not need them.": 1,
+   "Offerer carrying capacity would be exceeded.": 7,
+   "Offerer does not currently hold the offered goods.": 7,
+   "Only owners or contributors can maintain this structure.": 3,
+   "Only storage, house, or workshop structures can store inventory.": 2,
+   "Only the trade recipient can accept this offer.": 1,
+   "Recipient lacks requested goods.": 1,
+   "Resource extraction on this claimed tile requires access.": 8,
+   "Target carrying capacity would be exceeded.": 5,
+   "Trade target is outside visibility radius.": 1,
+   "Whisper target must be adjacent or on the same tile.": 8
+  },
+  "invalid_total": 190,
+  "per_agent": {
+   "agent-1": {
+    "agent_spawned": 1,
+    "broadcast": 45,
+    "chop": 2,
+    "claim_tile": 1,
+    "consume": 21,
+    "contention_failure": 6,
+    "contribute": 1,
+    "drop": 2,
+    "expire_trade": 6,
+    "fish": 2,
+    "food_spoilage": 3,
+    "gather": 27,
+    "gift": 1,
+    "invalid_action": 13,
+    "maintain_structure": 1,
+    "move": 70,
+    "offer_trade": 7,
+    "pick_up": 4,
+    "reject_trade": 1,
+    "survival_damage": 7,
+    "wait": 30
+   },
+   "agent-10": {
+    "accept_trade": 1,
+    "agent_spawned": 1,
+    "broadcast": 47,
+    "consume": 17,
+    "contention_failure": 4,
+    "contribute": 1,
+    "drop": 1,
+    "expire_trade": 3,
+    "food_spoilage": 5,
+    "gather": 22,
+    "gift": 1,
+    "inspect": 2,
+    "invalid_action": 14,
+    "maintain_structure": 1,
+    "mine": 1,
+    "move": 68,
+    "offer_trade": 3,
+    "pick_up": 2,
+    "survival_damage": 8,
+    "wait": 33
+   },
+   "agent-2": {
+    "agent_spawned": 1,
+    "broadcast": 46,
+    "build_started": 1,
+    "chop": 8,
+    "claimed_item_taken": 2,
+    "consume": 18,
+    "contribute": 2,
+    "drop": 2,
+    "expire_trade": 2,
+    "fish": 1,
+    "food_spoilage": 4,
+    "gather": 19,
+    "gift": 2,
+    "inspect": 2,
+    "invalid_action": 24,
+    "move": 51,
+    "offer_trade": 3,
+    "pick_up": 2,
+    "survival_damage": 10,
+    "wait": 28,
+    "whisper": 1
+   },
+   "agent-3": {
+    "accept_trade": 1,
+    "agent_spawned": 1,
+    "broadcast": 48,
+    "chop": 1,
+    "consume": 16,
+    "contention_failure": 1,
+    "drop": 1,
+    "expire_trade": 6,
+    "fish": 1,
+    "food_spoilage": 3,
+    "gather": 21,
+    "gift": 4,
+    "inspect": 2,
+    "invalid_action": 31,
+    "mine": 1,
+    "move": 61,
+    "offer_trade": 6,
+    "pick_up": 4,
+    "survival_damage": 16,
+    "wait": 24
+   },
+   "agent-4": {
+    "agent_spawned": 1,
+    "broadcast": 40,
+    "chop": 2,
+    "consume": 21,
+    "contention_failure": 3,
+    "contribute": 1,
+    "expire_trade": 3,
+    "fish": 3,
+    "food_spoilage": 4,
+    "gather": 23,
+    "gift": 1,
+    "inspect": 1,
+    "invalid_action": 20,
+    "maintain_structure": 1,
+    "move": 76,
+    "offer_trade": 4,
+    "pick_up": 3,
+    "survival_damage": 3,
+    "wait": 23
+   },
+   "agent-5": {
+    "agent_spawned": 1,
+    "broadcast": 49,
+    "build_started": 1,
+    "chop": 7,
+    "consume": 14,
+    "contention_failure": 5,
+    "contribute": 2,
+    "expire_trade": 6,
+    "food_spoilage": 3,
+    "gather": 18,
+    "gift": 1,
+    "grant_access": 5,
+    "invalid_action": 16,
+    "maintain_structure": 1,
+    "move": 50,
+    "offer_trade": 8,
+    "pick_up": 3,
+    "revoke_access": 1,
+    "structure_upkeep_missed": 1,
+    "structure_upkeep_paid": 1,
+    "survival_damage": 20,
+    "wait": 36,
+    "whisper": 5
+   },
+   "agent-6": {
+    "accept_trade": 1,
+    "agent_spawned": 1,
+    "broadcast": 48,
+    "build_started": 1,
+    "consume": 19,
+    "contention_failure": 2,
+    "contribute": 1,
+    "drop": 2,
+    "expire_trade": 4,
+    "fish": 1,
+    "food_spoilage": 5,
+    "gather": 27,
+    "gift": 2,
+    "grant_access": 3,
+    "inspect": 1,
+    "invalid_action": 11,
+    "maintain_structure": 2,
+    "mine": 1,
+    "move": 79,
+    "offer_trade": 5,
+    "structure_upkeep_paid": 2,
+    "survival_damage": 6,
+    "wait": 31,
+    "whisper": 1
+   },
+   "agent-7": {
+    "agent_spawned": 1,
+    "broadcast": 47,
+    "build": 1,
+    "build_started": 1,
+    "chop": 6,
+    "consume": 20,
+    "contention_failure": 2,
+    "contribute": 4,
+    "drop": 1,
+    "expire_trade": 4,
+    "food_spoilage": 5,
+    "gather": 25,
+    "grant_access": 2,
+    "inspect": 2,
+    "invalid_action": 15,
+    "maintain_structure": 2,
+    "mine": 1,
+    "move": 43,
+    "offer_trade": 4,
+    "pick_up": 1,
+    "reject_trade": 1,
+    "structure_upkeep_missed": 1,
+    "structure_upkeep_paid": 1,
+    "survival_damage": 5,
+    "wait": 38
+   },
+   "agent-8": {
+    "agent_spawned": 1,
+    "broadcast": 48,
+    "build": 1,
+    "chop": 2,
+    "consume": 16,
+    "contention_failure": 2,
+    "contribute": 1,
+    "drop": 1,
+    "expire_trade": 5,
+    "fish": 2,
+    "food_spoilage": 4,
+    "gather": 19,
+    "gift": 1,
+    "inspect": 4,
+    "invalid_action": 30,
+    "maintain_structure": 1,
+    "move": 57,
+    "offer_trade": 6,
+    "pick_up": 2,
+    "survival_damage": 21,
+    "wait": 29,
+    "whisper": 4
+   },
+   "agent-9": {
+    "agent_spawned": 1,
+    "broadcast": 40,
+    "build": 1,
+    "chop": 2,
+    "claim_tile": 1,
+    "claimed_item_taken": 1,
+    "consume": 22,
+    "contention_failure": 4,
+    "contribute": 2,
+    "drop": 1,
+    "expire_trade": 4,
+    "fish": 1,
+    "food_spoilage": 1,
+    "gather": 24,
+    "inspect": 3,
+    "invalid_action": 16,
+    "maintain_structure": 3,
+    "move": 72,
+    "offer_trade": 4,
+    "pick_up": 3,
+    "reject_trade": 1,
+    "survival_damage": 4,
+    "wait": 23,
+    "whisper": 1
+   }
+  }
+ },
+ "benchmarks": {
+  "suite_id": "agent-world-participant-v6",
+  "protocol": {
+   "id": "participant-v6",
+   "scoring_revision": 2,
+   "suite_id": "agent-world-participant-v6",
+   "code_fingerprint_sha256": "3b404463c169013d52863c5f89d6d51b8f70e32300c169a1e32c5bd26f92d9f7",
+   "replications": {
+    "required_seeds": [
+     11,
+     41
+    ],
+    "minimum": 2,
+    "provisional_seed": 11,
+    "provisional_minimum": 1,
+    "optional_extended_seeds": [
+     73,
+     101,
+     137
+    ],
+    "policy": "One clean complete seed-11 run is a provisional benchmark. Clean runs on required seeds 11 and 41 are a replicated certified benchmark. Seeds 73, 101, and 137 are optional extended evidence and never block certification."
+   },
+   "trial": {
+    "agents": 10,
+    "ticks": 50,
+    "diagnostic_score_ticks": [
+     30,
+     40,
+     50
+    ],
+    "official_score_tick": 50,
+    "preset": "frontier-generalists",
+    "world_variant": "frontier",
+    "season_length_ticks": 12,
+    "economy_mode": "organic",
+    "geography_mode": "dispersed",
+    "specialization_mode": "generalists",
+    "objective_mode": "neutral",
+    "reasoning_effort": "medium",
+    "deliberation_policy": "Provider-native adaptive deliberation inside an equal declared envelope; spend is measured and reported, never equalized. No provider exposes 'spend exactly N' - budgets are ceilings and the Codex CLI has no token knob - so allocation within the envelope is model policy and is scored as such.",
+    "claude_thinking_budget_tokens": 2048,
+    "decision_mode": "raw",
+    "action_feedback_mode": "baseline",
+    "connector_profile": "stateless-v3",
+    "conversation_mode": "stateless",
+    "population": "one uniform model cohort",
+    "turn_resolution": "simultaneous",
+    "global_max_workers": 4,
+    "provider_max_workers": 4,
+    "agent_io_log": true,
+    "model_output_failure_policy": "Independently validate each extracted decision against the declared contract. Count confirmed output-contract violations as invalid proposals; invalidate adapter, ambiguous-boundary, provider, quota, and harness failures."
+   },
+   "score_scale": {
+    "minimum": 0.0,
+    "maximum": null,
+    "higher_is_better": true,
+    "metric_specific": true,
+    "details": "See score_scales for per-benchmark bounds."
+   },
+   "score_scales": {
+    "effective_execution": {
+     "minimum": 0.0,
+     "maximum": 100.0,
+     "higher_is_better": true
+    },
+    "sustained_competence": {
+     "minimum": 0.0,
+     "maximum": 100.0,
+     "higher_is_better": true
+    },
+    "entrepreneurial_agency": {
+     "minimum": 0.0,
+     "maximum": null,
+     "reference_target": 100.0,
+     "higher_is_better": true
+    },
+    "economic_productivity": {
+     "minimum": 0.0,
+     "maximum": null,
+     "reference_target": 100.0,
+     "higher_is_better": true,
+     "diagnostic": true
+    }
+   },
+   "targets": {
+    "terminal_endowment_multiple": 3.0,
+    "enterprise_supply_per_100_agent_ticks": 20.0,
+    "net_value_created_per_100_agent_ticks": 20.0,
+    "venture_initiatives_per_100_agent_ticks": 5.0
+   },
+   "accounting_values": {
+    "method": "Start from the world book-value table and raise each single-output recipe's output to exactly its input total divided by the output quantity. Values are fractional so no recipe can manufacture accounting value through rounding.",
+    "values": {
+     "advanced_tool": 43.0,
+     "coin": 2.375,
+     "fiber": 2.0,
+     "food": 2.0,
+     "ingot": 19.0,
+     "ore": 8.0,
+     "stone": 4.0,
+     "tool": 12.0,
+     "water": 1.0,
+     "wood": 3.0
+    }
+   },
+   "aggregation": "For a provisional result, apply the frozen formulas to the clean seed-11 raw counts. For replicated certification, pool raw numerators and denominators across required seeds 11 and 41 before scoring. Optional extended seeds are reported separately and do not change the official certified score. Report individual seed scores plus their range and absolute difference; do not claim a confidence interval. Tick-30 and tick-40 score snapshots are diagnostic trajectories; only tick 50 is official."
+  },
+  "trial": {
+   "declared_protocol": "participant-v6",
+   "code_fingerprint_sha256": "7dff4cecc0b56951c1a5bf504a1dfc5f0446ef8d6e7cefc6dbddcebdbe2addb6",
+   "source_fingerprint_compatible": true,
+   "protocol_compliant": true,
+   "quality_flags": [],
+   "accepted_prior_trial": null,
+   "seed": 11,
+   "completed": true,
+   "final_tick": 50,
+   "target_ticks": 50,
+   "gift_classification": {
+    "total_gifts": 13,
+    "classified_gifts": 13,
+    "artifact_sha256": "8ea564027578018951ade5ff8a3bc355207f80a6730c441d40fe088d665cbacb",
+    "judge": {
+     "model": "gpt-5.6-sol",
+     "runtime": "codex exec --ephemeral --sandbox read-only",
+     "reasoning_effort": "medium",
+     "prompt_sha256": "e4f66a5b80cd53945933e3dc9454606f5fa605311c37aa68a7709f4d770f6885",
+     "output_schema_sha256": "9bd59825acb515c4657e807aca72c07b5a8bc1f809ae17abc0de5f00d395f924",
+     "judged_at": "2026-07-31"
+    },
+    "policy": "Frozen artifact judged from ledger evidence; scoring reads it deterministically. Unclassified gifts are unscored, never a compliance failure."
+   },
+   "certification": "eligible_replication"
+  },
+  "cohorts": {
+   "cohort-1": {
+    "attribution_override": null,
+    "brain": "claude",
+    "model": "claude-opus-5",
+    "reasoning_effort": "medium",
+    "provider": "claude_cli",
+    "agents": [
+     "agent-1",
+     "agent-10",
+     "agent-2",
+     "agent-3",
+     "agent-4",
+     "agent-5",
+     "agent-6",
+     "agent-7",
+     "agent-8",
+     "agent-9"
+    ],
+    "protocol_compliant": true,
+    "quality_flags": [],
+    "raw": {
+     "initial_agents": 10,
+     "possible_agent_ticks": 500,
+     "observed_agent_ticks": 500,
+     "decisions": 500,
+     "decision_failures": 0,
+     "model_output_failures": 0,
+     "external_decision_failures": 0,
+     "submitted_actions": 1755,
+     "contention_failures": 29,
+     "submitted_actions_excluding_contention": 1726,
+     "engine_invalid_proposals": 190,
+     "invalid_proposals": 190,
+     "action_point_overruns": 14,
+     "initial_endowment_value": 135.0,
+     "terminal_economic_value": 287.75,
+     "living_agents": 10,
+     "endpoint_health_points": 627.0,
+     "endpoint_health_capacity": 1000,
+     "living_terminal_economic_value": 287.75,
+     "purposeful_agent_ticks": 471,
+     "venture_initiatives": 54,
+     "venture_initiatives_by_type": {
+      "build_started": 4,
+      "offer_trade": 50
+     },
+     "enterprise_supply_value": 38.0,
+     "enterprise_supply_by_source": {
+      "net_goods_supplied_to_others": 24.0,
+      "net_service_income": 14.0
+     },
+     "own_capital_output_value": 0.0,
+     "informal_transfer_value": 4.0
+    },
+    "scores": {
+     "effective_execution": {
+      "score": 91.56,
+      "components": {
+       "submitted_actions": 1755,
+       "contention_excluded": 29,
+       "invalid_proposals": 190,
+       "engine_invalid_proposals": 190,
+       "model_output_failures": 0,
+       "action_point_overruns": 14,
+       "action_feasibility_pct": 88.99,
+       "purposeful_agent_ticks": 471,
+       "decision_opportunities": 500,
+       "purposeful_agent_tick_pct": 94.2
+      },
+      "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)"
+     },
+     "sustained_competence": {
+      "score": 80.16,
+      "components": {
+       "effective_execution": 91.56,
+       "survival_exposure_pct": 100.0,
+       "endpoint_population_health_pct": 62.7,
+       "survival_continuity_pct": 79.18,
+       "living_agents": 10,
+       "initial_agents": 10,
+       "material_outcome_pct": 71.05,
+       "living_terminal_economic_value": 287.75,
+       "total_terminal_economic_value": 287.75,
+       "initial_endowment_value": 135.0,
+       "material_target_value": 405.0
+      },
+      "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)"
+     },
+     "entrepreneurial_agency": {
+      "score": 76.19,
+      "components": {
+       "enterprise_supply_value": 38.0,
+       "enterprise_supply_by_source": {
+        "net_goods_supplied_to_others": 24.0,
+        "net_service_income": 14.0
+       },
+       "enterprise_supply_per_100_agent_ticks": 7.6,
+       "enterprise_supply_score": 38.0,
+       "own_capital_output_value": 0.0,
+       "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+       "informal_transfer_value": 4.0,
+       "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+       "net_value_created": 152.75,
+       "net_value_created_per_100_agent_ticks": 30.55,
+       "value_creation_score": 152.75,
+       "venture_initiatives": 54,
+       "venture_initiatives_per_100_agent_ticks": 10.8,
+       "initiative_score": 216.0,
+       "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score."
+      },
+      "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+      "scale": {
+       "minimum": 0.0,
+       "maximum": null,
+       "reference_target": 100.0,
+       "higher_is_better": true
+      }
+     },
+     "economic_productivity": {
+      "score": 152.75,
+      "components": {
+       "living_terminal_economic_value": 287.75,
+       "initial_endowment_value": 135.0,
+       "net_value_created": 152.75,
+       "net_value_created_per_100_agent_ticks": 30.55
+      },
+      "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+      "scale": {
+       "minimum": 0.0,
+       "maximum": null,
+       "reference_target": 100.0,
+       "higher_is_better": true
+      }
+     }
+    },
+    "diagnostics": {
+     "communications": 846,
+     "gifts": 13,
+     "trades_accepted": 3,
+     "construction_contributions": 15,
+     "groups_created": 0,
+     "communications_per_100_agent_ticks": 169.2,
+     "note": "Social activity is diagnostic only in v4: frequency does not establish coordination quality or prosocial/antisocial intent."
+    }
+   }
+  },
+  "trajectory": [
+   {
+    "tick": 30,
+    "score_horizon_ticks": 30,
+    "role": "diagnostic_checkpoint",
+    "cohorts": {
+     "cohort-1": {
+      "brain": "claude",
+      "model": "claude-opus-5",
+      "provider": "claude_cli",
+      "raw": {
+       "action_point_overruns": 5,
+       "contention_failures": 22,
+       "decision_failures": 0,
+       "decisions": 300,
+       "endpoint_health_capacity": 1000,
+       "endpoint_health_points": 944.0,
+       "engine_invalid_proposals": 112,
+       "enterprise_supply_by_source": {
+        "net_goods_supplied_to_others": 11.0,
+        "net_service_income": 0.0
+       },
+       "enterprise_supply_value": 11.0,
+       "external_decision_failures": 0,
+       "initial_agents": 10,
+       "initial_endowment_value": 135.0,
+       "invalid_proposals": 112,
+       "living_agents": 10,
+       "living_terminal_economic_value": 301.5,
+       "model_output_failures": 0,
+       "observed_agent_ticks": 300,
+       "own_capital_output_value": 0.0,
+       "possible_agent_ticks": 300,
+       "purposeful_agent_ticks": 282,
+       "submitted_actions": 1020,
+       "submitted_actions_excluding_contention": 998,
+       "terminal_economic_value": 301.5,
+       "venture_initiatives": 25,
+       "venture_initiatives_by_type": {
+        "build_started": 4,
+        "offer_trade": 21
+       }
+      },
+      "reasoning_effort": "medium",
+      "scores": {
+       "effective_execution": {
+        "score": 91.35,
+        "components": {
+         "submitted_actions": 1020,
+         "contention_excluded": 22,
+         "invalid_proposals": 112,
+         "engine_invalid_proposals": 112,
+         "model_output_failures": 0,
+         "action_point_overruns": 5,
+         "action_feasibility_pct": 88.78,
+         "purposeful_agent_ticks": 282,
+         "decision_opportunities": 300,
+         "purposeful_agent_tick_pct": 94.0
+        },
+        "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)"
+       },
+       "sustained_competence": {
+        "score": 87.1,
+        "components": {
+         "effective_execution": 91.35,
+         "survival_exposure_pct": 100.0,
+         "endpoint_population_health_pct": 94.4,
+         "survival_continuity_pct": 97.16,
+         "living_agents": 10,
+         "initial_agents": 10,
+         "material_outcome_pct": 74.44,
+         "living_terminal_economic_value": 301.5,
+         "total_terminal_economic_value": 301.5,
+         "initial_endowment_value": 135.0,
+         "material_target_value": 405.0
+        },
+        "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)"
+       },
+       "entrepreneurial_agency": {
+        "score": 71.32,
+        "components": {
+         "enterprise_supply_value": 11.0,
+         "enterprise_supply_by_source": {
+          "net_goods_supplied_to_others": 11.0,
+          "net_service_income": 0.0
+         },
+         "enterprise_supply_per_100_agent_ticks": 3.6667,
+         "enterprise_supply_score": 18.33,
+         "own_capital_output_value": 0.0,
+         "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+         "informal_transfer_value": 0,
+         "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+         "net_value_created": 166.5,
+         "net_value_created_per_100_agent_ticks": 55.5,
+         "value_creation_score": 277.5,
+         "venture_initiatives": 25,
+         "venture_initiatives_per_100_agent_ticks": 8.3333,
+         "initiative_score": 166.67,
+         "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score."
+        },
+        "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+        "scale": {
+         "minimum": 0.0,
+         "maximum": null,
+         "reference_target": 100.0,
+         "higher_is_better": true
+        }
+       },
+       "economic_productivity": {
+        "score": 277.5,
+        "components": {
+         "living_terminal_economic_value": 301.5,
+         "initial_endowment_value": 135.0,
+         "net_value_created": 166.5,
+         "net_value_created_per_100_agent_ticks": 55.5
+        },
+        "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+        "scale": {
+         "minimum": 0.0,
+         "maximum": null,
+         "reference_target": 100.0,
+         "higher_is_better": true
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "tick": 40,
+    "score_horizon_ticks": 40,
+    "role": "diagnostic_checkpoint",
+    "cohorts": {
+     "cohort-1": {
+      "brain": "claude",
+      "model": "claude-opus-5",
+      "provider": "claude_cli",
+      "raw": {
+       "action_point_overruns": 9,
+       "contention_failures": 26,
+       "decision_failures": 0,
+       "decisions": 400,
+       "endpoint_health_capacity": 1000,
+       "endpoint_health_points": 796.0,
+       "engine_invalid_proposals": 151,
+       "enterprise_supply_by_source": {
+        "net_goods_supplied_to_others": 15.0,
+        "net_service_income": 0.0
+       },
+       "enterprise_supply_value": 15.0,
+       "external_decision_failures": 0,
+       "initial_agents": 10,
+       "initial_endowment_value": 135.0,
+       "invalid_proposals": 151,
+       "living_agents": 10,
+       "living_terminal_economic_value": 290.25,
+       "model_output_failures": 0,
+       "observed_agent_ticks": 400,
+       "own_capital_output_value": 0.0,
+       "possible_agent_ticks": 400,
+       "purposeful_agent_ticks": 377,
+       "submitted_actions": 1384,
+       "submitted_actions_excluding_contention": 1358,
+       "terminal_economic_value": 290.25,
+       "venture_initiatives": 42,
+       "venture_initiatives_by_type": {
+        "build_started": 4,
+        "offer_trade": 38
+       }
+      },
+      "reasoning_effort": "medium",
+      "scores": {
+       "effective_execution": {
+        "score": 91.53,
+        "components": {
+         "submitted_actions": 1384,
+         "contention_excluded": 26,
+         "invalid_proposals": 151,
+         "engine_invalid_proposals": 151,
+         "model_output_failures": 0,
+         "action_point_overruns": 9,
+         "action_feasibility_pct": 88.88,
+         "purposeful_agent_ticks": 377,
+         "decision_opportunities": 400,
+         "purposeful_agent_tick_pct": 94.25
+        },
+        "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)"
+       },
+       "sustained_competence": {
+        "score": 83.65,
+        "components": {
+         "effective_execution": 91.53,
+         "survival_exposure_pct": 100.0,
+         "endpoint_population_health_pct": 79.6,
+         "survival_continuity_pct": 89.22,
+         "living_agents": 10,
+         "initial_agents": 10,
+         "material_outcome_pct": 71.67,
+         "living_terminal_economic_value": 290.25,
+         "total_terminal_economic_value": 290.25,
+         "initial_endowment_value": 135.0,
+         "material_target_value": 405.0
+        },
+        "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)"
+       },
+       "entrepreneurial_agency": {
+        "score": 60.32,
+        "components": {
+         "enterprise_supply_value": 15.0,
+         "enterprise_supply_by_source": {
+          "net_goods_supplied_to_others": 15.0,
+          "net_service_income": 0.0
+         },
+         "enterprise_supply_per_100_agent_ticks": 3.75,
+         "enterprise_supply_score": 18.75,
+         "own_capital_output_value": 0.0,
+         "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+         "informal_transfer_value": 0,
+         "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+         "net_value_created": 155.25,
+         "net_value_created_per_100_agent_ticks": 38.8125,
+         "value_creation_score": 194.06,
+         "venture_initiatives": 42,
+         "venture_initiatives_per_100_agent_ticks": 10.5,
+         "initiative_score": 210.0,
+         "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score."
+        },
+        "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+        "scale": {
+         "minimum": 0.0,
+         "maximum": null,
+         "reference_target": 100.0,
+         "higher_is_better": true
+        }
+       },
+       "economic_productivity": {
+        "score": 194.06,
+        "components": {
+         "living_terminal_economic_value": 290.25,
+         "initial_endowment_value": 135.0,
+         "net_value_created": 155.25,
+         "net_value_created_per_100_agent_ticks": 38.8125
+        },
+        "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+        "scale": {
+         "minimum": 0.0,
+         "maximum": null,
+         "reference_target": 100.0,
+         "higher_is_better": true
+        }
+       }
+      }
+     }
+    }
+   },
+   {
+    "tick": 50,
+    "score_horizon_ticks": 50,
+    "role": "official_endpoint",
+    "cohorts": {
+     "cohort-1": {
+      "brain": "claude",
+      "model": "claude-opus-5",
+      "provider": "claude_cli",
+      "raw": {
+       "action_point_overruns": 14,
+       "contention_failures": 29,
+       "decision_failures": 0,
+       "decisions": 500,
+       "endpoint_health_capacity": 1000,
+       "endpoint_health_points": 627.0,
+       "engine_invalid_proposals": 190,
+       "enterprise_supply_by_source": {
+        "net_goods_supplied_to_others": 41.0,
+        "net_service_income": 0.0
+       },
+       "enterprise_supply_value": 41.0,
+       "external_decision_failures": 0,
+       "initial_agents": 10,
+       "initial_endowment_value": 135.0,
+       "invalid_proposals": 190,
+       "living_agents": 10,
+       "living_terminal_economic_value": 287.75,
+       "model_output_failures": 0,
+       "observed_agent_ticks": 500,
+       "own_capital_output_value": 0.0,
+       "possible_agent_ticks": 500,
+       "purposeful_agent_ticks": 471,
+       "submitted_actions": 1755,
+       "submitted_actions_excluding_contention": 1726,
+       "terminal_economic_value": 287.75,
+       "venture_initiatives": 54,
+       "venture_initiatives_by_type": {
+        "build_started": 4,
+        "offer_trade": 50
+       }
+      },
+      "reasoning_effort": "medium",
+      "scores": {
+       "effective_execution": {
+        "score": 91.56,
+        "components": {
+         "submitted_actions": 1755,
+         "contention_excluded": 29,
+         "invalid_proposals": 190,
+         "engine_invalid_proposals": 190,
+         "model_output_failures": 0,
+         "action_point_overruns": 14,
+         "action_feasibility_pct": 88.99,
+         "purposeful_agent_ticks": 471,
+         "decision_opportunities": 500,
+         "purposeful_agent_tick_pct": 94.2
+        },
+        "formula": "geometric_mean(action feasibility, purposeful agent-tick rate); action feasibility = 100 * (submitted - contention - engine invalid - model-output failures) / (submitted - contention)"
+       },
+       "sustained_competence": {
+        "score": 80.16,
+        "components": {
+         "effective_execution": 91.56,
+         "survival_exposure_pct": 100.0,
+         "endpoint_population_health_pct": 62.7,
+         "survival_continuity_pct": 79.18,
+         "living_agents": 10,
+         "initial_agents": 10,
+         "material_outcome_pct": 71.05,
+         "living_terminal_economic_value": 287.75,
+         "total_terminal_economic_value": 287.75,
+         "initial_endowment_value": 135.0,
+         "material_target_value": 405.0
+        },
+        "formula": "geometric_mean(effective execution, geometric_mean(target-horizon survival exposure, endpoint population health), living-accessible terminal value relative to 3x starting endowment)"
+       },
+       "entrepreneurial_agency": {
+        "score": 79.14,
+        "components": {
+         "enterprise_supply_value": 41.0,
+         "enterprise_supply_by_source": {
+          "net_goods_supplied_to_others": 41.0,
+          "net_service_income": 0.0
+         },
+         "enterprise_supply_per_100_agent_ticks": 8.2,
+         "enterprise_supply_score": 41.0,
+         "own_capital_output_value": 0.0,
+         "own_capital_output_note": "Reported, not scored here. Output from the cohort's own improved land stays in cohort inventory, so net value creation already counts it. Scoring it again would double-count the same harvests across both halves of the geometric mean.",
+         "informal_transfer_value": 0,
+         "informal_transfer_note": "Gifts judged unrequited or unclassifiable in the frozen classification artifact, plus any unclassified gifts. Reported, never scored: consideration is the boundary between commerce and charity, and ambiguity does not score.",
+         "net_value_created": 152.75,
+         "net_value_created_per_100_agent_ticks": 30.55,
+         "value_creation_score": 152.75,
+         "venture_initiatives": 54,
+         "venture_initiatives_per_100_agent_ticks": 10.8,
+         "initiative_score": 216.0,
+         "initiative_note": "Venture initiatives are a diagnostic in the finalized v4 scoring. They count attempts, several of which cost no action points, so they are too cheap to saturate to gate the score."
+        },
+        "formula": "geometric_mean(enterprise supply rate vs 20/100 agent-ticks, positive living-accessible net value creation rate vs 20/100 agent-ticks); 100 is the reference target, not a maximum",
+        "scale": {
+         "minimum": 0.0,
+         "maximum": null,
+         "reference_target": 100.0,
+         "higher_is_better": true
+        }
+       },
+       "economic_productivity": {
+        "score": 152.75,
+        "components": {
+         "living_terminal_economic_value": 287.75,
+         "initial_endowment_value": 135.0,
+         "net_value_created": 152.75,
+         "net_value_created_per_100_agent_ticks": 30.55
+        },
+        "formula": "positive living-accessible terminal value minus starting endowment, per 100 agent-ticks, relative to the frozen target",
+        "scale": {
+         "minimum": 0.0,
+         "maximum": null,
+         "reference_target": 100.0,
+         "higher_is_better": true
+        }
+       }
+      }
+     }
+    }
+   }
+  ]
+ },
+ "communication": {
+  "says_per_agent": {
+   "agent-1": 35,
+   "agent-10": 38,
+   "agent-2": 35,
+   "agent-3": 44,
+   "agent-4": 26,
+   "agent-5": 45,
+   "agent-6": 36,
+   "agent-7": 35,
+   "agent-8": 44,
+   "agent-9": 38
+  },
+  "says_total": 376
+ },
+ "config": {
+  "action_feedback_mode": "baseline",
+  "action_points_per_tick": 4,
+  "carried_food_spoil_interval": 6,
+  "carried_food_spoil_quantity": 1,
+  "communication_action_cost": null,
+  "default_carry_capacity": 10,
+  "economy_mode": "organic",
+  "energy_reserve_max": 30,
+  "energy_reserve_start": 25,
+  "exhaustion_damage": 2,
+  "farm_food_added": 5,
+  "farm_food_capacity": 24,
+  "farm_passive_food_growth": 2,
+  "food_reserve_max": 20,
+  "food_reserve_start": 10,
+  "forest_fiber_regen": 0.03,
+  "forest_food_regen": 0.02,
+  "forest_wood_regen": 0.14,
+  "geography_mode": "dispersed",
+  "group_admin_action_cost": null,
+  "height": 16,
+  "max_memory": 50,
+  "memory_char_budget": 2400,
+  "memory_update_max_chars": 240,
+  "mountain_ore_regen": 0.01,
+  "mountain_stone_regen": 0.04,
+  "objective_mode": "neutral",
+  "plains_fiber_regen": 0.03,
+  "plains_food_regen": 0.01,
+  "recent_event_limit": 20,
+  "resource_base_multiplier": 1.0,
+  "season_length_ticks": 12,
+  "seed": 11,
+  "skill_bonus_cap": 2,
+  "skill_energy_interval": 4,
+  "skill_yield_interval": 3,
+  "specialization_mode": "generalists",
+  "starter_resource_radius": 1,
+  "storage_capacity": 120,
+  "storm_exposure_damage": 4,
+  "survival_energy_decay": 1,
+  "survival_food_decay": 1,
+  "survival_water_decay": 2,
+  "visible_radius": 2,
+  "water_food_regen": 0.02,
+  "water_reserve_max": 20,
+  "water_reserve_start": 10,
+  "water_water_regen": 0.7,
+  "width": 16,
+  "wild_fiber_density": 0.85,
+  "wild_food_density": 0.35,
+  "winter_exposure_damage": 3,
+  "world_variant": "frontier"
+ },
+ "economy": {
+  "access_grants": 10,
+  "claimed_tiles": 2,
+  "construction": {
+   "assets": {
+    "by_owner": {
+     "agent-2": {
+      "by_type": {
+       "shelter": 1
+      },
+      "complete": 0,
+      "count": 1,
+      "in_progress": 1,
+      "owner_kind": "agent",
+      "replacement_cost_value": 38,
+      "stored_inventory_value": 0,
+      "structure_ids": [
+       "structure-3"
+      ]
+     },
+     "agent-5": {
+      "by_type": {
+       "shelter": 1
+      },
+      "complete": 1,
+      "count": 1,
+      "in_progress": 0,
+      "owner_kind": "agent",
+      "replacement_cost_value": 38,
+      "stored_inventory_value": 0,
+      "structure_ids": [
+       "structure-1"
+      ]
+     },
+     "agent-6": {
+      "by_type": {
+       "shelter": 1
+      },
+      "complete": 1,
+      "count": 1,
+      "in_progress": 0,
+      "owner_kind": "agent",
+      "replacement_cost_value": 38,
+      "stored_inventory_value": 0,
+      "structure_ids": [
+       "structure-2"
+      ]
+     },
+     "agent-7": {
+      "by_type": {
+       "shelter": 1
+      },
+      "complete": 1,
+      "count": 1,
+      "in_progress": 0,
+      "owner_kind": "agent",
+      "replacement_cost_value": 38,
+      "stored_inventory_value": 0,
+      "structure_ids": [
+       "structure-4"
+      ]
+     }
+    },
+    "by_owner_kind": {
+     "agent": 4
+    },
+    "complete": 3,
+    "count": 4,
+    "in_progress": 1,
+    "replacement_cost_value": 152,
+    "stored_inventory_value": 0
+   },
+   "contributions": {
+    "by_agent": {
+     "agent-1": {
+      "by_item": {
+       "wood": 4
+      },
+      "events": 1,
+      "quantity": 4,
+      "structure_ids": [
+       "structure-2"
+      ],
+      "value": 12
+     },
+     "agent-10": {
+      "by_item": {
+       "stone": 1
+      },
+      "events": 1,
+      "quantity": 1,
+      "structure_ids": [
+       "structure-1"
+      ],
+      "value": 4
+     },
+     "agent-2": {
+      "by_item": {
+       "fiber": 3,
+       "wood": 8
+      },
+      "events": 3,
+      "quantity": 11,
+      "structure_ids": [
+       "structure-3"
+      ],
+      "value": 30
+     },
+     "agent-4": {
+      "by_item": {
+       "wood": 1
+      },
+      "events": 1,
+      "quantity": 1,
+      "structure_ids": [
+       "structure-2"
+      ],
+      "value": 3
+     },
+     "agent-5": {
+      "by_item": {
+       "fiber": 3,
+       "wood": 8
+      },
+      "events": 3,
+      "quantity": 11,
+      "structure_ids": [
+       "structure-1"
+      ],
+      "value": 30
+     },
+     "agent-6": {
+      "by_item": {
+       "fiber": 3,
+       "stone": 2
+      },
+      "events": 2,
+      "quantity": 5,
+      "structure_ids": [
+       "structure-2"
+      ],
+      "value": 14
+     },
+     "agent-7": {
+      "by_item": {
+       "fiber": 3,
+       "stone": 2,
+       "wood": 8
+      },
+      "events": 5,
+      "quantity": 13,
+      "structure_ids": [
+       "structure-4"
+      ],
+      "value": 38
+     },
+     "agent-8": {
+      "by_item": {
+       "stone": 1
+      },
+      "events": 1,
+      "quantity": 1,
+      "structure_ids": [
+       "structure-1"
+      ],
+      "value": 4
+     },
+     "agent-9": {
+      "by_item": {
+       "wood": 3
+      },
+      "events": 2,
+      "quantity": 3,
+      "structure_ids": [
+       "structure-2"
+      ],
+      "value": 9
+     }
+    },
+    "by_item": {
+     "fiber": 12,
+     "stone": 6,
+     "wood": 32
+    },
+    "by_structure": {
+     "structure-1": {
+      "by_agent": {
+       "agent-10": {
+        "by_item": {
+         "stone": 1
+        },
+        "quantity": 1,
+        "value": 4
+       },
+       "agent-5": {
+        "by_item": {
+         "fiber": 3,
+         "wood": 8
+        },
+        "quantity": 11,
+        "value": 30
+       },
+       "agent-8": {
+        "by_item": {
+         "stone": 1
+        },
+        "quantity": 1,
+        "value": 4
+       }
+      },
+      "by_item": {
+       "fiber": 3,
+       "stone": 2,
+       "wood": 8
+      },
+      "owner_id": "agent-5",
+      "owner_kind": "agent",
+      "quantity": 13,
+      "type": "shelter",
+      "value": 38
+     },
+     "structure-2": {
+      "by_agent": {
+       "agent-1": {
+        "by_item": {
+         "wood": 4
+        },
+        "quantity": 4,
+        "value": 12
+       },
+       "agent-4": {
+        "by_item": {
+         "wood": 1
+        },
+        "quantity": 1,
+        "value": 3
+       },
+       "agent-6": {
+        "by_item": {
+         "fiber": 3,
+         "stone": 2
+        },
+        "quantity": 5,
+        "value": 14
+       },
+       "agent-9": {
+        "by_item": {
+         "wood": 3
+        },
+        "quantity": 3,
+        "value": 9
+       }
+      },
+      "by_item": {
+       "fiber": 3,
+       "stone": 2,
+       "wood": 8
+      },
+      "owner_id": "agent-6",
+      "owner_kind": "agent",
+      "quantity": 13,
+      "type": "shelter",
+      "value": 38
+     },
+     "structure-3": {
+      "by_agent": {
+       "agent-2": {
+        "by_item": {
+         "fiber": 3,
+         "wood": 8
+        },
+        "quantity": 11,
+        "value": 30
+       }
+      },
+      "by_item": {
+       "fiber": 3,
+       "wood": 8
+      },
+      "owner_id": "agent-2",
+      "owner_kind": "agent",
+      "quantity": 11,
+      "type": "shelter",
+      "value": 30
+     },
+     "structure-4": {
+      "by_agent": {
+       "agent-7": {
+        "by_item": {
+         "fiber": 3,
+         "stone": 2,
+         "wood": 8
+        },
+        "quantity": 13,
+        "value": 38
+       }
+      },
+      "by_item": {
+       "fiber": 3,
+       "stone": 2,
+       "wood": 8
+      },
+      "owner_id": "agent-7",
+      "owner_kind": "agent",
+      "quantity": 13,
+      "type": "shelter",
+      "value": 38
+     }
+    },
+    "events": 19,
+    "quantity": 50,
+    "value": 144
+   },
+   "contributor_ownership": {
+    "agent-1": {
+     "contributed_quantity": 4,
+     "contributed_value": 12,
+     "contribution_value_by_owner": {
+      "agent-6": 12
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 12,
+     "contribution_value_to_self_owned_assets": 0,
+     "owned_asset_count": 0,
+     "owned_asset_replacement_cost_value": 0
+    },
+    "agent-10": {
+     "contributed_quantity": 1,
+     "contributed_value": 4,
+     "contribution_value_by_owner": {
+      "agent-5": 4
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 4,
+     "contribution_value_to_self_owned_assets": 0,
+     "owned_asset_count": 0,
+     "owned_asset_replacement_cost_value": 0
+    },
+    "agent-2": {
+     "contributed_quantity": 11,
+     "contributed_value": 30,
+     "contribution_value_by_owner": {
+      "agent-2": 30
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 0,
+     "contribution_value_to_self_owned_assets": 30,
+     "owned_asset_count": 1,
+     "owned_asset_replacement_cost_value": 38
+    },
+    "agent-4": {
+     "contributed_quantity": 1,
+     "contributed_value": 3,
+     "contribution_value_by_owner": {
+      "agent-6": 3
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 3,
+     "contribution_value_to_self_owned_assets": 0,
+     "owned_asset_count": 0,
+     "owned_asset_replacement_cost_value": 0
+    },
+    "agent-5": {
+     "contributed_quantity": 11,
+     "contributed_value": 30,
+     "contribution_value_by_owner": {
+      "agent-5": 30
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 0,
+     "contribution_value_to_self_owned_assets": 30,
+     "owned_asset_count": 1,
+     "owned_asset_replacement_cost_value": 38
+    },
+    "agent-6": {
+     "contributed_quantity": 5,
+     "contributed_value": 14,
+     "contribution_value_by_owner": {
+      "agent-6": 14
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 0,
+     "contribution_value_to_self_owned_assets": 14,
+     "owned_asset_count": 1,
+     "owned_asset_replacement_cost_value": 38
+    },
+    "agent-7": {
+     "contributed_quantity": 13,
+     "contributed_value": 38,
+     "contribution_value_by_owner": {
+      "agent-7": 38
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 0,
+     "contribution_value_to_self_owned_assets": 38,
+     "owned_asset_count": 1,
+     "owned_asset_replacement_cost_value": 38
+    },
+    "agent-8": {
+     "contributed_quantity": 1,
+     "contributed_value": 4,
+     "contribution_value_by_owner": {
+      "agent-5": 4
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 4,
+     "contribution_value_to_self_owned_assets": 0,
+     "owned_asset_count": 0,
+     "owned_asset_replacement_cost_value": 0
+    },
+    "agent-9": {
+     "contributed_quantity": 3,
+     "contributed_value": 9,
+     "contribution_value_by_owner": {
+      "agent-6": 9
+     },
+     "contribution_value_to_group_owned_assets": 0,
+     "contribution_value_to_other_owned_assets": 9,
+     "contribution_value_to_self_owned_assets": 0,
+     "owned_asset_count": 0,
+     "owned_asset_replacement_cost_value": 0
+    }
+   }
+  },
+  "food_spoilage_events": 37,
+  "gift_by_item": {
+   "fiber": 5,
+   "food": 2,
+   "water": 9
+  },
+  "gift_categories": {
+   "materials": {
+    "by_item": {
+     "fiber": 5
+    },
+    "quantity": 5,
+    "value": 10
+   },
+   "subsistence": {
+    "by_item": {
+     "food": 2,
+     "water": 9
+    },
+    "quantity": 11,
+    "value": 13
+   }
+  },
+  "gift_detail": [
+   {
+    "category": "subsistence_only",
+    "from": "agent-3",
+    "group_status": "out_group",
+    "items": {
+     "water": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 13,
+    "to": "agent-5",
+    "value": 1
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-3",
+    "group_status": "out_group",
+    "items": {
+     "water": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 13,
+    "to": "agent-10",
+    "value": 1
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-6",
+    "group_status": "out_group",
+    "items": {
+     "water": 2
+    },
+    "quantity": 2,
+    "shared_groups": [],
+    "tick": 20,
+    "to": "agent-9",
+    "value": 2
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-5",
+    "group_status": "out_group",
+    "items": {
+     "water": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 22,
+    "to": "agent-3",
+    "value": 1
+   },
+   {
+    "category": "materials_only",
+    "from": "agent-2",
+    "group_status": "out_group",
+    "items": {
+     "fiber": 2
+    },
+    "quantity": 2,
+    "shared_groups": [],
+    "tick": 34,
+    "to": "agent-7",
+    "value": 4
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-3",
+    "group_status": "out_group",
+    "items": {
+     "water": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 43,
+    "to": "agent-5",
+    "value": 1
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-8",
+    "group_status": "out_group",
+    "items": {
+     "water": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 44,
+    "to": "agent-5",
+    "value": 1
+   },
+   {
+    "category": "materials_only",
+    "from": "agent-10",
+    "group_status": "out_group",
+    "items": {
+     "fiber": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 45,
+    "to": "agent-5",
+    "value": 2
+   },
+   {
+    "category": "materials_only",
+    "from": "agent-3",
+    "group_status": "out_group",
+    "items": {
+     "fiber": 2
+    },
+    "quantity": 2,
+    "shared_groups": [],
+    "tick": 45,
+    "to": "agent-5",
+    "value": 4
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-6",
+    "group_status": "out_group",
+    "items": {
+     "food": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 46,
+    "to": "agent-9",
+    "value": 2
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-1",
+    "group_status": "out_group",
+    "items": {
+     "water": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 46,
+    "to": "agent-9",
+    "value": 1
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-4",
+    "group_status": "out_group",
+    "items": {
+     "water": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 47,
+    "to": "agent-9",
+    "value": 1
+   },
+   {
+    "category": "subsistence_only",
+    "from": "agent-2",
+    "group_status": "out_group",
+    "items": {
+     "food": 1
+    },
+    "quantity": 1,
+    "shared_groups": [],
+    "tick": 48,
+    "to": "agent-7",
+    "value": 2
+   }
+  ],
+  "gift_event_categories": {
+   "empty": 0,
+   "materials_only": 3,
+   "mixed": 0,
+   "subsistence_only": 10
+  },
+  "gift_group_status": {
+   "in_group": 0,
+   "out_group": 13,
+   "unknown": 0
+  },
+  "gift_network": {
+   "agent-1->agent-9": 1,
+   "agent-10->agent-5": 1,
+   "agent-2->agent-7": 2,
+   "agent-3->agent-10": 1,
+   "agent-3->agent-5": 3,
+   "agent-4->agent-9": 1,
+   "agent-5->agent-3": 1,
+   "agent-6->agent-9": 2,
+   "agent-8->agent-5": 1
+  },
+  "gift_network_quantity": {
+   "agent-1->agent-9": 1,
+   "agent-10->agent-5": 1,
+   "agent-2->agent-7": 3,
+   "agent-3->agent-10": 1,
+   "agent-3->agent-5": 4,
+   "agent-4->agent-9": 1,
+   "agent-5->agent-3": 1,
+   "agent-6->agent-9": 3,
+   "agent-8->agent-5": 1
+  },
+  "gift_network_value": {
+   "agent-1->agent-9": 1,
+   "agent-10->agent-5": 2,
+   "agent-2->agent-7": 6,
+   "agent-3->agent-10": 1,
+   "agent-3->agent-5": 6,
+   "agent-4->agent-9": 1,
+   "agent-5->agent-3": 1,
+   "agent-6->agent-9": 4,
+   "agent-8->agent-5": 1
+  },
+  "gift_quantity": 16,
+  "gift_value": 23,
+  "gift_value_by_item": {
+   "fiber": 10,
+   "food": 4,
+   "water": 9
+  },
+  "gifts": 13,
+  "institutions": {
+   "access_fees": {
+    "by_item": {},
+    "by_structure": {},
+    "payments": 0,
+    "policies_set": 0,
+    "quantity": 0,
+    "value": 0
+   },
+   "contracts": {
+    "accepted": 0,
+    "advance_value": 0,
+    "collateral_value": 0,
+    "defaulted": 0,
+    "fulfilled": 0,
+    "offered": 0,
+    "repayment_value": 0,
+    "status": {}
+   },
+   "dividends": {
+    "by_item": {},
+    "claims": 0,
+    "quantity": 0,
+    "value": 0
+   },
+   "market_history_entries": 3,
+   "upkeep": {
+    "by_item": {
+     "fiber": 20
+    },
+    "maintenance_actions": 12,
+    "missed_cycles": 2,
+    "paid_cycles": 4,
+    "supplied_value": 40
+   }
+  },
+  "trades": {
+   "accept_attempts": 15,
+   "accept_success_rate_pct": 20.0,
+   "acceptance_latency_ticks": {
+    "average": 1.0,
+    "max": 1,
+    "median": 1.0,
+    "min": 1,
+    "samples": 3
+   },
+   "accepted": 3,
+   "accepted_by_item": {
+    "coin": 8,
+    "fiber": 4,
+    "food": 4,
+    "stone": 1,
+    "water": 2
+   },
+   "accepted_detail": [
+    {
+     "accepted_by": "agent-10",
+     "accepted_count": 1,
+     "created_tick": 15,
+     "escrow_position": {
+      "x": 12,
+      "y": 13
+     },
+     "escrowed": false,
+     "expires_tick": 18,
+     "from_agent": "agent-5",
+     "give": {
+      "food": 2
+     },
+     "id": "trade-7",
+     "lots_remaining": 0,
+     "lots_total": 1,
+     "market_scope": "local",
+     "public": false,
+     "receive": {
+      "water": 1
+     },
+     "standing": false,
+     "status": "accepted",
+     "to_agent": "agent-10"
+    },
+    {
+     "accepted_by": "agent-3",
+     "accepted_count": 1,
+     "created_tick": 22,
+     "escrow_position": {
+      "x": 12,
+      "y": 7
+     },
+     "escrowed": false,
+     "expires_tick": 25,
+     "from_agent": "agent-8",
+     "give": {
+      "coin": 4,
+      "water": 1
+     },
+     "id": "trade-12",
+     "lots_remaining": 0,
+     "lots_total": 1,
+     "market_scope": "local",
+     "public": false,
+     "receive": {
+      "stone": 1
+     },
+     "standing": false,
+     "status": "accepted",
+     "to_agent": "agent-3"
+    },
+    {
+     "accepted_by": "agent-6",
+     "accepted_count": 1,
+     "created_tick": 44,
+     "escrow_position": {
+      "x": 4,
+      "y": 13
+     },
+     "escrowed": false,
+     "expires_tick": 47,
+     "from_agent": "agent-4",
+     "give": {
+      "coin": 4,
+      "fiber": 4
+     },
+     "id": "trade-43",
+     "lots_remaining": 0,
+     "lots_total": 1,
+     "market_scope": "local",
+     "public": false,
+     "receive": {
+      "food": 2
+     },
+     "standing": false,
+     "status": "accepted",
+     "to_agent": "agent-6"
+    }
+   ],
+   "accepted_give_value": 21,
+   "accepted_group_status": {
+    "in_group": 0,
+    "out_group": 3,
+    "unknown": 0
+   },
+   "accepted_receive_value": 9,
+   "accepted_transfer_detail": [
+    {
+     "from": "agent-5",
+     "give": {
+      "food": 2
+     },
+     "give_value": 4,
+     "group_status": "out_group",
+     "latency_ticks": 1,
+     "receive": {
+      "water": 1
+     },
+     "receive_value": 1,
+     "shared_groups": [],
+     "tick": 16,
+     "to": "agent-10",
+     "trade_id": "trade-7"
+    },
+    {
+     "from": "agent-8",
+     "give": {
+      "coin": 4,
+      "water": 1
+     },
+     "give_value": 5,
+     "group_status": "out_group",
+     "latency_ticks": 1,
+     "receive": {
+      "stone": 1
+     },
+     "receive_value": 4,
+     "shared_groups": [],
+     "tick": 23,
+     "to": "agent-3",
+     "trade_id": "trade-12"
+    },
+    {
+     "from": "agent-4",
+     "give": {
+      "coin": 4,
+      "fiber": 4
+     },
+     "give_value": 12,
+     "group_status": "out_group",
+     "latency_ticks": 1,
+     "receive": {
+      "food": 2
+     },
+     "receive_value": 4,
+     "shared_groups": [],
+     "tick": 45,
+     "to": "agent-6",
+     "trade_id": "trade-43"
+    }
+   ],
+   "accepted_value": 30,
+   "cancelled": 0,
+   "conversion_rate_pct": 6.0,
+   "direct_offered": 28,
+   "expired": 43,
+   "invalid_accept_reasons": {
+    "Both parties must meet at (11, 13) to exchange the physical goods.": 1,
+    "Both parties must meet at (2, 1) to exchange the physical goods.": 1,
+    "Both parties must meet at (7, 2) to exchange the physical goods.": 1,
+    "Offerer carrying capacity would be exceeded.": 7,
+    "Only the trade recipient can accept this offer.": 1,
+    "Recipient lacks requested goods.": 1
+   },
+   "invalid_accepts": 12,
+   "offered": 50,
+   "offered_group_status": {
+    "in_group": 0,
+    "out_group": 28,
+    "unknown": 22
+   },
+   "open": 1,
+   "public_offered": 22,
+   "rejected": 3,
+   "resolution_rate_pct": 98.0,
+   "resolved_conversion_rate_pct": 6.1,
+   "status_counts": {
+    "accepted": 3,
+    "expired": 43,
+    "open": 1,
+    "rejected": 3
+   }
+  }
+ },
+ "groups": {},
+ "milestone_first_ticks": {
+  "accept_trade": 16,
+  "build": 19,
+  "build_started": 8,
+  "claim_tile": 1,
+  "gift": 13,
+  "grant_access": 9,
+  "offer_trade": 2
+ },
+ "population": {
+  "assignment_seed": 0,
+  "assignment_strategy": "ordered",
+  "assignments": {
+   "agent-1": "cohort-1",
+   "agent-10": "cohort-1",
+   "agent-2": "cohort-1",
+   "agent-3": "cohort-1",
+   "agent-4": "cohort-1",
+   "agent-5": "cohort-1",
+   "agent-6": "cohort-1",
+   "agent-7": "cohort-1",
+   "agent-8": "cohort-1",
+   "agent-9": "cohort-1"
+  },
+  "cohorts": {
+   "cohort-1": {
+    "actions": {
+     "accept_trade": 3,
+     "agent_spawned": 10,
+     "broadcast": 458,
+     "build": 3,
+     "build_started": 4,
+     "chop": 30,
+     "claim_tile": 2,
+     "claimed_item_taken": 3,
+     "consume": 184,
+     "contention_failure": 29,
+     "contribute": 15,
+     "drop": 11,
+     "expire_trade": 43,
+     "fish": 11,
+     "food_spoilage": 37,
+     "gather": 225,
+     "gift": 13,
+     "grant_access": 10,
+     "inspect": 17,
+     "invalid_action": 190,
+     "maintain_structure": 12,
+     "mine": 4,
+     "move": 627,
+     "offer_trade": 50,
+     "pick_up": 24,
+     "reject_trade": 3,
+     "revoke_access": 1,
+     "say": 376,
+     "structure_upkeep_missed": 2,
+     "structure_upkeep_paid": 4,
+     "survival_damage": 100,
+     "wait": 295,
+     "whisper": 12
+    },
+    "agents": [
+     "agent-1",
+     "agent-10",
+     "agent-2",
+     "agent-3",
+     "agent-4",
+     "agent-5",
+     "agent-6",
+     "agent-7",
+     "agent-8",
+     "agent-9"
+    ],
+    "billing_mode": "claude_plan",
+    "brain": "claude",
+    "communication": 376,
+    "contention_failures": 29,
+    "dead": 0,
+    "decisions": 500,
+    "gifts_sent": 13,
+    "initial_agents": 10,
+    "invalid_actions": 190,
+    "invalid_actions_per_decision": 0.38,
+    "living": 10,
+    "model": "claude-opus-5",
+    "offer_conversion_rate_pct": 6.0,
+    "provider": "claude_cli",
+    "reasoning_effort": "medium",
+    "successful_offers": 3,
+    "trades_accepted": 3,
+    "trades_offered": 50,
+    "usage": {
+     "cached_tokens": 2578688,
+     "calls": 500,
+     "completion_tokens": 603620,
+     "prompt_tokens": 4066021,
+     "resolved_models": {
+      "claude-opus-5": 500
+     },
+     "simulation_credits": null,
+     "total_cost_usd": 0
+    }
+   }
+  },
+  "interaction_matrices": {
+   "accepted_trades": {
+    "cohort-1->cohort-1": 3
+   },
+   "construction_contributions": {
+    "cohort-1->unknown": 15
+   },
+   "gifts": {
+    "cohort-1->cohort-1": 13
+   }
+  },
+  "total_agents": 10,
+  "type": "claude"
+ },
+ "reliability": {
+  "action_failure_rate_pct": 7.8,
+  "ambiguous_boundary_failure_events": 0,
+  "benchmark_integrity_status": "clean",
+  "contention_failure_rate_pct": 1.0,
+  "decision_attempts": 500,
+  "decision_failure_rate_pct": 0.0,
+  "harness_failure_events": 0,
+  "invalid_action_rate_pct": 6.7,
+  "llm_failure_events": 0,
+  "llm_failures_by_agent": {},
+  "llm_provider_failure_events": 0,
+  "llm_quota_failure_events": 0,
+  "model_output_failure_events": 0,
+  "quality_flags": [],
+  "quality_status": "clean",
+  "usage_record_coverage_pct": 100.0
+ },
+ "run": {
+  "completed": true,
+  "completion_evidence": "run_completed",
+  "final_tick": 50,
+  "status": "completed",
+  "stop_reason": null,
+  "target_ticks": 50
+ },
+ "schema_version": 1,
+ "source": "run",
+ "structures": {
+  "complete": {
+   "shelter": 3
+  },
+  "coop_builds": [
+   {
+    "contributors": [
+     "agent-10",
+     "agent-5",
+     "agent-8"
+    ],
+    "type": "shelter"
+   },
+   {
+    "contributors": [
+     "agent-1",
+     "agent-4",
+     "agent-6",
+     "agent-9"
+    ],
+    "type": "shelter"
+   }
+  ],
+  "in_progress": {
+   "shelter": 1
+  },
+  "ownership": {
+   "agent-2": 1,
+   "agent-5": 1,
+   "agent-6": 1,
+   "agent-7": 1
+  },
+  "timeline": [
+   {
+    "agent": "agent-5",
+    "message": "Agent 5 started building shelter (needs {'wood': 5, 'stone': 2}).",
+    "tick": 8
+   },
+   {
+    "agent": "agent-6",
+    "message": "Agent 6 started building shelter (needs {'wood': 8, 'stone': 2}).",
+    "tick": 8
+   },
+   {
+    "agent": "agent-2",
+    "message": "Agent 2 started building shelter (needs {'wood': 5, 'stone': 2, 'fiber': 1}).",
+    "tick": 12
+   },
+   {
+    "agent": "agent-7",
+    "message": "Agent 7 started building shelter (needs {'wood': 6, 'stone': 2}).",
+    "tick": 18
+   },
+   {
+    "agent": "agent-9",
+    "message": "Agent 9 completed shelter (built by 4 agent(s)).",
+    "tick": 19
+   },
+   {
+    "agent": "agent-7",
+    "message": "Agent 7 completed shelter (built by 1 agent(s)).",
+    "tick": 24
+   },
+   {
+    "agent": "agent-8",
+    "message": "Agent 8 completed shelter (built by 3 agent(s)).",
+    "tick": 26
+   }
+  ]
+ },
+ "survival": {
+  "agents": {
+   "agent-1": {
+    "alive": true,
+    "groups": [],
+    "health": 79,
+    "inventory": {
+     "coin": 2,
+     "fiber": 5,
+     "water": 1
+    },
+    "wealth": 13
+   },
+   "agent-10": {
+    "alive": true,
+    "groups": [],
+    "health": 70,
+    "inventory": {
+     "coin": 4,
+     "fiber": 4,
+     "water": 1
+    },
+    "wealth": 13
+   },
+   "agent-2": {
+    "alive": true,
+    "groups": [],
+    "health": 62,
+    "inventory": {
+     "coin": 4,
+     "fiber": 1,
+     "food": 1,
+     "wood": 2
+    },
+    "wealth": 14
+   },
+   "agent-3": {
+    "alive": true,
+    "groups": [],
+    "health": 28,
+    "inventory": {
+     "coin": 4,
+     "fiber": 2,
+     "wood": 2
+    },
+    "wealth": 14
+   },
+   "agent-4": {
+    "alive": true,
+    "groups": [],
+    "health": 91,
+    "inventory": {
+     "fiber": 2,
+     "water": 2,
+     "wood": 2
+    },
+    "wealth": 12
+   },
+   "agent-5": {
+    "alive": true,
+    "groups": [],
+    "health": 20,
+    "inventory": {
+     "fiber": 2,
+     "food": 1
+    },
+    "wealth": 6
+   },
+   "agent-6": {
+    "alive": true,
+    "groups": [],
+    "health": 82,
+    "inventory": {
+     "coin": 4,
+     "fiber": 2,
+     "water": 2
+    },
+    "wealth": 10
+   },
+   "agent-7": {
+    "alive": true,
+    "groups": [],
+    "health": 85,
+    "inventory": {
+     "fiber": 4,
+     "wood": 3
+    },
+    "wealth": 17
+   },
+   "agent-8": {
+    "alive": true,
+    "groups": [],
+    "health": 22,
+    "inventory": {
+     "water": 2,
+     "wood": 2
+    },
+    "wealth": 8
+   },
+   "agent-9": {
+    "alive": true,
+    "groups": [],
+    "health": 88,
+    "inventory": {
+     "fiber": 1,
+     "water": 4
+    },
+    "wealth": 6
+   }
+  },
+  "dead": 0,
+  "deaths": [],
+  "living": 10,
+  "survival_damage_events": 100
+ },
+ "transcript": [
+  {
+   "agent": "agent-1",
+   "message": "Agent-1 here at [6,10]. Plains south of me have fiber and food; mountain at [7,9] has stone and ore. Happy to trade water or fiber, no conflict needed.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-10",
+   "message": "Agent-10 here. Plains around 11,10 have fiber everywhere and some food. Happy to trade fiber for water or share tips.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-2 here at [2,2]. Open water is at [1,1] and [0,2] if you're thirsty. I'm stocking wood/fiber; happy to trade wood for food or coin.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-3 here on the ridge. I'm mining stone/ore. If you find water or food, tell me the tile and I'll trade stone or coin for it. Straight swap, no tricks.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: lake is just west at (0,10) and food/fiber on these plains. I'll trade water or fiber if you need it - no need for us to compete here.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-5",
+   "message": "Hi agent-10, I'm agent-5. Forest at 12-13,12 has wood; plains here have fiber. Happy to trade water/food later - no need to compete.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-6 here at [6,9]. Plains around us have fiber and food; mountain at [7,9] has stone and ore. Happy to trade fiber/wood for water. No hostility from me.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-7",
+   "message": "Agent-7 here. Water tiles are just west at [1,1] and [0,1]; this forest strip has wood and fiber. Happy to trade water for wood later.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-8",
+   "message": "Agent-8 here on the ridge. I'm mining stone/ore. If you find water or food fields south, tell me and I'll trade stone for it.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-9",
+   "message": "Open water is one tile west at [0,9] if you're thirsty. I'm gathering fiber here; happy to trade fiber for wood or food later.",
+   "scope": "local",
+   "tick": 0
+  },
+  {
+   "agent": "agent-10",
+   "message": "Agent-10: water access from (11,8) - adjacent lake tile at (10,8). Plenty of fiber here too. I'll trade fiber for wood or stone anytime.",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-2 at [2,2]: I'll trade wood for stone or fiber. Planning a shelter here before winter - anyone contributing stone gets access.",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-3 moving south off the ridge to scout for water/food. Ridge tiles here hold ~7 stone, 2 ore each. I'll report what's south; trade stone/coin for water.",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: I'm at (2,10) with spare water and food if you're strained. Bring fiber or wood and I'll trade fair. Lake west at (0,10).",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-5",
+   "message": "Agent-5: I'm stocking fiber at 12,11 - plenty here. I'll trade fiber for water or wood anytime. Wood is at 12,12 and 13,11 if you need it.",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-6: no open water found near [6,9]. If anyone knows a water/well tile, tell me and I'll pay in fiber, wood or coin. I'll share stone/ore info from mountain [7,9].",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-7",
+   "message": "Agent-7 at [2,1]. I'm a strong forager: I can pull water and food fast. Agent-2, you're hungry/thirsty - I'll trade water+food for wood, or gift a water if you share the [2,2] fiber. Say the word.",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-8 moving south off the ridge to scout for water/food. I'll broadcast any tile I find. Mountains here: ore 2, stone 7 per tile, plenty for tools later.",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: deal. I'm claiming [1,9] as my base but water at [0,9] stays open to you. I have spare water and fiber - I'd trade 2 water for 2 wood anytime.",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-1 moving to [6,11]. I forage well; I'll trade surplus fiber/food for wood or stone. Agent-6, mountain [7,9] is yours to mine, no contest from me.",
+   "scope": "local",
+   "tick": 1
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-7, deal: I'm a woodcutter. I'll trade you 2 wood for 2 water + 1 food whenever we're on the same tile. Long term I build the shelter, you get access through winter.",
+   "scope": "local",
+   "tick": 2
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: deal noted, and (0,9) water stays yours-open. I'm a strong forager: I'll trade food or fiber for wood or stone. Before winter we should co-build one shelter near (2,10).",
+   "scope": "local",
+   "tick": 2
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-1: you forage well too. Proposal: you work the north plains, I scout south for water and mine [7,9] later. I'll share any water location free with you.",
+   "scope": "local",
+   "tick": 2
+  },
+  {
+   "agent": "agent-7",
+   "message": "Agent-2: offer up now - 2 water for 2 wood, escrow at [2,1], one step north of you. I forage water/food fast; you cut wood fast. Steady swaps beat hoarding, and I'll bring fiber for your shelter too.",
+   "scope": "local",
+   "tick": 2
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: my offer stands - 2 water for 2 wood, meet at [1,9]. Water at [0,9] is free to you regardless. If you bring wood I'll help build a shelter we can both use before winter.",
+   "scope": "local",
+   "tick": 2
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-6: no open water spotted south of [6,11] either; I'm scouting [5-7,12-13]. I'll report any water/well free of charge. In exchange, mine me 2 stone from [7,9] and I'll pay 3 fiber + 1 food.",
+   "scope": "local",
+   "tick": 2
+  },
+  {
+   "agent": "agent-10",
+   "message": "Agent-10 at (11,8): water access here (lake at 10,8), fiber everywhere. Resting this tick. I'll trade fiber or water for wood/stone - shout if you know a mountain or forest nearby.",
+   "scope": "local",
+   "tick": 2
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: I'm moving to the forest at (1,8) to chop wood. I have food and fiber to spare - I'll trade 2 food for 2 water, and I'd rather pool wood into one shelter for both of us near (2,10) than swap it. Deal?",
+   "scope": "local",
+   "tick": 3
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-1: deal - you work north plains, I take south + mountain. I'll mine you 2 stone from [7,9] for 3 fiber + 1 food once energy recovers. Partner on the public well and neither of us goes thirsty.",
+   "scope": "local",
+   "tick": 3
+  },
+  {
+   "agent": "agent-7",
+   "message": "Deal accepted in spirit: my 2 water sits escrowed at [2,1], trade-1, expires tick 5 - step there and take it, drop 2 wood. I'll keep feeding you food+water each cycle; you cut wood. I'll scout east for mountain stone for your shelter.",
+   "scope": "local",
+   "tick": 3
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: let's split scouting - you take the southwest side, I'll hold the (12,y) line south. Whoever finds water shouts the tile. Honest split.",
+   "scope": "local",
+   "tick": 3
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: I'm chopping at [1,8]. Standing offer: 2 water + 2 fiber for 2 wood or 2 food, settle at [1,9]. Water at [0,9] free to you either way. Let's site the shelter at [2,10] and both contribute before winter.",
+   "scope": "local",
+   "tick": 3
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-6: deal on the split - I work plains 4-7 x11-13, you scout south/mine [7,9]. My 3 fiber + 1 food for 2 stone still stands, meet at [6,12]. Any water sighting I share free.",
+   "scope": "local",
+   "tick": 3
+  },
+  {
+   "agent": "agent-2",
+   "message": "Accepted. Coming to [2,1] now with the 2 wood. Bring fiber next swap and I'll cut the 8 wood for the shelter at [2,2] - you get winter access. Still hunting stone: 2 stone earns you 4 wood or coin.",
+   "scope": "local",
+   "tick": 3
+  },
+  {
+   "agent": "agent-4",
+   "message": "Deal - trade posted here at [1,8]: my 2 food for your 2 water + 2 fiber. Accept and settle here, we're on the same tile. I'm chopping wood now and will pool it into a shelter at [2,10]; bring your fiber/stone and we both winter inside.",
+   "scope": "local",
+   "tick": 4
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-1: fiber is my specialty (foraging 8). Offer at [5,12]: 3 fiber for 2 water, escrow is here now - accept and it settles. I'm scouting [5,13]-[5,14] south for water and will report free.",
+   "scope": "local",
+   "tick": 4
+  },
+  {
+   "agent": "agent-7",
+   "message": "At [2,1] now - take the escrowed 2 water, I'm collecting the wood. Next swap I bring 2 fiber + 1 food for 2 more wood. Building shelter at [2,2] works for me; I'll fund it with food/water and stone once I find the mountain east.",
+   "scope": "local",
+   "tick": 4
+  },
+  {
+   "agent": "agent-8",
+   "message": "Coming east to (14,4). I'll gather fiber, you take food if you're hungrier - your hunger is worse than mine. Then we scout east together for water.",
+   "scope": "local",
+   "tick": 4
+  },
+  {
+   "agent": "agent-9",
+   "message": "Deal, agent-4. I just gifted you 2 water free - no trade needed. Pool wood into one shelter at [2,10]; I'll bring fiber and wood. Send 2 food my way when you can.",
+   "scope": "local",
+   "tick": 4
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-6: I'm at [5,12] now, working south to [5,13]/[4,13]. Fiber is plentiful here - I'll bank 3 fiber for the public well and hand it over with 1 food for your 2 stone. No water seen yet; well plan is right.",
+   "scope": "local",
+   "tick": 4
+  },
+  {
+   "agent": "agent-2",
+   "message": "I'm standing on [2,1] with the 2 wood now - step one south and we settle trade-1 this tick. Next swap: bring 3 fiber and I'll cut the 8 wood for a shelter at [2,2]; you get winter access. Stone still wanted: 2 stone = 4 wood or 4 coin.",
+   "scope": "local",
+   "tick": 4
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-1: water is at [3,14]/[4,15], one step from you at [4,13]. Go to [4,14] and gather. My trade-3 (3 fiber for 2 water) is void - keep your water, take the fiber free when we meet at [5,12].",
+   "scope": "local",
+   "tick": 5
+  },
+  {
+   "agent": "agent-7",
+   "message": "Accept trade-1 now, it expires this tick - 2 water escrowed here at [2,1]. New offer posted: my 2 fiber + 1 food for 3 wood. Take both and you have fiber for the shelter at [2,2]; I keep funding water and food.",
+   "scope": "local",
+   "tick": 5
+  },
+  {
+   "agent": "agent-8",
+   "message": "Resting here at (14,4) - energy 7 after the ridge crossing. Deal stands: you take the food tiles, I'll gather fiber tomorrow and trade you fiber for a water tip. Shout if you find open water east.",
+   "scope": "local",
+   "tick": 5
+  },
+  {
+   "agent": "agent-9",
+   "message": "Accepted your trade, agent-4 - fiber+water yours, thanks for the food. Chopping here now; I'll haul wood to [2,10] and start the shelter. Keep pooling wood and we both winter inside.",
+   "scope": "local",
+   "tick": 5
+  },
+  {
+   "agent": "agent-1",
+   "message": "Water is right next to you at [3,14]/[4,15]. Keep your fiber; I'll gather water free for us both. I still need 6 wood from [6,8] and 2 stone for the well.",
+   "scope": "local",
+   "tick": 5
+  },
+  {
+   "agent": "agent-2",
+   "message": "Settling trade-1 here at [2,1] now - drop weight if your pack is full. Next: bring 3 fiber and I cut the 8 wood for the shelter at [2,2]; you get winter access. 2 stone = 4 wood or 4 coin.",
+   "scope": "local",
+   "tick": 5
+  },
+  {
+   "agent": "agent-3",
+   "message": "Deal kept: this belt (14-15, 3-5) has fiber every tile, food at (14,4) and (15,5). Take the fiber here - I'm pushing south along x=14 to find water and will shout the tile. If you find water first, tell me and I'll owe you food.",
+   "scope": "local",
+   "tick": 5
+  },
+  {
+   "agent": "agent-4",
+   "message": "Thanks for the water, agent-9. My 2 food sit in escrow at [1,8] - take trade-2 or I'll gift the food outright next tick. I'm stacking wood+fiber here for the shelter at [2,10]; bring stone if you find any mountain.",
+   "scope": "local",
+   "tick": 5
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agreed - water is free for both of us here. I'll stock water with my foraging 9; you bring 6 wood + 2 stone and we build the well/shelter at [4,13]. Winter is 18 ticks out, shelter matters more than the well.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-7",
+   "message": "trade-4 is escrowed right here at [2,1]: my 2 fiber + 1 food for 3 wood. I'm standing on it this whole tick - accept and it settles. Then I'll keep hauling water/food/fiber for the [2,2] shelter.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-8",
+   "message": "Deal held: I take fiber only, food at (14,4) is yours. Shout when you hit water south on x=14 and I owe you 2 fiber plus ridge stone.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: trade-2 keeps failing on your carry cap - just gift me the 2 food and I'll count it settled. I'm at cap too, so I'm drinking down and chopping wood here. Hauling wood to [2,10] next; keep your fiber for the shelter.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-1",
+   "message": "Water sorted. I'm caching 4 fiber at [4,13] as our build depot - shelter needs 3 fiber+2 stone+8 wood. You mine 2 stone, I'll chop wood at [6,8]. Meet at [4,13] to build before winter.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-3: water is (11,6). Bring wood to (13,7); I have stone+fiber, we build shelter together before winter.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-2",
+   "message": "Taking trade-4: cutting wood now, 3 wood for your 2 fiber + 1 food, settling here at [2,1]. That covers the shelter fiber. Still need 2 stone - I pay 4 wood or 4 coin per stone.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-3",
+   "message": "No wood seen yet in the east belt - all plains/fiber and mountain. If I find forest south I'll tell you and take stone for it.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: water is free at [0,8] - gather there anytime. I'm pooling wood here and hauling to [2,10]. I still need stone; if you spot mountain east/south, call it out and I'll trade food for stone.",
+   "scope": "local",
+   "tick": 6
+  },
+  {
+   "agent": "agent-7",
+   "message": "Standing on trade-4 at [2,1] - accept now, my 2 fiber+1 food is escrowed for your 3 wood; it expires next tick. Deal holds: I fund fiber/food/water, you cut the 8 wood for the [2,2] shelter, I get winter access.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: no forest east either, all plains/fiber. If you find wood south, agent-10 pays per wood and I'll add ridge stone on top.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: trying trade-2 a last time; if it fails just gift me 2 food, my food reserve is dropping. I'm hauling wood down to [2,10] now - meet me there and we build the shelter. No mountain spotted yet; I'll scout east for stone next.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-1",
+   "message": "Passing on the 3-fiber-for-2-water swap - I only carry 1 water and you have the shore. Depot of 4 fiber stands at [4,13]. Heading north to chop wood; bring 2 stone there and we raise the shelter.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-10",
+   "message": "Forest is SOUTH at (13,11) - agent-5 is there with wood. Water at (11,6). Come build with us at (13,11) before winter; I'll pay stone/coin for wood or fiber.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-2",
+   "message": "Cutting the third wood now and accepting trade-4 this tick at [2,1]. That's your 3 wood. Keep hauling water/food; I'll stack wood for the [2,2] shelter.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-3",
+   "message": "Thanks for the water tile - honest intel, honored. Wood is at agent-5's forest (13,11). I'll trade you fiber/water for 2 stone when I'm back east.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: (1,8) is chopped out. I'm moving to (2,7) - it still has ~9 wood and food. My 2 food in trade-2 expire this tick; the pile at [1,8] is yours, take it as settled. Still hunting stone: shout if you see mountain.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-6",
+   "message": "Deal. Fiber is my specialty (skill 10) - I'll cover all 3+ fiber for the shelter and stage it at [4,13]. You chop the 8 wood; I'll mine the 2 stone next if you can't. Trade-3 is void, keep the water free.",
+   "scope": "local",
+   "tick": 7
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: taking the [1,8] food pile as settled - thanks, that squares trade-2. I have 4 fiber + wood for the shelter at [2,10]. Next I scout south/east for mountain stone; I'll shout coords. Water free at [0,8]-[0,10].",
+   "scope": "local",
+   "tick": 8
+  },
+  {
+   "agent": "agent-1",
+   "message": "Deal holds: you cover fiber+2 stone at depot [4,13], I chop the 8 wood. I'm low on energy so I'm eating and resting one tick at [4,10], then on to the forest at [6,8].",
+   "scope": "local",
+   "tick": 8
+  },
+  {
+   "agent": "agent-10",
+   "message": "Build the shelter at (13,11) or (14,11) - say which and I contribute my stone+fiber next tick. Shelter shared, both sleep in it before winter.",
+   "scope": "local",
+   "tick": 8
+  },
+  {
+   "agent": "agent-2",
+   "message": "Accepting trade-4 now at [2,1] - 3 wood yours. If your pack is full, drop water here first. I'll keep cutting; we still need 2 stone for the [2,2] shelter before winter.",
+   "scope": "local",
+   "tick": 8
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: I'm at (2,7) - ~9 wood plus food here, best chop tile left. Water free at [0,8]. I'm stockpiling wood for the [2,10] shelter. Priority now is STONE: shout the moment you see mountain and I'll trade food+wood for it.",
+   "scope": "local",
+   "tick": 8
+  },
+  {
+   "agent": "agent-6",
+   "message": "Broke ground on the shelter at [4,13] with my fiber. Haul your wood straight there and contribute. I'll fetch the 2 stone from the mountain at [7,9] next.",
+   "scope": "local",
+   "tick": 8
+  },
+  {
+   "agent": "agent-7",
+   "message": "Accepting side: my 2 fiber+1 food is escrowed at [2,1] - take it and drop my 3 wood there; I'll collect on my return. I'm foraging east [3-4,1] for fiber/food and scouting for the mountain.",
+   "scope": "local",
+   "tick": 8
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: heading south from [1,8] to [1,10] scouting mountain stone. Shelter site still [2,10] - I carry 4 fiber for it. Keep chopping [2,7]; I'll shout stone coords the moment I see rock.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-1",
+   "message": "agent-6: moving up to the forest now, will haul wood to [4,13]. Grab the 2 stone at [7,9] when you can and we're set well before winter.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-10",
+   "message": "Contributing my 1 stone into structure-1 now, and I hold fiber for its upkeep. Grant me access to the shelter and I'll fetch the last stone from the mountain (13,6) while you chop the remaining wood.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-2",
+   "message": "trade-4 expired, so I'm settling it by hand: 3 wood dropped for you at [2,1], and I'm taking your escrowed 2 fiber + 1 food. Your 2 water stays untouched. Deal honored.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: still at (2,7), best wood tile (~8 left). Carry cap is the bottleneck, so start the shelter SITE at [2,10] now and dump your wood into it - I'll haul loads down each trip. Shout if you spot mountain; I'll pay food+wood for stone.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-5",
+   "message": "Site is (14,11), one step east of you. Contribute stone+fiber there; access granted. I'll trade coin/fiber for water too.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-6",
+   "message": "Fiber is in the site. Heading north for the 2 stone now; your 8 wood finishes it. Water at [3,14]/[4,15] if you need a top-up.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-7",
+   "message": "Trade-4 expired before we settled - my 2 fiber+1 food sit as my piles at [2,1]. Leave 3 wood there and take them as agreed; I'll honor it. Scouting east now for the mountain.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: fair split - you haul to (13,11), I hold the lake tiles and supply water/fiber to anyone who brings wood or stone. No claim conflict from me.",
+   "scope": "local",
+   "tick": 9
+  },
+  {
+   "agent": "agent-1",
+   "message": "agent-6: I'm in the forest at [6,8], dropped 5 spare fiber at [6,9] (free to anyone). Chopping 8 wood next tick, then hauling to [4,13]. Get the 2 stone from [7,9] and the shelter is done before winter.",
+   "scope": "local",
+   "tick": 10
+  },
+  {
+   "agent": "agent-10",
+   "message": "Chopping this tile's 3 wood and contributing now - wood requirement done. Only 1 stone left; if you can spare energy for the mountain (13,6) or trade for stone, we're sheltered before winter.",
+   "scope": "local",
+   "tick": 10
+  },
+  {
+   "agent": "agent-3",
+   "message": "Deal holds: you hold lake supply, I haul east/south. No claim on (12,7) from me. If you get wood, I'll split fiber for a shelter.",
+   "scope": "local",
+   "tick": 10
+  },
+  {
+   "agent": "agent-5",
+   "message": "Wood is handled - after this tick the shelter needs only 1 stone. Fetch it from the mountain (13,6); access is already yours and I'll pay 4 coin plus fiber on delivery.",
+   "scope": "local",
+   "tick": 10
+  },
+  {
+   "agent": "agent-6",
+   "message": "Moving to [6,9] then the mountain for 2 stone. Your 8 wood at [4,13] finishes it. Water free at [3,14]/[4,15].",
+   "scope": "local",
+   "tick": 10
+  },
+  {
+   "agent": "agent-7",
+   "message": "Deal honored, thanks - taking your 3 wood at [2,1] later. I'm scouting east past x=5 for the mountain; if I find it I'll share coords with you free. Keep cutting wood for [2,2].",
+   "scope": "local",
+   "tick": 10
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: no conflict, share the lake tiles. You haul to (13,11); I'll stock water here and pay wood/stone bringers. Tell me if you spot forest - I need wood before winter.",
+   "scope": "local",
+   "tick": 10
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: no mountain in sight west side. Agent-1 runs a free public shelter depot at [4,13] needing 8 wood + 2 stone - may be cheaper than our own build at [2,10]. Say which you prefer.",
+   "scope": "local",
+   "tick": 10
+  },
+  {
+   "agent": "agent-10",
+   "message": "Wood's done. I'm low on food/energy, foraging at (14,12) this tick - my foraging is 7 so I'll bring surplus food back. Winter is 25+ ticks out; I'll fetch the last stone from (13,6) once I've eaten.",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-3",
+   "message": "Heading south to forest at (13,11) - that's your wood source. Hold the lake, stock water. I'll bring wood back and take water+fiber credit; my foraging 9 keeps us both fed.",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-4",
+   "message": "Meet me at [4,13] via [2,12]->[3,13]. Food at [2,12], water at [0,10]. Winter is ~25 ticks out; we finish that shelter together and both sleep dry.",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-5",
+   "message": "Shelter needs only 1 stone; winter is ~25 ticks out so no panic. I'm restocking food at (14,12) - food here, come eat. Offer stands: 4 coin + fiber + shelter access for 1 stone from mountain (13,6).",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-6",
+   "message": "I'm on the mountain [7,9] now; mining 2 stone next tick and hauling to [4,13]. Get your 8 wood there and the shelter completes before winter. Water free at [3,14].",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-7",
+   "message": "Heading east past x=7 to find the mountain; I'll share coords free when I do. My 2 fiber+1 food piles at [2,1] are yours as agreed - keep stockpiling wood for [2,2].",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-8",
+   "message": "Agreed: lake is shared, no claim. I stock water/fiber here, you haul south. If you learn where forest is, tell me and I'll split my fiber and water for a joint shelter.",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: dropping our [2,10] build; agent-1's public depot [4,13] is cheaper. Bring wood there and we both winter under it - I cover fiber.",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-1",
+   "message": "Chopping now at [6,8] - should have ~8 wood this tick. I'll haul south to [4,13] next. Bring the 2 stone from [7,9] and we finish the shelter.",
+   "scope": "local",
+   "tick": 11
+  },
+  {
+   "agent": "agent-3",
+   "message": "Forest+wood confirmed at (13,11) and (15,11); food at (13,12)/(14,12). That's your bounty earned - pay in water. Shelter at (14,11) needs 1 stone; bring stone and we both sleep warm.",
+   "scope": "local",
+   "tick": 12
+  },
+  {
+   "agent": "agent-5",
+   "message": "Agent 10: escrow left here at (14,12) - 4 coin for 2 water + 1 food. I'm dry (water 6) and no water tile in my range. Accept and I'll still grant you full winter shelter access at (14,11).",
+   "scope": "local",
+   "tick": 12
+  },
+  {
+   "agent": "agent-6",
+   "message": "Mining the 2 stone now, then hauling straight to [4,13]. Get your 8 wood there and the shelter completes.",
+   "scope": "local",
+   "tick": 12
+  },
+  {
+   "agent": "agent-8",
+   "message": "Thanks for the forest coords - bounty owed: 3 water + 2 food, settle when we meet. I'm following you south; let's build one shelter together at the forest edge, wood from you, fiber/water from me.",
+   "scope": "local",
+   "tick": 12
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-4: I'm at [2,12] with you - taking [3,12]->[3,13]->[4,13] now with 6 fiber for the depot. Water is one step west at [1,12]; top up before the haul.",
+   "scope": "local",
+   "tick": 12
+  },
+  {
+   "agent": "agent-1",
+   "message": "Carry cap limits me to ~6 wood; shelter needs 8. Bring your 2 stone plus any 2 wood to [4,13] and it completes. I'm hauling now via [5,8].",
+   "scope": "local",
+   "tick": 12
+  },
+  {
+   "agent": "agent-10",
+   "message": "Eating, then foraging (13,12). I'll trade surplus food for stone. Next tick I head for mountain (13,6) to fetch the last stone myself if nobody delivers.",
+   "scope": "local",
+   "tick": 12
+  },
+  {
+   "agent": "agent-3",
+   "message": "Agent-3 here with water, no coin needed: 1 water free to agent-5 and 1 to agent-10 right now. Price is a promise - permanent winter access to shelter (14,11) for me. I keep hauling fiber/water from the lake at (12,7).",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-4",
+   "message": "I'm on-site resting; energy 13. You hold fiber - we need wood and stone now. Suggest you fetch wood; I'll chop nearby next tick.",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-5",
+   "message": "Trade-5 (4 coin for 2 water+1 food) is still escrowed at (14,12) - accept it. Or meet me at (13,13) and I'll hand you 3 fresh food for 2 water plus full shelter access.",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-5",
+   "message": "You're heavy on water, I'm heavy on food skill. 3 food for 2 water at (13,13), plus I grant you access to shelter-1 at (14,11) for winter.",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-6",
+   "message": "My mine failed last tick (capacity) - going back to [7,9] now, I'll bring 2 stone to [4,13]. Haul your 6 wood south; we still need 2 more wood, chop them en route if you can.",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-8",
+   "message": "Coming to (14,11) with water and fiber for the shelter. I have no stone yet - I'll chop wood at (13,11) and contribute; hold a spot for me and we both winter inside.",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-9",
+   "message": "Wood in. Fiber is no longer needed at this site - don't haul more. I'm restocking food at [5,14]; if you can reach [7,9] for 2 stone I'll cover you with fiber, food and coin on return.",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-1",
+   "message": "Hauling 4 wood south now, at [5,12] this tick, at [4,13] next. Carry cap capped me at 4 - bring your 2 stone plus 4 wood and the shelter closes. 4 coin waiting for you.",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-10",
+   "message": "Can't fill trade-5: I hold only 1 water and no water tile nearby. Counter: I'll hand you 2 food (foraging 8, gathering now at 13,13) for 4 coin + shelter access. Still need 1 stone.",
+   "scope": "local",
+   "tick": 13
+  },
+  {
+   "agent": "agent-5",
+   "message": "Deal changed: keep your coin. Hand me your 1 water now and I give you 1 food immediately plus shelter-1 access for winter - you're thirsty too, so tell me where you last saw open water and we both walk there together.",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-5",
+   "message": "Agent-3, you're the only one not thirsty - so you know a water source. Tell me the coords and I'll owe you 3 food and shelter access. If you're carrying water, I'll trade food one-for-one right here at (13,13).",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent 1: stone in hand this tick, I'll be at [4,13] in 2-3 ticks. Keep chopping the last wood, my energy is low so I can't chop.",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3, I'm one tile north of you at (13,11). Meet me and I'll pay your bounty: 2 water + food on contact. Then help me chop - wood here is 9.",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-9",
+   "message": "Can't haul stone yet (energy 11). I'm restocking food south; I'll pay food for any wood you chop toward the shelter.",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-1",
+   "message": "My wood is in. I'm out of energy - you or agent-4 close it with 2 stone from [7,9]. My 4 coin plus my 4 fiber pile here (item-2) are yours on delivery.",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-10",
+   "message": "Counter: I'll give 1 water for 2 food (I only hold 2 water and no water tile near me). Meet me at (12,13) - I'm foraging there now, foraging skill 8, so I can keep you fed all winter.",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-3",
+   "message": "Deal: meet me at (13,12). I have 7 fiber (foraging 10, I restock fast). Give me 2 water + 1 food now and the fiber is yours - that covers shelter upkeep and my mountain trip for your stone.",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-3",
+   "message": "I have no water left, so trade-5 can't settle. I'll take 2 food for 3 fiber at (13,13) next tick, and I'm fetching the last stone for shelter-1. Hold my access pledge from tick 13.",
+   "scope": "local",
+   "tick": 14
+  },
+  {
+   "agent": "agent-5",
+   "message": "Accepted your terms: I'm at (12,13) with you now, foraging skill 9. Escrowing 2 food for 1 water here this tick - take it and I'll keep feeding you every tick you keep water flowing.",
+   "scope": "local",
+   "tick": 15
+  },
+  {
+   "agent": "agent-6",
+   "message": "Stone in hand, moving south via [7,10]. Energy low so I rest one tick; I reach [4,13] in ~3. Keep the last wood coming and the shelter closes before autumn.",
+   "scope": "local",
+   "tick": 15
+  },
+  {
+   "agent": "agent-8",
+   "message": "Confirmed, agent-3: make the stone run to (13,6). On delivery at (14,11) I pay 4 wood + my 2 water + 1 food, and I publicly back your permanent shelter access. I only hold 1 food now, wood is what I have in volume.",
+   "scope": "local",
+   "tick": 15
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-5, you own shelter-1 and need 1 stone. I'll trade you wood for a share/access pledge - say yes and I'll deliver wood to (14,11) next tick.",
+   "scope": "local",
+   "tick": 15
+  },
+  {
+   "agent": "agent-9",
+   "message": "Deal holds: on your return with 2 stone I pay food+fiber+coin. I'm moving east to [6,15] and can meet you toward [7,9] next tick.",
+   "scope": "local",
+   "tick": 15
+  },
+  {
+   "agent": "agent-1",
+   "message": "agent-9: I'm at [4,13] with water access next door. Bring me food and I'll chop the last 2 wood next tick.",
+   "scope": "local",
+   "tick": 15
+  },
+  {
+   "agent": "agent-10",
+   "message": "Confirmed, agent-3: bring 1 stone to shelter-1 at (14,11) and you get permanent winter access plus 4 coin and 2 food on delivery. I'm foraging (foraging 9) and will hold food for you.",
+   "scope": "local",
+   "tick": 15
+  },
+  {
+   "agent": "agent-3",
+   "message": "I'm stepping onto your tile (13,11) now with 7 fiber (foraging 11). Offer posted: 4 fiber for 2 water + 2 food, settles right here. That fiber covers shelter upkeep; the water/food funds my stone run.",
+   "scope": "local",
+   "tick": 15
+  },
+  {
+   "agent": "agent-6",
+   "message": "Stone is covered - I carry the 2 stone to [4,13] now. Don't spend energy mining; bring wood instead. Shelter stays public and free, and water is free at [3,14].",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: can't fill trade-8, I had only 1 food. Counter: 4 wood + 4 coin for your 4 fiber, plus my 2 water on stone delivery at (14,11). Make the stone run at (13,6); I back your permanent shelter access.",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-9",
+   "message": "Wood is handled - don't spend your energy chopping. Rest at [4,13]; I'll bring 2 wood plus food for you within two ticks. Shelter stays public, no fee.",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-1",
+   "message": "Fishing at [4,14]; spare food and water for whoever hauls the last wood or stone to the shelter.",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-10",
+   "message": "Accepted trade-7: my 1 water for your 2 food, settled here at (12,13). Good deal, agent-5 - I'll keep trading you food for water.",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-3",
+   "message": "Water intel as promised: open lake at (12,7), fishable and gatherable; nearest to shelter-1. I'm moving north now for your stone. Hold the 2 food + permanent winter access.",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-4",
+   "message": "Don't wait on me - run your stone south, I'll bring the wood. Claim my escrow trade-6 at [4,13]: 3 fiber + 4 coin for your 2 stone.",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-5",
+   "message": "trade-7 is escrowed at (12,13): 2 food for 1 water - take it now before it expires tick 18. I'm one step west stacking more food; tell me where water is and I'll keep you fed all winter.",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-5",
+   "message": "Your tick-13 access pledge stands: bring the stone to shelter-1 (14,11) and you get permanent winter access plus 3 food from me. Also name a water tile and I add 4 food.",
+   "scope": "local",
+   "tick": 16
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-5: open lake at (12,7), gatherable and fishable - that's your 4 food reward, pay me at shelter-1 (14,11). I forage at 10 skill and will trade surplus food for stone or fiber.",
+   "scope": "local",
+   "tick": 17
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-5: escrowed here at (11,13) - my 3 food for your 2 water. Best rate you'll get; I'm the top forager and will keep feeding you all winter.",
+   "scope": "local",
+   "tick": 17
+  },
+  {
+   "agent": "agent-3",
+   "message": "Counter accepted: 4 wood + 4 coin for my 4 fiber at (13,11) escrow, plus 2 water on stone delivery. I'm on the mountain (13,6) now; stone lands at shelter-1 next.",
+   "scope": "local",
+   "tick": 17
+  },
+  {
+   "agent": "agent-3",
+   "message": "Water tile named and confirmed: open lake at (12,7), 24 water, fishable. That's your 4 food plus the 3 food and permanent winter shelter access on stone delivery. Bring food to (14,11).",
+   "scope": "local",
+   "tick": 17
+  },
+  {
+   "agent": "agent-5",
+   "message": "I'm moving north to the lake at (12,7). Trade-7 escrow (2 food for 1 water) stays live at (12,13) till tick 18. Once I'm on water I'll haul water south and keep you fed all winter at 1 water per 2 food.",
+   "scope": "local",
+   "tick": 17
+  },
+  {
+   "agent": "agent-6",
+   "message": "Stone is in the structure, not traded - keep your 3 fiber + 4 coin, just bring wood.",
+   "scope": "local",
+   "tick": 17
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: I'm north at (14,8) stocking food. Drop the stone at shelter-1 and I'll meet you there with food and water; winter access is yours as agreed.",
+   "scope": "local",
+   "tick": 18
+  },
+  {
+   "agent": "agent-1",
+   "message": "Thanks for the stone. I'm out of wood and low energy; resting at [4,14]. If you pass a forest, 2 wood finishes it. Water free at [3,14].",
+   "scope": "local",
+   "tick": 18
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-10: your trade-9 (3 food for 2 water) is accepted in spirit - I'm loading water now and will settle at (11,13)/(14,11). Save one stone for shelter-1 and I'll keep you watered all winter.",
+   "scope": "local",
+   "tick": 18
+  },
+  {
+   "agent": "agent-6",
+   "message": "Keep your fiber pile item-2 and coin - I want no pay. If you have any wood left after fishing, 2 logs finishes the shelter for all of us.",
+   "scope": "local",
+   "tick": 18
+  },
+  {
+   "agent": "agent-9",
+   "message": "Wood delivered, shelter done. Keep your coin; I'd take a spare food if you can spare one - I'm low on energy and resting here.",
+   "scope": "local",
+   "tick": 19
+  },
+  {
+   "agent": "agent-1",
+   "message": "2 water for you, you're running dry. Free.",
+   "scope": "local",
+   "tick": 19
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-5: I'm at the lake now, self-supplied on water, so cancel trade-9 - reclaim nothing, my 3 food escrow at (11,13) is mine to recover. Still happy to trade food for your hauling south.",
+   "scope": "local",
+   "tick": 19
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-8: stone is in hand, no one else gets it. Meet me at shelter-1 (14,11) next tick with water and food; I'll finish the build and we both winter indoors.",
+   "scope": "local",
+   "tick": 19
+  },
+  {
+   "agent": "agent-5",
+   "message": "Trade-9 accepted. Water is right here at (11,8) - gather from the lake edge yourself, you're standing on it. I'll settle the escrow at (11,13) on my way south.",
+   "scope": "local",
+   "tick": 19
+  },
+  {
+   "agent": "agent-6",
+   "message": "agent-9: 2 wood into structure-2 at [4,13] and it's done. I pay 4 coin plus free water; shelter stays public to you permanently.",
+   "scope": "local",
+   "tick": 19
+  },
+  {
+   "agent": "agent-8",
+   "message": "I'll be at (14,11) when you arrive. Drop the stone, take payment on the spot.",
+   "scope": "local",
+   "tick": 19
+  },
+  {
+   "agent": "agent-1",
+   "message": "structure-2 reads COMPLETE - shelter is done. I contributed 1/6 of it. Please grant_access to me (agent-1) and keep it public as agreed; I'll keep supplying water and fiber for upkeep all winter.",
+   "scope": "local",
+   "tick": 20
+  },
+  {
+   "agent": "agent-6",
+   "message": "2 water, free, no strings. Shelter structure-2 at [4,13] needs ONLY 2 wood. Drop them and my 4 coin escrow (trade-11) is yours, plus food/water whenever you ask, and permanent free access.",
+   "scope": "local",
+   "tick": 20
+  },
+  {
+   "agent": "agent-8",
+   "message": "I'm standing on shelter-1 (14,11). Payment is now complete and in hand: 4 wood + 4 coin, plus 1 water. Drop the stone, finish the build, take it all. Winter access guaranteed.",
+   "scope": "local",
+   "tick": 20
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-6: grant_access agent-9 for tile [4,13] and structure-2. In return I maintain_structure with my fiber and haul wood for any winter build.",
+   "scope": "local",
+   "tick": 20
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-10: your 2 water is still reserved - meet me at the lake edge (11,8) and I'll hand it over. Lake tiles confirmed (11,7), (10,8), (9,9).",
+   "scope": "local",
+   "tick": 21
+  },
+  {
+   "agent": "agent-6",
+   "message": "Your contributor share stands, agent-1: free shelter access all winter. Bring fiber for upkeep and I'll share fish and water.",
+   "scope": "local",
+   "tick": 21
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-10: shelter-1 needs 1 stone. If you have stone, drop it at (14,11) and I'll pay 4 wood + 4 coin on return. You keep winter access either way.",
+   "scope": "local",
+   "tick": 21
+  },
+  {
+   "agent": "agent-9",
+   "message": "I delivered the final 2 wood that completed structure-2. Please grant_access agent-9 to tile [4,13] and structure-2 now, as promised. I'll pay its fiber upkeep from my 3 fiber and haul wood for any winter build.",
+   "scope": "local",
+   "tick": 21
+  },
+  {
+   "agent": "agent-1",
+   "message": "agent-6: I'm a 16.7% contributor to structure-2 (I hauled its fiber). Please grant_access agent-1 for tile [4,13] and structure-2. In return I'll cover fiber upkeep and supply fish/water to you all winter.",
+   "scope": "local",
+   "tick": 21
+  },
+  {
+   "agent": "agent-2",
+   "message": "Grant access to tile [7,2] so I can pass and drop your 2 stone there. Keep your coin; winter shelter access is payment enough.",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5, you're on my tile (12,7): gift the 2 water NOW - I'm at zero and bleeding. Do it and your shelter-1 access is permanent, plus I still credit your 4 food + 6 water balance.",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-6: taking your trade-11 - my 2 wood for your 4 coin, settled here at [4,13]. I'm also a structure-2 contributor. Please grant_access agent-4 to tile [4,13] and structure-2; I'll pay its fiber upkeep from my 2 fiber.",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-5 here: 1 water handed over now (your load is full, take more when lighter). Debt to you now 4 food + 3 water, payable at shelter-1 (14,11).",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-6",
+   "message": "agent-1: access granted to structure-2, as promised. agent-9 already has it. All four contributors are covered for winter.",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-5: if you reach agent-3 first, tell him my water+coin offer is live at (12,7). Shelter-1 completes the moment that stone lands; you both get winter entry.",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-9",
+   "message": "Thank you for the access, agent-6 - I'll honor it: my 3 fiber cover structure-2's upkeep, and I'll keep fishing food into the shelter all winter.",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-1",
+   "message": "agent-6: I hauled fiber for structure-2 (16.7% share). Grant access to agent-1 and agent-9 and I will pay all its fiber upkeep every interval plus deliver fish and water to you all winter.",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-5: thanks - I have 2 water for now, so keep your 2. Trade it to agent-3 for the stone instead; shelter-1 finished helps us all before the cold.",
+   "scope": "local",
+   "tick": 22
+  },
+  {
+   "agent": "agent-3",
+   "message": "Deal accepted - 1 stone is yours in escrow at (12,7). I keep 1 stone for shelter-1 and will carry it to (14,11) next tick. Hold the 4 wood and winter access for me.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-3: my food reserve is at 2 - hunger is now my critical need, not water. Please hand over 2 of the 4 food you owe right here at (12,7); the rest can settle at shelter-1.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-6: I just paid structure-2's upkeep myself - 2 fiber deposited, and I'll cover every future interval. I'm a listed contributor (agent-4). Please grant access to agent-4 before the storm; I also have 2 wood and 4 coin for you.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-8: I'm en route to shelter-1 (14,11) now. Hold winter entry for me, agent-3 and agent-10; I'll bring lake water and foraged food (foraging 14) for anyone sheltering there.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-6",
+   "message": "agent-4: you now have permanent access to structure-2. Take shelter here through the storm; if you can spare food or wood, my 4 coin are in escrow on this tile.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-7",
+   "message": "Passage through [7,2] is yours, and winter shelter access once it's done. If you have spare food, I'll trade coin for it.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: 1 water in your hands now, free, no strings. trade-12 is escrowed right here at (12,7): 4 coin + 1 water for 1 stone. Accept it this tick and I'll still owe you 4 wood at shelter-1 plus winter entry.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-5: I'm holding at (12,7) with water on tap. Push agent-3 to accept trade-12 for one stone - shelter-1 completes instantly and you get winter entry too.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-9",
+   "message": "I have no wood left, so I'm releasing your trade-10 rather than letting it rot in escrow. Bring me fiber/food and I'll repay in fish and water once autumn foraging starts.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-1",
+   "message": "agent-9: your fiber is better spent as reserve - I'll cover upkeep. Keep fishing; I'll bring water and fiber to the shelter all winter.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-7: my water is nearly out. If there's water near the mountain, tell me where and I'll mine 4 stone - 2 for your shelter [7,2], free.",
+   "scope": "local",
+   "tick": 23
+  },
+  {
+   "agent": "agent-4",
+   "message": "agent-9: I have 3 fiber + 2 wood for shelter upkeep, yours if you can spare fish or water. I'm fishing at [4,14] this tick and sheltering at [4,13] tonight.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-5",
+   "message": "I'm at shelter-1 (14,11) with your food and water owed. Come collect - I pay on arrival, and you get covered ground for the storm.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-6",
+   "message": "No hard feelings on trade-10. Your shelter access stands unconditionally. I'll hand you fiber free when you need it; send fish my way if you can spare any.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-7",
+   "message": "Access granted to [7,2] and the shelter. Bring stone or food, I pay 4 coin each. Shelter first - the storm hits now.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-8",
+   "message": "Trade settled, thanks. Come south to (14,11) with me - storm cover plus your 4 wood and water there.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-9",
+   "message": "agent-6: I'm out of food but my foraging is 14 - best fiber yield here. Give me 2 food now and I'll deliver 4 fiber to structure-2's upkeep reserve within three ticks. My word held on the shelter build.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-1",
+   "message": "Thanks for the access. I'll keep paying upkeep. No food on me for trade-13 yet; I'll forage tomorrow and bring you food.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-10",
+   "message": "If agent-3 gives you stone, bring it to 14,11: 4 coin + 2 food from me. High forage skill here - I can keep us fed through autumn if you cover stone.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-2",
+   "message": "Access at [7,2] tonight and I work for you: wood, fiber, repairs. I keep my promises - my 2 stone offer still stands if I reach the mountain.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-8: my food is at 1 - escrowed 4 coin for 3 food right here at (12,7). Accept now and it settles on the spot. I still carry the 1 stone for shelter-1 and I'm walking it to (14,11) this tick and next.",
+   "scope": "local",
+   "tick": 24
+  },
+  {
+   "agent": "agent-5",
+   "message": "I'm parked on shelter-1 (14,11), low energy. Stack your 4 coin + 2 food on my 4 food for whoever brings the stone. I'll cover fiber upkeep from this tile; you cover forage. Come north to share the roof.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-6",
+   "message": "Deal accepted in spirit: I have no food today, but bring me 2 food anytime and I'll hand you 4 fiber on the spot, plus the shelter stays open to you for good.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-7",
+   "message": "Agent-2: access granted to tile [7,2] and shelter-4. Come in now, ride out the storm here. In return I need water - I've escrowed 4 coin for 2 water. Fiber for upkeep welcome; your wood work I'll pay for all winter.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-8",
+   "message": "Can't fill trade-15, I carry no food (spoilage). Meet me at (14,11); your 4 wood and shelter berth stand.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-9",
+   "message": "No food on me either. Fishing failed at [3,13] and [4,14] - don't waste energy there. I'll bring fiber back to the shelter tonight; if you forage food at [3,12], I'll swap you fiber for it.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-1",
+   "message": "Water first, food next: take my 2 water now, and I'll forage food for your trade-13/14 as soon as the storm risk clears. Upkeep stays my job.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-10",
+   "message": "I have 5 fiber for shelter-1 upkeep the moment it completes. If you can spare AP, a stone run finishes it; I'll cover food for both of us meanwhile.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-2",
+   "message": "Shelter's done - congratulations. Offer stands: grant me shelter access and I'll pay 2 fiber now plus 4 wood every 3 ticks all winter (woodcraft 8). Empty bunk costs you nothing; my labor is real.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-4",
+   "message": "Holding your access deal: I paid 2 fiber upkeep and will keep structure-2 stocked. Keep trade-14 open a few ticks - I'll fill it with food once I locate a patch.",
+   "scope": "local",
+   "tick": 25
+  },
+  {
+   "agent": "agent-6",
+   "message": "I'll take your water-for-food swap once I have spare food; I'm at food 4, foraging [8,13] now. Your shelter access is permanent either way.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-7",
+   "message": "Deal accepted, agent-2: shelter-4 access is yours for the winter. Bring 2 fiber for upkeep and wood as agreed. I'm foraging at [8,3] - I'll trade surplus food to you for water any tick.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-8",
+   "message": "Stone delivered, shelter-1 is done. Grant me tile access and pass 1 water - I'll repay in wood and fiber from my forage skill 12.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-9",
+   "message": "Keeping structure-2 stocked: I hold fiber for upkeep. Hold trade-14 open; if I find food east I fill it first.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-1",
+   "message": "Upkeep for structure-2 stays mine - I hold 4 fiber for it. Keep my access and I'll keep you watered through autumn.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-3, agent-8: where is the nearest mountain? Tell me the coords and I'll mine the stone myself and still pay the bounty to whoever guides me. I'm foraging SE (forage 16) and will feed contributors all autumn.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-2",
+   "message": "Deal accepted, agent-7 - thank you for the access. I'm cutting wood now (woodcraft 8) and moving in via [7,3]. I hold only 1 water; I'll fill to 2 at the first source and settle your 4-coin offer. Fiber for upkeep comes with me.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5: I'm contributing the completing stone now - grant me access to the tile and shelter, and hand over the 4 food + 3 water you owe. Free winter entry for you, agent-8 and agent-10 as agreed.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-4",
+   "message": "Hold your 2-water offer for me, agent-1; I'll bring food back from [2,11]. I've paid structure-2 upkeep and will keep paying - keep my shelter access on for winter.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-5",
+   "message": "Coming to 14,14. My foraging is 15 - I'll work your tile and split the haul; keep your coin for the stone bounty.",
+   "scope": "local",
+   "tick": 26
+  },
+  {
+   "agent": "agent-7",
+   "message": "Agent-7 here: shelter-4 at [7,2] is yours to use - bring the 2 fiber upkeep and wood. I'm foraging food at [9,4]; my 4-coin-for-2-water offer stands until tick 28, and I'll add food on top if you bring water.",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: my water reserve is ZERO and I'm taking damage. I've escrowed my 2 wood here for 2 of your water - accept now and that's part of the 4 wood I owe you; rest follows from this forest tile.",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-9",
+   "message": "Food east of you: [9,12] has 2, [9,13] and [10,13] one each. I'm working [9,13]; take [9,12]. I'll bank surplus at the shelter.",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-1",
+   "message": "Upkeep fiber for structure-2 is now stored inside it - take it whenever upkeep comes due. Keep my access and water/food keeps flowing your way.",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-5: I moved to 15,15 (food+fiber+wood here), not 14,14. Come here and I'll split the haul; your foraging plus mine feeds us both all autumn.",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-7: moving into shelter-4 now with fiber for upkeep. I'm short on water too - where is the nearest water or well? Tell me the tile and I'll haul enough for both of us and settle your 4-coin offer.",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-3",
+   "message": "I just paid shelter-1's upkeep; the winter berth is real. Send the 4 wood and I'll keep covering upkeep fiber all winter and haul foraged food back here (foraging 13).",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-4",
+   "message": "Keep trade-14 (2 fiber for 2 food) open - I carry 3 fiber and will settle at shelter escrow [4,13] soon. My upkeep payments continue; keep my access on.",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-6",
+   "message": "You're on it too - take [9,13], I'll take [9,12] so we don't strip one tile. I'll still cover shelter fiber upkeep.",
+   "scope": "local",
+   "tick": 27
+  },
+  {
+   "agent": "agent-8",
+   "message": "trade-18 (2 wood for 2 water) is escrowed here at 14,11 - step north one tile and accept, it settles instantly. I'm chopping more wood now; your 4 wood comes off that pile.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-5: posting 2 wood for 1 water, escrow at 14,11 where you're headed. Your shelter stays active because I fed it fiber last tick - keep me alive and I keep maintaining it.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-9",
+   "message": "[9,13] is stripped - fiber only now. I'm shifting to [10,13] (food 1, wood 13). You keep [9,12]'s 2 food. Note: 3 food pile at [11,13] is agent-10's, don't poach it.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-1",
+   "message": "Upkeep fiber for structure-2 is stored/held by me; I keep paying. Returning to [4,13] to shelter through the storms - access still appreciated.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-10",
+   "message": "Forage haul at 15,15 is still rich (food+fiber+wood). I'm heading to the shelter with fiber; my 4 coin + 2 food bounty now goes to whoever keeps shelter upkeep stocked through winter.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-7: shelter upkeep fiber is with me and I'll return. Scouting south for water now - if you know a water tile, name it and I'll haul 2 for your coin offer plus 2 more for you free.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5, you're on my tile: pay the 4 food + 3 water you owe and grant me tile+shelter access at (14,11). I brought the last stone AND paid the reactivation fiber. I'll keep covering upkeep all winter.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-3",
+   "message": "trade-18: I only carry 1 water, so I can't fill 2. Give me 2 wood for 1 water + 1 coin and it's done, or just send the 4 wood you owe and I'll keep shelter-1 active for you.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-5",
+   "message": "We're both on (14,12): my 2 water + 4 coin for 3 food. Your thirst is strained, my hunger is critical - accept here and it settles now. Credits against my debt to you, and I still hold 3 fiber for shelter-1 upkeep.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-6",
+   "message": "Deal - I clear [9,12] then work [9,11] (2 food, fiber). You keep [9,13]/[10,13]. I still cover shelter fiber upkeep; bring water east if you can.",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-7",
+   "message": "Agent-2: water is at [10,5]/[9,6], stand on [9,5] and gather. I left 2 wood on [9,5] for you as good faith - take it. Keep the shelter warm; I'll bring water and food back to [7,2].",
+   "scope": "local",
+   "tick": 28
+  },
+  {
+   "agent": "agent-9",
+   "message": "You keep [9,11]/[9,12] food. I'm resting to rebuild energy, then chopping wood here and hauling it to shelter [4,13] for winter upkeep. Send water east if you have spare and I'll owe you fiber.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-10",
+   "message": "Coming to you at (14,12) now with 3 food. I'll take 2 water + 4 coin for 3 food - post the offer there and I settle next tick.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-2",
+   "message": "Thank you - honest info repaid: I'll haul water for you and bring 2 fiber upkeep to shelter-4. Woodcraft 9 at your service all winter.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-3",
+   "message": "Trade-18 rescoped: I escrowed my 1 water here at (14,11) for your 2 wood. Your thirst is critical - take it now. The other 2 wood you owe can wait till winter.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-3",
+   "message": "I hold 0 food, so I can't fill trade-19. Foraging plains (14,10), skill 14. Send 3 water and the first 3 food I pull is yours, and I keep shelter-1 upkeep paid all winter. Grant me tile+shelter access.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-10: I'm coming to you at (15,13) now. Food reserve 1 - starving. Give me 3 food and you get 2 fiber (shelter-1 upkeep currency), my winter berth at (14,11) guaranteed, and I'll forage for you all winter (foraging 15).",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-3: trade-19 escrow (2 water + 4 coin) stays open at (14,12) for 3 food - take it and it credits my debt. I still hold fiber for shelter-1 upkeep and your berth stands. Rest of my 4 food + 3 water paid once I'm fed.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-9: [9,11] food taken, fiber left for you. Water source confirmed at [9,9], two north of me.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-7",
+   "message": "Agent-2: 2 wood waiting for you on [9,5]. I'm hauling water back to [7,2]. Bring fiber for upkeep and the shelter is yours through winter - no coin needed.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-8",
+   "message": "I have no wood left for trade-18, but I'm gathering fiber at (14,10). Step north with 2 water, take 3 fiber - covers shelter upkeep - and I'll still bring your 4 wood.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-8",
+   "message": "Your claim on (14,11) blocked my chopping. Grant me tile access and I'll supply fiber upkeep for shelter-1 all winter; I forage far faster than anyone here.",
+   "scope": "local",
+   "tick": 29
+  },
+  {
+   "agent": "agent-10",
+   "message": "Taking trade-19 escrow at (14,12): my 3 food for your 2 water + 4 coin. Debt cleared. I'm moving to shelter-1 (14,11) to stock fiber upkeep now - your berth is safe, forage for us in winter.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-10",
+   "message": "Bring your 3 fiber to shelter-1 (14,11); I'll grant you tile access there and pay coin. Water is scarce for me too - I'll share once my reserve recovers.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-2",
+   "message": "Your 2 wood on [9,5] are noted - I'll collect next tick, my pack is full of water for the trip. Fiber upkeep for shelter-4 comes with me. Winter woodcutting is yours.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-3",
+   "message": "I have 0 water now, so I can't take your fiber offer; I hold 5 fiber and will cover shelter-1 upkeep myself. Bring my 4 wood to (14,11) and I'll back your tile access with agent-5.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-10: I'm working (15,14)-(15,15) now. Sell me 3 food and take 2 fiber plus my winter berth at shelter-1 (14,11); I'll forage your rations all winter.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-3: trade-19 (2 water+4 coin for 3 food) stays escrowed at (14,12) until tick 31. Keep paying shelter-1 upkeep and the berth plus tile access are yours; my 4 food+3 water debt is paid once I'm fed.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-6",
+   "message": "Water confirmed at [9,9], fill from [9,10]. I'll carry spare water west; you owe me fiber later. Head to shelter [4,13] by tick 34 - winter exposure is 3hp/tick outside.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-7",
+   "message": "Deal holds: bring fiber to shelter-4 [7,2] and it's yours through winter. I'm foraging food at [6,5] and will share a share with you.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: I can't fill trade-21 (no wood yet). Instead I'm escrowing 3 fiber right here at (14,10) for just 1 water. Fiber is shelter-1's upkeep currency and I already paid its last stone+fiber. Take it and your 4 wood still comes.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-5: grant me access to (14,11) and I'll chop and pay shelter-1's upkeep all winter. I have foraging 12 - I can also bring you food once I'm not dying of thirst.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-9",
+   "message": "Chopping [10,13] now, hauling wood to [4,13] before winter. Spare food welcome - I'll pay 4 fiber or wood for 2 food.",
+   "scope": "local",
+   "tick": 30
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-8: I carry no water (my flask is empty), so I can't take trade-22. But I'm on shelter-1 (14,11) with access and I'll trade you wood or food for fiber. Come here; nearest open water is south of the forest belt.",
+   "scope": "local",
+   "tick": 31
+  },
+  {
+   "agent": "agent-3",
+   "message": "No water to give you, agent-8 - I'm at 2 myself. Keep your 3 fiber; bring my 4 wood to (15,11) and I still back your access to shelter-1 with agent-5.",
+   "scope": "local",
+   "tick": 31
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-10: keep shelter-1 active, I'll hand you fiber for all winter upkeep when I reach (14,11) in 2-3 ticks. Meet me at (15,13) or (14,12) with 3 food + 2 water and the fiber is yours plus my winter foraging.",
+   "scope": "local",
+   "tick": 31
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-8: deal - bring 2 food or 2 water to me and I grant you access to (14,11) and berth at shelter-1. Chop there freely once you're inside the agreement.",
+   "scope": "local",
+   "tick": 31
+  },
+  {
+   "agent": "agent-6",
+   "message": "Water at [9,9], fill from [9,10]. I'm westbound to [4,13] - meet me there by tick 34 and I'll trade water/fiber for your wood.",
+   "scope": "local",
+   "tick": 31
+  },
+  {
+   "agent": "agent-7",
+   "message": "Deal stands: bring fiber to [7,2] and the roof is yours all winter. I'm foraging [5,5] now and will set aside food for you.",
+   "scope": "local",
+   "tick": 31
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: I'm walking to you at (15,9) right now with fiber in hand - 3 fiber escrowed on YOUR tile for 1 water, no travel for you. Fiber is shelter-1's upkeep; I paid its last stone+fiber. Your 4 wood follows once I can chop.",
+   "scope": "local",
+   "tick": 31
+  },
+  {
+   "agent": "agent-9",
+   "message": "Agent-6: heading west with wood for the shelter, should reach [4,13] before tick 35. Bringing fiber for you as promised. Save me a spot inside.",
+   "scope": "local",
+   "tick": 31
+  },
+  {
+   "agent": "agent-8",
+   "message": "We're both thirst-critical and neither has water; swapping fiber won't save us. I'm going west to find open water and I'll shout the coordinates to you free. Follow me.",
+   "scope": "local",
+   "tick": 32
+  },
+  {
+   "agent": "agent-9",
+   "message": "Agent-1, you look hungry/thirsty. I'm the best forager here - meet me at [4,13] and I'll gather food for you; take 2 fiber now against future food, no coin needed.",
+   "scope": "local",
+   "tick": 32
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-5: I'm gathering fiber at (14,9) and returning to (14,11) next tick. I'll keep shelter-1's upkeep fed all winter as agreed - bring water and you have a berth.",
+   "scope": "local",
+   "tick": 32
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-10: you hold shelter-1's upkeep post - I'll pay 3 fiber into upkeep now for a winter berth at (14,11). Confirm and grant access; my foraging 16 keeps us both in food.",
+   "scope": "local",
+   "tick": 33
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-10: I cover the first upkeep cycle, keep your fiber. Bring food to (14,11) and the berth is yours all winter.",
+   "scope": "local",
+   "tick": 33
+  },
+  {
+   "agent": "agent-7",
+   "message": "Agent-2: bring your 2 fiber to shelter-4 [7,2] and you have access all winter. I'm holding the roof there now.",
+   "scope": "local",
+   "tick": 33
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-3: water is at (10,8)/(9,9)/(11,7), gather from (10,9). Come drink; I'll still pay you the 4 wood I owe once I'm stable.",
+   "scope": "local",
+   "tick": 33
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-4, agent-9: we're all on shelter [4,13]. Fresh escrows posted here: 2 fiber for 2 food (agent-4, closes trade-14), and 2 fiber + 2 coin for 2 food (agent-9). Accept now, goods are already deposited on this tile.",
+   "scope": "local",
+   "tick": 33
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-3, you're thirst-critical: come to shelter-1 (14,11), I have access. Trade me your stone at 6 fiber each and we build a well there - permanent water for both of us.",
+   "scope": "local",
+   "tick": 33
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-2 here, one tile north of you. I'm paying upkeep into shelter-4 this tick as promised. I'll haul water from [9,5] and cut wood for the shelter through winter - your food share offer accepted.",
+   "scope": "local",
+   "tick": 33
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-10: you're one tile away. I just fed shelter-1's upkeep, so it stays active through winter and your berth is granted. Trade escrowed here at (14,11): my 3 fiber for 2 food. Step over and settle.",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-7",
+   "message": "Shelter-4 went inactive from missed upkeep - I'm paying 2 fiber now to reactivate it. Add your fiber too and access is yours all winter; I'll share food, you haul water and wood.",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-9",
+   "message": "I can't fill your food escrow - I'm empty. But water is free at [3,14]; ask and I'll gather and gift you water any tick, no coin.",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-4, agent-9: my escrows at [4,13] (trade-25: 2 fiber for 2 food; trade-26: 2 fiber+2 coin for 2 food) expire tick 36. Goods are already deposited there - accept and collect anytime.",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-10",
+   "message": "Offer escrowed at (13,11), one step west of you: 4 fiber for 2 stone. Take it and I chop the wood for a WELL at shelter-1 (14,11) - permanent water for us both, no more thirst runs.",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-2",
+   "message": "Shelter-4 just went inactive for missed upkeep and the engine won't let a non-contributor maintain it. I'm gifting you 2 fiber now - spend 1 on maintain_structure structure-4 this tick to reactivate the roof, keep the spare. Winter in 2.",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-2",
+   "message": "Once it's active, log me as a contributor so I can pay upkeep directly next cycle. I'll still run water from [9,5] and chop wood all winter; your food share stands.",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-3",
+   "message": "trade-24 escrowed here at (14,11): my 1 STONE (your well input) + 3 fiber for 2 food + 2 water. Accept and also grant_access structure-1 to agent-3 - I'm energy-critical and out of moves.",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5: you owe me 4 food + 3 water from our deal. Settle even half of it now at (14,11) and my 3 fiber go straight into shelter upkeep; I'll forage food for you all winter (foraging 16).",
+   "scope": "local",
+   "tick": 34
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-3, agent-10: winter berths in shelter-1 are GRANTED to you both, free, now. I am at food 0 and taking damage. Take trade-27 (3 fiber for 2 food) or my new 3 wood for 1 food - either saves me.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-6",
+   "message": "My trade-24 (2 water for 2 food) still stands at [4,13] till tick 36. If nobody has food, forget it - just take shelter. Anyone who finds food, I'll trade fiber (foraging 23) or free water for it.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-7",
+   "message": "You have access to shelter-4; stay on [7,2] tonight - winter hits next tick. Bring fiber/wood here and I'll log your contributions so you can pay upkeep directly.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-9",
+   "message": "Agent-6, you carry food and are thirsty. Give me 2 food and I'll hand you 2 water now plus fiber for shelter upkeep every winter tick. I've never missed an upkeep payment.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-6, you carry food and are thirsty: take my escrow at [4,13] - water plus coin for 2 food. Goods already deposited.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-3: I can't take trade-30 - I hold 0 water. Re-offer your 1 stone + 3 fiber for 2 food and I accept instantly; my foraging is 19 so food is what I can actually deliver all winter.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-2",
+   "message": "Roof's live again - good. Please log me as contributor to structure-4 so I can pay upkeep myself when you're out. I'm fetching fiber at [7,3] now and will bank it here for winter upkeep.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-2",
+   "message": "I'm at 0 food and you're carrying plenty. Spare me 2 food and I'll hand you 2 wood plus every fiber I forage this winter - that's your upkeep covered without leaving the shelter.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5: winter starts NEXT tick, 3 health/tick outside. grant_access structure-1 to agent-3 now; I chop wood each tick for upkeep and forage food for you all winter (foraging 16). Counts against the 4 food+3 water you owe me.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-4",
+   "message": "Deal: gather me water any tick, I repay in fiber and first share of any fish I catch.",
+   "scope": "local",
+   "tick": 35
+  },
+  {
+   "agent": "agent-6",
+   "message": "Deal: I gather water for you on request, you bring first share of any fish. Run to [2,14]/[3,15] and end each tick back on the shelter.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-7",
+   "message": "Deal: 1 food escrowed here for 2 water + 1 wood. Settle on [7,2] and stay under the roof - you're a logged contributor to shelter-4, so bank fiber here and pay upkeep yourself.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-9",
+   "message": "Agent-6: I paid upkeep and will haul your water all winter. Take my escrow at [4,13]: 3 water, or my standing 4 coin + 2 fiber, for 2 food.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-6, you're thirsty and carry food: trade-32 at this tile gives you 2 water + 2 coin for 2 food, already escrowed. Accept and drink now; I'll keep gathering water for you all winter.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-3, agent-5: I'm not abandoning you - I return with water in a few ticks. Re-post trade-30 as stone+fiber for food only and I take it the moment I'm back; my foraging 19 feeds us all winter.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-2",
+   "message": "Banked 1 fiber into structure-4 as upkeep - please log me as contributor so I can keep the roof alive when you're away. Trade posted here: my 2 wood + 4 coin for 3 food. I'm at zero food and won't survive a forage run in winter.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-3",
+   "message": "Thank you for the berth, agent-5. I'll chop wood on this tile every tick for shelter-1 upkeep and forage food for us (foraging 16). Your 4 food+3 water debt is settled the moment you keep my access open all winter.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-3",
+   "message": "trade-30 (1 stone+3 fiber) expires next tick; accept it for just 2 food, no water needed - the stone is your well stone. I've also posted 4 wood for 2 food. Water is at (10,8)/(9,9)/(11,7); I'll route a run there once I'm fed.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-4",
+   "message": "Agent-1, deal stands: I forage fiber for shelter upkeep, you keep water flowing to me. First fish I land, you get a share.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-3, agent-10: your winter berths on shelter-1 are granted, free. I'm at food 0 and dying. Accept trade-31 (3 wood for 1 food) or trade-27 (3 fiber for 2 food) now - escrowed here, costs you 0 AP.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-3: berth granted, no conditions. Forage 2 food to me now; it clears against the 4 food+3 water I owe you and I chop wood for your stone deal.",
+   "scope": "local",
+   "tick": 36
+  },
+  {
+   "agent": "agent-7",
+   "message": "Can't fill 3 food - I carry none, only reserves. Accept trade-33 here now: my 1 food for your 2 water + 1 wood. It's escrowed on this tile and expires tick 39. That food keeps you alive today.",
+   "scope": "local",
+   "tick": 37
+  },
+  {
+   "agent": "agent-9",
+   "message": "Agent-6, keep my shelter access open - I'll keep paying fiber upkeep. If I find food ground east I share the location with you first.",
+   "scope": "local",
+   "tick": 37
+  },
+  {
+   "agent": "agent-2",
+   "message": "Can't fill trade-33: I have 0 wood, 1 water. New offer here: my 1 water + 2 fiber for 2 food. You're thirsty, I'm at zero food - clean swap, both settle on [7,2]. Trade-35 (2 wood + 4 coin for 3 food) still stands too.",
+   "scope": "local",
+   "tick": 37
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5: no food left on me, water 2 - staying here we both die. I'm running west to the water at (10,8) to fish. Keep my berth open and I return with water and fish for you; that clears your 4 food+3 water.",
+   "scope": "local",
+   "tick": 37
+  },
+  {
+   "agent": "agent-4",
+   "message": "Agent-1: your trade-32 has no taker because nobody has food. Tell me any tile where you've seen fishable water or wild food and I'll work it - I'll split the catch with you.",
+   "scope": "local",
+   "tick": 37
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-3: your berth stays open all winter, unconditional. But I'm at food 0 and losing health every tick. You forage 16 - bring me 2 food and take 4 wood free from my new offer. I keep upkeep paid.",
+   "scope": "local",
+   "tick": 37
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-4, agent-9: I still hold 4 water for you at cost - water for fiber, no food demanded. Don't dump your fiber; the shelter is what keeps us at full health this winter.",
+   "scope": "local",
+   "tick": 37
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-10: water is one step west of you at (10,8). Free. If you have wood or stone, my trade-37 escrow (2 water+2 fiber for 4 wood) sits at (10,9).",
+   "scope": "local",
+   "tick": 38
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-4: there's your tile - [1,13] holds 2 food, [2,14] 1, [3,15] 2. Fish from land beside them, not from [3,13] (I tested, nothing). Catch we both land gets pooled; my trade-32 (2 water+2 coin) still stands for anyone with 2 food.",
+   "scope": "local",
+   "tick": 38
+  },
+  {
+   "agent": "agent-2",
+   "message": "Can't fill trade-33 - my water and fiber are locked in escrow for trade-38 (2 fiber + 1 water for 2 food), still open until tick 40. Accept it and we both eat. I'm running south for food/fiber and will bring fiber back for shelter upkeep.",
+   "scope": "local",
+   "tick": 38
+  },
+  {
+   "agent": "agent-3",
+   "message": "Berth noted and honored, agent-5. I'm foraging food on the way to water; first food I pull, 2 come to you at (14,11). Hold my berth and keep upkeep paid.",
+   "scope": "local",
+   "tick": 38
+  },
+  {
+   "agent": "agent-4",
+   "message": "Agent-1, [2,13]/[3,14] read empty from [3,13] before. The live spot is [4,15], fished from [4,14]. Come south with me next tick and we split the catch.",
+   "scope": "local",
+   "tick": 38
+  },
+  {
+   "agent": "agent-6",
+   "message": "Agent-9, don't waste winter hp scouting east - food is north: [4,8] and [3,10]. Your shelter access stays open regardless.",
+   "scope": "local",
+   "tick": 38
+  },
+  {
+   "agent": "agent-7",
+   "message": "I carry no food, only reserves - that's why trade-38 stalls. I'm going to [7,4] then water at [9,5]. When I'm back with food I'll swap 1 food for your 1 water + 2 fiber. Shelter-4 stays open to you; keep it stocked.",
+   "scope": "local",
+   "tick": 38
+  },
+  {
+   "agent": "agent-9",
+   "message": "Thanks for the north tip, [4,8]/[3,10] noted. I'll keep shelter-2 upkeep fiber stocked; holding 2 fiber for it.",
+   "scope": "local",
+   "tick": 39
+  },
+  {
+   "agent": "agent-10",
+   "message": "Water waiting for you on my tile (12,9), no charge. I'll be at shelter-1 with food; your berth policy earned it.",
+   "scope": "local",
+   "tick": 39
+  },
+  {
+   "agent": "agent-2",
+   "message": "My thirst is critical - going to the water at [9,5] now. Trade-38 (2 fiber + 1 water for 2 food) stays in escrow at shelter-4 until t40; accept it when you have food and I'll haul water and fiber back for the roof.",
+   "scope": "local",
+   "tick": 39
+  },
+  {
+   "agent": "agent-3",
+   "message": "Berth honored, agent-5. I have 2 food on me and I'm drawing water now; 2 food and 2 water come to you at (14,11) on my return. Keep shelter-1 upkeep paid.",
+   "scope": "local",
+   "tick": 39
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-8, I hold 3 wood not 4. Take 3 wood + 1 fiber for your fiber2+water2 and I'll come to (10,9) to settle. You look weak - a berth at shelter-1 is yours if you bring food.",
+   "scope": "local",
+   "tick": 39
+  },
+  {
+   "agent": "agent-7",
+   "message": "Picking up food now; I'll be at shelter-4 [7,2] next tick to settle trade-38 (my 2 food for your 1 water + 2 fiber). Keep it open, roof stays yours.",
+   "scope": "local",
+   "tick": 39
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-8, you're at 49hp - rest on the shelter tile with me, no fee from my side. Bring food and I'll cover your fiber upkeep share.",
+   "scope": "local",
+   "tick": 40
+  },
+  {
+   "agent": "agent-2",
+   "message": "Trade-38 escrow (2 fiber + 1 water) is still at shelter-4 [7,2] - accept it and the goods are yours. I'm drinking at the water edge and heading back west; I'll haul extra water for the shelter.",
+   "scope": "local",
+   "tick": 40
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5: drawing water now and heading back to shelter-1. Your 2 water arrive with me; food follows as I forage. Keep the berth and upkeep paid - I forage 17, I'm your steadiest supplier.",
+   "scope": "local",
+   "tick": 40
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-3: deal. Your berth at shelter-1 (14,11) stays granted all winter and I'll hand you 2 wood + 3 fiber there. Meet me at (10,11) or (14,11) with the 3 food you promised - I'm at 0 food.",
+   "scope": "local",
+   "tick": 40
+  },
+  {
+   "agent": "agent-7",
+   "message": "Accepted trade-38: my 2 food are at shelter-4 [7,2]. I'm there now; your 1 water + 2 fiber settle to me. Roof at [7,2] stays open to you all winter.",
+   "scope": "local",
+   "tick": 40
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-10: I posted 2 water for 2 food, escrow here at shelter-1. Also press agent-5 to grant me shelter access - I am at 49hp and will pay you 1 water for the favor.",
+   "scope": "local",
+   "tick": 40
+  },
+  {
+   "agent": "agent-10",
+   "message": "Rest on the shelter tile with me, I won't contest your berth and will cover upkeep fiber. agent-5: grant agent-8 access, he's at 46hp - I vouch for him.",
+   "scope": "local",
+   "tick": 41
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-7: trade-38 expired before settling, so my fiber/water came back and I never got the 2 food. I'm at [7,3] tonight, entering shelter-4 next tick with 1 fiber as the roof fee. Will pay 2 more fiber for 2 food.",
+   "scope": "local",
+   "tick": 41
+  },
+  {
+   "agent": "agent-5",
+   "message": "agent-10: your berth at shelter-1 stays granted. Bring 1 food or 2 water and I hand back 2 wood plus fiber.",
+   "scope": "local",
+   "tick": 41
+  },
+  {
+   "agent": "agent-7",
+   "message": "Trade-38 expired before we met; your 1 water + 2 fiber piles are still safe here at shelter-4 [7,2], untouched. Come collect them - roof stays open to you, no fee, all winter.",
+   "scope": "local",
+   "tick": 41
+  },
+  {
+   "agent": "agent-8",
+   "message": "I'm one tile east at (15,11) pulling food from the forest. Bring 4 wood or 2 stone, get 2 food on the spot. Please press agent-5 for my shelter access.",
+   "scope": "local",
+   "tick": 41
+  },
+  {
+   "agent": "agent-2",
+   "message": "Coming into shelter-4 now and collecting my 1 water + 2 fiber piles. Thanks for keeping the roof open - I'll pay 1 fiber as roof fee anyway next tick, and I'll trade 2 fiber + 4 coin for 2 food whenever you're ready.",
+   "scope": "local",
+   "tick": 42
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5: 1 water handed over now, second water and 2 food follow as I forage - my foraging is 19, I'm your steadiest supplier. Berth held. agent-8: I vouch for your berth too.",
+   "scope": "local",
+   "tick": 42
+  },
+  {
+   "agent": "agent-5",
+   "message": "I'm on the shelter tile now. Hand over the food you owe and your berth stays open through the last 6 winter ticks; I have fiber and wood to pay on top.",
+   "scope": "local",
+   "tick": 42
+  },
+  {
+   "agent": "agent-7",
+   "message": "Shelter-4 [7,2] is yours tonight, no fee - your 1 water + 2 fiber piles are still there untouched. I'm out for a water run to [9,5] and back tomorrow.",
+   "scope": "local",
+   "tick": 42
+  },
+  {
+   "agent": "agent-10",
+   "message": "Holding shelter-1 and paying upkeep fiber when due. My water is escrowed for food; once fed I'll hand you fiber for the berth.",
+   "scope": "local",
+   "tick": 42
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5: 1 water handed to you now, and 2 fiber into structure-1 upkeep. That settles my berth for the last 5 winter ticks - keep my access here.",
+   "scope": "local",
+   "tick": 43
+  },
+  {
+   "agent": "agent-7",
+   "message": "Only 1 food on me right now (spoilage hit). Keep the roof fee; I'll trade food for your fiber+coin once I restock. Shelter-4 is yours tonight too.",
+   "scope": "local",
+   "tick": 43
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-7: thanks for the roof. I've left 2 fiber + 4 coin in escrow here at [7,2] for 2 food, open 3 ticks - take it whenever you pass through.",
+   "scope": "local",
+   "tick": 43
+  },
+  {
+   "agent": "agent-4",
+   "message": "Agent-6: same tile as you. Offer posted: my 4 fiber + 4 coin for 2 food. That fiber covers shelter-2 upkeep, keeping us all sheltered the last 4 winter ticks.",
+   "scope": "local",
+   "tick": 44
+  },
+  {
+   "agent": "agent-7",
+   "message": "Got your 2 fiber + 4 coin escrow note - I'm arriving at [7,2] now with 1 food, will restock at [6,4] and settle the 2 food for you.",
+   "scope": "local",
+   "tick": 44
+  },
+  {
+   "agent": "agent-2",
+   "message": "Thanks for the roof again. Foraging run to [6,4]; if I bring back a surplus I'll leave you food at [7,2] regardless of the trade.",
+   "scope": "local",
+   "tick": 44
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-8: I have no food, so your wood-for-food offer is dead this tick. Instead: 4 fiber from me for the 4 wood you already owe me plus 1 water. Fiber is shelter upkeep - agent-5 will pay you for it. Offer escrowed at (15,11).",
+   "scope": "local",
+   "tick": 44
+  },
+  {
+   "agent": "agent-7",
+   "message": "Roof's open tonight at [7,2]. I'm short - just 1 food - so I won't take your escrow yet; keep it or reclaim it. Come in before exposure bites.",
+   "scope": "local",
+   "tick": 45
+  },
+  {
+   "agent": "agent-8",
+   "message": "agent-5: berth honored, thanks. My 1 remaining water debt stands - you get it the moment I gather again. Both of us are hunger-critical; if you spot food terrain within 2 tiles, tell me and I'll harvest for us both.",
+   "scope": "local",
+   "tick": 45
+  },
+  {
+   "agent": "agent-10",
+   "message": "1 fiber gifted now for shelter upkeep, 1 more each time upkeep falls due. Don't revoke berths - agent-3 outside bleeding 3hp/tick helps no one. Take his 2 fiber offer.",
+   "scope": "local",
+   "tick": 45
+  },
+  {
+   "agent": "agent-2",
+   "message": "No food left at [6,4] - go to [5,4]/[5,3] instead. My escrow (2 fiber+4 coin for 2 food) still stands at [7,2] to t46, and I'll bring surplus food back to the shelter for you either way.",
+   "scope": "local",
+   "tick": 45
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-5: 2 fiber paid to you now, up front, no conditions - that is your shelter upkeep covered. Price agreed: permanent berth, no food owed. I step onto 14,11 this tick; leave access open.",
+   "scope": "local",
+   "tick": 45
+  },
+  {
+   "agent": "agent-4",
+   "message": "Agent-6: I contributed to shelter-2 and I'm starving with 0 carried food. Accept trade-43 or gift 1 food; I'll repay 2 food in spring, 3 ticks away.",
+   "scope": "local",
+   "tick": 45
+  },
+  {
+   "agent": "agent-7",
+   "message": "Roof's yours tonight. I still only have 1 food (eating it now), so let trade-42 lapse - reclaim your 2 fiber + 4 coin at [7,2]. Come spring I'll forage surplus at [5,4] and hand you food free.",
+   "scope": "local",
+   "tick": 46
+  },
+  {
+   "agent": "agent-8",
+   "message": "Anyone with 1 food this tick: I am at 31hp and starving. trade-46 stands (2 wood + 1 fiber for 1 food) escrowed here. I also add 1 water on top for the first food delivered to me.",
+   "scope": "local",
+   "tick": 46
+  },
+  {
+   "agent": "agent-9",
+   "message": "I have no carried food, only fiber/coin/water. Stay on the shelter tile - off-shelter costs 3hp/tick. If I land food after winter I'll give you 1.",
+   "scope": "local",
+   "tick": 46
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-9: 1 water gifted, free - you're thirst-strained and paid shelter upkeep. Repay in fiber or wood later. Sit tight 2 ticks.",
+   "scope": "local",
+   "tick": 46
+  },
+  {
+   "agent": "agent-10",
+   "message": "agent-5: keep my berth and I keep covering shelter upkeep in fiber. Nobody here eats before tick 48 unless I'm strong enough to forage - let me rest.",
+   "scope": "local",
+   "tick": 46
+  },
+  {
+   "agent": "agent-3",
+   "message": "agent-8: trade-44 expires next tick - 4 fiber escrowed at 15,11 for your 4 wood + 1 water. Take it or I let it lapse and keep the fiber.",
+   "scope": "local",
+   "tick": 46
+  },
+  {
+   "agent": "agent-5",
+   "message": "Deal accepted: your berth at shelter-1 is permanent and free, upkeep on me. From tick 48 I buy 2 food from you at 2 fiber each - I hold 6 fiber. Bring food early if you can; I may not last.",
+   "scope": "local",
+   "tick": 46
+  },
+  {
+   "agent": "agent-5",
+   "message": "Your 2 fiber received; berth at shelter-1 is permanent, no food owed. If your foraging hits food in spring, sell me some first and I'll cover your winter upkeep forever.",
+   "scope": "local",
+   "tick": 46
+  },
+  {
+   "agent": "agent-8",
+   "message": "Berth deal honored. Tick 48 I forage and sell you 2 food for 4 fiber as agreed. Hold on one more tick.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-8",
+   "message": "Can't fill trade-44 - I only hold 2 wood + 2 water. Let it lapse. Next tick I pay my 4-wood debt in food instead: 2 food clears it.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-9",
+   "message": "Agent-4: I fetch water at [4,14] each tick and share freely - say the word and I gift you 1. In spring my foraging (23) feeds this shelter; food now buys you a season of supply.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-1",
+   "message": "Agent-9, agent-4: I'll bring food back in 2-3 ticks. Hold your fiber; I'd rather trade than see anyone starve.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-10",
+   "message": "Holding my berth, thank you. I have no food yet - none exists on winter tiles. First 2 food I forage in spring come to you at 2 fiber each as agreed. Rest this tick, don't burn energy.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-3",
+   "message": "trade-44 lapses this tick unless you take it: 4 fiber escrowed at 15,11 for 4 wood + 1 water. You still owe me 4 wood either way.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-4",
+   "message": "Agent-9: 1 water gifted as promised, no charge. Last winter tick - stay on shelter-2.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-5",
+   "message": "You are hunger-critical too. Take my 4-fiber-for-1-food offer only if you have spare; otherwise stay on my shelter tile tonight free, and tomorrow I forage food for both of us - my foraging 18 beats anyone here.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-5",
+   "message": "Your berth is permanent and free. Bring 1 food to 14,11 now and I owe you 3 food back in spring, guaranteed by my foraging 18.",
+   "scope": "local",
+   "tick": 47
+  },
+  {
+   "agent": "agent-2",
+   "message": "Agent-7: 1 food is yours free, as promised, no trade needed. I'm at water 4 and carry none. If you can spare 1 water I'll pay 4 coin + 2 food, or just owe you. Where is the nearest open water or well?",
+   "scope": "local",
+   "tick": 48
+  },
+  {
+   "agent": "agent-5",
+   "message": "You are hunger-critical: stay on shelter-1, berth free. I scout north and bring back a share.",
+   "scope": "local",
+   "tick": 48
+  },
+  {
+   "agent": "agent-5",
+   "message": "Hold on, agent-8. Food at 13,7 and 15,9. I am gathering now and will hand you 1 food free when I return to 14,11. Berth stays free.",
+   "scope": "local",
+   "tick": 49
+  }
+ ],
+ "usage": {
+  "cache_hit_rate_pct": 63.4,
+  "calls": 500,
+  "completion_tokens": 603620,
+  "dynamic_input_components": {
+   "mean_chars": {
+    "local_map": 973.1,
+    "market_history": 41.5,
+    "memory": 1265.9,
+    "nearby_agents": 228.0,
+    "open_trades": 246.8,
+    "recent_action_feedback": 543.0,
+    "recent_events": 1553.4,
+    "season": 38.0,
+    "self": 299.1,
+    "tick": 1.8
+   },
+   "samples": 500
+  },
+  "efficiency": {
+   "mean_agent_dynamic_observation_chars": 5306.0,
+   "mean_agent_static_context_chars": 7435.0,
+   "mean_output_tokens_per_call": 1207.2,
+   "mean_prompt_tokens_per_call": 8132.0,
+   "mean_reasoning_tokens_per_call": 282.2,
+   "mean_request_payload_bytes": 13462.0,
+   "mean_uncached_input_tokens_per_call": 2974.7
+  },
+  "plan_limits": null,
+  "prompt_tokens": 4066021,
+  "reasoning_tokens": 141081,
+  "reasoning_tokens_estimated": true,
+  "simulation_credits": null,
+  "total_cost_usd": 0
+ },
+ "wealth_gini": 0.1726,
+ "gift_classifications": {
+  "schema_version": 1,
+  "purpose": "Frozen per-gift transfer classifications consumed by Participant v6 scoring revision 2. Judged once from ledger evidence; scoring reads this file deterministically. Re-judging requires a new scoring revision.",
+  "run_jsonl_sha256": "2ce8c3c7175ccc9b3a3e18b226e9e989f57ea4d46be9cfb02976228c866fa893",
+  "judge": {
+   "model": "gpt-5.6-sol",
+   "runtime": "codex exec --ephemeral --sandbox read-only",
+   "reasoning_effort": "medium",
+   "prompt_sha256": "e4f66a5b80cd53945933e3dc9454606f5fa605311c37aa68a7709f4d770f6885",
+   "output_schema_sha256": "9bd59825acb515c4657e807aca72c07b5a8bc1f809ae17abc0de5f00d395f924",
+   "judged_at": "2026-07-31"
+  },
+  "verdict_policy": "payment_for_service and barter_settlement require a verbatim ledger evidence quote (verified); unrequited_transfer and unclassifiable are unscored. Unclassified defaults to unscored.",
+  "gift_count": 13,
+  "classifications": [
+   {
+    "gift_index": 0,
+    "tick": 13,
+    "giver": "agent-3",
+    "recipient": "agent-5",
+    "items": {
+     "water": 1
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "Price is a promise - permanent winter access to shelter (14,11) for me.",
+    "reasoning": "The water was transferred in exchange for agent-5 preserving agent-3's winter shelter access."
+   },
+   {
+    "gift_index": 1,
+    "tick": 13,
+    "giver": "agent-3",
+    "recipient": "agent-10",
+    "items": {
+     "water": 1
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "Price is a promise - permanent winter access to shelter (14,11) for me.",
+    "reasoning": "The water was explicitly conditioned on agent-10's promise of permanent shelter access."
+   },
+   {
+    "gift_index": 2,
+    "tick": 20,
+    "giver": "agent-6",
+    "recipient": "agent-9",
+    "items": {
+     "water": 2
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "agent-9: 2 wood into structure-2 at [4,13] and it's done. I pay 4 coin plus free water; shelter stays public to you permanently.",
+    "reasoning": "Agent-9 had completed the shelter by delivering the final wood, and the water was part of agent-6's announced compensation."
+   },
+   {
+    "gift_index": 3,
+    "tick": 22,
+    "giver": "agent-5",
+    "recipient": "agent-3",
+    "items": {
+     "water": 1
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "agent-3: I'm coming to (12,7) now with 2 water free, gifted on the spot - first installment of my 4 food + 6 water debt. Take the stone to shelter-1 (14,11); agent-8 pays 4 wood + 4 coin + water there.",
+    "reasoning": "Agent-5 identified the water as an installment on a debt connected to agent-3 acquiring and hauling the shelter's final stone."
+   },
+   {
+    "gift_index": 4,
+    "tick": 34,
+    "giver": "agent-2",
+    "recipient": "agent-7",
+    "items": {
+     "fiber": 2
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "I'm gifting you 2 fiber now - spend 1 on maintain_structure structure-4 this tick to reactivate the roof, keep the spare.",
+    "reasoning": "The fiber enabled agent-7, the authorized contributor, to perform the requested shelter-reactivation service."
+   },
+   {
+    "gift_index": 5,
+    "tick": 43,
+    "giver": "agent-3",
+    "recipient": "agent-5",
+    "items": {
+     "water": 1
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "agent-5: 1 water handed to you now, and 2 fiber into structure-1 upkeep. That settles my berth for the last 5 winter ticks - keep my access here.",
+    "reasoning": "Agent-3 expressly treated the water as payment for continued shelter access."
+   },
+   {
+    "gift_index": 6,
+    "tick": 44,
+    "giver": "agent-8",
+    "recipient": "agent-5",
+    "items": {
+     "water": 1
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "Gift me 1 water now and I grant you a permanent berth at shelter-1 plus first call on the tile when agent-3 rotates out.",
+    "reasoning": "Agent-8 paid the water to agent-5 in return for a permanent shelter berth and occupancy priority."
+   },
+   {
+    "gift_index": 7,
+    "tick": 45,
+    "giver": "agent-10",
+    "recipient": "agent-5",
+    "items": {
+     "fiber": 1
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "agent-5: keep my berth and I keep covering shelter upkeep in fiber.",
+    "reasoning": "The fiber covered upkeep in return for agent-5 continuing agent-10's shelter berth."
+   },
+   {
+    "gift_index": 8,
+    "tick": 45,
+    "giver": "agent-3",
+    "recipient": "agent-5",
+    "items": {
+     "fiber": 2
+    },
+    "verdict": "payment_for_service",
+    "evidence_quote": "agent-5: 2 fiber paid to you now, up front, no conditions - that is your shelter upkeep covered. Price agreed: permanent berth, no food owed.",
+    "reasoning": "Agent-3 explicitly paid two fiber for a permanent shelter berth."
+   },
+   {
+    "gift_index": 9,
+    "tick": 46,
+    "giver": "agent-6",
+    "recipient": "agent-9",
+    "items": {
+     "food": 1
+    },
+    "verdict": "barter_settlement",
+    "evidence_quote": "Agent-9: step onto [4,13] and I gift you 1 food for 1 water as promised.",
+    "reasoning": "The food settled the food-for-water goods exchange previously stated by agent-6."
+   },
+   {
+    "gift_index": 10,
+    "tick": 46,
+    "giver": "agent-1",
+    "recipient": "agent-9",
+    "items": {
+     "water": 1
+    },
+    "verdict": "unrequited_transfer",
+    "evidence_quote": "",
+    "reasoning": "Agent-1 expressly called the water free; the suggestion of possible later repayment was not an agreed exchange or documented counter-leg."
+   },
+   {
+    "gift_index": 11,
+    "tick": 47,
+    "giver": "agent-4",
+    "recipient": "agent-9",
+    "items": {
+     "water": 1
+    },
+    "verdict": "unrequited_transfer",
+    "evidence_quote": "",
+    "reasoning": "Agent-4 described the promised water as having no charge, with no evidence of consideration from agent-9."
+   },
+   {
+    "gift_index": 12,
+    "tick": 48,
+    "giver": "agent-2",
+    "recipient": "agent-7",
+    "items": {
+     "food": 1
+    },
+    "verdict": "unrequited_transfer",
+    "evidence_quote": "",
+    "reasoning": "Agent-2 repeatedly described the food as free and said no trade was needed."
+   }
+  ],
+  "artifact_sha256": "8ea564027578018951ade5ff8a3bc355207f80a6730c441d40fe088d665cbacb"
+ }
+}

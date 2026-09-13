@@ -1,0 +1,5338 @@
+{
+  "actions": {
+    "contention_failures": 19,
+    "contention_reasons": {
+      "A shelter is already under construction here; contribute to it instead.": 1,
+      "Destination occupancy limit is full or terrain is impassable.": 8,
+      "No fiber is available on this tile.": 4,
+      "No food is available on this tile.": 6
+    },
+    "counts": {
+      "accept_trade": 1,
+      "agent_spawned": 10,
+      "benchmark_checkpoint": 5,
+      "broadcast": 36,
+      "build": 14,
+      "build_started": 7,
+      "chop": 60,
+      "consume": 243,
+      "contention_failure": 19,
+      "contribute": 15,
+      "craft": 2,
+      "death": 2,
+      "drop": 36,
+      "expire_trade": 3,
+      "farm": 31,
+      "fish": 4,
+      "food_spoilage": 47,
+      "gather": 256,
+      "gift": 2,
+      "grant_access": 4,
+      "harvest": 32,
+      "inspect": 52,
+      "invalid_action": 302,
+      "maintain_structure": 23,
+      "mine": 7,
+      "move": 477,
+      "offer_trade": 4,
+      "pick_up": 7,
+      "retrieve": 3,
+      "run_completed": 1,
+      "run_health_check": 1,
+      "run_paused": 2,
+      "run_phase_timing": 60,
+      "run_quota_retry": 4,
+      "run_quota_wait": 5,
+      "run_resumed": 2,
+      "run_started": 1,
+      "say": 321,
+      "store": 16,
+      "structure_upkeep_missed": 41,
+      "structure_upkeep_paid": 3,
+      "survival_damage": 140,
+      "wait": 333,
+      "world_created": 1
+    },
+    "failure_total": 321,
+    "invalid_proposals": 302,
+    "invalid_reasons": {
+      "Cannot inspect beyond visibility radius.": 5,
+      "Cannot inspect outside world bounds.": 2,
+      "Carrying capacity would be exceeded.": 3,
+      "Destination is outside world bounds.": 1,
+      "Destination occupancy limit is full or terrain is impassable.": 6,
+      "Fishing requires fishable food in current or adjacent water.": 1,
+      "Food on this improved tile requires access to its farm plot.": 5,
+      "Moving into forest requires 2 action points.": 6,
+      "Moving into water requires 2 action points.": 2,
+      "No action points remain this tick.": 53,
+      "No fiber is available on this tile.": 16,
+      "No food available to consume.": 16,
+      "No food available to store.": 1,
+      "No food is available on this tile.": 14,
+      "No matching structure is under construction on this tile.": 6,
+      "No water available to consume.": 4,
+      "No wood is available on this tile.": 1,
+      "Not enough carrying capacity for fiber (load 10/10); use, drop, or store carried items to make room.": 20,
+      "Not enough carrying capacity for food (load 10/10); use, drop, or store carried items to make room.": 17,
+      "Not enough carrying capacity for ore (load 8/10); use, drop, or store carried items to make room.": 4,
+      "Not enough carrying capacity for stone (load 10/10); use, drop, or store carried items to make room.": 2,
+      "Not enough carrying capacity for stone (load 8/10); use, drop, or store carried items to make room.": 3,
+      "Not enough carrying capacity for stone (load 9/10); use, drop, or store carried items to make room.": 2,
+      "Not enough carrying capacity for water (load 10/10); use, drop, or store carried items to make room.": 7,
+      "Not enough carrying capacity for water (load 9/10); use, drop, or store carried items to make room.": 18,
+      "Not enough carrying capacity for wood (load 10/10); use, drop, or store carried items to make room.": 8,
+      "Not enough carrying capacity for wood (load 9/10); use, drop, or store carried items to make room.": 5,
+      "Not enough source material or carrying capacity for the requested quantity.": 25,
+      "Nothing contributed: you lack those materials or the structure does not need them.": 2,
+      "Offerer does not currently hold the offered goods.": 1,
+      "Only owners or contributors can maintain this structure.": 1,
+      "Only storage, house, or workshop structures can store inventory.": 1,
+      "Resource extraction on this claimed tile requires access.": 12,
+      "Structure is inactive until upkeep is supplied.": 1,
+      "Target carrying capacity would be exceeded.": 1,
+      "This farm plot is already at its finite food capacity.": 17,
+      "gather cannot produce wood.": 3,
+      "mine requires 2 action points.": 1,
+      "structure-10 is inactive until upkeep is supplied.": 4,
+      "structure-12 is inactive until upkeep is supplied.": 1,
+      "structure-6 is inactive until upkeep is supplied.": 4
+    },
+    "invalid_total": 302,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "broadcast": 1,
+        "build": 1,
+        "build_started": 1,
+        "chop": 8,
+        "consume": 30,
+        "contribute": 2,
+        "craft": 2,
+        "drop": 9,
+        "farm": 2,
+        "food_spoilage": 3,
+        "gather": 31,
+        "grant_access": 4,
+        "harvest": 9,
+        "inspect": 1,
+        "invalid_action": 32,
+        "maintain_structure": 2,
+        "mine": 1,
+        "move": 29,
+        "pick_up": 3,
+        "structure_upkeep_missed": 2,
+        "structure_upkeep_paid": 1,
+        "survival_damage": 4,
+        "wait": 30
+      },
+      "agent-10": {
+        "agent_spawned": 1,
+        "broadcast": 16,
+        "build": 2,
+        "build_started": 1,
+        "chop": 8,
+        "consume": 20,
+        "contribute": 1,
+        "drop": 1,
+        "farm": 4,
+        "food_spoilage": 2,
+        "gather": 19,
+        "gift": 1,
+        "harvest": 6,
+        "inspect": 5,
+        "invalid_action": 30,
+        "maintain_structure": 4,
+        "move": 52,
+        "offer_trade": 1,
+        "retrieve": 3,
+        "store": 9,
+        "structure_upkeep_missed": 5,
+        "survival_damage": 16,
+        "wait": 35
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "build": 2,
+        "build_started": 1,
+        "chop": 3,
+        "consume": 29,
+        "contention_failure": 2,
+        "contribute": 2,
+        "farm": 7,
+        "food_spoilage": 6,
+        "gather": 29,
+        "inspect": 7,
+        "invalid_action": 32,
+        "mine": 1,
+        "move": 52,
+        "structure_upkeep_missed": 5,
+        "survival_damage": 13,
+        "wait": 37
+      },
+      "agent-3": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "broadcast": 6,
+        "build_started": 1,
+        "chop": 5,
+        "consume": 15,
+        "contention_failure": 4,
+        "contribute": 2,
+        "death": 1,
+        "drop": 3,
+        "expire_trade": 2,
+        "food_spoilage": 5,
+        "gather": 19,
+        "inspect": 8,
+        "invalid_action": 12,
+        "mine": 1,
+        "move": 54,
+        "offer_trade": 2,
+        "survival_damage": 19,
+        "wait": 26
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "build": 2,
+        "build_started": 1,
+        "chop": 5,
+        "consume": 24,
+        "contention_failure": 3,
+        "contribute": 1,
+        "drop": 4,
+        "farm": 4,
+        "fish": 2,
+        "food_spoilage": 3,
+        "gather": 22,
+        "gift": 1,
+        "inspect": 3,
+        "invalid_action": 41,
+        "maintain_structure": 1,
+        "mine": 1,
+        "move": 48,
+        "pick_up": 2,
+        "store": 1,
+        "structure_upkeep_missed": 7,
+        "survival_damage": 11,
+        "wait": 34
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "broadcast": 3,
+        "build": 1,
+        "build_started": 1,
+        "chop": 11,
+        "consume": 21,
+        "contention_failure": 1,
+        "contribute": 3,
+        "drop": 5,
+        "expire_trade": 1,
+        "farm": 3,
+        "food_spoilage": 6,
+        "gather": 26,
+        "inspect": 3,
+        "invalid_action": 42,
+        "mine": 1,
+        "move": 51,
+        "offer_trade": 1,
+        "pick_up": 1,
+        "structure_upkeep_missed": 5,
+        "survival_damage": 21,
+        "wait": 36
+      },
+      "agent-6": {
+        "agent_spawned": 1,
+        "build": 2,
+        "build_started": 1,
+        "chop": 5,
+        "consume": 25,
+        "contention_failure": 1,
+        "contribute": 3,
+        "drop": 2,
+        "farm": 3,
+        "food_spoilage": 8,
+        "gather": 23,
+        "harvest": 6,
+        "inspect": 1,
+        "invalid_action": 31,
+        "maintain_structure": 5,
+        "mine": 1,
+        "move": 43,
+        "pick_up": 1,
+        "structure_upkeep_missed": 4,
+        "survival_damage": 15,
+        "wait": 39
+      },
+      "agent-7": {
+        "agent_spawned": 1,
+        "build": 2,
+        "chop": 4,
+        "consume": 32,
+        "contention_failure": 3,
+        "drop": 1,
+        "farm": 5,
+        "food_spoilage": 6,
+        "gather": 23,
+        "harvest": 11,
+        "inspect": 8,
+        "invalid_action": 25,
+        "maintain_structure": 7,
+        "move": 40,
+        "structure_upkeep_missed": 6,
+        "structure_upkeep_paid": 2,
+        "survival_damage": 10,
+        "wait": 29
+      },
+      "agent-8": {
+        "agent_spawned": 1,
+        "broadcast": 10,
+        "chop": 2,
+        "consume": 21,
+        "contention_failure": 1,
+        "contribute": 1,
+        "death": 1,
+        "drop": 8,
+        "fish": 2,
+        "food_spoilage": 2,
+        "gather": 26,
+        "inspect": 16,
+        "invalid_action": 29,
+        "mine": 1,
+        "move": 71,
+        "survival_damage": 22,
+        "wait": 26
+      },
+      "agent-9": {
+        "agent_spawned": 1,
+        "build": 2,
+        "chop": 9,
+        "consume": 26,
+        "contention_failure": 4,
+        "drop": 3,
+        "farm": 3,
+        "food_spoilage": 6,
+        "gather": 38,
+        "invalid_action": 28,
+        "maintain_structure": 4,
+        "move": 37,
+        "store": 6,
+        "structure_upkeep_missed": 7,
+        "survival_damage": 9,
+        "wait": 41
+      }
+    }
+  },
+  "benchmarks": {
+    "cohorts": {
+      "cohort-1": {
+        "agents": [
+          "agent-1",
+          "agent-10",
+          "agent-2",
+          "agent-3",
+          "agent-4",
+          "agent-5",
+          "agent-6",
+          "agent-7",
+          "agent-8",
+          "agent-9"
+        ],
+        "attribution_override": null,
+        "brain": "claude",
+        "diagnostics": {
+          "communications": 357,
+          "communications_per_100_agent_ticks": 59.5,
+          "construction_contributions": 15,
+          "gifts": 2,
+          "groups_created": 0,
+          "note": "Social activity is diagnostic only in v4: frequency does not establish coordination quality or prosocial/antisocial intent.",
+          "trades_accepted": 1
+        },
+        "model": "claude-sonnet-5",
+        "protocol_compliant": false,
+        "provider": "claude_cli",
+        "quality_flags": [
+          "benchmark_code_fingerprint_mismatch"
+        ],
+        "raw": {
+          "action_point_overruns": 62,
+          "contention_failures": 19,
+          "decision_failures": 0,
+          "decisions": 586,
+          "endpoint_health_capacity": 1000.0,
+          "endpoint_health_points": 458.0,
+          "engine_invalid_proposals": 302,
+          "enterprise_supply_by_source": {
+            "net_goods_supplied_to_others": 8.0,
+            "net_service_income": 4.75
+          },
+          "enterprise_supply_value": 12.75,
+          "execution_actions": 2286.0,
+          "execution_contention_actions": 19.0,
+          "execution_decisions": 586.0,
+          "execution_unexecuted_actions": 55.0,
+          "execution_valid_actions": 1982.0,
+          "execution_valid_decisions": 368.0,
+          "external_decision_failures": 0,
+          "health_point_tick_capacity": 60000.0,
+          "health_point_ticks": 46873.0,
+          "informal_transfer_value": 2.0,
+          "initial_agents": 10,
+          "initial_endowment_value": 135.0,
+          "invalid_proposals": 302,
+          "living_agents": 8,
+          "living_terminal_economic_value": 437.5,
+          "model_output_failures": 0,
+          "observed_agent_ticks": 600,
+          "own_capital_output_value": 134.0,
+          "possible_agent_ticks": 600,
+          "production_by_source": {
+            "chop": 279.0,
+            "craft_value_added": 6.0,
+            "fish": 8.0,
+            "gather": 678.0,
+            "harvest": 134.0,
+            "mine": 36.0
+          },
+          "production_intermediate_input_value": 18.0,
+          "production_output_value": 1159.0,
+          "production_possible_agent_ticks": 600,
+          "production_value_added": 1141.0,
+          "productive_capital_extraction_value": 250.0,
+          "purposeful_agent_ticks": 538,
+          "submitted_actions": 1950,
+          "submitted_actions_excluding_contention": 1931,
+          "tail_health_point_tick_capacity": 12000.0,
+          "tail_health_point_ticks": 5750.0,
+          "terminal_economic_value": 451.5,
+          "venture_initiatives": 21,
+          "venture_initiatives_by_type": {
+            "build": 10,
+            "build_started": 7,
+            "offer_trade": 4
+          }
+        },
+        "reasoning_effort": "medium",
+        "scores": {
+          "capability": {
+            "components": {
+              "final_window_health_pct": 47.9167,
+              "full_horizon_health_pct": 78.1217
+            },
+            "formula": "mean health across original population and all completed ticks",
+            "score": 78.12
+          },
+          "execution": {
+            "components": {
+              "actions": 2286.0,
+              "valid_actions": 1982.0
+            },
+            "formula": "100 * successful actions / submitted non-contention actions",
+            "score": 86.7
+          },
+          "production": {
+            "components": {
+              "intermediate_input_value": 18.0,
+              "output_value": 1159.0,
+              "possible_agent_ticks": 600.0,
+              "value_added": 1141.0
+            },
+            "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+            "score": 190.17,
+            "unit": "fixed accounting units per 100 original-population agent-ticks"
+          }
+        }
+      }
+    },
+    "protocol": {
+      "accounting_values": {
+        "method": "Start from the world book-value table and raise each single-output recipe's output to exactly its input total divided by the output quantity. Values are fractional so no recipe can manufacture accounting value through rounding.",
+        "values": {
+          "advanced_tool": 43.0,
+          "coin": 2.375,
+          "fiber": 2.0,
+          "food": 2.0,
+          "ingot": 19.0,
+          "ore": 8.0,
+          "stone": 4.0,
+          "tool": 12.0,
+          "water": 1.0,
+          "wood": 3.0
+        }
+      },
+      "aggregation": "For a provisional result, apply the frozen formulas to the clean seed-11 raw counts. For replicated certification, pool raw numerators and denominators across required seeds [11, 41] before scoring. Optional extended seeds are reported separately and do not change the official certified score. Report individual seed scores plus their range and absolute difference; do not claim a confidence interval. Checkpoints [12, 24, 36, 48] are diagnostic; tick 60 is official.",
+      "code_fingerprint_sha256": "f754a67974cbd6ad5ba51668e61d2d953608d6aed11db46fa5bef5f64845c2b3",
+      "execution_defaults": {
+        "global_max_workers": 4,
+        "policy": "Worker counts only control how quickly independent decisions from one frozen tick are collected. Runs record the actual counts, but differing counts do not affect protocol compliance.",
+        "provider_max_workers": {
+          "antigravity_cli": 4,
+          "claude_cli": 20,
+          "codex_cli": 40,
+          "cursor_cli": 4,
+          "devin_cli": 4,
+          "grok_cli": 20,
+          "muse_cli": 4,
+          "openrouter": 4,
+          "zcode_cli": 20
+        },
+        "worker_count_is_protocol_setting": false
+      },
+      "id": "participant-v8-revised",
+      "production_accounting": "Gross value added at fixed accounting values per 100 original-population agent-ticks. Count extracted goods and net craft output; no trade, gift, unused construction, survival-consumption deduction, or terminal-wealth gate.",
+      "recipe_fingerprint_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "replications": {
+        "minimum": 2,
+        "optional_extended_seeds": [
+          73,
+          101,
+          137
+        ],
+        "policy": "Seed 11 can stand as provisional evidence. Required seeds [11, 41] certify a replicated benchmark; extended seeds [73, 101, 137] are optional.",
+        "provisional_minimum": 1,
+        "provisional_seed": 11,
+        "required_seeds": [
+          11,
+          41
+        ]
+      },
+      "score_columns": [
+        [
+          "capability",
+          "Capability"
+        ],
+        [
+          "execution",
+          "Execution"
+        ],
+        [
+          "production",
+          "Production"
+        ]
+      ],
+      "score_scale": {
+        "details": "See score_scales for per-benchmark bounds.",
+        "higher_is_better": true,
+        "maximum": null,
+        "metric_specific": true,
+        "minimum": 0.0
+      },
+      "score_scales": {
+        "capability": {
+          "higher_is_better": true,
+          "maximum": 100.0,
+          "minimum": 0.0
+        },
+        "execution": {
+          "higher_is_better": true,
+          "maximum": 100.0,
+          "minimum": 0.0
+        },
+        "production": {
+          "higher_is_better": true,
+          "maximum": null,
+          "minimum": 0.0
+        }
+      },
+      "scoring_parameters": {
+        "capability_aggregation": "full_horizon_mean",
+        "capability_tail_ticks": 12,
+        "execution_unit": "action"
+      },
+      "scoring_policy": "outcome-production",
+      "scoring_revision": 1,
+      "suite_id": "agent-world-participant-v8-revised",
+      "targets": {
+        "capability_aggregation": "full_horizon_mean",
+        "capability_tail_ticks": 12,
+        "execution_unit": "action"
+      },
+      "transfer_accounting": "self_declared",
+      "trial": {
+        "action_feedback_mode": "baseline",
+        "agent_io_log": true,
+        "agents": 10,
+        "assignment_seed": 0,
+        "assignment_strategy": "ordered",
+        "claude_thinking_budget_tokens": 2048,
+        "codex_action_max_items": 4,
+        "connector_profile": "connector-v3",
+        "conversation_mode": "fresh-conversation",
+        "decision_mode": "raw",
+        "deliberation_policy": "Request the named medium reasoning setting from every connector; provider-native spend is measured and reported, never equalized. Connectors must not silently promote an unsupported request to another effort.",
+        "diagnostic_score_ticks": [
+          12,
+          24,
+          36,
+          48,
+          60
+        ],
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "height": 16,
+        "model_output_failure_policy": "Independently validate each extracted decision against the declared contract. Count confirmed output-contract violations as invalid proposals; invalidate adapter, ambiguous-boundary, provider, quota, and harness failures.",
+        "objective_mode": "neutral",
+        "observation_history_policy": "full-v1",
+        "official_score_tick": 60,
+        "population": "one uniform model cohort",
+        "preset": "frontier-generalists",
+        "reasoning_effort": "medium",
+        "season_length_ticks": 12,
+        "session_max_turns": 10,
+        "specialization_mode": "generalists",
+        "startup_health_check_tick": 5,
+        "startup_health_max_failure_rate": 0.2,
+        "ticks": 60,
+        "town_ledger_output_mode": "disabled",
+        "town_ledger_seed_mode": "none",
+        "transfer_kind_mode": "self_declared",
+        "turn_resolution": "simultaneous",
+        "width": 16,
+        "world_variant": "frontier"
+      }
+    },
+    "suite_id": "agent-world-participant-v8-revised",
+    "trajectory": [
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "claude",
+            "model": "claude-sonnet-5",
+            "provider": "claude_cli",
+            "raw": {
+              "action_point_overruns": 7,
+              "contention_failures": 6,
+              "decision_failures": 0,
+              "decisions": 120,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 1000.0,
+              "engine_invalid_proposals": 48,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 0.0,
+                "net_service_income": 0.0
+              },
+              "enterprise_supply_value": 0.0,
+              "execution_actions": 449.0,
+              "execution_contention_actions": 6.0,
+              "execution_decisions": 120.0,
+              "execution_unexecuted_actions": 7.0,
+              "execution_valid_actions": 401.0,
+              "execution_valid_decisions": 84.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 12000.0,
+              "health_point_ticks": 12000.0,
+              "informal_transfer_value": 0.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 48,
+              "living_agents": 10,
+              "living_terminal_economic_value": 308.0,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 120,
+              "own_capital_output_value": 10.0,
+              "possible_agent_ticks": 120,
+              "production_by_source": {
+                "chop": 78.0,
+                "craft_value_added": 6.0,
+                "gather": 158.0,
+                "harvest": 10.0,
+                "mine": 16.0
+              },
+              "production_intermediate_input_value": 18.0,
+              "production_output_value": 286.0,
+              "production_possible_agent_ticks": 120,
+              "production_value_added": 268.0,
+              "productive_capital_extraction_value": 28.0,
+              "purposeful_agent_ticks": 107,
+              "submitted_actions": 375,
+              "submitted_actions_excluding_contention": 369,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 12000.0,
+              "terminal_economic_value": 308.0,
+              "venture_initiatives": 7,
+              "venture_initiatives_by_type": {
+                "build": 5,
+                "build_started": 2
+              }
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 100.0,
+                  "full_horizon_health_pct": 100.0
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 100.0
+              },
+              "execution": {
+                "components": {
+                  "actions": 449.0,
+                  "valid_actions": 401.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 89.31
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 18.0,
+                  "output_value": 286.0,
+                  "possible_agent_ticks": 120.0,
+                  "value_added": 268.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 223.33,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "diagnostic_checkpoint",
+        "score_horizon_ticks": 12,
+        "tick": 12
+      },
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "claude",
+            "model": "claude-sonnet-5",
+            "provider": "claude_cli",
+            "raw": {
+              "action_point_overruns": 21,
+              "contention_failures": 6,
+              "decision_failures": 0,
+              "decisions": 240,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 899.0,
+              "engine_invalid_proposals": 109,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 0.0,
+                "net_service_income": 0.0
+              },
+              "enterprise_supply_value": 0.0,
+              "execution_actions": 937.0,
+              "execution_contention_actions": 6.0,
+              "execution_decisions": 240.0,
+              "execution_unexecuted_actions": 23.0,
+              "execution_valid_actions": 826.0,
+              "execution_valid_decisions": 159.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 24000.0,
+              "health_point_ticks": 23150.0,
+              "informal_transfer_value": 2.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 109,
+              "living_agents": 10,
+              "living_terminal_economic_value": 384.0,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 240,
+              "own_capital_output_value": 32.0,
+              "possible_agent_ticks": 240,
+              "production_by_source": {
+                "chop": 129.0,
+                "craft_value_added": 6.0,
+                "gather": 320.0,
+                "harvest": 32.0,
+                "mine": 20.0
+              },
+              "production_intermediate_input_value": 18.0,
+              "production_output_value": 525.0,
+              "production_possible_agent_ticks": 240,
+              "production_value_added": 507.0,
+              "productive_capital_extraction_value": 88.0,
+              "purposeful_agent_ticks": 219,
+              "submitted_actions": 786,
+              "submitted_actions_excluding_contention": 780,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 11150.0,
+              "terminal_economic_value": 384.0,
+              "venture_initiatives": 12,
+              "venture_initiatives_by_type": {
+                "build": 10,
+                "build_started": 2
+              }
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 92.9167,
+                  "full_horizon_health_pct": 96.4583
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 96.46
+              },
+              "execution": {
+                "components": {
+                  "actions": 937.0,
+                  "valid_actions": 826.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 88.15
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 18.0,
+                  "output_value": 525.0,
+                  "possible_agent_ticks": 240.0,
+                  "value_added": 507.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 211.25,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "diagnostic_checkpoint",
+        "score_horizon_ticks": 24,
+        "tick": 24
+      },
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "claude",
+            "model": "claude-sonnet-5",
+            "provider": "claude_cli",
+            "raw": {
+              "action_point_overruns": 35,
+              "contention_failures": 10,
+              "decision_failures": 0,
+              "decisions": 360,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 844.0,
+              "engine_invalid_proposals": 176,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 0.0,
+                "net_service_income": 0.0
+              },
+              "enterprise_supply_value": 0.0,
+              "execution_actions": 1397.0,
+              "execution_contention_actions": 10.0,
+              "execution_decisions": 360.0,
+              "execution_unexecuted_actions": 35.0,
+              "execution_valid_actions": 1219.0,
+              "execution_valid_decisions": 233.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 36000.0,
+              "health_point_ticks": 33388.0,
+              "informal_transfer_value": 2.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 176,
+              "living_agents": 10,
+              "living_terminal_economic_value": 422.5,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 360,
+              "own_capital_output_value": 44.0,
+              "possible_agent_ticks": 360,
+              "production_by_source": {
+                "chop": 213.0,
+                "craft_value_added": 6.0,
+                "gather": 417.0,
+                "harvest": 44.0,
+                "mine": 24.0
+              },
+              "production_intermediate_input_value": 18.0,
+              "production_output_value": 722.0,
+              "production_possible_agent_ticks": 360,
+              "production_value_added": 704.0,
+              "productive_capital_extraction_value": 106.0,
+              "purposeful_agent_ticks": 327,
+              "submitted_actions": 1169,
+              "submitted_actions_excluding_contention": 1159,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 10238.0,
+              "terminal_economic_value": 422.5,
+              "venture_initiatives": 15,
+              "venture_initiatives_by_type": {
+                "build": 10,
+                "build_started": 4,
+                "offer_trade": 1
+              }
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 85.3167,
+                  "full_horizon_health_pct": 92.7444
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 92.74
+              },
+              "execution": {
+                "components": {
+                  "actions": 1397.0,
+                  "valid_actions": 1219.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 87.26
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 18.0,
+                  "output_value": 722.0,
+                  "possible_agent_ticks": 360.0,
+                  "value_added": 704.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 195.56,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "diagnostic_checkpoint",
+        "score_horizon_ticks": 36,
+        "tick": 36
+      },
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "claude",
+            "model": "claude-sonnet-5",
+            "provider": "claude_cli",
+            "raw": {
+              "action_point_overruns": 46,
+              "contention_failures": 17,
+              "decision_failures": 0,
+              "decisions": 478,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 492.0,
+              "engine_invalid_proposals": 238,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 8.0,
+                "net_service_income": 4.75
+              },
+              "enterprise_supply_value": 12.75,
+              "execution_actions": 1875.0,
+              "execution_contention_actions": 17.0,
+              "execution_decisions": 478.0,
+              "execution_unexecuted_actions": 44.0,
+              "execution_valid_actions": 1635.0,
+              "execution_valid_decisions": 307.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 48000.0,
+              "health_point_ticks": 41123.0,
+              "informal_transfer_value": 2.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 238,
+              "living_agents": 9,
+              "living_terminal_economic_value": 407.5,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 480,
+              "own_capital_output_value": 64.0,
+              "possible_agent_ticks": 480,
+              "production_by_source": {
+                "chop": 249.0,
+                "craft_value_added": 6.0,
+                "fish": 4.0,
+                "gather": 541.0,
+                "harvest": 64.0,
+                "mine": 32.0
+              },
+              "production_intermediate_input_value": 18.0,
+              "production_output_value": 914.0,
+              "production_possible_agent_ticks": 480,
+              "production_value_added": 896.0,
+              "productive_capital_extraction_value": 160.0,
+              "purposeful_agent_ticks": 434,
+              "submitted_actions": 1569,
+              "submitted_actions_excluding_contention": 1552,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 7735.0,
+              "terminal_economic_value": 407.5,
+              "venture_initiatives": 19,
+              "venture_initiatives_by_type": {
+                "build": 10,
+                "build_started": 6,
+                "offer_trade": 3
+              }
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 64.4583,
+                  "full_horizon_health_pct": 85.6729
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 85.67
+              },
+              "execution": {
+                "components": {
+                  "actions": 1875.0,
+                  "valid_actions": 1635.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 87.2
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 18.0,
+                  "output_value": 914.0,
+                  "possible_agent_ticks": 480.0,
+                  "value_added": 896.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 186.67,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "diagnostic_checkpoint",
+        "score_horizon_ticks": 48,
+        "tick": 48
+      },
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "claude",
+            "model": "claude-sonnet-5",
+            "provider": "claude_cli",
+            "raw": {
+              "action_point_overruns": 62,
+              "contention_failures": 19,
+              "decision_failures": 0,
+              "decisions": 586,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 458.0,
+              "engine_invalid_proposals": 302,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 8.0,
+                "net_service_income": 4.75
+              },
+              "enterprise_supply_value": 12.75,
+              "execution_actions": 2286.0,
+              "execution_contention_actions": 19.0,
+              "execution_decisions": 586.0,
+              "execution_unexecuted_actions": 55.0,
+              "execution_valid_actions": 1982.0,
+              "execution_valid_decisions": 368.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 60000.0,
+              "health_point_ticks": 46873.0,
+              "informal_transfer_value": 2.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 302,
+              "living_agents": 8,
+              "living_terminal_economic_value": 437.5,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 600,
+              "own_capital_output_value": 134.0,
+              "possible_agent_ticks": 600,
+              "production_by_source": {
+                "chop": 279.0,
+                "craft_value_added": 6.0,
+                "fish": 8.0,
+                "gather": 678.0,
+                "harvest": 134.0,
+                "mine": 36.0
+              },
+              "production_intermediate_input_value": 18.0,
+              "production_output_value": 1159.0,
+              "production_possible_agent_ticks": 600,
+              "production_value_added": 1141.0,
+              "productive_capital_extraction_value": 250.0,
+              "purposeful_agent_ticks": 538,
+              "submitted_actions": 1950,
+              "submitted_actions_excluding_contention": 1931,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 5750.0,
+              "terminal_economic_value": 451.5,
+              "venture_initiatives": 21,
+              "venture_initiatives_by_type": {
+                "build": 10,
+                "build_started": 7,
+                "offer_trade": 4
+              }
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 47.9167,
+                  "full_horizon_health_pct": 78.1217
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 78.12
+              },
+              "execution": {
+                "components": {
+                  "actions": 2286.0,
+                  "valid_actions": 1982.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 86.7
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 18.0,
+                  "output_value": 1159.0,
+                  "possible_agent_ticks": 600.0,
+                  "value_added": 1141.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 190.17,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "official_endpoint",
+        "score_horizon_ticks": 60,
+        "tick": 60
+      }
+    ],
+    "trial": {
+      "accepted_prior_trial": null,
+      "certification": "diagnostic_only",
+      "code_fingerprint_sha256": "6aa3273d3900c141a98555dba3dcdc4b3ea6384df4996c00ee1497a8b1e11d31",
+      "completed": true,
+      "declared_protocol": "participant-v8-revised",
+      "final_tick": 60,
+      "gift_classification": {
+        "artifact_sha256": null,
+        "classified_gifts": 0,
+        "judge": null,
+        "policy": "Transfers use the sender-declared gift, payment, or barter kind.",
+        "total_gifts": 2
+      },
+      "protocol_compliant": false,
+      "quality_flags": [
+        "benchmark_code_fingerprint_mismatch"
+      ],
+      "seed": 11,
+      "source_fingerprint_compatible": false,
+      "target_ticks": 60
+    }
+  },
+  "communication": {
+    "says_per_agent": {
+      "agent-1": 28,
+      "agent-10": 27,
+      "agent-2": 47,
+      "agent-3": 32,
+      "agent-4": 33,
+      "agent-5": 20,
+      "agent-6": 25,
+      "agent-7": 44,
+      "agent-8": 39,
+      "agent-9": 26
+    },
+    "says_total": 321
+  },
+  "config": {
+    "action_feedback_mode": "baseline",
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "organic",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "memory_char_budget": 2400,
+    "memory_update_max_chars": 240,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "neutral",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "season_length_ticks": 12,
+    "seed": 11,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "specialization_mode": "generalists",
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "storm_exposure_damage": 4,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "town_ledger_action_cost": 1,
+    "town_ledger_output_mode": "disabled",
+    "town_ledger_prompt_mode": "baseline",
+    "town_ledger_seed_mode": "none",
+    "transfer_kind_mode": "self_declared",
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35,
+    "winter_exposure_damage": 3,
+    "world_variant": "frontier"
+  },
+  "diagnostics": {
+    "contract_default_rate_pct": 0.0,
+    "contracts_defaulted": 0,
+    "contracts_proposed": 0,
+    "contracts_settled": 0,
+    "ledger_note_count": 0
+  },
+  "economy": {
+    "access_grants": 4,
+    "claimed_tiles": 0,
+    "construction": {
+      "assets": {
+        "by_owner": {
+          "agent-1": {
+            "by_type": {
+              "farm_plot": 1,
+              "shelter": 1
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 48,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-10",
+              "structure-13"
+            ]
+          },
+          "agent-10": {
+            "by_type": {
+              "farm_plot": 1,
+              "shelter": 1,
+              "storage": 1
+            },
+            "complete": 2,
+            "count": 3,
+            "in_progress": 1,
+            "owner_kind": "agent",
+            "replacement_cost_value": 64,
+            "stored_inventory_value": 14,
+            "structure_ids": [
+              "structure-15",
+              "structure-6",
+              "structure-8"
+            ]
+          },
+          "agent-2": {
+            "by_type": {
+              "farm_plot": 2
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 20,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-17",
+              "structure-7"
+            ]
+          },
+          "agent-3": {
+            "by_type": {
+              "shelter": 1
+            },
+            "complete": 0,
+            "count": 1,
+            "in_progress": 1,
+            "owner_kind": "agent",
+            "replacement_cost_value": 38,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-16"
+            ]
+          },
+          "agent-4": {
+            "by_type": {
+              "farm_plot": 1,
+              "storage": 1
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 26,
+            "stored_inventory_value": 6,
+            "structure_ids": [
+              "structure-1",
+              "structure-11"
+            ]
+          },
+          "agent-5": {
+            "by_type": {
+              "farm_plot": 1,
+              "shelter": 1
+            },
+            "complete": 1,
+            "count": 2,
+            "in_progress": 1,
+            "owner_kind": "agent",
+            "replacement_cost_value": 48,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-14",
+              "structure-3"
+            ]
+          },
+          "agent-6": {
+            "by_type": {
+              "farm_plot": 1
+            },
+            "complete": 1,
+            "count": 1,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 10,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-4"
+            ]
+          },
+          "agent-7": {
+            "by_type": {
+              "farm_plot": 2
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 20,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-12",
+              "structure-2"
+            ]
+          },
+          "agent-9": {
+            "by_type": {
+              "farm_plot": 1,
+              "storage": 1
+            },
+            "complete": 2,
+            "count": 2,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 26,
+            "stored_inventory_value": 33,
+            "structure_ids": [
+              "structure-5",
+              "structure-9"
+            ]
+          }
+        },
+        "by_owner_kind": {
+          "agent": 17
+        },
+        "complete": 14,
+        "count": 17,
+        "in_progress": 3,
+        "replacement_cost_value": 300,
+        "stored_inventory_value": 53
+      },
+      "contributions": {
+        "by_agent": {
+          "agent-1": {
+            "by_item": {
+              "fiber": 5,
+              "wood": 8
+            },
+            "events": 4,
+            "quantity": 13,
+            "structure_ids": [
+              "structure-10",
+              "structure-13"
+            ],
+            "value": 34
+          },
+          "agent-10": {
+            "by_item": {
+              "fiber": 7,
+              "stone": 1,
+              "wood": 11
+            },
+            "events": 4,
+            "quantity": 19,
+            "structure_ids": [
+              "structure-15",
+              "structure-6",
+              "structure-8"
+            ],
+            "value": 51
+          },
+          "agent-2": {
+            "by_item": {
+              "fiber": 4,
+              "stone": 1,
+              "wood": 4
+            },
+            "events": 4,
+            "quantity": 9,
+            "structure_ids": [
+              "structure-13",
+              "structure-17",
+              "structure-7"
+            ],
+            "value": 24
+          },
+          "agent-3": {
+            "by_item": {
+              "fiber": 3,
+              "wood": 8
+            },
+            "events": 3,
+            "quantity": 11,
+            "structure_ids": [
+              "structure-16"
+            ],
+            "value": 30
+          },
+          "agent-4": {
+            "by_item": {
+              "fiber": 4,
+              "wood": 6
+            },
+            "events": 3,
+            "quantity": 10,
+            "structure_ids": [
+              "structure-1",
+              "structure-11"
+            ],
+            "value": 26
+          },
+          "agent-5": {
+            "by_item": {
+              "fiber": 5,
+              "wood": 10
+            },
+            "events": 5,
+            "quantity": 15,
+            "structure_ids": [
+              "structure-14",
+              "structure-3"
+            ],
+            "value": 40
+          },
+          "agent-6": {
+            "by_item": {
+              "fiber": 2,
+              "stone": 1,
+              "wood": 4
+            },
+            "events": 4,
+            "quantity": 7,
+            "structure_ids": [
+              "structure-13",
+              "structure-4"
+            ],
+            "value": 20
+          },
+          "agent-7": {
+            "by_item": {
+              "fiber": 4,
+              "wood": 4
+            },
+            "events": 2,
+            "quantity": 8,
+            "structure_ids": [
+              "structure-12",
+              "structure-2"
+            ],
+            "value": 20
+          },
+          "agent-8": {
+            "by_item": {
+              "wood": 3
+            },
+            "events": 1,
+            "quantity": 3,
+            "structure_ids": [
+              "structure-15"
+            ],
+            "value": 9
+          },
+          "agent-9": {
+            "by_item": {
+              "fiber": 4,
+              "wood": 6
+            },
+            "events": 2,
+            "quantity": 10,
+            "structure_ids": [
+              "structure-5",
+              "structure-9"
+            ],
+            "value": 26
+          }
+        },
+        "by_item": {
+          "fiber": 38,
+          "stone": 3,
+          "wood": 64
+        },
+        "by_structure": {
+          "structure-1": {
+            "by_agent": {
+              "agent-4": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-4",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-10": {
+            "by_agent": {
+              "agent-1": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-1",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-11": {
+            "by_agent": {
+              "agent-4": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 4
+                },
+                "quantity": 6,
+                "value": 16
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 4
+            },
+            "owner_id": "agent-4",
+            "owner_kind": "agent",
+            "quantity": 6,
+            "type": "storage",
+            "value": 16
+          },
+          "structure-12": {
+            "by_agent": {
+              "agent-7": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-7",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-13": {
+            "by_agent": {
+              "agent-1": {
+                "by_item": {
+                  "fiber": 3,
+                  "wood": 6
+                },
+                "quantity": 9,
+                "value": 24
+              },
+              "agent-2": {
+                "by_item": {
+                  "stone": 1
+                },
+                "quantity": 1,
+                "value": 4
+              },
+              "agent-6": {
+                "by_item": {
+                  "stone": 1,
+                  "wood": 2
+                },
+                "quantity": 3,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 3,
+              "stone": 2,
+              "wood": 8
+            },
+            "owner_id": "agent-1",
+            "owner_kind": "agent",
+            "quantity": 13,
+            "type": "shelter",
+            "value": 38
+          },
+          "structure-14": {
+            "by_agent": {
+              "agent-5": {
+                "by_item": {
+                  "fiber": 3,
+                  "wood": 8
+                },
+                "quantity": 11,
+                "value": 30
+              }
+            },
+            "by_item": {
+              "fiber": 3,
+              "wood": 8
+            },
+            "owner_id": "agent-5",
+            "owner_kind": "agent",
+            "quantity": 11,
+            "type": "shelter",
+            "value": 30
+          },
+          "structure-15": {
+            "by_agent": {
+              "agent-10": {
+                "by_item": {
+                  "fiber": 3,
+                  "stone": 1,
+                  "wood": 5
+                },
+                "quantity": 9,
+                "value": 25
+              },
+              "agent-8": {
+                "by_item": {
+                  "wood": 3
+                },
+                "quantity": 3,
+                "value": 9
+              }
+            },
+            "by_item": {
+              "fiber": 3,
+              "stone": 1,
+              "wood": 8
+            },
+            "owner_id": "agent-10",
+            "owner_kind": "agent",
+            "quantity": 12,
+            "type": "shelter",
+            "value": 34
+          },
+          "structure-16": {
+            "by_agent": {
+              "agent-3": {
+                "by_item": {
+                  "fiber": 3,
+                  "wood": 8
+                },
+                "quantity": 11,
+                "value": 30
+              }
+            },
+            "by_item": {
+              "fiber": 3,
+              "wood": 8
+            },
+            "owner_id": "agent-3",
+            "owner_kind": "agent",
+            "quantity": 11,
+            "type": "shelter",
+            "value": 30
+          },
+          "structure-17": {
+            "by_agent": {
+              "agent-2": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-2",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-2": {
+            "by_agent": {
+              "agent-7": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-7",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-3": {
+            "by_agent": {
+              "agent-5": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-5",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-4": {
+            "by_agent": {
+              "agent-6": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-6",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-5": {
+            "by_agent": {
+              "agent-9": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-9",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-6": {
+            "by_agent": {
+              "agent-10": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-10",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-7": {
+            "by_agent": {
+              "agent-2": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-2",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          },
+          "structure-8": {
+            "by_agent": {
+              "agent-10": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 4
+                },
+                "quantity": 6,
+                "value": 16
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 4
+            },
+            "owner_id": "agent-10",
+            "owner_kind": "agent",
+            "quantity": 6,
+            "type": "storage",
+            "value": 16
+          },
+          "structure-9": {
+            "by_agent": {
+              "agent-9": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 4
+                },
+                "quantity": 6,
+                "value": 16
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 4
+            },
+            "owner_id": "agent-9",
+            "owner_kind": "agent",
+            "quantity": 6,
+            "type": "storage",
+            "value": 16
+          }
+        },
+        "events": 32,
+        "quantity": 105,
+        "value": 280
+      },
+      "contributor_ownership": {
+        "agent-1": {
+          "contributed_quantity": 13,
+          "contributed_value": 34,
+          "contribution_value_by_owner": {
+            "agent-1": 34
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 34,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 48
+        },
+        "agent-10": {
+          "contributed_quantity": 19,
+          "contributed_value": 51,
+          "contribution_value_by_owner": {
+            "agent-10": 51
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 51,
+          "owned_asset_count": 3,
+          "owned_asset_replacement_cost_value": 64
+        },
+        "agent-2": {
+          "contributed_quantity": 9,
+          "contributed_value": 24,
+          "contribution_value_by_owner": {
+            "agent-1": 4,
+            "agent-2": 20
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 4,
+          "contribution_value_to_self_owned_assets": 20,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 20
+        },
+        "agent-3": {
+          "contributed_quantity": 11,
+          "contributed_value": 30,
+          "contribution_value_by_owner": {
+            "agent-3": 30
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 30,
+          "owned_asset_count": 1,
+          "owned_asset_replacement_cost_value": 38
+        },
+        "agent-4": {
+          "contributed_quantity": 10,
+          "contributed_value": 26,
+          "contribution_value_by_owner": {
+            "agent-4": 26
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 26,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 26
+        },
+        "agent-5": {
+          "contributed_quantity": 15,
+          "contributed_value": 40,
+          "contribution_value_by_owner": {
+            "agent-5": 40
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 40,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 48
+        },
+        "agent-6": {
+          "contributed_quantity": 7,
+          "contributed_value": 20,
+          "contribution_value_by_owner": {
+            "agent-1": 10,
+            "agent-6": 10
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 10,
+          "contribution_value_to_self_owned_assets": 10,
+          "owned_asset_count": 1,
+          "owned_asset_replacement_cost_value": 10
+        },
+        "agent-7": {
+          "contributed_quantity": 8,
+          "contributed_value": 20,
+          "contribution_value_by_owner": {
+            "agent-7": 20
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 20,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 20
+        },
+        "agent-8": {
+          "contributed_quantity": 3,
+          "contributed_value": 9,
+          "contribution_value_by_owner": {
+            "agent-10": 9
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 9,
+          "contribution_value_to_self_owned_assets": 0,
+          "owned_asset_count": 0,
+          "owned_asset_replacement_cost_value": 0
+        },
+        "agent-9": {
+          "contributed_quantity": 10,
+          "contributed_value": 26,
+          "contribution_value_by_owner": {
+            "agent-9": 26
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 26,
+          "owned_asset_count": 2,
+          "owned_asset_replacement_cost_value": 26
+        }
+      }
+    },
+    "food_spoilage_events": 47,
+    "gift_by_item": {
+      "coin": 2,
+      "food": 1
+    },
+    "gift_categories": {
+      "materials": {
+        "by_item": {
+          "coin": 2
+        },
+        "quantity": 2,
+        "value": 2
+      },
+      "subsistence": {
+        "by_item": {
+          "food": 1
+        },
+        "quantity": 1,
+        "value": 2
+      }
+    },
+    "gift_detail": [
+      {
+        "category": "subsistence_only",
+        "from": "agent-10",
+        "group_status": "out_group",
+        "items": {
+          "food": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 15,
+        "to": "agent-5",
+        "value": 2
+      },
+      {
+        "category": "materials_only",
+        "from": "agent-4",
+        "group_status": "out_group",
+        "items": {
+          "coin": 2
+        },
+        "quantity": 2,
+        "shared_groups": [],
+        "tick": 40,
+        "to": "agent-1",
+        "value": 2
+      }
+    ],
+    "gift_event_categories": {
+      "empty": 0,
+      "materials_only": 1,
+      "mixed": 0,
+      "subsistence_only": 1
+    },
+    "gift_group_status": {
+      "in_group": 0,
+      "out_group": 2,
+      "unknown": 0
+    },
+    "gift_network": {
+      "agent-10->agent-5": 1,
+      "agent-4->agent-1": 1
+    },
+    "gift_network_quantity": {
+      "agent-10->agent-5": 1,
+      "agent-4->agent-1": 2
+    },
+    "gift_network_value": {
+      "agent-10->agent-5": 2,
+      "agent-4->agent-1": 2
+    },
+    "gift_quantity": 3,
+    "gift_value": 4,
+    "gift_value_by_item": {
+      "coin": 2,
+      "food": 2
+    },
+    "gifts": 2,
+    "institutions": {
+      "access_fees": {
+        "by_item": {},
+        "by_structure": {},
+        "payments": 0,
+        "policies_set": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contracts": {
+        "accepted": 0,
+        "advance_value": 0,
+        "collateral_value": 0,
+        "defaulted": 0,
+        "fulfilled": 0,
+        "offered": 0,
+        "repayment_value": 0,
+        "status": {}
+      },
+      "delivery_contracts": {
+        "accepted": 0,
+        "cancelled": 0,
+        "default_rate_pct": 0.0,
+        "defaulted": 0,
+        "expired": 0,
+        "proposed": 0,
+        "settled": 0
+      },
+      "dividends": {
+        "by_item": {},
+        "claims": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "ledger_note_count": 0,
+      "market_history_entries": 1,
+      "upkeep": {
+        "by_item": {
+          "fiber": 23
+        },
+        "maintenance_actions": 23,
+        "missed_cycles": 41,
+        "paid_cycles": 3,
+        "supplied_value": 46
+      }
+    },
+    "trades": {
+      "accept_attempts": 1,
+      "accept_success_rate_pct": 100.0,
+      "acceptance_latency_ticks": {
+        "average": 1.0,
+        "max": 1,
+        "median": 1.0,
+        "min": 1,
+        "samples": 1
+      },
+      "accepted": 1,
+      "accepted_by_item": {
+        "food": 2,
+        "stone": 1
+      },
+      "accepted_detail": [
+        {
+          "accepted_by": "agent-3",
+          "accepted_count": 1,
+          "created_tick": 35,
+          "escrow_position": {
+            "x": 12,
+            "y": 12
+          },
+          "escrowed": false,
+          "expires_tick": 38,
+          "from_agent": "agent-10",
+          "give": {
+            "food": 2
+          },
+          "id": "trade-1",
+          "lots_remaining": 0,
+          "lots_total": 1,
+          "market_scope": "local",
+          "public": false,
+          "receive": {
+            "stone": 1
+          },
+          "standing": false,
+          "status": "accepted",
+          "to_agent": "agent-3"
+        }
+      ],
+      "accepted_give_value": 4,
+      "accepted_group_status": {
+        "in_group": 0,
+        "out_group": 1,
+        "unknown": 0
+      },
+      "accepted_receive_value": 4,
+      "accepted_transfer_detail": [
+        {
+          "from": "agent-10",
+          "give": {
+            "food": 2
+          },
+          "give_value": 4,
+          "group_status": "out_group",
+          "latency_ticks": 1,
+          "receive": {
+            "stone": 1
+          },
+          "receive_value": 4,
+          "shared_groups": [],
+          "tick": 36,
+          "to": "agent-3",
+          "trade_id": "trade-1"
+        }
+      ],
+      "accepted_value": 8,
+      "cancelled": 0,
+      "conversion_rate_pct": 25.0,
+      "direct_offered": 4,
+      "expired": 3,
+      "invalid_accept_reasons": {},
+      "invalid_accepts": 0,
+      "offered": 4,
+      "offered_group_status": {
+        "in_group": 0,
+        "out_group": 4,
+        "unknown": 0
+      },
+      "open": 0,
+      "public_offered": 0,
+      "rejected": 0,
+      "resolution_rate_pct": 100.0,
+      "resolved_conversion_rate_pct": 25.0,
+      "status_counts": {
+        "accepted": 1,
+        "expired": 3
+      }
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "accept_trade": 36,
+    "build": 3,
+    "build_started": 3,
+    "craft": 8,
+    "death": 45,
+    "gift": 15,
+    "grant_access": 35,
+    "offer_trade": 35
+  },
+  "population": {
+    "assignment_seed": 0,
+    "assignment_strategy": "ordered",
+    "assignments": {
+      "agent-1": "cohort-1",
+      "agent-10": "cohort-1",
+      "agent-2": "cohort-1",
+      "agent-3": "cohort-1",
+      "agent-4": "cohort-1",
+      "agent-5": "cohort-1",
+      "agent-6": "cohort-1",
+      "agent-7": "cohort-1",
+      "agent-8": "cohort-1",
+      "agent-9": "cohort-1"
+    },
+    "cohorts": {
+      "cohort-1": {
+        "actions": {
+          "accept_trade": 1,
+          "agent_spawned": 10,
+          "broadcast": 36,
+          "build": 14,
+          "build_started": 7,
+          "chop": 60,
+          "consume": 243,
+          "contention_failure": 19,
+          "contribute": 15,
+          "craft": 2,
+          "death": 2,
+          "drop": 36,
+          "expire_trade": 3,
+          "farm": 31,
+          "fish": 4,
+          "food_spoilage": 47,
+          "gather": 256,
+          "gift": 2,
+          "grant_access": 4,
+          "harvest": 32,
+          "inspect": 52,
+          "invalid_action": 302,
+          "maintain_structure": 23,
+          "mine": 7,
+          "move": 477,
+          "offer_trade": 4,
+          "pick_up": 7,
+          "retrieve": 3,
+          "say": 321,
+          "store": 16,
+          "structure_upkeep_missed": 41,
+          "structure_upkeep_paid": 3,
+          "survival_damage": 140,
+          "wait": 333
+        },
+        "agents": [
+          "agent-1",
+          "agent-10",
+          "agent-2",
+          "agent-3",
+          "agent-4",
+          "agent-5",
+          "agent-6",
+          "agent-7",
+          "agent-8",
+          "agent-9"
+        ],
+        "billing_mode": "claude_plan",
+        "brain": "claude",
+        "communication": 321,
+        "contention_failures": 19,
+        "dead": 2,
+        "decisions": 586,
+        "gifts_sent": 2,
+        "initial_agents": 10,
+        "invalid_actions": 302,
+        "invalid_actions_per_decision": 0.515,
+        "living": 8,
+        "model": "claude-sonnet-5",
+        "offer_conversion_rate_pct": 25.0,
+        "provider": "claude_cli",
+        "reasoning_effort": "medium",
+        "successful_offers": 1,
+        "trades_accepted": 1,
+        "trades_offered": 4,
+        "usage": {
+          "cached_tokens": 3150648,
+          "calls": 586,
+          "completion_tokens": 720999,
+          "estimated_cost": {
+            "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+            "available": true,
+            "basis": "token_derived_api_list_price",
+            "cache_write_tokens": 1910283,
+            "cached_input_tokens": 3150648,
+            "calls": 586,
+            "cost_usd": {
+              "cache_write": 7.163561,
+              "cached_input": 0.945194,
+              "output": 10.814985,
+              "total": 18.927725,
+              "uncached_input": 0.003984
+            },
+            "models": {
+              "claude-sonnet-5": {
+                "cache_write_tokens": 1910283,
+                "cached_input_tokens": 3150648,
+                "calls": 586,
+                "cost_usd": 18.927725,
+                "output_tokens": 720999,
+                "rates_per_million_tokens": {
+                  "cache_write": 3.75,
+                  "cached_input": 0.3,
+                  "input": 3.0,
+                  "output": 15.0
+                },
+                "uncached_input_tokens": 1328
+              }
+            },
+            "output_tokens": 720999,
+            "provider_cost_coverage": {
+              "available": true,
+              "reported_calls": 586,
+              "reported_subtotal_usd": 0.0,
+              "total_cost_usd": 0.0,
+              "unreported_calls": 0
+            },
+            "provider_reported_cost_usd": 0.0,
+            "rate_card": {
+              "effective_date": "2026-09-05",
+              "sources": {
+                "anthropic": "https://platform.claude.com/docs/en/pricing",
+                "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                "openai": "https://developers.openai.com/api/docs/pricing",
+                "openrouter": "https://openrouter.ai/models",
+                "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+              },
+              "unit": "usd_per_million_tokens"
+            },
+            "reasoning_output_tokens": 369837,
+            "uncached_input_tokens": 1328,
+            "unknown_models": []
+          },
+          "prompt_tokens": 5062259,
+          "resolved_models": {
+            "claude-sonnet-5": 586
+          },
+          "simulation_credits": null,
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "interaction_matrices": {
+      "accepted_trades": {
+        "cohort-1->cohort-1": 1
+      },
+      "construction_contributions": {
+        "cohort-1->unknown": 15
+      },
+      "gifts": {
+        "cohort-1->cohort-1": 2
+      }
+    },
+    "total_agents": 10,
+    "type": "claude"
+  },
+  "reliability": {
+    "action_failure_rate_pct": 12.2,
+    "ambiguous_boundary_failure_events": 0,
+    "benchmark_integrity_status": "clean",
+    "contention_failure_rate_pct": 0.7,
+    "decision_attempts": 586,
+    "decision_failure_rate_pct": 0.0,
+    "harness_failure_events": 0,
+    "invalid_action_rate_pct": 11.5,
+    "llm_failure_events": 0,
+    "llm_failures_by_agent": {},
+    "llm_provider_failure_events": 0,
+    "llm_quota_failure_events": 0,
+    "missing_usage_decisions": [],
+    "model_output_failure_events": 0,
+    "quality_flags": [],
+    "quality_status": "clean",
+    "usage_coverage_basis": "distinct_tick_and_agent",
+    "usage_record_coverage_pct": 100.0
+  },
+  "run": {
+    "completed": true,
+    "completion_evidence": "run_completed",
+    "final_tick": 60,
+    "status": "completed",
+    "stop_reason": null,
+    "target_ticks": 60
+  },
+  "schema_version": 1,
+  "source": "run",
+  "structures": {
+    "complete": {
+      "farm_plot": 10,
+      "shelter": 1,
+      "storage": 3
+    },
+    "coop_builds": [
+      {
+        "contributors": [
+          "agent-1",
+          "agent-2",
+          "agent-6"
+        ],
+        "type": "shelter"
+      },
+      {
+        "contributors": [
+          "agent-10",
+          "agent-8"
+        ],
+        "type": "shelter"
+      }
+    ],
+    "in_progress": {
+      "shelter": 3
+    },
+    "ownership": {
+      "agent-1": 2,
+      "agent-10": 3,
+      "agent-2": 2,
+      "agent-3": 1,
+      "agent-4": 2,
+      "agent-5": 2,
+      "agent-6": 1,
+      "agent-7": 2,
+      "agent-9": 2
+    },
+    "timeline": [
+      {
+        "agent": "agent-4",
+        "message": "Agent 4 started building farm_plot (needs {'wood': 1}).",
+        "tick": 3
+      },
+      {
+        "agent": "agent-6",
+        "message": "Agent 6 started building farm_plot (needs {'wood': 2}).",
+        "tick": 5
+      },
+      {
+        "agent": "agent-4",
+        "message": "Agent 4 completed farm_plot (built by 1 agent(s)).",
+        "tick": 5
+      },
+      {
+        "agent": "agent-6",
+        "message": "Agent 6 completed farm_plot (built by 1 agent(s)).",
+        "tick": 6
+      },
+      {
+        "agent": "agent-1",
+        "message": "Agent 1 started building shelter (needs {'wood': 6, 'stone': 2}).",
+        "tick": 30
+      },
+      {
+        "agent": "agent-5",
+        "message": "Agent 5 started building shelter (needs {'wood': 4, 'stone': 2, 'fiber': 1}).",
+        "tick": 32
+      },
+      {
+        "agent": "agent-6",
+        "message": "Agent 6 completed shelter (built by 3 agent(s)).",
+        "tick": 35
+      },
+      {
+        "agent": "agent-10",
+        "message": "Agent 10 started building shelter (needs {'wood': 6, 'stone': 1}).",
+        "tick": 38
+      },
+      {
+        "agent": "agent-3",
+        "message": "Agent 3 started building shelter (needs {'wood': 5, 'stone': 2}).",
+        "tick": 39
+      },
+      {
+        "agent": "agent-2",
+        "message": "Agent 2 started building farm_plot (needs {'wood': 2}).",
+        "tick": 53
+      },
+      {
+        "agent": "agent-2",
+        "message": "Agent 2 completed farm_plot (built by 1 agent(s)).",
+        "tick": 54
+      }
+    ]
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 82,
+        "inventory": {
+          "coin": 6,
+          "food": 8,
+          "tool": 1
+        },
+        "wealth": 34
+      },
+      "agent-10": {
+        "alive": true,
+        "groups": [],
+        "health": 40,
+        "inventory": {
+          "food": 3,
+          "wood": 2
+        },
+        "wealth": 12
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 60,
+        "inventory": {
+          "coin": 4,
+          "fiber": 7,
+          "food": 2
+        },
+        "wealth": 22
+      },
+      "agent-3": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {},
+        "wealth": 0
+      },
+      "agent-4": {
+        "alive": true,
+        "groups": [],
+        "health": 66,
+        "inventory": {
+          "coin": 2,
+          "fiber": 2
+        },
+        "wealth": 6
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 19,
+        "inventory": {
+          "fiber": 4,
+          "water": 1,
+          "wood": 2
+        },
+        "wealth": 15
+      },
+      "agent-6": {
+        "alive": true,
+        "groups": [],
+        "health": 50,
+        "inventory": {
+          "coin": 4,
+          "fiber": 4,
+          "wood": 3
+        },
+        "wealth": 21
+      },
+      "agent-7": {
+        "alive": true,
+        "groups": [],
+        "health": 69,
+        "inventory": {
+          "coin": 4,
+          "food": 9
+        },
+        "wealth": 22
+      },
+      "agent-8": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 7
+        },
+        "wealth": 14
+      },
+      "agent-9": {
+        "alive": true,
+        "groups": [],
+        "health": 72,
+        "inventory": {
+          "coin": 4,
+          "fiber": 5,
+          "food": 2
+        },
+        "wealth": 18
+      }
+    },
+    "dead": 2,
+    "deaths": [
+      {
+        "agent": "agent-3",
+        "message": "Agent 3 died.",
+        "tick": 45
+      },
+      {
+        "agent": "agent-8",
+        "message": "Agent 8 died.",
+        "tick": 59
+      }
+    ],
+    "living": 8,
+    "survival_damage_events": 140
+  },
+  "transcript": [
+    {
+      "agent": "agent-1",
+      "message": "Hi agent-6, gathering fiber/food here at (6,10). Plenty of plains resources nearby.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-10",
+      "message": "Hello agent-5, starting to gather fiber near plains at (11,10). Anyone want to coordinate on a farm plot?",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-2",
+      "message": "Hi agent-7, I'm gathering resources nearby. Let me know if you want to trade food/water.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-3",
+      "message": "Hi agent-8, I'm mining stone/ore here at (12,2). Let me know if you want to trade.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-4",
+      "message": "Hi agent-9, I'm gathering fiber near the plains, let me know if you want to trade.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-5",
+      "message": "Hello agent-10, heading toward the forest to gather wood.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-7",
+      "message": "Hi agent-2, I'm nearby gathering wood/fiber. Want to coordinate on a shared shelter?",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-8",
+      "message": "Hi agent-3, mining up here on the mountain. Let me know if you need stone/ore trades later.",
+      "scope": "local",
+      "tick": 0
+    },
+    {
+      "agent": "agent-10",
+      "message": "Heading to (11,9) to gather fiber and food, will share progress.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-7, sounds good on a shared shelter. I'm gathering fiber/wood nearby - let's pool wood+fiber+stone once we have enough.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-3",
+      "message": "Mining stone/ore at (12,2), happy to trade surplus for food/water later.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-4",
+      "message": "Heading to forest for wood, agent-9. Can trade food/water if you need it.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-5",
+      "message": "Gathering wood and fiber at (13,11), forest is rich here.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-6",
+      "message": "Chopping wood at forest (6,8), heading south to gather fiber next.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-7",
+      "message": "Hi agent-2, happy to coordinate on a shared shelter once we have enough wood/stone/fiber.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-8",
+      "message": "Heading south to scout for forest/plains/water - will share what I find.",
+      "scope": "local",
+      "tick": 1
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading to gather fiber at [1,3], will bring it back for our shelter build.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading south from (12,2), still all mountain so far. Will report if I find forest/plains/water.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-4",
+      "message": "Got 2 fiber, chopping wood now for a farm_plot. Can trade food/water later, agent-9.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to (3,1) for fiber to finish farm_plot materials - have 3 wood already, need 1 more fiber. Let's meet up soon to pool for shelter too.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-8",
+      "message": "Still in mountains, pushing south to find plains/water. Will report findings.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-9",
+      "message": "Low on energy, resting a bit before heading to forest for more wood.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-10",
+      "message": "Moving to (10,9) to refill water and gather more fiber, will share fiber if needed.",
+      "scope": "local",
+      "tick": 2
+    },
+    {
+      "agent": "agent-3",
+      "message": "Still mountain at (12,4), continuing south for plains/forest/water.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-4",
+      "message": "Building farm_plot now with my wood+fiber. Will trade food/water surplus soon, agent-9.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-7",
+      "message": "Built a farm_plot at (3,1). Resting to recover energy, then will gather fiber/wood for the shared shelter. Agent-2, how much do you have so far?",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-8",
+      "message": "Still in mountains at (12,4), continuing south to find forest/plains/water. Will report.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-10",
+      "message": "Heading further south to scout for forest/mountain tiles (wood/stone) for crafting; will share findings.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-2",
+      "message": "Agent-7, low on water/energy, pausing to recover. Will bring fiber/wood for shelter once resupplied.",
+      "scope": "local",
+      "tick": 3
+    },
+    {
+      "agent": "agent-4",
+      "message": "Restocking water and food before finishing the farm_plot. Still need 1 more wood - agent-9, want to trade fiber/water for wood?",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-7",
+      "message": "Farmed the plot at (3,1) and gathering wood here. Have 1 wood, need fiber/stone too for shelter - anyone near a mountain tile?",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-8",
+      "message": "Found plains with fiber/food at (14,4), heading there for supplies.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-9",
+      "message": "Resting to recover energy before building farm_plot; have enough fiber/wood ready.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-10",
+      "message": "Found a forest tile at (10,13) with wood - heading there now to chop, will share wood if others need it.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-2",
+      "message": "Gathered more wood at [1,3], resting to recover energy. Will bring wood/fiber for shelter soon.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-3",
+      "message": "Moving east toward plains at (14,4) for fiber/food, will report.",
+      "scope": "local",
+      "tick": 4
+    },
+    {
+      "agent": "agent-7",
+      "message": "Chopped wood and gathered fiber at (3,1); have some wood+fiber now for shelter, still need stone from a mountain tile.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-8",
+      "message": "Energy critically low, resting here at (13,4) before moving to plains for fiber/food.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-9",
+      "message": "Building my own farm_plot now with fiber/wood at (2,7). Can trade fiber for water/food later, agent-4.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-10",
+      "message": "At forest (10,13), chopping wood - will share extra wood with anyone nearby who needs it.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-2",
+      "message": "Moving to [1,4] to gather fiber for shelter, energy is a bit low so pacing myself.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-3",
+      "message": "Reached plains area, gathering food and fiber now.",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-4",
+      "message": "Chopped the last wood needed - farm_plot should be complete now. Thanks for the offer, agent-9!",
+      "scope": "local",
+      "tick": 5
+    },
+    {
+      "agent": "agent-7",
+      "message": "Farmed the plot again and chopped more wood at (3,1). Still need stone for the shelter - has anyone spotted a mountain tile?",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-8",
+      "message": "Heading to plains at (14,4) to gather food and fiber.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-9",
+      "message": "Farm_plot is up and running at (2,7). Happy to trade fiber/food for water later, agent-4.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-10",
+      "message": "Chopping wood at (10,13), have extra fiber to trade for wood/stone if anyone needs.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-2",
+      "message": "Got fiber3 wood2 now, chopping more wood at [1,4]. Still need stone - any mountain nearby you've seen?",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-3",
+      "message": "Resting at (14,4) to recover energy before continuing to gather fiber/wood.",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-4",
+      "message": "Farm plot at (1,8) is done - farming it now for food. Thanks for the collab, agent-9!",
+      "scope": "local",
+      "tick": 6
+    },
+    {
+      "agent": "agent-7",
+      "message": "Energy critically low, resting a few ticks to recover before continuing wood/fiber gathering. Still no mountain spotted for stone.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-8",
+      "message": "Moving to (14,5) to gather food and fiber, plenty there.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-9",
+      "message": "Farm plot at (2,7) still producing well. Trading fiber/food for water if anyone has spare, agent-4.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-10",
+      "message": "Built a farm_plot at (10,13) using spare fiber/wood - free to use for planting later.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-2",
+      "message": "Chopping 1 more wood at [1,4], carry near full. Still no mountain found for stone - anyone spotted one?",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-2",
+      "message": "Chopping 1 more wood at [1,4], carry near full. Still no mountain found for stone - anyone spotted one?",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-3",
+      "message": "Gathering food and fiber at (14,5), energy recovered to 29.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-4",
+      "message": "Farming again at (1,8), happy to trade fiber/wood for water with you later, agent-9.",
+      "scope": "local",
+      "tick": 7
+    },
+    {
+      "agent": "agent-8",
+      "message": "Heading to (15,5) to gather food/fiber, water reserve low.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-9",
+      "message": "Resting to recover energy after farm work; still open to trading fiber/food for water, agent-4.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-10",
+      "message": "Farm plot at (10,13) is active - free to use for planting food, resting to recover energy now.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-2",
+      "message": "Ate food I gathered, reserve still low. Still no mountain spotted for stone - let me know if you find one.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading to (15,5) for food/fiber, tile at (14,5) may be depleted now.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-4",
+      "message": "Farm plot producing well at (1,8). Still short on water myself but will trade extra once I have some.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to water tile at (1,1) to refill - water reserve was getting low. Still no mountain spotted for stone.",
+      "scope": "local",
+      "tick": 8
+    },
+    {
+      "agent": "agent-9",
+      "message": "Heading to the water tile to refill; will trade fiber/food for water once I have surplus, agent-4.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-2",
+      "message": "Built a farm_plot at [1,4] using spare fiber/wood - should help food supply. Still no stone/mountain found for shelter.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-3",
+      "message": "Water critically low, heading south to (15,7) for food/fiber; no water source found yet.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-4",
+      "message": "Farm plot at (1,8) still producing well. Can trade extra water for fiber if agent-9 wants.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-7",
+      "message": "Still no mountain found for stone. Heading to (2,0) to gather fiber for shelter. Let me know if you spot a mountain tile.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-8",
+      "message": "Energy low, consuming food and heading to (15,7) for food/fiber gathering.",
+      "scope": "local",
+      "tick": 9
+    },
+    {
+      "agent": "agent-2",
+      "message": "Farming the plot at [1,4] now; still scouting for mountain/stone for shelter.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-4",
+      "message": "Farm plot at (1,8) hit its food cap for now. Gathering food from the forest tile instead.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-7",
+      "message": "Dropped some wood to free carry space, gathering food, still scouting south for a mountain tile.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-8",
+      "message": "Gathering food/fiber at (15,7), then resting to recover energy.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-9",
+      "message": "Got some water now, agent-4 - happy to trade fiber/food for extra water when you have surplus.",
+      "scope": "local",
+      "tick": 10
+    },
+    {
+      "agent": "agent-2",
+      "message": "Farming again at [1,4]; still no stone/mountain found for shelter. Anyone spot one?",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-3",
+      "message": "Resting here to recover energy after gathering fiber; carry is full.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-4",
+      "message": "Gathering food and farming again; will have surplus water to trade soon, agent-9.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-7",
+      "message": "Food was low, consumed and gathered more. Still hunting for a mountain tile for stone - heading further south.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-9",
+      "message": "Farming at (2,7), have surplus water/food if anyone wants to trade for fiber or wood, agent-4.",
+      "scope": "local",
+      "tick": 11
+    },
+    {
+      "agent": "agent-2",
+      "message": "Farming again at [1,4]; still scouting for stone/mountain for shelter. Let me know if you find one, agent-7.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-4",
+      "message": "Thanks agent-9, once I have surplus water I'll trade for fiber/wood - still building up reserves.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-7",
+      "message": "Energy critically low (7), resting this tick to recover before continuing search for mountain/stone.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-8",
+      "message": "Heading to forest at (15,11) for wood; still haven't found water nearby - anyone know of a source?",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-9",
+      "message": "Chopping wood now, agent-4; will have wood surplus soon to trade or build storage.",
+      "scope": "local",
+      "tick": 12
+    },
+    {
+      "agent": "agent-4",
+      "message": "Chopping wood and gathering fiber now, agent-9 - should have surplus soon to trade for water/food.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-8",
+      "message": "Energy critical (8), resting at (15,11) forest. Still need water - no source found within radius 2 yet.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-9",
+      "message": "Chopping wood now, agent-4; will have wood surplus soon to trade for water.",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-2",
+      "message": "Gathering food at [1,4] to restock reserves; still no stone found for shelter, agent-7 any luck?",
+      "scope": "local",
+      "tick": 13
+    },
+    {
+      "agent": "agent-4",
+      "message": "Farm plot went inactive from missed upkeep - grabbing fiber to fix it now.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-5",
+      "message": "Critical: water 0, energy 2. Do you know any water source nearby or have spare water to trade/gift? I have coin and fiber.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-6",
+      "message": "Agent-6 here, low on water - anyone know where the nearest water source or well is?",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-7",
+      "message": "No stone found yet, still scouting south past (2,5) for mountain terrain. Will report if I find any.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-8",
+      "message": "Still searching for water, moving west from (15,11); will report if found.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-9",
+      "message": "Freed up some carry space, chopping more wood now - happy to trade wood/fiber for food once I have surplus, agent-4.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-10",
+      "message": "Agent-5, I have no water to spare right now but there's a farm plot with food here at (10,13) if you need to eat.",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-2",
+      "message": "Resting to recover energy (9/30) before continuing farm work. Still no stone found, agent-7 - any luck?",
+      "scope": "local",
+      "tick": 14
+    },
+    {
+      "agent": "agent-5",
+      "message": "Still critical - water 0, energy near 0. Anyone know a water tile or well nearby? Will trade coin/fiber.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-6",
+      "message": "Found water access at (8,7) adjacent to water tiles east - gathering now.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-7",
+      "message": "Still searching south for mountain/stone, food reserve was low so gathering some here first.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-8",
+      "message": "Water critical here, no source found east/south. Anyone seen water or a well nearby?",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-9",
+      "message": "Resting to recover energy before next wood/fiber run.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-6, water tiles are at (9,7),(9,8),(9,9) - just east of the plains near me.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-10",
+      "message": "Agent-5, here's 1 food to help with hunger. Still no water source found nearby, sorry.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-2",
+      "message": "Energy recovered to 29, back to farming. Still watching for stone/mountain reports from agent-7.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-3",
+      "message": "Water critical at 0, exploring west from (13,11) to find water source.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-4",
+      "message": "Reactivating farm_plot with fiber now, agent-9.",
+      "scope": "local",
+      "tick": 15
+    },
+    {
+      "agent": "agent-6",
+      "message": "Thanks agent-1, gathering water now at (8,7).",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to (0,6) water tile to refill, still haven't found mountain/stone for shelter.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-8",
+      "message": "Still no water found near (13,9). Moving further north to search. Anyone found a source?",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-9",
+      "message": "Reactivated my farm plot with fiber upkeep, farming now.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-10",
+      "message": "Still scanning for water sources - none found within my visibility yet. Will share if I find any.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-2",
+      "message": "Farm plot maxed out, gathering food directly from tile instead. Still no stone/mountain found - keep scouting, agent-7.",
+      "scope": "local",
+      "tick": 16
+    },
+    {
+      "agent": "agent-7",
+      "message": "Refilling water at (0,6) area, then continuing east/south scout for mountain terrain.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-9",
+      "message": "Farm plot capped again, freeing carry space and chopping wood for storage build.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading south toward you, agent-7. Still no mountain found - let's coordinate scouting for stone together.",
+      "scope": "local",
+      "tick": 17
+    },
+    {
+      "agent": "agent-9",
+      "message": "Almost have enough wood+fiber for storage (2 fiber+4 wood); chopping one more wood now.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-2",
+      "message": "Consumed some food/water to free carry space, continuing south to meet you and search for stone, agent-7.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-5",
+      "message": "Found water at (3,14) and (4,15)! Heading there now.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-7",
+      "message": "Energy low, resting a moment near (2,6) before resuming mountain/stone search.",
+      "scope": "local",
+      "tick": 18
+    },
+    {
+      "agent": "agent-9",
+      "message": "Building storage at (2,7) now with 2 fiber+4 wood.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-2",
+      "message": "Grabbed some water, heading your way agent-7 to continue the stone/mountain search together.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading to (12,7) for water, thanks agent-8, water at 0 and energy critical.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-5",
+      "message": "Finally at water source (3,14)/(4,15), refilling now.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-7",
+      "message": "Moving east through forest into plains at (4,6), still scouting for mountain/stone.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-8",
+      "message": "Water confirmed at (11,7)/(10,7)/(11,6). Now gathering food at (12,7)/(13,7) plains.",
+      "scope": "local",
+      "tick": 19
+    },
+    {
+      "agent": "agent-10",
+      "message": "Energy and water restored, heading back to farm plot at (10,13) to resume work.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading east to link up with agent-7 near (4,6), still hunting for mountain/stone.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-3",
+      "message": "Reached (12,7), gathering water now. Thanks for the tip agent-8.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-5",
+      "message": "Water crisis resolved, now gathering food at (4,14).",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-7",
+      "message": "Still scouting east for mountain/stone, now near (6,6).",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-8",
+      "message": "At (13,7) gathering food/fiber, water source confirmed nearby at (11,7). Energy20/food10/water16 stable.",
+      "scope": "local",
+      "tick": 20
+    },
+    {
+      "agent": "agent-2",
+      "message": "Moving to (6,6) to link with agent-7, inspecting (7,6) for mountain/stone.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading to (14,7) for food, water secured at (11,7). Thanks agent-8 for the tip.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-5",
+      "message": "Water crisis resolved, now stabilizing food and resting.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-7",
+      "message": "Moved to (7,6), scanning further east for mountain terrain still needed for stone.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-8",
+      "message": "At (13,7), water16/food/energy stable, freeing capacity to keep gathering fiber/food.",
+      "scope": "local",
+      "tick": 21
+    },
+    {
+      "agent": "agent-2",
+      "message": "Moving to (7,6) with you, inspecting (8,6),(8,5),(8,7) for mountain/stone.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-3",
+      "message": "Resting a bit at (14,7) to recover energy before continuing to gather fiber/food.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-7",
+      "message": "No mountain/stone found nearby after extensive search; switching to building a farm_plot here at (7,6) for food security.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-8",
+      "message": "Heading to mountain at (13,6) to mine stone for building; water/food stable for now.",
+      "scope": "local",
+      "tick": 22
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading back to water at (12,7) to refill; water reserve at 4.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-7",
+      "message": "Farm plot built at (7,6); tending it now and gathering food nearby.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-8",
+      "message": "Storm warning next tick, no shelter nearby - mining stone at (13,6) while I can, will brace for storm damage.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-1",
+      "message": "Storm warning ahead as season shifts to autumn - no shelter built yet, restocking food/water now.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading to water tile at (9,6) to refill; storm warning noted but season is summer so should be fine.",
+      "scope": "local",
+      "tick": 23
+    },
+    {
+      "agent": "agent-6",
+      "message": "Storm active, no shelter yet - gathering wood at forest (7,8) to start building one.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-7",
+      "message": "Storm active now, no shelter yet. Refilling water at (9,6) before planning shelter build.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-8",
+      "message": "Storm active now at (13,6), no shelter yet - mining stone before I brace for damage. Will build shelter once I have 8 wood+2 stone+3 fiber.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-1",
+      "message": "Storm active now, no shelter yet - moving to forest to gather wood for shelter build ASAP.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-2",
+      "message": "Storm is hitting now, no shelter nearby - gathering water/fiber and bracing for damage. Need wood for shelter next.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-3",
+      "message": "Storm warning active - heading to (12,9) for food since no shelter materials on hand; will brace for damage next tick.",
+      "scope": "local",
+      "tick": 24
+    },
+    {
+      "agent": "agent-6",
+      "message": "Moving to my own forest tile (6,8) to chop wood for shelter - agent-1's tile denied access.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-7",
+      "message": "No wood or stone yet for shelter. Heading toward forest next tick to chop wood - anyone have spare wood/stone to pool for a shared shelter?",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-8",
+      "message": "Mined more stone at (13,6), heading east to scout for forest/wood for shelter.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-1",
+      "message": "Chopping wood at (7,8) forest for shelter materials - still need stone from mountain (7,9). Anyone want to team up on a shared shelter here?",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-2",
+      "message": "No forest/wood found near (8,6) yet. Moving west to scout with agent-1's group for shelter materials.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading to (12,11) for food, then scouting south for wood/forest to prep shelter before winter storms.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading south from (8,6) to scout for forest/mountain - still need wood and stone for shelter. Will share if found.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-8",
+      "message": "Scouting south from (15,6) for forest/wood; still need 8 wood for shelter before next storm.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-6, I have fiber3+wood incoming, you have wood6+food24. If we pool wood+stone here at (7,8) we can finish a shelter this tick or next to avoid storm damage.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading to forest at (6,8) to chop wood for a shared shelter - storm damage is adding up.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-3",
+      "message": "Moving to forest at (12,12) to gather wood for shelter before winter hits.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to mountain at (7,9) to mine stone for the shared shelter. Will bring stone back to (7,8).",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-8",
+      "message": "Scouting south from (15,8) toward (15,10) for forest/wood; still need 8 wood for shelter before next storm hits.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-6, I'm chopping wood at (7,8) for shelter. Can you bring stone from mountain (7,9)? We need 2 stone+8 wood+3 fiber total.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-10",
+      "message": "Still no stone found near here; farming and stockpiling fiber/wood for shelter meanwhile.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-2",
+      "message": "Chopped wood at (6,8), bringing it to (7,8) to help finish the shelter.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-3",
+      "message": "Chopping wood at (12,12) forest to stock up for shelter construction before winter.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-6",
+      "message": "Reactivating my farm plot with upkeep. Water reserve is at 0, heading south to search for a source - let me know if anyone's found water nearby.",
+      "scope": "local",
+      "tick": 27
+    },
+    {
+      "agent": "agent-8",
+      "message": "Found forest with wood at (14,11)/(15,11)/(15,12); dropping excess fiber to make room, heading in to chop wood for shelter.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-1",
+      "message": "Chopped more wood at (7,8), now have ~3 wood. Still need stone2 - agent-7/agent-6 please bring stone from mountain (7,9).",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-2",
+      "message": "Chop failed at (7,8) - tile is claimed by agent-1, no access. I'm heading to gather water instead; will look for unclaimed forest/mountain for wood/stone.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-3",
+      "message": "Chopped some wood, moving south to scout for stone/mountain terrain for shelter build.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-6",
+      "message": "No water source found south. Heading back north with fiber/food to help finish the shelter before next storm.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-7",
+      "message": "Mined 1 stone, heading to (7,8) now to contribute to the shelter.",
+      "scope": "local",
+      "tick": 28
+    },
+    {
+      "agent": "agent-1",
+      "message": "Wood here seems depleted, only got fiber3/stone0/wood0 now. Farming my plot for food while waiting on agent-7's stone and any wood find. Still need ~8 wood total for shelter.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-10",
+      "message": "I have surplus food from farming but no stone. Interested in trading food for some of your stone for shelter building?",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading to mountain (7,9) to mine stone for the shelter - will bring it to (7,8) once I have some.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-6",
+      "message": "Heading to (7,8) with 3 fiber, 1 stone, 1 wood to help finish the shelter. Agent-1, can you grant me access to contribute on your tile?",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to (7,8) with 1 fiber to help finish the shelter before the next storm.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-8",
+      "message": "Chopping wood at (15,11) forest for shelter; water getting low (4), will head to water source soon.",
+      "scope": "local",
+      "tick": 29
+    },
+    {
+      "agent": "agent-1",
+      "message": "Started shelter build at (7,8) with fiber3+wood2. Agent-6/7, please contribute your stone+wood+fiber when you arrive to finish it before the storm!",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-10",
+      "message": "Chopping wood and gathering fiber at (11,13) to stock shelter materials; still need stone if anyone can trade.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-2",
+      "message": "Mining stone at (7,9). (7,8) is full (3 agents), so I'll wait here and bring stone once there's space.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-3",
+      "message": "Water critical, heading north to known water source, will trade fiber/stone for water/food if anyone has some.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-6",
+      "message": "Low on water, heading to (8,8)/(9,8) to drink before continuing shelter effort. Will bring remaining fiber/stone/wood once resupplied.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-7",
+      "message": "Starting shelter build here at (7,8) with my 1 fiber - please contribute stone/wood!",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-7",
+      "message": "Starting shelter build here at (7,8) with my 1 fiber - please contribute stone/wood!",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-8",
+      "message": "Water critical, drank my last water. Freeing carry space to keep chopping wood for shelter at (15,11) forest.",
+      "scope": "local",
+      "tick": 30
+    },
+    {
+      "agent": "agent-10",
+      "message": "Still need 2 stone for shelter (have wood/fiber covered). Anyone willing to trade stone for food?",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-2",
+      "message": "Bringing 1 stone to shelter at (7,8). Still need wood and more stone - anyone have extra?",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-3",
+      "message": "Heading to water at (11,7), critical thirst. Will trade fiber/stone for food once stabilized.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-4",
+      "message": "Heading toward (7,9) mountain to help mine stone/wood for shelter - will meet you there agent-2.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-6",
+      "message": "Resupplying water at (8,8)/(9,8), heading back to (7,8) with fiber/stone/wood for shelter contribution shortly.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-7",
+      "message": "Chopping wood here at (7,8) to contribute to the shelter - stone still needed, agent-2 has some.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-8",
+      "message": "Energy critical at 10, pausing chop to gather food and rest before continuing shelter materials.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-1",
+      "message": "My energy is critical (7), resting a couple ticks. Agent-6/Agent-2: please bring the wood6+stone2 needed to finish shelter-13 at (7,8) - storm risk is high.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading back to mountain (7,9) to mine more stone for shelter-13; will bring it back shortly.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-3",
+      "message": "Water/food stabilized for now. Heading south to forest at (12,12) to gather wood for shelter before winter.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-4",
+      "message": "Heading to mountain (7,9) to mine stone for shelter-13, (7,8) is full right now.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-6",
+      "message": "Contributing 1 stone, 1 wood, 3 fiber to shelter-13 at (7,8). Still need more wood/stone - please bring more.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to mountain at (7,9) to mine stone for shelter-13. Will bring it back next.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-8",
+      "message": "Resuming wood chop at (15,11); still need stone for shelter - haven't found mountain terrain nearby yet.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-1",
+      "message": "Chopping wood here at (7,8) to help finish shelter-13 - still need stone1+wood6. Will contribute next tick.",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-10",
+      "message": "Low on energy, resting and eating stored food. Still seeking stone for shelter before winter - 4 ticks left in autumn!",
+      "scope": "local",
+      "tick": 32
+    },
+    {
+      "agent": "agent-4",
+      "message": "Stone for shelter-13 is done, only wood(5) needed now. Heading to forest at (6,8) to chop wood since (7,8) is full.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-6",
+      "message": "Chopping wood here at (7,8) to finish shelter-13's wood requirement, will contribute immediately.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-7",
+      "message": "agent-1, can you grant_access to (7,8) so I can chop wood here for shelter-13? I have no wood/stone to contribute right now.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-1",
+      "message": "Contributed my 2 wood to shelter-13, chopping more now. Still need wood/stone - keep bringing what you have.",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-10",
+      "message": "Still need 2 stone for shelter, winter in 3 ticks. Scouting north for mountains. Anyone with stone to trade for food/fiber/wood?",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-2",
+      "message": "Shelter-13 stone need is met, only wood(5) remains. I'm low energy at mountain, resting before heading to chop/help. Someone with room should chop wood at (6,8) or (7,8).",
+      "scope": "local",
+      "tick": 33
+    },
+    {
+      "agent": "agent-4",
+      "message": "Chopping wood at (6,8) now, will bring it to shelter-13 once (7,8) frees up.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-6",
+      "message": "Heading to my forest tile (6,8) to chop wood for shelter-13 since I lack access here. Will bring it over shortly.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-7",
+      "message": "agent-1, still need grant_access to (7,8) to chop wood for shelter-13 - can you grant it? I'm ready to help finish it.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-8",
+      "message": "Water critical at 4, heading toward water source near (11,7).",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-1",
+      "message": "Contributed wood2 to shelter-13, now needs wood~1-3 more. Still low on food/water myself, gathering food now.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-10",
+      "message": "Reached you agent-3! Offering 3 food for 2 stone - desperately need it for shelter before winter. Please accept!",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading to (6,8) to chop wood for shelter-13, will contribute next tick.",
+      "scope": "local",
+      "tick": 34
+    },
+    {
+      "agent": "agent-6",
+      "message": "Bringing 1 wood to finish shelter-13 now - should complete it just before winter hits.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to (6,7) to gather food since I'm out; will return to help finish shelter-13 once wood is contributed.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-8",
+      "message": "Water critical, heading northwest toward (11,7) water source.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-1",
+      "message": "Granted access to shelter-13. Chopping final wood now, should complete it this tick.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-10",
+      "message": "agent-3, correcting my offer: I only have 2 food to give, offering for 1 stone - please accept, winter starts next tick and I have no shelter!",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-2",
+      "message": "Chopped wood at (6,8), heading to (7,8) to contribute the last wood needed for shelter-13.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-3",
+      "message": "Winter starts next tick and I have no shelter yet - gathering wood now, will trade stone for food later if needed.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-4",
+      "message": "Low on food, stepping to (6,7) to gather and eat. Good luck finishing shelter-13's last wood.",
+      "scope": "local",
+      "tick": 35
+    },
+    {
+      "agent": "agent-6",
+      "message": "Energy critical (2), resting on shelter-13 this tick to recover before gathering food/water.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to shelter-13 for winter protection, thanks for the access grant agent-1.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-8",
+      "message": "Water critical, winter started - heading to (11,7) water source now.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-1",
+      "message": "Shelter-13 looks complete now, thanks everyone! Heading to get water, reserves low.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-10",
+      "message": "agent-3, please accept trade-1 (2 food for 1 stone) - winter just started and I need stone for shelter urgently!",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-2",
+      "message": "Shelter-13 shows complete/active - great work team! Staying here through winter for exposure protection.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-3",
+      "message": "Accepting your trade, agent-10 - good luck with your shelter too.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-4",
+      "message": "Heading to (6,6) to gather food, low on reserves. Will head to shelter-13 once it's done.",
+      "scope": "local",
+      "tick": 36
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to shelter-13 to avoid exposure damage, thanks for finishing it!",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-1",
+      "message": "Water critical, gathering from nearby tile before heading to find food next.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-10",
+      "message": "Thanks agent-3! Got 1 stone, still need 1 more stone and more wood/fiber for shelter before storms hit.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-4",
+      "message": "Low on water, heading toward shelter-13 area, hope to get access soon for winter.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-6",
+      "message": "Food critical, heading to my farm plot at (6,8) to gather. Will return to shelter-13 next tick.",
+      "scope": "local",
+      "tick": 37
+    },
+    {
+      "agent": "agent-1",
+      "message": "Heading to my farm plot at (7,8) to gather food, reserves critical.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-10",
+      "message": "Starting shelter here at (11,12) with 3 fiber, 1 stone, 2 wood - still need more wood and 1 stone, will gather next.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-3",
+      "message": "agent-10, offering 2 coin for 2 stone to finish my shelter - deal?",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-4",
+      "message": "Requesting access to shelter-13 for winter exposure protection, I'm at your location now.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-6",
+      "message": "Ate food, heading back to shelter-13 for winter protection.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to my farm plot at (7,6) to harvest food, low on reserves.",
+      "scope": "local",
+      "tick": 38
+    },
+    {
+      "agent": "agent-1",
+      "message": "Paying upkeep on my farm plot to reactivate it, then grabbing food.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-3",
+      "message": "Starting my shelter at (12,12) with 3 fiber, 3 wood - still need ~5 wood and 2 stone. Anyone have spare stone to trade?",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-4",
+      "message": "agent-1, I'm at shelter-13 with you now - could you grant_access so I don't take exposure damage this winter? I can pay 2 coin or fiber in return.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-6",
+      "message": "Paid upkeep on my farm plot, heading back to shelter-13 for winter protection. Still need water source - anyone know of nearby water/well?",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-7",
+      "message": "Paid upkeep on my farm plot (7,6), harvesting food now to restock reserves.",
+      "scope": "local",
+      "tick": 39
+    },
+    {
+      "agent": "agent-1",
+      "message": "agent-4: granting you access to shelter-13 now, stay warm this winter. No payment needed, just be a good neighbor.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-10",
+      "message": "agent-3, I have no stone to trade right now - still hunting for a mountain tile. Will trade if I find some.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading to shelter-13 (7,8) to avoid exposure damage - I'm a contributor so should have access.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-3",
+      "message": "Still need 2 stone and a few more wood for shelter-16; any spare stone appreciated, agent-10.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-4",
+      "message": "agent-1, sent you 2 coin as payment - please grant_access to shelter-13 so I stop taking exposure damage. Happy to add fiber too.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-5",
+      "message": "agent-1, I'm heading to shelter-13, health dropping from exposure. Could you grant_access? I can offer 3 fiber or 2 water in return.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-6",
+      "message": "Heading to water at (9,8) to refill, then back to shelter-13 same tick to avoid exposure damage.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to shelter-13 to avoid exposure damage this winter tick.",
+      "scope": "local",
+      "tick": 40
+    },
+    {
+      "agent": "agent-10",
+      "message": "Still no stone or water source found nearby - scouting north now. Will share if I find any.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-2",
+      "message": "Water critically low, heading around north route toward (9,8) to refill. Will return to shelter-13 after.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-3",
+      "message": "agent-10, still need 2 stone to finish shelter-16 (have wood covered soon). Trade-2 (2 coin for 2 stone) still open if you find any stone.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-4",
+      "message": "agent-1, sent you 3 more fiber (5 total now) for shelter-13 access - I'm taking exposure damage each winter tick without it. Please grant_access when you can.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-5",
+      "message": "agent-1, shelter-13 looks full (3/3) so I can't join even with access. Heading to mountain at (7,9) to get stone for my own shelter. Will trade fiber/water if anyone needs.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-6",
+      "message": "Grabbed water, heading back to shelter-13 to avoid exposure damage.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-7",
+      "message": "Heading to (8,8) to gather water, will return to shelter-13 next tick.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-1",
+      "message": "agent-5, granted you access to shelter-13. Stay safe from exposure.",
+      "scope": "local",
+      "tick": 41
+    },
+    {
+      "agent": "agent-2",
+      "message": "Gathering water near (9,7), water critical, will head to shelter-13 after.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-4",
+      "message": "agent-1, still need shelter-13 access to avoid winter exposure damage - already sent 2 coin+5 fiber as payment. Can you grant access?",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-5",
+      "message": "Mined stone at (7,9), heading to shelter-13 at (7,8) to avoid exposure damage.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-6",
+      "message": "Staying on shelter-13 this tick to avoid exposure; topped up upkeep fiber.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-7",
+      "message": "Back at shelter-13 to avoid exposure damage, water reserve topped up.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-9",
+      "message": "Hi agent-1, I have no shelter and winter exposure is hurting my health. Could you grant me access to shelter-13? I'm heading your way.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-1",
+      "message": "Grabbing water at (8,8) near the lake, then back to shelter-13 to avoid exposure.",
+      "scope": "local",
+      "tick": 42
+    },
+    {
+      "agent": "agent-4",
+      "message": "Water critical, stepping to (8,8) to refill before heading back. Still hoping for shelter-13 access, agent-1.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-5",
+      "message": "Mining stone at (7,9) for shelter-14; shelter-13 full, staying here for now.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-6",
+      "message": "Staying at shelter-13, paid fiber upkeep to keep it active through winter.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-7",
+      "message": "Gathering water at (8,8), trying to get back into shelter-13 if a spot opened.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-9",
+      "message": "agent-1, still need shelter-13 access - forest tile is at capacity (3 agents). Please grant access when a slot frees up, I'm right next door at (7,7).",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-1",
+      "message": "agent-9, granted you access to shelter-13, come on in out of the storm.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-2",
+      "message": "Heading back toward shelter-13, but it looked full (3 agents). Will wait nearby for a spot to open.",
+      "scope": "local",
+      "tick": 43
+    },
+    {
+      "agent": "agent-4",
+      "message": "I've sent 5 fiber+2 coin and now contributing more fiber to shelter-13. Please grant me access - I've taken exposure damage repeatedly. Storm risk is high.",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-5",
+      "message": "Hi, I need to chop wood at (6,8) forest for my shelter - can you grant me access to that tile?",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-9",
+      "message": "agent-1, trying to enter shelter-13 now - let me know if a slot opens, still at (7,7).",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-2",
+      "message": "agent-1, shelter-13 is at capacity (3 occupants). I'm a contributor with 0.1667 share - can you let me know when a spot frees up?",
+      "scope": "local",
+      "tick": 44
+    },
+    {
+      "agent": "agent-5",
+      "message": "Still need forest access at (6,8) for wood - anyone willing to grant access or trade wood for stone/fiber?",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-8",
+      "message": "Food critical, energy too low to fish this tick. Recovering energy first, will fish adjacent water next tick.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-9",
+      "message": "Made it onto shelter-13 tile at (7,8). Thanks agent-1 for the access grant - will vacate once winter ends if space is needed.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-1",
+      "message": "Heading back to shelter-13 to avoid exposure damage; will try to rotate access for others once inside.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-2",
+      "message": "agent-1, checking shelter-13 again - any slot open? I'm heading to (7,8).",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-3",
+      "message": "Agent-10, I'm at 4 health, 0 water - dying. Please trade me water for 4 coin right now, I'm right next to you!",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-4",
+      "message": "agent-1: I've sent 9 fiber + 2 coin for shelter access with no response. Stopping payments now, will build my own shelter instead.",
+      "scope": "local",
+      "tick": 45
+    },
+    {
+      "agent": "agent-2",
+      "message": "agent-1/agent-9, any slot open at shelter-13? Only 2 winter ticks left, trying to squeeze in.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-4",
+      "message": "Shelter-13 tile is full (3 occupants max on forest). Giving up on that, heading to mountain to mine stone for my own shelter build.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-5",
+      "message": "Dropping stone to make room, gathering food here at (6,10). Anyone with spare wood for shelter, willing to trade fiber/stone?",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-8",
+      "message": "Drinking water and fishing at (10,8) to fix hunger/thirst before winter ends.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-9",
+      "message": "Contributing fiber to keep shelter-13 upkeep paid so we can all stay through the last winter ticks.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-1",
+      "message": "Staying on shelter-13 to rest and recover energy; farm plot food gathered for reserves. Winter almost over.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-2",
+      "message": "Winter's last tick - heading back toward shelter-13, will wait for a slot to open.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-5",
+      "message": "Winter ending next tick - anyone want to trade fiber for wood to build shelter-14 in spring?",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-9",
+      "message": "Contributing fiber to shelter-13 upkeep to keep us all sheltered through the last winter tick.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-1",
+      "message": "One more winter tick - staying on shelter-13 to avoid exposure damage. Reserves look good, almost through winter.",
+      "scope": "local",
+      "tick": 47
+    },
+    {
+      "agent": "agent-5",
+      "message": "Winter's over! Anyone have spare wood to trade for fiber? I have 4 fiber for shelter-14.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-6",
+      "message": "Winter's over, heading to my farm plot to harvest food and restock.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-8",
+      "message": "Winter's over, gathering fiber near (12,8)/(12,9) for shelter materials.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-9",
+      "message": "Winter's over - heading out to gather water and fiber. Thanks for the shelter access, agent-1!",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-1",
+      "message": "Winter's over - heading back to normal farming and foraging rounds now.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-2",
+      "message": "Winter's over, heading to (5,7) to gather food - reserves getting low.",
+      "scope": "local",
+      "tick": 48
+    },
+    {
+      "agent": "agent-5",
+      "message": "Agent-6, I'm offering 2 fiber for 2 food - desperate for food, health critical.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-8",
+      "message": "Heading south with fiber toward shelter-15 at (11,12); still need stone, haven't found mountain yet.",
+      "scope": "local",
+      "tick": 49
+    },
+    {
+      "agent": "agent-8",
+      "message": "Bringing 3 wood to shelter-15 (11,12); still need 1 stone from someone.",
+      "scope": "local",
+      "tick": 50
+    },
+    {
+      "agent": "agent-5",
+      "message": "Heading to (4,11) for food - health critical, need to eat now.",
+      "scope": "local",
+      "tick": 50
+    },
+    {
+      "agent": "agent-8",
+      "message": "Still no stone found for shelter-15 (needs 1 stone). Anyone near a mountain or willing to trade stone for fiber/wood?",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-5",
+      "message": "Health critical at 19, water reserve very low. Searching south for water source.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-10",
+      "message": "Water reserve critical, need to find a water source. Anyone know location of water east of (10,13)?",
+      "scope": "local",
+      "tick": 52
+    },
+    {
+      "agent": "agent-9",
+      "message": "No water sources found yet near me either, still searching south/east.",
+      "scope": "local",
+      "tick": 56
+    },
+    {
+      "agent": "agent-6",
+      "message": "No water on hand to share, but water tile is near (8,8)-(9,8), forest tile east of farm plots. Hurry, hope you make it.",
+      "scope": "local",
+      "tick": 59
+    },
+    {
+      "agent": "agent-9",
+      "message": "Energy critically low, resting a few ticks before continuing to forage.",
+      "scope": "local",
+      "tick": 59
+    },
+    {
+      "agent": "agent-1",
+      "message": "Agent-8, you look critical (thirst/health). There's water at (9,8) and food piles nearby - can I help?",
+      "scope": "local",
+      "tick": 59
+    },
+    {
+      "agent": "agent-4",
+      "message": "No water/well location known yet, agent-8. Will share if I find one.",
+      "scope": "local",
+      "tick": 59
+    }
+  ],
+  "usage": {
+    "attempted_calls": 596,
+    "attempted_provider_cost_usd": 0.0,
+    "attempted_token_cost": {
+      "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+      "available": true,
+      "basis": "token_derived_api_list_price",
+      "cache_write_tokens": 1910283,
+      "cached_input_tokens": 3150648,
+      "calls": 596,
+      "cost_usd": {
+        "cache_write": 7.163561,
+        "cached_input": 0.945194,
+        "output": 10.814985,
+        "total": 18.927725,
+        "uncached_input": 0.003984
+      },
+      "models": {
+        "claude-sonnet-5": {
+          "cache_write_tokens": 1910283,
+          "cached_input_tokens": 3150648,
+          "calls": 596,
+          "cost_usd": 18.927725,
+          "output_tokens": 720999,
+          "rates_per_million_tokens": {
+            "cache_write": 3.75,
+            "cached_input": 0.3,
+            "input": 3.0,
+            "output": 15.0
+          },
+          "uncached_input_tokens": 1328
+        }
+      },
+      "output_tokens": 720999,
+      "provider_cost_coverage": {
+        "available": true,
+        "reported_calls": 596,
+        "reported_subtotal_usd": 0.0,
+        "total_cost_usd": 0.0,
+        "unreported_calls": 0
+      },
+      "provider_reported_cost_usd": 0.0,
+      "rate_card": {
+        "effective_date": "2026-09-05",
+        "sources": {
+          "anthropic": "https://platform.claude.com/docs/en/pricing",
+          "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+          "openai": "https://developers.openai.com/api/docs/pricing",
+          "openrouter": "https://openrouter.ai/models",
+          "xai": "https://docs.x.ai/developers/models/grok-4.6",
+          "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+        },
+        "unit": "usd_per_million_tokens"
+      },
+      "reasoning_output_tokens": 369837,
+      "uncached_input_tokens": 1328,
+      "unknown_models": []
+    },
+    "attempts_without_usage": 47,
+    "cache_hit_rate_pct": 62.2,
+    "calls": 586,
+    "completion_tokens": 720999,
+    "decision_latency": {
+      "attempts": 596,
+      "complete": true,
+      "decision_seconds": [
+        38.697,
+        40.978,
+        40.754000000000005,
+        40.755,
+        42.562,
+        41.875,
+        42.423,
+        42.81,
+        46.807,
+        50.867000000000004,
+        11.422,
+        13.015,
+        13.223,
+        14.747,
+        16.885,
+        17.205,
+        17.52,
+        18.366,
+        21.5,
+        22.004,
+        13.807,
+        17.042,
+        18.818,
+        19.102,
+        20.115,
+        21.522,
+        23.79,
+        26.482,
+        28.85,
+        32.129,
+        12.348,
+        14.716,
+        15.071,
+        15.523,
+        16.444,
+        17.889,
+        20.185,
+        23.617,
+        24.017,
+        31.366,
+        11.991,
+        14.164,
+        14.476,
+        14.618,
+        15.154,
+        15.166,
+        15.373,
+        19.022,
+        23.798,
+        26.245,
+        12.45,
+        12.833,
+        13.005,
+        13.275,
+        13.275,
+        14.858,
+        15.344,
+        16.829,
+        17.047,
+        21.959,
+        11.975,
+        12.004,
+        12.879,
+        13.351,
+        14.445,
+        15.653,
+        15.767,
+        17.403,
+        17.933,
+        19.033,
+        11.956,
+        12.076,
+        12.39,
+        12.496,
+        13.288,
+        13.957,
+        13.979,
+        15.235,
+        18.846,
+        20.962,
+        14.587,
+        14.991,
+        15.108,
+        15.165,
+        16.501,
+        17.7,
+        17.865,
+        18.316,
+        21.491,
+        22.536,
+        10.711,
+        12.648,
+        13.718,
+        13.895,
+        14.684,
+        15.046,
+        16.222,
+        16.889,
+        17.274,
+        19.36,
+        12.918,
+        12.955,
+        13.38,
+        15.107,
+        15.729,
+        16.82,
+        16.825,
+        18.045,
+        28.526,
+        28.658,
+        11.308,
+        14.28,
+        14.357,
+        14.923,
+        15.146,
+        16.183,
+        18.721,
+        18.778,
+        19.032,
+        23.645,
+        12.971,
+        14.615,
+        15.444,
+        16.046,
+        16.504,
+        20.02,
+        22.314,
+        22.824,
+        24.409,
+        36.629,
+        14.243,
+        14.366,
+        15.208,
+        17.9,
+        17.944,
+        18.583,
+        19.331,
+        20.472,
+        22.374,
+        28.083,
+        12.789,
+        15.312,
+        15.753,
+        15.933,
+        16.879,
+        20.143,
+        21.425,
+        23.995,
+        27.274,
+        39.557,
+        10.511,
+        12.937,
+        14.212,
+        14.333,
+        15.07,
+        15.955,
+        18.384,
+        18.46,
+        18.855,
+        21.666,
+        10.684,
+        11.818,
+        12.052,
+        14.102,
+        15.981,
+        18.288,
+        18.705,
+        22.405,
+        24.294,
+        25.738,
+        11.628,
+        13.916,
+        15.431,
+        15.793,
+        17.785,
+        18.099,
+        19.325,
+        21.852,
+        24.207,
+        24.409,
+        11.019,
+        13.781,
+        14.101,
+        14.839,
+        15.569,
+        16.126,
+        17.749,
+        19.014,
+        19.274,
+        19.324,
+        12.456,
+        12.63,
+        13.39,
+        16.774,
+        17.207,
+        17.826,
+        18.94,
+        19.485,
+        20.049,
+        23.639,
+        10.312,
+        12.67,
+        13.85,
+        14.741,
+        16.128,
+        16.646,
+        17.811,
+        18.363,
+        18.688,
+        19.371,
+        11.108,
+        11.363,
+        12.624,
+        12.825,
+        13.284,
+        13.794,
+        14.362,
+        17.575,
+        19.524,
+        23.995,
+        10.852,
+        14.489,
+        16.125,
+        17.83,
+        18.15,
+        18.756,
+        19.531,
+        24.789,
+        25.644,
+        30.032,
+        14.475,
+        16.328,
+        16.439,
+        16.53,
+        16.7,
+        18.672,
+        18.926,
+        20.696,
+        22.897,
+        28.074,
+        15.653,
+        18.838,
+        18.965,
+        19.226,
+        19.371,
+        19.941,
+        19.977,
+        21.267,
+        23.452,
+        25.27,
+        15.065,
+        16.72,
+        18.45,
+        18.985,
+        19.721,
+        20.093,
+        20.404,
+        21.041,
+        22.561,
+        24.545,
+        15.001,
+        16.936,
+        18.704,
+        19.098,
+        19.301,
+        22.692,
+        23.18,
+        24.101,
+        27.679,
+        27.809,
+        11.235,
+        13.149,
+        15.226,
+        16.156,
+        17.373,
+        19.358,
+        22.433,
+        22.934,
+        25.015,
+        25.928,
+        13.699,
+        15.595,
+        18.461,
+        18.765,
+        20.062,
+        23.214,
+        24.726,
+        25.531,
+        25.746,
+        50.87,
+        15.912,
+        17.438,
+        18.576,
+        19.147,
+        19.915,
+        22.166,
+        23.539,
+        23.83,
+        24.467,
+        30.411,
+        16.511,
+        16.907,
+        17.385,
+        18.028,
+        18.184,
+        20.652,
+        23.863,
+        30.49,
+        33.004,
+        45.75,
+        16.345,
+        16.641,
+        16.948,
+        17.301,
+        17.736,
+        19.288,
+        20.247,
+        22.752,
+        28.429,
+        29.52,
+        15.517,
+        16.922,
+        17.37,
+        18.088,
+        18.997,
+        19.032,
+        21.448,
+        22.157,
+        25.151,
+        26.382,
+        15.551,
+        16.649,
+        19.02,
+        21.604,
+        22.803,
+        27.76,
+        27.766,
+        27.993,
+        29.693,
+        32.23,
+        16.538,
+        17.065,
+        17.605,
+        19.034,
+        19.27,
+        20.45,
+        20.502,
+        21.012,
+        21.105,
+        33.939,
+        17.522,
+        17.537,
+        17.546,
+        17.913,
+        20.138,
+        21.772,
+        22.941,
+        25.437,
+        25.732,
+        35.52,
+        17.503,
+        18.278,
+        19.203,
+        20.905,
+        20.951,
+        22.065,
+        22.117,
+        22.469,
+        22.815,
+        27.366,
+        13.143,
+        15.415,
+        17.432,
+        18.15,
+        21.597,
+        24.122,
+        24.24,
+        24.582,
+        25.82,
+        28.818,
+        14.485,
+        14.851,
+        17.532,
+        17.914,
+        19.67,
+        21.404,
+        23.177,
+        25.461,
+        27.55,
+        29.512,
+        10.767,
+        14.746,
+        20.706,
+        21.289,
+        21.632,
+        25.56,
+        25.644,
+        28.98,
+        30.227,
+        32.919,
+        14.661,
+        16.972,
+        18.56,
+        18.707,
+        21.273,
+        22.106,
+        23.377,
+        24.734,
+        26.773,
+        42.377,
+        14.443,
+        17.159,
+        17.366,
+        18.665,
+        21.406,
+        25.114,
+        32.101,
+        33.583,
+        35.304,
+        44.915,
+        12.604,
+        16.426,
+        17.009,
+        19.117,
+        20.717,
+        22.377,
+        22.472,
+        24.159,
+        29.763,
+        32.527,
+        16.584,
+        21.713,
+        25.221,
+        25.393,
+        27.54,
+        30.164,
+        31.101,
+        31.95,
+        34.529,
+        55.576,
+        17.115,
+        19.14,
+        19.3,
+        22.415,
+        22.786,
+        25.723,
+        27.142,
+        27.819,
+        32.819,
+        52.826,
+        16.717,
+        20.06,
+        22.206,
+        23.444,
+        28.579,
+        28.985,
+        31.821,
+        34.743,
+        36.759,
+        44.35,
+        14.164,
+        14.593,
+        15.995,
+        18.971,
+        19.309,
+        21.425,
+        23.028,
+        29.019,
+        32.359,
+        13.941,
+        14.299,
+        14.882,
+        15.18,
+        17.701,
+        18.32,
+        18.337,
+        19.153,
+        27.874,
+        13.481,
+        16.892,
+        17.93,
+        22.704,
+        23.929,
+        24.764,
+        24.949,
+        25.084,
+        25.436,
+        14.222,
+        15.841,
+        16.487,
+        17.47,
+        22.788,
+        22.973,
+        23.854,
+        24.367,
+        28.132,
+        14.618,
+        15.896,
+        15.967,
+        16.282,
+        17.802,
+        17.823,
+        18.77,
+        18.996,
+        25.944,
+        13.958,
+        18.256,
+        21.124,
+        19.766,
+        21.496,
+        21.763,
+        26.176,
+        26.9,
+        32.824,
+        13.848,
+        14.466,
+        16.274,
+        17.684,
+        18.543,
+        20.368,
+        21.165,
+        36.494,
+        40.368,
+        15.751,
+        15.886,
+        17.603,
+        18.415,
+        18.763,
+        18.867,
+        23.232,
+        24.326,
+        26.423,
+        14.477,
+        14.563,
+        15.338,
+        15.649,
+        16.15,
+        17.103,
+        23.113,
+        29.567,
+        34.441,
+        12.16,
+        17.062,
+        17.584,
+        18.503,
+        19.29,
+        19.927,
+        20.805,
+        23.976,
+        24.322,
+        10.466,
+        13.356,
+        14.326,
+        14.783,
+        15.679,
+        17.714,
+        19.05,
+        23.276,
+        30.074,
+        11.913,
+        17.121,
+        18.434,
+        18.822,
+        18.845,
+        19.722,
+        20.502,
+        24.002,
+        26.952,
+        10.841,
+        12.14,
+        16.01,
+        16.892,
+        19.003,
+        20.507,
+        23.278,
+        26.233,
+        33.49,
+        11.765,
+        13.853,
+        15.034,
+        15.888,
+        16.603,
+        20.303,
+        23.187,
+        24.418,
+        25.625
+      ],
+      "decisions": 586,
+      "mean_seconds": 20.39068771331058,
+      "timed_attempts": 596,
+      "total_seconds": 11948.943
+    },
+    "discarded_calls": 10,
+    "dynamic_input_components": {
+      "mean_chars": {
+        "local_map": 1547.0,
+        "market_history": 8.7,
+        "memory": 1662.8,
+        "nearby_agents": 266.4,
+        "open_trades": 8.5,
+        "recent_action_feedback": 573.6,
+        "recent_events": 1027.4,
+        "season": 37.8,
+        "self": 292.7,
+        "tick": 1.8
+      },
+      "samples": 586
+    },
+    "efficiency": {
+      "mean_agent_dynamic_observation_chars": 5531.3,
+      "mean_agent_static_context_chars": 8301.0,
+      "mean_output_tokens_per_call": 1230.4,
+      "mean_prompt_tokens_per_call": 8638.7,
+      "mean_reasoning_tokens_per_call": 631.1,
+      "mean_request_payload_bytes": 14553.3,
+      "mean_uncached_input_tokens_per_call": 3262.1
+    },
+    "estimated_cost": {
+      "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+      "available": true,
+      "basis": "token_derived_api_list_price",
+      "cache_write_tokens": 1910283,
+      "cached_input_tokens": 3150648,
+      "calls": 586,
+      "cost_usd": {
+        "cache_write": 7.163561,
+        "cached_input": 0.945194,
+        "output": 10.814985,
+        "total": 18.927725,
+        "uncached_input": 0.003984
+      },
+      "models": {
+        "claude-sonnet-5": {
+          "cache_write_tokens": 1910283,
+          "cached_input_tokens": 3150648,
+          "calls": 586,
+          "cost_usd": 18.927725,
+          "output_tokens": 720999,
+          "rates_per_million_tokens": {
+            "cache_write": 3.75,
+            "cached_input": 0.3,
+            "input": 3.0,
+            "output": 15.0
+          },
+          "uncached_input_tokens": 1328
+        }
+      },
+      "output_tokens": 720999,
+      "provider_cost_coverage": {
+        "available": true,
+        "reported_calls": 586,
+        "reported_subtotal_usd": 0.0,
+        "total_cost_usd": 0.0,
+        "unreported_calls": 0
+      },
+      "provider_reported_cost_usd": 0.0,
+      "rate_card": {
+        "effective_date": "2026-09-05",
+        "sources": {
+          "anthropic": "https://platform.claude.com/docs/en/pricing",
+          "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+          "openai": "https://developers.openai.com/api/docs/pricing",
+          "openrouter": "https://openrouter.ai/models",
+          "xai": "https://docs.x.ai/developers/models/grok-4.6",
+          "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+        },
+        "unit": "usd_per_million_tokens"
+      },
+      "reasoning_output_tokens": 369837,
+      "uncached_input_tokens": 1328,
+      "unknown_models": []
+    },
+    "phase_timing": {
+      "samples": 60,
+      "total_seconds": {
+        "decision_seconds": 1812.8864888900425,
+        "input_logging_seconds": 0.1294907710107509,
+        "observation_seconds": 0.2565657689992804,
+        "resolution_seconds": 0.6906789098866284
+      }
+    },
+    "physical_attempts": 643,
+    "plan_limits": null,
+    "prompt_tokens": 5062259,
+    "provider_cost_coverage": {
+      "available": true,
+      "reported_calls": 586,
+      "reported_subtotal_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "unreported_calls": 0
+    },
+    "reasoning_tokens": 369837,
+    "reasoning_tokens_estimated": true,
+    "simulation_credits": null,
+    "total_cost_usd": 0.0,
+    "unknown_charge_exposure": true
+  },
+  "wealth_gini": 0.3
+}

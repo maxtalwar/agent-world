@@ -1,0 +1,2806 @@
+{
+  "actions": {
+    "contention_failures": 3,
+    "contention_reasons": {
+      "No food is available on this tile.": 3
+    },
+    "counts": {
+      "accept_trade": 1,
+      "agent_spawned": 10,
+      "benchmark_checkpoint": 5,
+      "broadcast": 14,
+      "build": 1,
+      "build_started": 1,
+      "chop": 40,
+      "consume": 217,
+      "contention_failure": 3,
+      "contribute": 3,
+      "death": 4,
+      "drop": 93,
+      "expire_trade": 3,
+      "farm": 1,
+      "fish": 14,
+      "food_spoilage": 33,
+      "gather": 296,
+      "gift": 5,
+      "inspect": 1,
+      "invalid_action": 165,
+      "mine": 26,
+      "move": 424,
+      "offer_trade": 4,
+      "pick_up": 3,
+      "run_completed": 1,
+      "run_health_check": 1,
+      "run_phase_timing": 60,
+      "run_started": 1,
+      "say": 14,
+      "survival_damage": 183,
+      "wait": 560,
+      "whisper": 16,
+      "world_created": 1
+    },
+    "failure_total": 168,
+    "invalid_proposals": 165,
+    "invalid_reasons": {
+      "Both parties must meet at (5, 4) to exchange the physical goods.": 1,
+      "Carrying capacity would be exceeded.": 4,
+      "Destination is outside world bounds.": 1,
+      "Destination occupancy limit is full or terrain is impassable.": 3,
+      "Fishing requires fishable food in current or adjacent water.": 5,
+      "Gift target must be adjacent or on the same tile.": 2,
+      "Move requires direction north, south, east, or west.": 1,
+      "Moving into forest requires 2 action points.": 1,
+      "Moving into water requires 2 action points.": 1,
+      "No action points remain this tick.": 8,
+      "No fiber is available on this tile.": 23,
+      "No food available to consume.": 4,
+      "No food is available on this tile.": 20,
+      "No matching item pile on this tile.": 3,
+      "No ore is available on this tile.": 2,
+      "No water available to consume.": 13,
+      "No water is available on this tile, from an accessible well, or adjacent water.": 10,
+      "No wood is available on this tile.": 1,
+      "Not enough carrying capacity for fiber (load 10/10); use, drop, or store carried items to make room.": 2,
+      "Not enough carrying capacity for food (load 10/10); use, drop, or store carried items to make room.": 4,
+      "Not enough carrying capacity for ore (load 7/10); use, drop, or store carried items to make room.": 2,
+      "Not enough carrying capacity for ore (load 8/10); use, drop, or store carried items to make room.": 1,
+      "Not enough carrying capacity for stone (load 10/10); use, drop, or store carried items to make room.": 2,
+      "Not enough carrying capacity for stone (load 8/10); use, drop, or store carried items to make room.": 8,
+      "Not enough carrying capacity for stone (load 9/10); use, drop, or store carried items to make room.": 2,
+      "Not enough carrying capacity for water (load 10/10); use, drop, or store carried items to make room.": 1,
+      "Not enough carrying capacity for water (load 9/10); use, drop, or store carried items to make room.": 12,
+      "Not enough carrying capacity for wood (load 9/10); use, drop, or store carried items to make room.": 7,
+      "Not enough source material or carrying capacity for the requested quantity.": 4,
+      "Nothing contributed: you lack those materials or the structure does not need them.": 1,
+      "Offerer carrying capacity would be exceeded.": 1,
+      "Recipient lacks requested goods.": 1,
+      "Target carrying capacity would be exceeded.": 5,
+      "Whisper target must be adjacent or on the same tile.": 9
+    },
+    "invalid_total": 165,
+    "per_agent": {
+      "agent-1": {
+        "agent_spawned": 1,
+        "chop": 4,
+        "consume": 25,
+        "drop": 9,
+        "food_spoilage": 5,
+        "gather": 41,
+        "invalid_action": 14,
+        "move": 64,
+        "survival_damage": 18,
+        "wait": 62
+      },
+      "agent-10": {
+        "agent_spawned": 1,
+        "chop": 2,
+        "consume": 22,
+        "drop": 14,
+        "fish": 3,
+        "food_spoilage": 4,
+        "gather": 31,
+        "gift": 2,
+        "invalid_action": 23,
+        "mine": 5,
+        "move": 45,
+        "survival_damage": 18,
+        "wait": 53
+      },
+      "agent-2": {
+        "agent_spawned": 1,
+        "chop": 12,
+        "consume": 27,
+        "drop": 16,
+        "food_spoilage": 5,
+        "gather": 38,
+        "invalid_action": 15,
+        "move": 20,
+        "survival_damage": 13,
+        "wait": 61
+      },
+      "agent-3": {
+        "agent_spawned": 1,
+        "broadcast": 3,
+        "consume": 13,
+        "death": 1,
+        "drop": 3,
+        "food_spoilage": 1,
+        "gather": 12,
+        "invalid_action": 14,
+        "mine": 4,
+        "move": 45,
+        "survival_damage": 19,
+        "wait": 46
+      },
+      "agent-4": {
+        "agent_spawned": 1,
+        "build_started": 1,
+        "chop": 7,
+        "consume": 17,
+        "contribute": 3,
+        "death": 1,
+        "drop": 6,
+        "expire_trade": 1,
+        "fish": 2,
+        "food_spoilage": 2,
+        "gather": 23,
+        "invalid_action": 16,
+        "mine": 1,
+        "move": 40,
+        "offer_trade": 1,
+        "pick_up": 1,
+        "survival_damage": 19,
+        "wait": 54,
+        "whisper": 12
+      },
+      "agent-5": {
+        "agent_spawned": 1,
+        "broadcast": 8,
+        "consume": 25,
+        "drop": 8,
+        "expire_trade": 1,
+        "fish": 1,
+        "food_spoilage": 4,
+        "gather": 32,
+        "gift": 2,
+        "invalid_action": 23,
+        "mine": 6,
+        "move": 41,
+        "offer_trade": 1,
+        "survival_damage": 17,
+        "wait": 60
+      },
+      "agent-6": {
+        "agent_spawned": 1,
+        "build": 1,
+        "chop": 4,
+        "consume": 28,
+        "contention_failure": 2,
+        "drop": 10,
+        "farm": 1,
+        "fish": 4,
+        "food_spoilage": 6,
+        "gather": 44,
+        "invalid_action": 15,
+        "move": 49,
+        "pick_up": 1,
+        "survival_damage": 16,
+        "wait": 49
+      },
+      "agent-7": {
+        "agent_spawned": 1,
+        "chop": 7,
+        "consume": 21,
+        "death": 1,
+        "drop": 8,
+        "expire_trade": 1,
+        "food_spoilage": 2,
+        "gather": 27,
+        "gift": 1,
+        "inspect": 1,
+        "invalid_action": 12,
+        "move": 32,
+        "offer_trade": 2,
+        "survival_damage": 23,
+        "wait": 76,
+        "whisper": 3
+      },
+      "agent-8": {
+        "agent_spawned": 1,
+        "broadcast": 3,
+        "consume": 17,
+        "death": 1,
+        "drop": 9,
+        "food_spoilage": 1,
+        "gather": 19,
+        "invalid_action": 13,
+        "mine": 8,
+        "move": 43,
+        "survival_damage": 21,
+        "wait": 38
+      },
+      "agent-9": {
+        "accept_trade": 1,
+        "agent_spawned": 1,
+        "chop": 4,
+        "consume": 22,
+        "contention_failure": 1,
+        "drop": 10,
+        "fish": 4,
+        "food_spoilage": 3,
+        "gather": 29,
+        "invalid_action": 20,
+        "mine": 2,
+        "move": 45,
+        "pick_up": 1,
+        "survival_damage": 19,
+        "wait": 61,
+        "whisper": 1
+      }
+    }
+  },
+  "benchmarks": {
+    "cohorts": {
+      "cohort-1": {
+        "agents": [
+          "agent-1",
+          "agent-10",
+          "agent-2",
+          "agent-3",
+          "agent-4",
+          "agent-5",
+          "agent-6",
+          "agent-7",
+          "agent-8",
+          "agent-9"
+        ],
+        "attribution_override": null,
+        "brain": "codex",
+        "diagnostics": {
+          "communications": 44,
+          "communications_per_100_agent_ticks": 7.33,
+          "construction_contributions": 3,
+          "gifts": 5,
+          "groups_created": 0,
+          "note": "Social activity is diagnostic only in v4: frequency does not establish coordination quality or prosocial/antisocial intent.",
+          "trades_accepted": 1
+        },
+        "model": "gpt-5.6-terra",
+        "protocol_compliant": true,
+        "provider": "codex_cli",
+        "quality_flags": [],
+        "raw": {
+          "action_point_overruns": 10,
+          "contention_failures": 3,
+          "decision_failures": 0,
+          "decisions": 558,
+          "endpoint_health_capacity": 1000.0,
+          "endpoint_health_points": 195.0,
+          "engine_invalid_proposals": 165,
+          "enterprise_supply_by_source": {
+            "net_goods_supplied_to_others": 1.0,
+            "net_service_income": 0.0
+          },
+          "enterprise_supply_value": 1.0,
+          "execution_actions": 1899.0,
+          "execution_contention_actions": 3.0,
+          "execution_decisions": 558.0,
+          "execution_unexecuted_actions": 8.0,
+          "execution_valid_actions": 1734.0,
+          "execution_valid_decisions": 428.0,
+          "external_decision_failures": 0,
+          "health_point_tick_capacity": 60000.0,
+          "health_point_ticks": 40747.0,
+          "informal_transfer_value": 7.0,
+          "initial_agents": 10,
+          "initial_endowment_value": 135.0,
+          "invalid_proposals": 165,
+          "living_agents": 6,
+          "living_terminal_economic_value": 149.0,
+          "model_output_failures": 0,
+          "observed_agent_ticks": 600,
+          "own_capital_output_value": 0.0,
+          "possible_agent_ticks": 600,
+          "production_by_source": {
+            "chop": 162.0,
+            "fish": 30.0,
+            "gather": 750.0,
+            "mine": 132.0
+          },
+          "production_intermediate_input_value": 0.0,
+          "production_output_value": 1074.0,
+          "production_possible_agent_ticks": 600,
+          "production_value_added": 1074.0,
+          "productive_capital_extraction_value": 4.0,
+          "purposeful_agent_ticks": 506,
+          "submitted_actions": 1865,
+          "submitted_actions_excluding_contention": 1862,
+          "tail_health_point_tick_capacity": 12000.0,
+          "tail_health_point_ticks": 2828.0,
+          "terminal_economic_value": 205.0,
+          "venture_initiatives": 6,
+          "venture_initiatives_by_type": {
+            "build": 1,
+            "build_started": 1,
+            "offer_trade": 4
+          }
+        },
+        "reasoning_effort": "medium",
+        "scores": {
+          "capability": {
+            "components": {
+              "final_window_health_pct": 23.5667,
+              "full_horizon_health_pct": 67.9117
+            },
+            "formula": "mean health across original population and all completed ticks",
+            "score": 67.91
+          },
+          "execution": {
+            "components": {
+              "actions": 1899.0,
+              "valid_actions": 1734.0
+            },
+            "formula": "100 * successful actions / submitted non-contention actions",
+            "score": 91.31
+          },
+          "production": {
+            "components": {
+              "intermediate_input_value": 0.0,
+              "output_value": 1074.0,
+              "possible_agent_ticks": 600.0,
+              "value_added": 1074.0
+            },
+            "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+            "score": 179.0,
+            "unit": "fixed accounting units per 100 original-population agent-ticks"
+          }
+        }
+      }
+    },
+    "protocol": {
+      "accounting_values": {
+        "method": "Start from the world book-value table and raise each single-output recipe's output to exactly its input total divided by the output quantity. Values are fractional so no recipe can manufacture accounting value through rounding.",
+        "values": {
+          "advanced_tool": 43.0,
+          "coin": 2.375,
+          "fiber": 2.0,
+          "food": 2.0,
+          "ingot": 19.0,
+          "ore": 8.0,
+          "stone": 4.0,
+          "tool": 12.0,
+          "water": 1.0,
+          "wood": 3.0
+        }
+      },
+      "aggregation": "For a provisional result, apply the frozen formulas to the clean seed-11 raw counts. For replicated certification, pool raw numerators and denominators across required seeds [11, 41] before scoring. Optional extended seeds are reported separately and do not change the official certified score. Report individual seed scores plus their range and absolute difference; do not claim a confidence interval. Checkpoints [12, 24, 36, 48] are diagnostic; tick 60 is official.",
+      "code_fingerprint_sha256": "d4ef5807c908ade5360dc7759d84eb5a4322ac43f033a43af38ecbfda32dcc13",
+      "execution_defaults": {
+        "global_max_workers": 4,
+        "policy": "Worker counts only control how quickly independent decisions from one frozen tick are collected. Runs record the actual counts, but differing counts do not affect protocol compliance.",
+        "provider_max_workers": {
+          "antigravity_cli": 4,
+          "claude_cli": 20,
+          "codex_cli": 40,
+          "cursor_cli": 4,
+          "devin_cli": 4,
+          "grok_cli": 20,
+          "muse_cli": 4,
+          "openrouter": 4,
+          "zcode_cli": 20
+        },
+        "worker_count_is_protocol_setting": false
+      },
+      "id": "participant-v8-revised",
+      "production_accounting": "Gross value added at fixed accounting values per 100 original-population agent-ticks. Count extracted goods and net craft output; no trade, gift, unused construction, survival-consumption deduction, or terminal-wealth gate.",
+      "recipe_fingerprint_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+      "replications": {
+        "minimum": 2,
+        "optional_extended_seeds": [
+          73,
+          101,
+          137
+        ],
+        "policy": "Seed 11 can stand as provisional evidence. Required seeds [11, 41] certify a replicated benchmark; extended seeds [73, 101, 137] are optional.",
+        "provisional_minimum": 1,
+        "provisional_seed": 11,
+        "required_seeds": [
+          11,
+          41
+        ]
+      },
+      "score_columns": [
+        [
+          "capability",
+          "Capability"
+        ],
+        [
+          "execution",
+          "Execution"
+        ],
+        [
+          "production",
+          "Production"
+        ]
+      ],
+      "score_scale": {
+        "details": "See score_scales for per-benchmark bounds.",
+        "higher_is_better": true,
+        "maximum": null,
+        "metric_specific": true,
+        "minimum": 0.0
+      },
+      "score_scales": {
+        "capability": {
+          "higher_is_better": true,
+          "maximum": 100.0,
+          "minimum": 0.0
+        },
+        "execution": {
+          "higher_is_better": true,
+          "maximum": 100.0,
+          "minimum": 0.0
+        },
+        "production": {
+          "higher_is_better": true,
+          "maximum": null,
+          "minimum": 0.0
+        }
+      },
+      "scoring_parameters": {
+        "capability_aggregation": "full_horizon_mean",
+        "capability_tail_ticks": 12,
+        "execution_unit": "action"
+      },
+      "scoring_policy": "outcome-production",
+      "scoring_revision": 1,
+      "suite_id": "agent-world-participant-v8-revised",
+      "targets": {
+        "capability_aggregation": "full_horizon_mean",
+        "capability_tail_ticks": 12,
+        "execution_unit": "action"
+      },
+      "transfer_accounting": "self_declared",
+      "trial": {
+        "action_feedback_mode": "baseline",
+        "agent_io_log": true,
+        "agents": 10,
+        "assignment_seed": 0,
+        "assignment_strategy": "ordered",
+        "claude_thinking_budget_tokens": 2048,
+        "codex_action_max_items": 4,
+        "connector_profile": "connector-v3",
+        "conversation_mode": "fresh-conversation",
+        "decision_mode": "raw",
+        "deliberation_policy": "Request the named medium reasoning setting from every connector; provider-native spend is measured and reported, never equalized. Connectors must not silently promote an unsupported request to another effort.",
+        "diagnostic_score_ticks": [
+          12,
+          24,
+          36,
+          48,
+          60
+        ],
+        "economy_mode": "organic",
+        "geography_mode": "dispersed",
+        "height": 16,
+        "model_output_failure_policy": "Independently validate each extracted decision against the declared contract. Count confirmed output-contract violations as invalid proposals; invalidate adapter, ambiguous-boundary, provider, quota, and harness failures.",
+        "objective_mode": "neutral",
+        "observation_history_policy": "full-v1",
+        "official_score_tick": 60,
+        "population": "one uniform model cohort",
+        "preset": "frontier-generalists",
+        "reasoning_effort": "medium",
+        "season_length_ticks": 12,
+        "session_max_turns": 10,
+        "specialization_mode": "generalists",
+        "startup_health_check_tick": 5,
+        "startup_health_max_failure_rate": 0.2,
+        "ticks": 60,
+        "town_ledger_output_mode": "disabled",
+        "town_ledger_seed_mode": "none",
+        "transfer_kind_mode": "self_declared",
+        "turn_resolution": "simultaneous",
+        "width": 16,
+        "world_variant": "frontier"
+      }
+    },
+    "suite_id": "agent-world-participant-v8-revised",
+    "trajectory": [
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "codex",
+            "model": "gpt-5.6-terra",
+            "provider": "codex_cli",
+            "raw": {
+              "action_point_overruns": 1,
+              "contention_failures": 2,
+              "decision_failures": 0,
+              "decisions": 120,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 1000.0,
+              "engine_invalid_proposals": 42,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 0.0,
+                "net_service_income": 0.0
+              },
+              "enterprise_supply_value": 0.0,
+              "execution_actions": 403.0,
+              "execution_contention_actions": 2.0,
+              "execution_decisions": 120.0,
+              "execution_unexecuted_actions": 0.0,
+              "execution_valid_actions": 361.0,
+              "execution_valid_decisions": 84.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 12000.0,
+              "health_point_ticks": 12000.0,
+              "informal_transfer_value": 0.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 42,
+              "living_agents": 10,
+              "living_terminal_economic_value": 228.0,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 120,
+              "own_capital_output_value": 0.0,
+              "possible_agent_ticks": 120,
+              "production_by_source": {
+                "chop": 15.0,
+                "gather": 196.0,
+                "mine": 64.0
+              },
+              "production_intermediate_input_value": 0.0,
+              "production_output_value": 275.0,
+              "production_possible_agent_ticks": 120,
+              "production_value_added": 275.0,
+              "productive_capital_extraction_value": 0.0,
+              "purposeful_agent_ticks": 99,
+              "submitted_actions": 405,
+              "submitted_actions_excluding_contention": 403,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 12000.0,
+              "terminal_economic_value": 228.0,
+              "venture_initiatives": 0,
+              "venture_initiatives_by_type": {}
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 100.0,
+                  "full_horizon_health_pct": 100.0
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 100.0
+              },
+              "execution": {
+                "components": {
+                  "actions": 403.0,
+                  "valid_actions": 361.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 89.58
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 0.0,
+                  "output_value": 275.0,
+                  "possible_agent_ticks": 120.0,
+                  "value_added": 275.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 229.17,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "diagnostic_checkpoint",
+        "score_horizon_ticks": 12,
+        "tick": 12
+      },
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "codex",
+            "model": "gpt-5.6-terra",
+            "provider": "codex_cli",
+            "raw": {
+              "action_point_overruns": 4,
+              "contention_failures": 2,
+              "decision_failures": 0,
+              "decisions": 240,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 844.0,
+              "engine_invalid_proposals": 78,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 0.0,
+                "net_service_income": 0.0
+              },
+              "enterprise_supply_value": 0.0,
+              "execution_actions": 799.0,
+              "execution_contention_actions": 2.0,
+              "execution_decisions": 240.0,
+              "execution_unexecuted_actions": 2.0,
+              "execution_valid_actions": 721.0,
+              "execution_valid_decisions": 178.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 24000.0,
+              "health_point_ticks": 22958.0,
+              "informal_transfer_value": 1.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 78,
+              "living_agents": 10,
+              "living_terminal_economic_value": 157.5,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 240,
+              "own_capital_output_value": 0.0,
+              "possible_agent_ticks": 240,
+              "production_by_source": {
+                "chop": 42.0,
+                "fish": 4.0,
+                "gather": 313.0,
+                "mine": 104.0
+              },
+              "production_intermediate_input_value": 0.0,
+              "production_output_value": 463.0,
+              "production_possible_agent_ticks": 240,
+              "production_value_added": 463.0,
+              "productive_capital_extraction_value": 0.0,
+              "purposeful_agent_ticks": 214,
+              "submitted_actions": 795,
+              "submitted_actions_excluding_contention": 793,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 10958.0,
+              "terminal_economic_value": 157.5,
+              "venture_initiatives": 0,
+              "venture_initiatives_by_type": {}
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 91.3167,
+                  "full_horizon_health_pct": 95.6583
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 95.66
+              },
+              "execution": {
+                "components": {
+                  "actions": 799.0,
+                  "valid_actions": 721.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 90.24
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 0.0,
+                  "output_value": 463.0,
+                  "possible_agent_ticks": 240.0,
+                  "value_added": 463.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 192.92,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "diagnostic_checkpoint",
+        "score_horizon_ticks": 24,
+        "tick": 24
+      },
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "codex",
+            "model": "gpt-5.6-terra",
+            "provider": "codex_cli",
+            "raw": {
+              "action_point_overruns": 6,
+              "contention_failures": 2,
+              "decision_failures": 0,
+              "decisions": 360,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 732.0,
+              "engine_invalid_proposals": 116,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 0.0,
+                "net_service_income": 0.0
+              },
+              "enterprise_supply_value": 0.0,
+              "execution_actions": 1210.0,
+              "execution_contention_actions": 2.0,
+              "execution_decisions": 360.0,
+              "execution_unexecuted_actions": 4.0,
+              "execution_valid_actions": 1094.0,
+              "execution_valid_decisions": 269.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 36000.0,
+              "health_point_ticks": 31974.0,
+              "informal_transfer_value": 5.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 116,
+              "living_agents": 10,
+              "living_terminal_economic_value": 179.5,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 360,
+              "own_capital_output_value": 0.0,
+              "possible_agent_ticks": 360,
+              "production_by_source": {
+                "chop": 66.0,
+                "fish": 10.0,
+                "gather": 499.0,
+                "mine": 132.0
+              },
+              "production_intermediate_input_value": 0.0,
+              "production_output_value": 707.0,
+              "production_possible_agent_ticks": 360,
+              "production_value_added": 707.0,
+              "productive_capital_extraction_value": 0.0,
+              "purposeful_agent_ticks": 325,
+              "submitted_actions": 1195,
+              "submitted_actions_excluding_contention": 1193,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 9016.0,
+              "terminal_economic_value": 179.5,
+              "venture_initiatives": 2,
+              "venture_initiatives_by_type": {
+                "build_started": 1,
+                "offer_trade": 1
+              }
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 75.1333,
+                  "full_horizon_health_pct": 88.8167
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 88.82
+              },
+              "execution": {
+                "components": {
+                  "actions": 1210.0,
+                  "valid_actions": 1094.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 90.41
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 0.0,
+                  "output_value": 707.0,
+                  "possible_agent_ticks": 360.0,
+                  "value_added": 707.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 196.39,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "diagnostic_checkpoint",
+        "score_horizon_ticks": 36,
+        "tick": 36
+      },
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "codex",
+            "model": "gpt-5.6-terra",
+            "provider": "codex_cli",
+            "raw": {
+              "action_point_overruns": 8,
+              "contention_failures": 2,
+              "decision_failures": 0,
+              "decisions": 471,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 298.0,
+              "engine_invalid_proposals": 141,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 0.0,
+                "net_service_income": 0.0
+              },
+              "enterprise_supply_value": 0.0,
+              "execution_actions": 1585.0,
+              "execution_contention_actions": 2.0,
+              "execution_decisions": 471.0,
+              "execution_unexecuted_actions": 6.0,
+              "execution_valid_actions": 1444.0,
+              "execution_valid_decisions": 359.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 48000.0,
+              "health_point_ticks": 37919.0,
+              "informal_transfer_value": 6.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 141,
+              "living_agents": 8,
+              "living_terminal_economic_value": 171.5,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 480,
+              "own_capital_output_value": 0.0,
+              "possible_agent_ticks": 480,
+              "production_by_source": {
+                "chop": 132.0,
+                "fish": 18.0,
+                "gather": 646.0,
+                "mine": 132.0
+              },
+              "production_intermediate_input_value": 0.0,
+              "production_output_value": 928.0,
+              "production_possible_agent_ticks": 480,
+              "production_value_added": 928.0,
+              "productive_capital_extraction_value": 0.0,
+              "purposeful_agent_ticks": 429,
+              "submitted_actions": 1563,
+              "submitted_actions_excluding_contention": 1561,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 5945.0,
+              "terminal_economic_value": 198.5,
+              "venture_initiatives": 2,
+              "venture_initiatives_by_type": {
+                "build_started": 1,
+                "offer_trade": 1
+              }
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 49.5417,
+                  "full_horizon_health_pct": 78.9979
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 79.0
+              },
+              "execution": {
+                "components": {
+                  "actions": 1585.0,
+                  "valid_actions": 1444.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 91.1
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 0.0,
+                  "output_value": 928.0,
+                  "possible_agent_ticks": 480.0,
+                  "value_added": 928.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 193.33,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "diagnostic_checkpoint",
+        "score_horizon_ticks": 48,
+        "tick": 48
+      },
+      {
+        "cohorts": {
+          "cohort-1": {
+            "brain": "codex",
+            "model": "gpt-5.6-terra",
+            "provider": "codex_cli",
+            "raw": {
+              "action_point_overruns": 10,
+              "contention_failures": 3,
+              "decision_failures": 0,
+              "decisions": 558,
+              "endpoint_health_capacity": 1000.0,
+              "endpoint_health_points": 195.0,
+              "engine_invalid_proposals": 165,
+              "enterprise_supply_by_source": {
+                "net_goods_supplied_to_others": 1.0,
+                "net_service_income": 0.0
+              },
+              "enterprise_supply_value": 1.0,
+              "execution_actions": 1899.0,
+              "execution_contention_actions": 3.0,
+              "execution_decisions": 558.0,
+              "execution_unexecuted_actions": 8.0,
+              "execution_valid_actions": 1734.0,
+              "execution_valid_decisions": 428.0,
+              "external_decision_failures": 0,
+              "health_point_tick_capacity": 60000.0,
+              "health_point_ticks": 40747.0,
+              "informal_transfer_value": 7.0,
+              "initial_agents": 10,
+              "initial_endowment_value": 135.0,
+              "invalid_proposals": 165,
+              "living_agents": 6,
+              "living_terminal_economic_value": 149.0,
+              "model_output_failures": 0,
+              "observed_agent_ticks": 600,
+              "own_capital_output_value": 0.0,
+              "possible_agent_ticks": 600,
+              "production_by_source": {
+                "chop": 162.0,
+                "fish": 30.0,
+                "gather": 750.0,
+                "mine": 132.0
+              },
+              "production_intermediate_input_value": 0.0,
+              "production_output_value": 1074.0,
+              "production_possible_agent_ticks": 600,
+              "production_value_added": 1074.0,
+              "productive_capital_extraction_value": 4.0,
+              "purposeful_agent_ticks": 506,
+              "submitted_actions": 1865,
+              "submitted_actions_excluding_contention": 1862,
+              "tail_health_point_tick_capacity": 12000.0,
+              "tail_health_point_ticks": 2828.0,
+              "terminal_economic_value": 205.0,
+              "venture_initiatives": 6,
+              "venture_initiatives_by_type": {
+                "build": 1,
+                "build_started": 1,
+                "offer_trade": 4
+              }
+            },
+            "reasoning_effort": "medium",
+            "scores": {
+              "capability": {
+                "components": {
+                  "final_window_health_pct": 23.5667,
+                  "full_horizon_health_pct": 67.9117
+                },
+                "formula": "mean health across original population and all completed ticks",
+                "score": 67.91
+              },
+              "execution": {
+                "components": {
+                  "actions": 1899.0,
+                  "valid_actions": 1734.0
+                },
+                "formula": "100 * successful actions / submitted non-contention actions",
+                "score": 91.31
+              },
+              "production": {
+                "components": {
+                  "intermediate_input_value": 0.0,
+                  "output_value": 1074.0,
+                  "possible_agent_ticks": 600.0,
+                  "value_added": 1074.0
+                },
+                "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+                "score": 179.0,
+                "unit": "fixed accounting units per 100 original-population agent-ticks"
+              }
+            }
+          }
+        },
+        "role": "official_endpoint",
+        "score_horizon_ticks": 60,
+        "tick": 60
+      }
+    ],
+    "trial": {
+      "accepted_prior_trial": null,
+      "certification": "eligible_replication",
+      "code_fingerprint_sha256": "d4ef5807c908ade5360dc7759d84eb5a4322ac43f033a43af38ecbfda32dcc13",
+      "completed": true,
+      "declared_protocol": "participant-v8-revised",
+      "final_tick": 60,
+      "gift_classification": {
+        "artifact_sha256": null,
+        "classified_gifts": 0,
+        "judge": null,
+        "policy": "Transfers use the sender-declared gift, payment, or barter kind.",
+        "total_gifts": 5
+      },
+      "protocol_compliant": true,
+      "quality_flags": [],
+      "seed": 11,
+      "source_fingerprint_compatible": false,
+      "target_ticks": 60
+    }
+  },
+  "communication": {
+    "says_per_agent": {
+      "agent-1": 2,
+      "agent-3": 2,
+      "agent-4": 2,
+      "agent-5": 2,
+      "agent-7": 6
+    },
+    "says_total": 14
+  },
+  "config": {
+    "action_feedback_mode": "baseline",
+    "action_points_per_tick": 4,
+    "carried_food_spoil_interval": 6,
+    "carried_food_spoil_quantity": 1,
+    "communication_action_cost": null,
+    "default_carry_capacity": 10,
+    "economy_mode": "organic",
+    "energy_reserve_max": 30,
+    "energy_reserve_start": 25,
+    "exhaustion_damage": 2,
+    "farm_food_added": 5,
+    "farm_food_capacity": 24,
+    "farm_passive_food_growth": 2,
+    "food_reserve_max": 20,
+    "food_reserve_start": 10,
+    "forest_fiber_regen": 0.03,
+    "forest_food_regen": 0.02,
+    "forest_wood_regen": 0.14,
+    "geography_mode": "dispersed",
+    "group_admin_action_cost": null,
+    "height": 16,
+    "max_memory": 50,
+    "memory_char_budget": 2400,
+    "memory_update_max_chars": 240,
+    "mountain_ore_regen": 0.01,
+    "mountain_stone_regen": 0.04,
+    "objective_mode": "neutral",
+    "plains_fiber_regen": 0.03,
+    "plains_food_regen": 0.01,
+    "recent_event_limit": 20,
+    "resource_base_multiplier": 1.0,
+    "season_length_ticks": 12,
+    "seed": 11,
+    "skill_bonus_cap": 2,
+    "skill_energy_interval": 4,
+    "skill_yield_interval": 3,
+    "specialization_mode": "generalists",
+    "starter_resource_radius": 1,
+    "storage_capacity": 120,
+    "storm_exposure_damage": 4,
+    "survival_energy_decay": 1,
+    "survival_food_decay": 1,
+    "survival_water_decay": 2,
+    "town_ledger_action_cost": 1,
+    "town_ledger_output_mode": "disabled",
+    "town_ledger_prompt_mode": "baseline",
+    "town_ledger_seed_mode": "none",
+    "transfer_kind_mode": "self_declared",
+    "visible_radius": 2,
+    "water_food_regen": 0.02,
+    "water_reserve_max": 20,
+    "water_reserve_start": 10,
+    "water_water_regen": 0.7,
+    "width": 16,
+    "wild_fiber_density": 0.85,
+    "wild_food_density": 0.35,
+    "winter_exposure_damage": 3,
+    "world_variant": "frontier"
+  },
+  "diagnostics": {
+    "contract_default_rate_pct": 0.0,
+    "contracts_defaulted": 0,
+    "contracts_proposed": 0,
+    "contracts_settled": 0,
+    "ledger_note_count": 0
+  },
+  "economy": {
+    "access_grants": 0,
+    "claimed_tiles": 0,
+    "construction": {
+      "assets": {
+        "by_owner": {
+          "agent-4": {
+            "by_type": {
+              "shelter": 1
+            },
+            "complete": 0,
+            "count": 1,
+            "in_progress": 1,
+            "owner_kind": "agent",
+            "replacement_cost_value": 38,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-1"
+            ]
+          },
+          "agent-6": {
+            "by_type": {
+              "farm_plot": 1
+            },
+            "complete": 1,
+            "count": 1,
+            "in_progress": 0,
+            "owner_kind": "agent",
+            "replacement_cost_value": 10,
+            "stored_inventory_value": 0,
+            "structure_ids": [
+              "structure-2"
+            ]
+          }
+        },
+        "by_owner_kind": {
+          "agent": 2
+        },
+        "complete": 1,
+        "count": 2,
+        "in_progress": 1,
+        "replacement_cost_value": 48,
+        "stored_inventory_value": 0
+      },
+      "contributions": {
+        "by_agent": {
+          "agent-4": {
+            "by_item": {
+              "fiber": 3,
+              "stone": 1,
+              "wood": 8
+            },
+            "events": 4,
+            "quantity": 12,
+            "structure_ids": [
+              "structure-1"
+            ],
+            "value": 34
+          },
+          "agent-6": {
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "events": 1,
+            "quantity": 4,
+            "structure_ids": [
+              "structure-2"
+            ],
+            "value": 10
+          }
+        },
+        "by_item": {
+          "fiber": 5,
+          "stone": 1,
+          "wood": 10
+        },
+        "by_structure": {
+          "structure-1": {
+            "by_agent": {
+              "agent-4": {
+                "by_item": {
+                  "fiber": 3,
+                  "stone": 1,
+                  "wood": 8
+                },
+                "quantity": 12,
+                "value": 34
+              }
+            },
+            "by_item": {
+              "fiber": 3,
+              "stone": 1,
+              "wood": 8
+            },
+            "owner_id": "agent-4",
+            "owner_kind": "agent",
+            "quantity": 12,
+            "type": "shelter",
+            "value": 34
+          },
+          "structure-2": {
+            "by_agent": {
+              "agent-6": {
+                "by_item": {
+                  "fiber": 2,
+                  "wood": 2
+                },
+                "quantity": 4,
+                "value": 10
+              }
+            },
+            "by_item": {
+              "fiber": 2,
+              "wood": 2
+            },
+            "owner_id": "agent-6",
+            "owner_kind": "agent",
+            "quantity": 4,
+            "type": "farm_plot",
+            "value": 10
+          }
+        },
+        "events": 5,
+        "quantity": 16,
+        "value": 44
+      },
+      "contributor_ownership": {
+        "agent-4": {
+          "contributed_quantity": 12,
+          "contributed_value": 34,
+          "contribution_value_by_owner": {
+            "agent-4": 34
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 34,
+          "owned_asset_count": 1,
+          "owned_asset_replacement_cost_value": 38
+        },
+        "agent-6": {
+          "contributed_quantity": 4,
+          "contributed_value": 10,
+          "contribution_value_by_owner": {
+            "agent-6": 10
+          },
+          "contribution_value_to_group_owned_assets": 0,
+          "contribution_value_to_other_owned_assets": 0,
+          "contribution_value_to_self_owned_assets": 10,
+          "owned_asset_count": 1,
+          "owned_asset_replacement_cost_value": 10
+        }
+      }
+    },
+    "food_spoilage_events": 33,
+    "gift_by_item": {
+      "food": 1,
+      "water": 5
+    },
+    "gift_categories": {
+      "materials": {
+        "by_item": {},
+        "quantity": 0,
+        "value": 0
+      },
+      "subsistence": {
+        "by_item": {
+          "food": 1,
+          "water": 5
+        },
+        "quantity": 6,
+        "value": 7
+      }
+    },
+    "gift_detail": [
+      {
+        "category": "subsistence_only",
+        "from": "agent-10",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 15,
+        "to": "agent-5",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-5",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 25,
+        "to": "agent-3",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-10",
+        "group_status": "out_group",
+        "items": {
+          "food": 1,
+          "water": 1
+        },
+        "quantity": 2,
+        "shared_groups": [],
+        "tick": 27,
+        "to": "agent-3",
+        "value": 3
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-7",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 45,
+        "to": "agent-4",
+        "value": 1
+      },
+      {
+        "category": "subsistence_only",
+        "from": "agent-5",
+        "group_status": "out_group",
+        "items": {
+          "water": 1
+        },
+        "quantity": 1,
+        "shared_groups": [],
+        "tick": 50,
+        "to": "agent-10",
+        "value": 1
+      }
+    ],
+    "gift_event_categories": {
+      "empty": 0,
+      "materials_only": 0,
+      "mixed": 0,
+      "subsistence_only": 5
+    },
+    "gift_group_status": {
+      "in_group": 0,
+      "out_group": 5,
+      "unknown": 0
+    },
+    "gift_network": {
+      "agent-10->agent-3": 1,
+      "agent-10->agent-5": 1,
+      "agent-5->agent-10": 1,
+      "agent-5->agent-3": 1,
+      "agent-7->agent-4": 1
+    },
+    "gift_network_quantity": {
+      "agent-10->agent-3": 2,
+      "agent-10->agent-5": 1,
+      "agent-5->agent-10": 1,
+      "agent-5->agent-3": 1,
+      "agent-7->agent-4": 1
+    },
+    "gift_network_value": {
+      "agent-10->agent-3": 3,
+      "agent-10->agent-5": 1,
+      "agent-5->agent-10": 1,
+      "agent-5->agent-3": 1,
+      "agent-7->agent-4": 1
+    },
+    "gift_quantity": 6,
+    "gift_value": 7,
+    "gift_value_by_item": {
+      "food": 2,
+      "water": 5
+    },
+    "gifts": 5,
+    "institutions": {
+      "access_fees": {
+        "by_item": {},
+        "by_structure": {},
+        "payments": 0,
+        "policies_set": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "contracts": {
+        "accepted": 0,
+        "advance_value": 0,
+        "collateral_value": 0,
+        "defaulted": 0,
+        "fulfilled": 0,
+        "offered": 0,
+        "repayment_value": 0,
+        "status": {}
+      },
+      "delivery_contracts": {
+        "accepted": 0,
+        "cancelled": 0,
+        "default_rate_pct": 0.0,
+        "defaulted": 0,
+        "expired": 0,
+        "proposed": 0,
+        "settled": 0
+      },
+      "dividends": {
+        "by_item": {},
+        "claims": 0,
+        "quantity": 0,
+        "value": 0
+      },
+      "ledger_note_count": 0,
+      "market_history_entries": 1,
+      "upkeep": {
+        "by_item": {},
+        "maintenance_actions": 0,
+        "missed_cycles": 0,
+        "paid_cycles": 0,
+        "supplied_value": 0
+      }
+    },
+    "trades": {
+      "accept_attempts": 4,
+      "accept_success_rate_pct": 25.0,
+      "acceptance_latency_ticks": {
+        "average": 2.0,
+        "max": 2,
+        "median": 2.0,
+        "min": 2,
+        "samples": 1
+      },
+      "accepted": 1,
+      "accepted_by_item": {
+        "coin": 4,
+        "water": 1
+      },
+      "accepted_detail": [
+        {
+          "accepted_by": "agent-9",
+          "accepted_count": 1,
+          "created_tick": 49,
+          "escrow_position": {
+            "x": 5,
+            "y": 4
+          },
+          "escrowed": false,
+          "expires_tick": 54,
+          "from_agent": "agent-7",
+          "give": {
+            "coin": 4
+          },
+          "id": "trade-2",
+          "lots_remaining": 0,
+          "lots_total": 1,
+          "market_scope": "local",
+          "public": false,
+          "receive": {
+            "water": 1
+          },
+          "standing": false,
+          "status": "accepted",
+          "to_agent": "agent-9"
+        }
+      ],
+      "accepted_give_value": 4,
+      "accepted_group_status": {
+        "in_group": 0,
+        "out_group": 1,
+        "unknown": 0
+      },
+      "accepted_receive_value": 1,
+      "accepted_transfer_detail": [
+        {
+          "from": "agent-7",
+          "give": {
+            "coin": 4
+          },
+          "give_value": 4,
+          "group_status": "out_group",
+          "latency_ticks": 2,
+          "receive": {
+            "water": 1
+          },
+          "receive_value": 1,
+          "shared_groups": [],
+          "tick": 51,
+          "to": "agent-9",
+          "trade_id": "trade-2"
+        }
+      ],
+      "accepted_value": 5,
+      "cancelled": 0,
+      "conversion_rate_pct": 25.0,
+      "direct_offered": 3,
+      "expired": 3,
+      "invalid_accept_reasons": {
+        "Both parties must meet at (5, 4) to exchange the physical goods.": 1,
+        "Offerer carrying capacity would be exceeded.": 1,
+        "Recipient lacks requested goods.": 1
+      },
+      "invalid_accepts": 3,
+      "offered": 4,
+      "offered_group_status": {
+        "in_group": 0,
+        "out_group": 3,
+        "unknown": 1
+      },
+      "open": 0,
+      "public_offered": 1,
+      "rejected": 0,
+      "resolution_rate_pct": 100.0,
+      "resolved_conversion_rate_pct": 25.0,
+      "status_counts": {
+        "accepted": 1,
+        "expired": 3
+      }
+    }
+  },
+  "groups": {},
+  "milestone_first_ticks": {
+    "accept_trade": 51,
+    "build": 58,
+    "build_started": 25,
+    "death": 42,
+    "gift": 15,
+    "offer_trade": 32
+  },
+  "population": {
+    "assignment_seed": 0,
+    "assignment_strategy": "ordered",
+    "assignments": {
+      "agent-1": "cohort-1",
+      "agent-10": "cohort-1",
+      "agent-2": "cohort-1",
+      "agent-3": "cohort-1",
+      "agent-4": "cohort-1",
+      "agent-5": "cohort-1",
+      "agent-6": "cohort-1",
+      "agent-7": "cohort-1",
+      "agent-8": "cohort-1",
+      "agent-9": "cohort-1"
+    },
+    "cohorts": {
+      "cohort-1": {
+        "actions": {
+          "accept_trade": 1,
+          "agent_spawned": 10,
+          "broadcast": 14,
+          "build": 1,
+          "build_started": 1,
+          "chop": 40,
+          "consume": 217,
+          "contention_failure": 3,
+          "contribute": 3,
+          "death": 4,
+          "drop": 93,
+          "expire_trade": 3,
+          "farm": 1,
+          "fish": 14,
+          "food_spoilage": 33,
+          "gather": 296,
+          "gift": 5,
+          "inspect": 1,
+          "invalid_action": 165,
+          "mine": 26,
+          "move": 424,
+          "offer_trade": 4,
+          "pick_up": 3,
+          "say": 14,
+          "survival_damage": 183,
+          "wait": 560,
+          "whisper": 16
+        },
+        "agents": [
+          "agent-1",
+          "agent-10",
+          "agent-2",
+          "agent-3",
+          "agent-4",
+          "agent-5",
+          "agent-6",
+          "agent-7",
+          "agent-8",
+          "agent-9"
+        ],
+        "billing_mode": "chatgpt_plan",
+        "brain": "codex",
+        "communication": 14,
+        "contention_failures": 3,
+        "dead": 4,
+        "decisions": 558,
+        "gifts_sent": 5,
+        "initial_agents": 10,
+        "invalid_actions": 165,
+        "invalid_actions_per_decision": 0.296,
+        "living": 6,
+        "model": "gpt-5.6-terra",
+        "offer_conversion_rate_pct": 25.0,
+        "provider": "codex_cli",
+        "reasoning_effort": "medium",
+        "successful_offers": 1,
+        "trades_accepted": 1,
+        "trades_offered": 4,
+        "usage": {
+          "cached_tokens": 5042432,
+          "calls": 558,
+          "completion_tokens": 200401,
+          "estimated_cost": {
+            "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+            "available": true,
+            "basis": "token_derived_api_list_price",
+            "cache_write_tokens": 0,
+            "cached_input_tokens": 5042432,
+            "calls": 558,
+            "cost_usd": {
+              "cache_write": 0.0,
+              "cached_input": 1.008486,
+              "output": 2.404812,
+              "total": 8.710584,
+              "uncached_input": 5.297286
+            },
+            "models": {
+              "gpt-5.6-terra": {
+                "cache_write_tokens": 0,
+                "cached_input_tokens": 5042432,
+                "calls": 558,
+                "cost_usd": 8.710584,
+                "output_tokens": 200401,
+                "rates_per_million_tokens": {
+                  "cache_write": 2.5,
+                  "cached_input": 0.2,
+                  "input": 2.0,
+                  "output": 12.0
+                },
+                "uncached_input_tokens": 2648643
+              }
+            },
+            "output_tokens": 200401,
+            "provider_cost_coverage": {
+              "available": true,
+              "reported_calls": 558,
+              "reported_subtotal_usd": 0.0,
+              "total_cost_usd": 0.0,
+              "unreported_calls": 0
+            },
+            "provider_reported_cost_usd": 0.0,
+            "rate_card": {
+              "effective_date": "2026-09-05",
+              "sources": {
+                "anthropic": "https://platform.claude.com/docs/en/pricing",
+                "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+                "openai": "https://developers.openai.com/api/docs/pricing",
+                "openrouter": "https://openrouter.ai/models",
+                "xai": "https://docs.x.ai/developers/models/grok-4.6",
+                "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+              },
+              "unit": "usd_per_million_tokens"
+            },
+            "reasoning_output_tokens": 152345,
+            "uncached_input_tokens": 2648643,
+            "unknown_models": []
+          },
+          "prompt_tokens": 7691075,
+          "resolved_models": {
+            "gpt-5.6-terra": 558
+          },
+          "simulation_credits": {
+            "attribution": "Exact token usage from Codex decisions made by this simulation run only.",
+            "available": true,
+            "cached_input_tokens": 5042432,
+            "calls": 558,
+            "credits": {
+              "cached_input": 31.5152,
+              "output": 75.150375,
+              "total": 272.205762,
+              "uncached_input": 165.540188
+            },
+            "models": {
+              "gpt-5.6-terra": {
+                "cached_input_tokens": 5042432,
+                "calls": 558,
+                "credits": 272.205762,
+                "output_tokens": 200401,
+                "rates_per_million_tokens": {
+                  "cached_input": 6.25,
+                  "input": 62.5,
+                  "output": 375.0
+                },
+                "uncached_input_tokens": 2648643
+              }
+            },
+            "output_tokens": 200401,
+            "rate_card": {
+              "effective_date": "2026-07-10",
+              "source": "https://help.openai.com/en/articles/20001106-codex-rate-card-2",
+              "unit": "credits_per_million_tokens"
+            },
+            "reasoning_output_tokens": 152345,
+            "uncached_input_tokens": 2648643,
+            "unknown_models": []
+          },
+          "total_cost_usd": 0.0
+        }
+      }
+    },
+    "interaction_matrices": {
+      "accepted_trades": {
+        "cohort-1->cohort-1": 1
+      },
+      "construction_contributions": {
+        "cohort-1->unknown": 3
+      },
+      "gifts": {
+        "cohort-1->cohort-1": 5
+      }
+    },
+    "total_agents": 10,
+    "type": "codex"
+  },
+  "reliability": {
+    "action_failure_rate_pct": 7.6,
+    "ambiguous_boundary_failure_events": 0,
+    "benchmark_integrity_status": "clean",
+    "contention_failure_rate_pct": 0.1,
+    "decision_attempts": 558,
+    "decision_failure_rate_pct": 0.0,
+    "harness_failure_events": 0,
+    "invalid_action_rate_pct": 7.5,
+    "llm_failure_events": 0,
+    "llm_failures_by_agent": {},
+    "llm_provider_failure_events": 0,
+    "llm_quota_failure_events": 0,
+    "missing_usage_decisions": [],
+    "model_output_failure_events": 0,
+    "quality_flags": [],
+    "quality_status": "clean",
+    "usage_coverage_basis": "distinct_tick_and_agent",
+    "usage_record_coverage_pct": 100.0
+  },
+  "run": {
+    "completed": true,
+    "completion_evidence": "run_completed",
+    "final_tick": 60,
+    "status": "completed",
+    "stop_reason": null,
+    "target_ticks": 60
+  },
+  "schema_version": 1,
+  "source": "run",
+  "structures": {
+    "complete": {
+      "farm_plot": 1
+    },
+    "coop_builds": [],
+    "in_progress": {
+      "shelter": 1
+    },
+    "ownership": {
+      "agent-4": 1,
+      "agent-6": 1
+    },
+    "timeline": [
+      {
+        "agent": "agent-4",
+        "message": "Agent 4 started building shelter (needs {'wood': 5, 'stone': 2}).",
+        "tick": 25
+      }
+    ]
+  },
+  "survival": {
+    "agents": {
+      "agent-1": {
+        "alive": true,
+        "groups": [],
+        "health": 10,
+        "inventory": {
+          "coin": 4,
+          "fiber": 6,
+          "food": 2,
+          "water": 1
+        },
+        "wealth": 21
+      },
+      "agent-10": {
+        "alive": true,
+        "groups": [],
+        "health": 35,
+        "inventory": {
+          "food": 1,
+          "wood": 2
+        },
+        "wealth": 8
+      },
+      "agent-2": {
+        "alive": true,
+        "groups": [],
+        "health": 60,
+        "inventory": {
+          "coin": 4,
+          "wood": 5
+        },
+        "wealth": 19
+      },
+      "agent-3": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 6,
+          "ore": 1
+        },
+        "wealth": 20
+      },
+      "agent-4": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 3,
+          "wood": 3
+        },
+        "wealth": 15
+      },
+      "agent-5": {
+        "alive": true,
+        "groups": [],
+        "health": 33,
+        "inventory": {
+          "coin": 4,
+          "fiber": 7,
+          "food": 3
+        },
+        "wealth": 24
+      },
+      "agent-6": {
+        "alive": true,
+        "groups": [],
+        "health": 30,
+        "inventory": {
+          "coin": 4,
+          "food": 2,
+          "water": 2
+        },
+        "wealth": 10
+      },
+      "agent-7": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 3,
+          "food": 1,
+          "wood": 2
+        },
+        "wealth": 14
+      },
+      "agent-8": {
+        "alive": false,
+        "groups": [],
+        "health": 0,
+        "inventory": {
+          "fiber": 3,
+          "water": 1
+        },
+        "wealth": 7
+      },
+      "agent-9": {
+        "alive": true,
+        "groups": [],
+        "health": 27,
+        "inventory": {
+          "coin": 8,
+          "fiber": 2,
+          "wood": 4
+        },
+        "wealth": 24
+      }
+    },
+    "dead": 4,
+    "deaths": [
+      {
+        "agent": "agent-3",
+        "message": "Agent 3 died.",
+        "tick": 42
+      },
+      {
+        "agent": "agent-8",
+        "message": "Agent 8 died.",
+        "tick": 43
+      },
+      {
+        "agent": "agent-4",
+        "message": "Agent 4 died.",
+        "tick": 53
+      },
+      {
+        "agent": "agent-7",
+        "message": "Agent 7 died.",
+        "tick": 56
+      }
+    ],
+    "living": 6,
+    "survival_damage_events": 183
+  },
+  "transcript": [
+    {
+      "agent": "agent-1",
+      "message": "Water is west; free space and gather it.",
+      "scope": "local",
+      "tick": 25
+    },
+    {
+      "agent": "agent-1",
+      "message": "Drop stone; water west.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-3",
+      "message": "Need water or food if you can spare it.",
+      "scope": "local",
+      "tick": 26
+    },
+    {
+      "agent": "agent-3",
+      "message": "Low food. Please gift 1 food if able.",
+      "scope": "local",
+      "tick": 31
+    },
+    {
+      "agent": "agent-7",
+      "message": "Need 1 water, please.",
+      "scope": "local",
+      "tick": 46
+    },
+    {
+      "agent": "agent-7",
+      "message": "Agent 9, meet at 5,4 to settle water trade.",
+      "scope": "local",
+      "tick": 50
+    },
+    {
+      "agent": "agent-4",
+      "message": "Emergency: please gift 1 water; I can pay 2 coin.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-4",
+      "message": "Emergency: please gift 1 water; I can pay 2 coin.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-7",
+      "message": "Please accept trade-2 now; water is urgent.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-7",
+      "message": "Please accept trade-2 now; water is urgent.",
+      "scope": "local",
+      "tick": 51
+    },
+    {
+      "agent": "agent-7",
+      "message": "I drank my last water. Please trade 1 more water.",
+      "scope": "local",
+      "tick": 52
+    },
+    {
+      "agent": "agent-7",
+      "message": "Please accept the wood-for-water trade.",
+      "scope": "local",
+      "tick": 53
+    },
+    {
+      "agent": "agent-5",
+      "message": "Need water urgently; can trade food or fiber.",
+      "scope": "local",
+      "tick": 53
+    },
+    {
+      "agent": "agent-5",
+      "message": "Need water urgently; can trade food or fiber.",
+      "scope": "local",
+      "tick": 53
+    }
+  ],
+  "usage": {
+    "attempted_calls": 558,
+    "attempted_provider_cost_usd": 0.0,
+    "attempted_token_cost": {
+      "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+      "available": true,
+      "basis": "token_derived_api_list_price",
+      "cache_write_tokens": 0,
+      "cached_input_tokens": 5042432,
+      "calls": 558,
+      "cost_usd": {
+        "cache_write": 0.0,
+        "cached_input": 1.008486,
+        "output": 2.404812,
+        "total": 8.710584,
+        "uncached_input": 5.297286
+      },
+      "models": {
+        "gpt-5.6-terra": {
+          "cache_write_tokens": 0,
+          "cached_input_tokens": 5042432,
+          "calls": 558,
+          "cost_usd": 8.710584,
+          "output_tokens": 200401,
+          "rates_per_million_tokens": {
+            "cache_write": 2.5,
+            "cached_input": 0.2,
+            "input": 2.0,
+            "output": 12.0
+          },
+          "uncached_input_tokens": 2648643
+        }
+      },
+      "output_tokens": 200401,
+      "provider_cost_coverage": {
+        "available": true,
+        "reported_calls": 558,
+        "reported_subtotal_usd": 0.0,
+        "total_cost_usd": 0.0,
+        "unreported_calls": 0
+      },
+      "provider_reported_cost_usd": 0.0,
+      "rate_card": {
+        "effective_date": "2026-09-05",
+        "sources": {
+          "anthropic": "https://platform.claude.com/docs/en/pricing",
+          "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+          "openai": "https://developers.openai.com/api/docs/pricing",
+          "openrouter": "https://openrouter.ai/models",
+          "xai": "https://docs.x.ai/developers/models/grok-4.6",
+          "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+        },
+        "unit": "usd_per_million_tokens"
+      },
+      "reasoning_output_tokens": 152345,
+      "uncached_input_tokens": 2648643,
+      "unknown_models": []
+    },
+    "attempts_without_usage": 0,
+    "cache_hit_rate_pct": 65.6,
+    "calls": 558,
+    "completion_tokens": 200401,
+    "decision_latency": {
+      "attempts": 558,
+      "complete": true,
+      "decision_seconds": [
+        5.698,
+        7.865,
+        9.957,
+        6.149,
+        14.371,
+        7.734,
+        7.572,
+        6.319,
+        9.103,
+        6.844,
+        9.836,
+        9.874,
+        9.981,
+        10.226,
+        5.718,
+        6.601,
+        9.414,
+        10.574,
+        5.221,
+        9.679,
+        4.759,
+        5.667,
+        7.205,
+        9.004,
+        4.879,
+        6.369,
+        9.264,
+        7.752,
+        11.796,
+        9.443,
+        5.01,
+        5.2,
+        7.057,
+        8.99,
+        4.67,
+        4.587,
+        8.977,
+        9.87,
+        4.853,
+        10.105,
+        4.759,
+        5.707,
+        5.995,
+        4.758,
+        10.514,
+        7.346,
+        8.698,
+        7.816,
+        9.713,
+        11.575,
+        4.752,
+        4.876,
+        5.149,
+        7.644,
+        4.007,
+        4.87,
+        8.309,
+        4.713,
+        8.202,
+        8.712,
+        4.32,
+        4.512,
+        6.984,
+        9.506,
+        8.764,
+        11.712,
+        9.406,
+        4.41,
+        13.677,
+        10.624,
+        4.865,
+        7.622,
+        10.642,
+        12.138,
+        13.287,
+        20.812,
+        16.443,
+        19.782,
+        13.834,
+        9.372,
+        6.133,
+        8.485,
+        11.17,
+        11.644,
+        10.65,
+        8.503,
+        5.257,
+        11.105,
+        6.966,
+        14.107,
+        15.857,
+        17.072,
+        18.941,
+        22.448,
+        8.268,
+        11.715,
+        7.203,
+        13.284,
+        8.364,
+        12.567,
+        4.837,
+        8.957,
+        8.987,
+        11.432,
+        8.634,
+        13.396,
+        12.618,
+        15.874,
+        25.496,
+        23.576,
+        7.768,
+        9.264,
+        9.899,
+        12.449,
+        5.854,
+        4.682,
+        9.935,
+        12.319,
+        8.351,
+        7.063,
+        6.749,
+        10.152,
+        10.487,
+        19.675,
+        17.009,
+        6.793,
+        20.429,
+        16.352,
+        27.224,
+        10.093,
+        6.386,
+        9.569,
+        9.692,
+        10.422,
+        7.752,
+        9.873,
+        10.113,
+        6.088,
+        17.964,
+        20.263,
+        5.59,
+        8.058,
+        9.918,
+        14.474,
+        9.587,
+        9.106,
+        6.318,
+        8.954,
+        20.785,
+        14.864,
+        7.569,
+        10.585,
+        10.88,
+        6.127,
+        13.966,
+        16.042,
+        20.146,
+        17.711,
+        18.029,
+        12.548,
+        4.918,
+        9.608,
+        11.914,
+        12.219,
+        7.618,
+        7.211,
+        13.282,
+        11.662,
+        13.299,
+        21.545,
+        13.106,
+        13.34,
+        14.213,
+        14.771,
+        5.701,
+        9.399,
+        11.177,
+        13.136,
+        8.524,
+        7.008,
+        7.639,
+        8.066,
+        9.447,
+        11.298,
+        5.954,
+        9.762,
+        12.865,
+        10.749,
+        21.744,
+        16.798,
+        6.071,
+        8.364,
+        9.634,
+        10.478,
+        7.904,
+        8.038,
+        8.459,
+        8.795,
+        7.612,
+        10.766,
+        6.512,
+        8.572,
+        9.739,
+        10.314,
+        6.471,
+        10.323,
+        16.08,
+        19.262,
+        13.985,
+        23.93,
+        4.695,
+        7.005,
+        9.747,
+        11.752,
+        8.78,
+        9.235,
+        8.532,
+        7.085,
+        14.497,
+        13.404,
+        5.13,
+        8.462,
+        8.777,
+        10.941,
+        16.68,
+        18.903,
+        19.794,
+        22.331,
+        14.497,
+        11.433,
+        4.89,
+        7.786,
+        11.337,
+        11.475,
+        11.615,
+        20.34,
+        13.001,
+        9.068,
+        14.128,
+        13.189,
+        17.055,
+        17.388,
+        24.85,
+        10.091,
+        10.849,
+        33.93,
+        8.235,
+        12.904,
+        13.398,
+        13.369,
+        6.323,
+        9.662,
+        10.68,
+        11.186,
+        18.826,
+        16.328,
+        19.528,
+        7.261,
+        22.171,
+        9.725,
+        7.929,
+        11.869,
+        12.237,
+        13.912,
+        4.974,
+        9.425,
+        8.657,
+        12.284,
+        8.015,
+        14.237,
+        17.627,
+        18.444,
+        20.309,
+        25.71,
+        10.183,
+        13.751,
+        11.27,
+        8.008,
+        14.66,
+        14.219,
+        8.03,
+        8.107,
+        9.018,
+        10.617,
+        17.393,
+        18.849,
+        21.834,
+        22.881,
+        7.178,
+        14.023,
+        6.915,
+        10.477,
+        13.556,
+        16.125,
+        9.515,
+        10.183,
+        4.785,
+        7.963,
+        10.358,
+        16.43,
+        10.138,
+        10.679,
+        10.716,
+        15.787,
+        9.228,
+        8.251,
+        14.039,
+        15.405,
+        10.439,
+        10.587,
+        8.114,
+        11.191,
+        11.341,
+        11.778,
+        8.254,
+        13.614,
+        13.037,
+        20.591,
+        7.696,
+        22.021,
+        5.54,
+        10.157,
+        12.506,
+        7.621,
+        14.35,
+        8.538,
+        7.416,
+        8.802,
+        9.721,
+        8.707,
+        9.389,
+        9.498,
+        9.892,
+        14.731,
+        19.437,
+        16.462,
+        21.982,
+        22.237,
+        11.51,
+        37.336,
+        8.478,
+        8.548,
+        8.858,
+        12.064,
+        8.72,
+        11.739,
+        11.462,
+        11.592,
+        9.322,
+        10.947,
+        5.08,
+        9.61,
+        11.674,
+        11.921,
+        4.874,
+        4.43,
+        18.319,
+        14.07,
+        12.462,
+        20.318,
+        4.912,
+        9.272,
+        9.306,
+        9.793,
+        11.058,
+        10.924,
+        11.77,
+        13.776,
+        8.957,
+        12.44,
+        10.887,
+        11.123,
+        14.369,
+        16.947,
+        8.917,
+        9.206,
+        13.291,
+        9.871,
+        8.396,
+        14.908,
+        9.032,
+        11.045,
+        12.051,
+        12.556,
+        6.687,
+        10.108,
+        8.837,
+        9.863,
+        8.848,
+        8.641,
+        8.874,
+        9.062,
+        9.524,
+        23.285,
+        16.57,
+        17.065,
+        21.118,
+        4.785,
+        8.903,
+        15.802,
+        5.285,
+        7.396,
+        8.594,
+        5.143,
+        13.826,
+        11.816,
+        20.627,
+        8.796,
+        7.241,
+        12.186,
+        13.377,
+        13.785,
+        17.622,
+        24.685,
+        13.732,
+        10.716,
+        20.303,
+        13.152,
+        9.701,
+        12.729,
+        10.465,
+        13.823,
+        13.888,
+        14.652,
+        17.555,
+        22.685,
+        25.251,
+        26.902,
+        10.332,
+        11.23,
+        9.416,
+        9.427,
+        11.05,
+        11.728,
+        9.034,
+        10.041,
+        11.147,
+        14.244,
+        22.665,
+        7.789,
+        8.407,
+        8.623,
+        9.244,
+        6.871,
+        7.261,
+        10.263,
+        11.338,
+        8.33,
+        8.547,
+        9.865,
+        15.865,
+        9.973,
+        11.903,
+        11.98,
+        15.317,
+        12.411,
+        12.811,
+        13.114,
+        16.126,
+        8.631,
+        9.889,
+        10.615,
+        13.322,
+        8.418,
+        9.358,
+        14.096,
+        14.474,
+        5.317,
+        8.79,
+        10.218,
+        11.277,
+        18.123,
+        18.192,
+        24.795,
+        9.693,
+        28.016,
+        12.126,
+        9.139,
+        9.1,
+        7.398,
+        7.947,
+        9.337,
+        12.569,
+        7.52,
+        10.479,
+        9.066,
+        14.542,
+        12.089,
+        14.85,
+        15.639,
+        15.948,
+        10.056,
+        12.898,
+        13.688,
+        13.564,
+        10.099,
+        10.751,
+        13.289,
+        13.387,
+        5.154,
+        17.789,
+        18.993,
+        20.261,
+        6.726,
+        8.196,
+        10.338,
+        11.498,
+        13.379,
+        12.116,
+        13.3,
+        17.527,
+        10.177,
+        10.259,
+        11.308,
+        15.105,
+        8.595,
+        9.693,
+        10.001,
+        7.387,
+        7.935,
+        9.384,
+        10.473,
+        14.267,
+        4.981,
+        10.065,
+        13.855,
+        7.738,
+        7.819,
+        9.437,
+        9.742,
+        12.514,
+        12.755,
+        19.548,
+        9.387,
+        11.069,
+        11.883,
+        16.062,
+        14.027,
+        18.672,
+        24.187,
+        5.949,
+        8.764,
+        9.821,
+        12.677,
+        11.372,
+        9.595,
+        8.767,
+        9.489,
+        10.173,
+        10.944,
+        12.129,
+        14.076,
+        8.086,
+        10.294,
+        11.631,
+        4.655,
+        12.81,
+        13.577
+      ],
+      "decisions": 558,
+      "mean_seconds": 11.450546594982079,
+      "timed_attempts": 558,
+      "total_seconds": 6389.405
+    },
+    "discarded_calls": 0,
+    "dynamic_input_components": {
+      "mean_chars": {
+        "local_map": 801.7,
+        "market_history": 4.1,
+        "memory": 482.8,
+        "nearby_agents": 98.2,
+        "open_trades": 12.3,
+        "recent_action_feedback": 593.8,
+        "recent_events": 902.4,
+        "season": 37.9,
+        "self": 289.5,
+        "tick": 1.8
+      },
+      "samples": 558
+    },
+    "efficiency": {
+      "mean_agent_dynamic_observation_chars": 3323.6,
+      "mean_agent_static_context_chars": 8301.0,
+      "mean_output_tokens_per_call": 359.1,
+      "mean_prompt_tokens_per_call": 13783.3,
+      "mean_reasoning_tokens_per_call": 273.0,
+      "mean_request_payload_bytes": 12486.6,
+      "mean_uncached_input_tokens_per_call": 4746.7
+    },
+    "estimated_cost": {
+      "attribution": "Token usage from this run priced at API list rates; an estimate, not a provider charge, for subscription-billed connectors.",
+      "available": true,
+      "basis": "token_derived_api_list_price",
+      "cache_write_tokens": 0,
+      "cached_input_tokens": 5042432,
+      "calls": 558,
+      "cost_usd": {
+        "cache_write": 0.0,
+        "cached_input": 1.008486,
+        "output": 2.404812,
+        "total": 8.710584,
+        "uncached_input": 5.297286
+      },
+      "models": {
+        "gpt-5.6-terra": {
+          "cache_write_tokens": 0,
+          "cached_input_tokens": 5042432,
+          "calls": 558,
+          "cost_usd": 8.710584,
+          "output_tokens": 200401,
+          "rates_per_million_tokens": {
+            "cache_write": 2.5,
+            "cached_input": 0.2,
+            "input": 2.0,
+            "output": 12.0
+          },
+          "uncached_input_tokens": 2648643
+        }
+      },
+      "output_tokens": 200401,
+      "provider_cost_coverage": {
+        "available": true,
+        "reported_calls": 558,
+        "reported_subtotal_usd": 0.0,
+        "total_cost_usd": 0.0,
+        "unreported_calls": 0
+      },
+      "provider_reported_cost_usd": 0.0,
+      "rate_card": {
+        "effective_date": "2026-09-05",
+        "sources": {
+          "anthropic": "https://platform.claude.com/docs/en/pricing",
+          "meta": "https://dev.meta.ai/docs/pricing-rate-limits",
+          "openai": "https://developers.openai.com/api/docs/pricing",
+          "openrouter": "https://openrouter.ai/models",
+          "xai": "https://docs.x.ai/developers/models/grok-4.6",
+          "xai_grok_4_5": "https://docs.x.ai/developers/models/grok-4.5"
+        },
+        "unit": "usd_per_million_tokens"
+      },
+      "reasoning_output_tokens": 152345,
+      "uncached_input_tokens": 2648643,
+      "unknown_models": []
+    },
+    "phase_timing": {
+      "samples": 60,
+      "total_seconds": {
+        "decision_seconds": 1952.4867555619858,
+        "input_logging_seconds": 0.11205617302039173,
+        "observation_seconds": 0.2175140630133683,
+        "resolution_seconds": 0.6343095140182413
+      }
+    },
+    "physical_attempts": 558,
+    "plan_limits": {
+      "attribution": "Account-level observed delta during this run; concurrent Codex usage on the same account may be included.",
+      "available": true,
+      "buckets": {
+        "codex": {
+          "credits": {
+            "after_balance": "2148.2894640000",
+            "balance_delta": "0E-10",
+            "before_balance": "2148.2894640000",
+            "has_credits": true,
+            "unlimited": false
+          },
+          "limit_name": null,
+          "plan_type": "prolite",
+          "primary": {
+            "after_resets_at": 1789229364,
+            "after_used_percent": 30,
+            "before_resets_at": 1789229364,
+            "before_used_percent": 27,
+            "same_window": true,
+            "used_percent_delta": 3,
+            "window_duration_mins": 10080
+          },
+          "rate_limit_reached_type": null,
+          "secondary": null
+        },
+        "codex_bengalfox": {
+          "credits": null,
+          "limit_name": "GPT-5.3-Codex-Spark",
+          "plan_type": "prolite",
+          "primary": {
+            "after_resets_at": 1788697803,
+            "after_used_percent": 0,
+            "before_resets_at": 1788695784,
+            "before_used_percent": 0,
+            "same_window": false,
+            "used_percent_delta": null,
+            "window_duration_mins": 300
+          },
+          "rate_limit_reached_type": null,
+          "secondary": {
+            "after_resets_at": 1789284603,
+            "after_used_percent": 0,
+            "before_resets_at": 1789282584,
+            "before_used_percent": 0,
+            "same_window": false,
+            "used_percent_delta": null,
+            "window_duration_mins": 10080
+          }
+        }
+      },
+      "checkpoint_count": 2,
+      "ended_at_utc": "2026-09-06T07:30:02.224693+00:00",
+      "started_at_utc": "2026-09-06T06:56:21.997769+00:00",
+      "successful_checkpoint_count": 2
+    },
+    "prompt_tokens": 7691075,
+    "provider_cost_coverage": {
+      "available": true,
+      "reported_calls": 558,
+      "reported_subtotal_usd": 0.0,
+      "total_cost_usd": 0.0,
+      "unreported_calls": 0
+    },
+    "reasoning_tokens": 152345,
+    "reasoning_tokens_estimated": false,
+    "simulation_credits": {
+      "attribution": "Exact token usage from Codex decisions made by this simulation run only.",
+      "available": true,
+      "cached_input_tokens": 5042432,
+      "calls": 558,
+      "credits": {
+        "cached_input": 31.5152,
+        "output": 75.150375,
+        "total": 272.205762,
+        "uncached_input": 165.540188
+      },
+      "models": {
+        "gpt-5.6-terra": {
+          "cached_input_tokens": 5042432,
+          "calls": 558,
+          "credits": 272.205762,
+          "output_tokens": 200401,
+          "rates_per_million_tokens": {
+            "cached_input": 6.25,
+            "input": 62.5,
+            "output": 375.0
+          },
+          "uncached_input_tokens": 2648643
+        }
+      },
+      "output_tokens": 200401,
+      "rate_card": {
+        "effective_date": "2026-07-10",
+        "source": "https://help.openai.com/en/articles/20001106-codex-rate-card-2",
+        "unit": "credits_per_million_tokens"
+      },
+      "reasoning_output_tokens": 152345,
+      "uncached_input_tokens": 2648643,
+      "unknown_models": []
+    },
+    "total_cost_usd": 0.0,
+    "unknown_charge_exposure": false
+  },
+  "wealth_gini": 0.2111
+}
