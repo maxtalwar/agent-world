@@ -23,7 +23,6 @@ python3 -m agent_world.cli map
 python3 -m agent_world.cli run --ticks 25 --agents 5 --seed 7 --progress --out runs/example.jsonl --snapshot runs/example-snapshot.json
 python3 -m agent_world.cli replay runs/example.jsonl --last 30
 python3 -m agent_world.cli prompt --seed 7 --agents 2 --agent agent-1
-python3 -m agent_world.cli ablate --agents 4 --ticks 30 --seed 11
 python3 -m agent_world.cli experiment --agents 5 --ticks 20 --seeds 11 --environment all --objective all --progress
 python3 -m agent_world.cli experiment --brain codex --model gpt-5.4-mini --environment organic --objective neutral --ticks 40 --agents 5 --seeds 29 --progress
 python3 -m agent_world.cli run --brain codex --model gpt-5.6-luna --reasoning-effort low --ticks 3 --agents 2 --progress
@@ -639,8 +638,6 @@ The most important diagnostics to watch are:
 - `agents.median_lifespan` (whether agents survive long enough for investment to pay back)
 - invalid action reasons
 - wealth distribution and accepted trade count
-
-Use `agent_world.cli ablate` to sweep one variable at a time (carry capacity, energy ceiling, water decay, food density, horizon) on a fixed seed and diff these metrics, so model quality and world balance can be separated.
 
 For richer context, see:
 

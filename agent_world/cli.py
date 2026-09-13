@@ -15,7 +15,6 @@ import subprocess
 import sys
 from typing import Any
 
-from agent_world.ablation import format_table, run_ablation
 from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.benchmarks import (
     BENCHMARK_CLAUDE_THINKING_BUDGET_TOKENS,
@@ -409,22 +408,6 @@ def build_parser() -> argparse.ArgumentParser:
     view_parser.add_argument("--host", default="127.0.0.1")
     view_parser.add_argument("--port", type=int, default=8765)
 
-    ablate_parser = subparsers.add_parser(
-        "ablate",
-        help="Sweep single-variable config changes on a fixed seed and diff the metrics.",
-    )
-    ablate_parser.add_argument("--agents", type=int, default=4)
-    ablate_parser.add_argument("--ticks", type=int, default=30, help="Baseline tick count (horizon variants scale this).")
-    ablate_parser.add_argument("--seed", type=int, default=11)
-    ablate_parser.add_argument(
-        "--brain",
-        choices=["survival", "openrouter", "codex", "claude", "cursor", "devin", "grok", "zcode", "antigravity", "muse"],
-        default="survival",
-    )
-    ablate_parser.add_argument("--model", default=None)
-    ablate_parser.add_argument("--reasoning-effort", choices=["minimal", "low", "medium", "high", "xhigh", "max"], default=None)
-    ablate_parser.add_argument("--out", type=Path, default=None, help="Optional JSON output path for the rows.")
-
     report_parser = subparsers.add_parser(
         "report",
         help="Export structured -report.json/-report.md summaries for run logs; compares runs when given several.",
@@ -545,8 +528,6 @@ def main(argv: list[str] | None = None) -> None:
         _map(args)
     elif args.command == "view":
         _view(args)
-    elif args.command == "ablate":
-        _ablate(args)
     elif args.command == "report":
         _report(args)
     elif args.command == "benchmark":
@@ -1565,54 +1546,6 @@ def _map(args: argparse.Namespace) -> None:
 
 def _view(args: argparse.Namespace) -> None:
     serve_observer(snapshot_path=args.snapshot, events_path=args.events, host=args.host, port=args.port)
-
-
-def _ablate(args: argparse.Namespace) -> None:
-    load_dotenv()
-    runtime = BrainRuntime()
-
-    def brain_factory(_agent_id: str) -> AgentBrain:
-        if args.brain == "openrouter":
-            return OpenRouterBrain(
-                model=args.model,
-                reasoning_effort=args.reasoning_effort,
-                runtime=runtime,
-            )
-        if args.brain == "codex":
-            return CodexBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
-        if args.brain == "claude":
-            return ClaudeBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
-        if args.brain == "cursor":
-            return CursorBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
-        if args.brain == "grok":
-            return GrokBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
-        if args.brain == "antigravity":
-            return AntigravityBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
-        if args.brain == "muse":
-            return MuseBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
-        if args.brain == "zcode":
-            return ZCodeBrain(model=args.model, reasoning_effort=args.reasoning_effort, runtime=runtime)
-        if args.brain == "devin":
-            return DevinBrain(
-                model=args.model,
-                reasoning_effort=args.reasoning_effort,
-                runtime=runtime,
-            )
-        return SurvivalBrain()
-
-    results = run_ablation(
-        agents=args.agents,
-        ticks=args.ticks,
-        seed=args.seed,
-        brain_factory=brain_factory,
-    )
-    print(f"Ablation sweep (brain={args.brain}, agents={args.agents}, seed={args.seed}, baseline ticks={args.ticks})")
-    print("builds/buildable are only meaningful with an LLM brain; lifespan/spare capacity are model-independent.\n")
-    print(format_table(results))
-    if args.out:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        _atomic_write_text(args.out, json.dumps({name: row for name, row in results}, indent=2, sort_keys=True))
-        print(f"\nWrote rows to {args.out}")
 
 
 def _read_jsonl_records(path: Path) -> list[dict[str, Any]]:
