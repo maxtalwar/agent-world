@@ -382,16 +382,16 @@
     well(){
       this.groundPatch('#bbb48b',26);this.ellipse(4,5,19,7,'#52634b25');
       const posts=[[-.19,.19],[.19,-.19]].sort((a,b)=>this.project(...a)[1]-this.project(...b)[1]);
-      const post=([x,y])=>{const [px,py]=this.project(x,y);this.rect(px-1.5,py-34,3,35,'#96784e');};
+      const post=([x,y])=>{const [px,py]=this.project(x,y);this.rect(px-1.5,py-24,3,25,'#96784e');};
       post(posts[0]);
       this.ellipse(0,0,13,7,'#a2aa95');this.rect(-13,-8,26,9,'#a7af9e');
       this.ellipse(0,-9,13,7,'#d0ceaf');this.ellipse(0,-9,9,4,'#4d8485');
       post(posts[1]);
       this.mesh([
-        {points:[[-.26,-.26,32],[-.26,.26,32],[0,.26,44],[0,-.26,44]],fill:'#c1bd87'},
-        {points:[[.26,-.26,32],[.26,.26,32],[0,.26,44],[0,-.26,44]],fill:'#a3a575'}
+        {points:[[-.26,-.26,22],[-.26,.26,22],[0,.26,28],[0,-.26,28]],fill:'#c1bd87'},
+        {points:[[.26,-.26,22],[.26,.26,22],[0,.26,28],[0,-.26,28]],fill:'#a3a575'}
       ]);
-      this.line([[0,-31],[0,-10]],'#8c7957',1);this.rect(-3,-14,6,5,'#c5ac7a');
+      this.line([[0,-21],[0,-10]],'#8c7957',1);this.rect(-3,-14,6,5,'#c5ac7a');
     }
     construction(type,ground=true){
       // Use the finished structure's footprint and materials, with visible missing work.
