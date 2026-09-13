@@ -120,7 +120,8 @@ class V8PipelineTests(unittest.TestCase):
             path.write_text(json.dumps({"schema_version": 1, "run_id": "fixture", "kind": "benchmark",
                                         "protocol": "participant-v8", "model": {"brain": "codex", "id": "gpt-test"}}))
             config = load_run_config(path)
-            with patch("agent_world.managed_runs._git", side_effect=["a" * 40, "", ""]):
+            with patch("agent_world.managed_runs._git", side_effect=["a" * 40, "", ""]), \
+                 patch("agent_world.recipe_execution.verify_recipe_execution"):
                 plan = build_launch_plan(config, Path(directory))
             self.assertEqual([c["target_ticks"] for c in plan["cells"]], [60, 60])
             self.assertEqual([c["seed"] for c in plan["cells"]], [11, 41])
@@ -196,7 +197,7 @@ class V8PipelineTests(unittest.TestCase):
                 reports.append(report)
             job = {"schema_version": 1, "run_id": "fixture", "kind": "benchmark",
                    "protocol": recipe.id, "recipe_fingerprint_sha256": recipe.digest,
-                   "job_dir": str(root), "source_root": str(root), "launch_commit": "a" * 40,
+                   "job_dir": str(root), "source_root": str(Path(__file__).resolve().parents[1]), "launch_commit": "a" * 40,
                    "config": {"model": {"id": "gpt-test"}}, "cells": cells}
             with patch("agent_world.run_finalization.load_job", return_value=job), \
                  patch("agent_world.run_finalization.cell_status", return_value={"state": "completed", "supervisor_active": False}), \

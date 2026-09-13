@@ -124,7 +124,7 @@ class JsonRecipeTests(unittest.TestCase):
                     reports.append(_protocol_report(seed, str(events), protocol_id=recipe.id))
                 job = {"schema_version": 1, "run_id": "custom", "kind": "benchmark",
                        "protocol": recipe.id, "recipe_fingerprint_sha256": recipe.digest,
-                       "job_dir": str(root), "source_root": str(root), "launch_commit": "a" * 40,
+                       "job_dir": str(root), "source_root": str(Path(__file__).resolve().parents[1]), "launch_commit": "a" * 40,
                        "config": {"model": {"id": "gpt-test"}}, "cells": cells}
 
                 def frozen(cell, root):

@@ -90,7 +90,10 @@ CLI remains the source of truth for behavior.
   `docs/model-leaderboard.md` as the canonical compact human-readable
   projection. Update the source catalog, generated database, and projection in
   the same commit as any new or corrected durable benchmark result.
-- After making any workspace change, run the relevant validation, commit the change, and push the branch before handing work back to the user.
+- After making any workspace change, run the full test suite
+  (`python3 -m unittest discover -s tests`, about twenty seconds) plus any
+  dashboard checks the change touches, commit the change, and push the branch
+  before handing work back to the user. Do not substitute a subset of tests.
 - When a run, experiment, debug session, or benchmark surfaces something
   genuinely interesting — a model quirk, a capability inversion, an emergent
   behavior, a harness effect that masqueraded as model behavior — append a

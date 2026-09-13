@@ -460,7 +460,8 @@ class InfrastructureRegressions(unittest.TestCase):
         config = {"run_id": "fixture", "kind": "benchmark", "protocol": "participant-v6",
                   "source": {"commit": "old"}, "seeds": [11], "model": {"brain": "codex", "id": "fixture"}}
         from agent_world.protocols import get_recipe
-        with patch("agent_world.managed_runs._git", side_effect=["a"*40, json.dumps(get_recipe("participant-v6").to_dict()), "b"*40]):
+        with patch("agent_world.managed_runs._git", side_effect=["a"*40, json.dumps(get_recipe("participant-v6").to_dict()), "b"*40]), \
+             patch("agent_world.recipe_execution.verify_recipe_execution"):
             plan = build_launch_plan(config, Path("/fixture"))
         self.assertEqual(plan["launch_commit"], "a"*40)
         self.assertEqual(plan["orchestrator_commit"], "b"*40)
