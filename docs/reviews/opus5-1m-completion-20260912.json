@@ -1,0 +1,731 @@
+{
+  "run_id": "web-claude-opus-5-1m-680839180c53",
+  "request_id": "680839180c5316d2d9ccbc7a2ed3bfb4",
+  "launch_commit": "3a0867cfaf6c598ce506485a93fbcaa660ddab0c",
+  "recipe": "participant-v8-revised",
+  "recipe_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+  "recovery": "Canonical-root finalize_job using pinned report and aggregation source; no simulation migration.",
+  "cells": [
+    {
+      "seed": 11,
+      "worktree": "/home/maxtalwar/agent-world/.local/leaderboard-sources/3a0867cfaf6c598ce506485a93fbcaa660ddab0c/.worktrees/run-cohorts/web-claude-opus-5-1m-680839180c53-seed-11-3a0867cfaf6c",
+      "source_diff": "empty",
+      "source_status": "clean",
+      "code_fingerprint": "1ea5838de2429eb2f84978c992d9e3e4c83ced09aba60b137f3027cc3042386e",
+      "trial": {
+        "accepted_prior_trial": null,
+        "certification": "eligible_replication",
+        "code_fingerprint_sha256": "1ea5838de2429eb2f84978c992d9e3e4c83ced09aba60b137f3027cc3042386e",
+        "completed": true,
+        "declared_protocol": "participant-v8-revised",
+        "final_tick": 60,
+        "gift_classification": {
+          "artifact_sha256": null,
+          "classified_gifts": 0,
+          "judge": null,
+          "policy": "Transfers use the sender-declared gift, payment, or barter kind.",
+          "total_gifts": 12
+        },
+        "protocol_compliant": true,
+        "quality_flags": [],
+        "seed": 11,
+        "source_fingerprint_compatible": false,
+        "target_ticks": 60
+      },
+      "reliability": {
+        "action_failure_rate_pct": 8.1,
+        "ambiguous_boundary_failure_events": 0,
+        "benchmark_integrity_status": "clean",
+        "contention_failure_rate_pct": 0.9,
+        "decision_attempts": 589,
+        "decision_failure_rate_pct": 0.0,
+        "harness_failure_events": 0,
+        "invalid_action_rate_pct": 7.1,
+        "llm_failure_events": 0,
+        "llm_failures_by_agent": {},
+        "llm_provider_failure_events": 0,
+        "llm_quota_failure_events": 0,
+        "missing_usage_decisions": [],
+        "model_output_failure_events": 0,
+        "quality_flags": [],
+        "quality_status": "clean",
+        "usage_coverage_basis": "distinct_tick_and_agent",
+        "usage_record_coverage_pct": 100.0
+      },
+      "cohort": {
+        "agents": [
+          "agent-1",
+          "agent-10",
+          "agent-2",
+          "agent-3",
+          "agent-4",
+          "agent-5",
+          "agent-6",
+          "agent-7",
+          "agent-8",
+          "agent-9"
+        ],
+        "attribution_override": null,
+        "brain": "claude",
+        "diagnostics": {
+          "communications": 1056,
+          "communications_per_100_agent_ticks": 176.0,
+          "construction_contributions": 26,
+          "gifts": 12,
+          "groups_created": 0,
+          "note": "Social activity is diagnostic only in v4: frequency does not establish coordination quality or prosocial/antisocial intent.",
+          "trades_accepted": 2
+        },
+        "model": "claude-opus-5[1m]",
+        "protocol_compliant": true,
+        "provider": "claude_cli",
+        "quality_flags": [],
+        "raw": {
+          "action_point_overruns": 10,
+          "contention_failures": 32,
+          "decision_failures": 0,
+          "decisions": 589,
+          "endpoint_health_capacity": 1000.0,
+          "endpoint_health_points": 252.0,
+          "engine_invalid_proposals": 245,
+          "enterprise_supply_by_source": {
+            "net_goods_supplied_to_others": 18.0,
+            "net_service_income": 26.25
+          },
+          "enterprise_supply_value": 44.25,
+          "execution_actions": 3033.0,
+          "execution_contention_actions": 32.0,
+          "execution_decisions": 589.0,
+          "execution_unexecuted_actions": 5.0,
+          "execution_valid_actions": 2788.0,
+          "execution_valid_decisions": 406.0,
+          "external_decision_failures": 0,
+          "health_point_tick_capacity": 60000.0,
+          "health_point_ticks": 46323.0,
+          "informal_transfer_value": 10.0,
+          "initial_agents": 10,
+          "initial_endowment_value": 135.0,
+          "invalid_proposals": 245,
+          "living_agents": 9,
+          "living_terminal_economic_value": 256.0,
+          "model_output_failures": 0,
+          "observed_agent_ticks": 600,
+          "own_capital_output_value": 14.0,
+          "possible_agent_ticks": 600,
+          "production_by_source": {
+            "chop": 243.0,
+            "fish": 32.0,
+            "gather": 637.0,
+            "harvest": 14.0,
+            "mine": 32.0
+          },
+          "production_intermediate_input_value": 0.0,
+          "production_output_value": 958.0,
+          "production_possible_agent_ticks": 600,
+          "production_value_added": 958.0,
+          "productive_capital_extraction_value": 28.0,
+          "purposeful_agent_ticks": 558,
+          "submitted_actions": 2007,
+          "submitted_actions_excluding_contention": 1975,
+          "tail_health_point_tick_capacity": 12000.0,
+          "tail_health_point_ticks": 4066.0,
+          "terminal_economic_value": 294.0,
+          "venture_initiatives": 62,
+          "venture_initiatives_by_type": {
+            "build": 1,
+            "build_started": 7,
+            "offer_trade": 54
+          }
+        },
+        "reasoning_effort": "medium",
+        "scores": {
+          "capability": {
+            "components": {
+              "final_window_health_pct": 33.8833,
+              "full_horizon_health_pct": 77.205
+            },
+            "formula": "mean health across original population and all completed ticks",
+            "score": 77.2
+          },
+          "execution": {
+            "components": {
+              "actions": 3033.0,
+              "valid_actions": 2788.0
+            },
+            "formula": "100 * successful actions / submitted non-contention actions",
+            "score": 91.92
+          },
+          "production": {
+            "components": {
+              "intermediate_input_value": 0.0,
+              "output_value": 958.0,
+              "possible_agent_ticks": 600.0,
+              "value_added": 958.0
+            },
+            "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+            "score": 159.67,
+            "unit": "fixed accounting units per 100 original-population agent-ticks"
+          }
+        }
+      },
+      "usage_records": 589,
+      "lifecycle": [
+        {
+          "actor_id": null,
+          "data": {
+            "action_feedback_mode": "baseline",
+            "agent_io_log": true,
+            "agents": 10,
+            "benchmark_code_fingerprint": "1ea5838de2429eb2f84978c992d9e3e4c83ced09aba60b137f3027cc3042386e",
+            "benchmark_protocol": "participant-v8-revised",
+            "billing_mode": "claude_plan",
+            "brain": "claude",
+            "claude_thinking_budget_tokens": 2048,
+            "codex_action_max_items": 4,
+            "communication_action_cost": 0,
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "decision_mode": "raw",
+            "economy_mode": "organic",
+            "geography_mode": "dispersed",
+            "global_max_workers": 20,
+            "model": "claude-opus-5[1m]",
+            "objective_mode": "neutral",
+            "observation_history_policy": "full-v1",
+            "population": {
+              "assignment_seed": 0,
+              "assignment_strategy": "ordered",
+              "assignments": {
+                "agent-1": "cohort-1",
+                "agent-10": "cohort-1",
+                "agent-2": "cohort-1",
+                "agent-3": "cohort-1",
+                "agent-4": "cohort-1",
+                "agent-5": "cohort-1",
+                "agent-6": "cohort-1",
+                "agent-7": "cohort-1",
+                "agent-8": "cohort-1",
+                "agent-9": "cohort-1"
+              },
+              "groups": [
+                {
+                  "billing_mode": "claude_plan",
+                  "connector_profile": "connector-v3",
+                  "conversation_mode": "fresh-conversation",
+                  "count": 10,
+                  "id": "cohort-1",
+                  "max_workers": 20,
+                  "model": "claude-opus-5[1m]",
+                  "provider": "claude_cli",
+                  "reasoning_effort": "medium",
+                  "session_max_turns": 10,
+                  "type": "claude"
+                }
+              ],
+              "total_agents": 10,
+              "type": "claude"
+            },
+            "preset": "frontier-generalists",
+            "provider": "claude_cli",
+            "provider_max_workers": {
+              "antigravity_cli": 4,
+              "claude_cli": 20,
+              "codex_cli": 20,
+              "cursor_cli": 4,
+              "devin_cli": 4,
+              "grok_cli": 20,
+              "muse_cli": 4,
+              "openrouter": 4,
+              "zcode_cli": 20
+            },
+            "quota_wait_hours": 12.0,
+            "reasoning_effort": "medium",
+            "recipe": "participant-v8-revised",
+            "recipe_fingerprint_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+            "seed": 11,
+            "session_max_turns": 10,
+            "specialization_mode": "generalists",
+            "startup_health_check_tick": 5,
+            "startup_health_max_failure_rate": 0.2,
+            "target_ticks": 60,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "turn_resolution": "simultaneous"
+          },
+          "message": "Started claude run with 10 agents.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 0,
+          "type": "run_started"
+        },
+        {
+          "actor_id": null,
+          "data": {
+            "check_tick": 5,
+            "cohorts": [
+              {
+                "attempts": 50,
+                "brain": "claude",
+                "cohort": "cohort-1",
+                "decision_failures": 0,
+                "failure_rate": 0.0,
+                "model": "claude-opus-5[1m]",
+                "reasoning_effort": "medium",
+                "unhealthy": false
+              }
+            ],
+            "max_failure_rate": 0.2,
+            "minimum_failures": 2,
+            "status": "passed"
+          },
+          "message": "Startup model-health check passed.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 5,
+          "type": "run_health_check"
+        },
+        {
+          "actor_id": null,
+          "data": {
+            "completed_tick": 37,
+            "provider_messages": [
+              "Claude quota unavailable: You've hit your session limit \u00b7 resets 5:30pm (America/Los_Angeles)"
+            ],
+            "provider_reset_at_utc": "2026-09-13T00:30:00+00:00",
+            "reason": "insufficient_quota",
+            "resume_at_unix": 1789259460.000138,
+            "target_ticks": 60,
+            "wait_budget_seconds": 43200.0,
+            "wait_seconds": 16780.0,
+            "wait_source": "provider_reset_time",
+            "waited_seconds_episode": 16780.0,
+            "waited_seconds_total": 16780.0
+          },
+          "message": "Provider rate or usage limit; waiting 280 minute(s) for it to reset, then retrying the same tick. The world has not advanced.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 37,
+          "type": "run_quota_wait"
+        },
+        {
+          "actor_id": null,
+          "data": {
+            "completed_tick": 37,
+            "waited_seconds_episode": 16780.0,
+            "waited_seconds_total": 16780.0
+          },
+          "message": "Retrying the tick after the quota wait.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 37,
+          "type": "run_quota_retry"
+        },
+        {
+          "actor_id": null,
+          "data": {
+            "provider_event_counts": {
+              "quota_exhausted": 3,
+              "request_started": 592
+            },
+            "target_ticks": 60
+          },
+          "message": "Completed 60 target ticks.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 60,
+          "type": "run_completed"
+        }
+      ]
+    },
+    {
+      "seed": 41,
+      "worktree": "/home/maxtalwar/agent-world/.local/leaderboard-sources/3a0867cfaf6c598ce506485a93fbcaa660ddab0c/.worktrees/run-cohorts/web-claude-opus-5-1m-680839180c53-seed-41-3a0867cfaf6c",
+      "source_diff": "empty",
+      "source_status": "clean",
+      "code_fingerprint": "1ea5838de2429eb2f84978c992d9e3e4c83ced09aba60b137f3027cc3042386e",
+      "trial": {
+        "accepted_prior_trial": null,
+        "certification": "eligible_replication",
+        "code_fingerprint_sha256": "1ea5838de2429eb2f84978c992d9e3e4c83ced09aba60b137f3027cc3042386e",
+        "completed": true,
+        "declared_protocol": "participant-v8-revised",
+        "final_tick": 60,
+        "gift_classification": {
+          "artifact_sha256": null,
+          "classified_gifts": 0,
+          "judge": null,
+          "policy": "Transfers use the sender-declared gift, payment, or barter kind.",
+          "total_gifts": 8
+        },
+        "protocol_compliant": true,
+        "quality_flags": [],
+        "seed": 41,
+        "source_fingerprint_compatible": false,
+        "target_ticks": 60
+      },
+      "reliability": {
+        "action_failure_rate_pct": 10.1,
+        "ambiguous_boundary_failure_events": 0,
+        "benchmark_integrity_status": "clean",
+        "contention_failure_rate_pct": 0.7,
+        "decision_attempts": 594,
+        "decision_failure_rate_pct": 0.0,
+        "harness_failure_events": 0,
+        "invalid_action_rate_pct": 9.3,
+        "llm_failure_events": 0,
+        "llm_failures_by_agent": {},
+        "llm_provider_failure_events": 0,
+        "llm_quota_failure_events": 0,
+        "missing_usage_decisions": [],
+        "model_output_failure_events": 0,
+        "quality_flags": [],
+        "quality_status": "clean",
+        "usage_coverage_basis": "distinct_tick_and_agent",
+        "usage_record_coverage_pct": 100.0
+      },
+      "cohort": {
+        "agents": [
+          "agent-1",
+          "agent-10",
+          "agent-2",
+          "agent-3",
+          "agent-4",
+          "agent-5",
+          "agent-6",
+          "agent-7",
+          "agent-8",
+          "agent-9"
+        ],
+        "attribution_override": null,
+        "brain": "claude",
+        "diagnostics": {
+          "communications": 1022,
+          "communications_per_100_agent_ticks": 170.33,
+          "construction_contributions": 21,
+          "gifts": 8,
+          "groups_created": 0,
+          "note": "Social activity is diagnostic only in v4: frequency does not establish coordination quality or prosocial/antisocial intent.",
+          "trades_accepted": 3
+        },
+        "model": "claude-opus-5[1m]",
+        "protocol_compliant": true,
+        "provider": "claude_cli",
+        "quality_flags": [],
+        "raw": {
+          "action_point_overruns": 17,
+          "contention_failures": 24,
+          "decision_failures": 0,
+          "decisions": 594,
+          "endpoint_health_capacity": 1000.0,
+          "endpoint_health_points": 290.0,
+          "engine_invalid_proposals": 316,
+          "enterprise_supply_by_source": {
+            "net_goods_supplied_to_others": 23.0,
+            "net_service_income": 18.75
+          },
+          "enterprise_supply_value": 41.75,
+          "execution_actions": 2989.0,
+          "execution_contention_actions": 24.0,
+          "execution_decisions": 594.0,
+          "execution_unexecuted_actions": 14.0,
+          "execution_valid_actions": 2673.0,
+          "execution_valid_decisions": 369.0,
+          "external_decision_failures": 0,
+          "health_point_tick_capacity": 60000.0,
+          "health_point_ticks": 46637.0,
+          "informal_transfer_value": 14.0,
+          "initial_agents": 10,
+          "initial_endowment_value": 135.0,
+          "invalid_proposals": 316,
+          "living_agents": 9,
+          "living_terminal_economic_value": 267.375,
+          "model_output_failures": 0,
+          "observed_agent_ticks": 600,
+          "own_capital_output_value": 4.0,
+          "possible_agent_ticks": 600,
+          "production_by_source": {
+            "chop": 222.0,
+            "fish": 50.0,
+            "gather": 671.0,
+            "harvest": 4.0,
+            "mine": 32.0
+          },
+          "production_intermediate_input_value": 0.0,
+          "production_output_value": 979.0,
+          "production_possible_agent_ticks": 600,
+          "production_value_added": 979.0,
+          "productive_capital_extraction_value": 42.0,
+          "purposeful_agent_ticks": 541,
+          "submitted_actions": 1989,
+          "submitted_actions_excluding_contention": 1965,
+          "tail_health_point_tick_capacity": 12000.0,
+          "tail_health_point_ticks": 3847.0,
+          "terminal_economic_value": 273.125,
+          "venture_initiatives": 65,
+          "venture_initiatives_by_type": {
+            "build": 1,
+            "build_started": 8,
+            "offer_trade": 53,
+            "set_access_fee": 3
+          }
+        },
+        "reasoning_effort": "medium",
+        "scores": {
+          "capability": {
+            "components": {
+              "final_window_health_pct": 32.0583,
+              "full_horizon_health_pct": 77.7283
+            },
+            "formula": "mean health across original population and all completed ticks",
+            "score": 77.73
+          },
+          "execution": {
+            "components": {
+              "actions": 2989.0,
+              "valid_actions": 2673.0
+            },
+            "formula": "100 * successful actions / submitted non-contention actions",
+            "score": 89.43
+          },
+          "production": {
+            "components": {
+              "intermediate_input_value": 0.0,
+              "output_value": 979.0,
+              "possible_agent_ticks": 600.0,
+              "value_added": 979.0
+            },
+            "formula": "100 * max(0, output value - intermediate input value) / original-population agent-ticks",
+            "score": 163.17,
+            "unit": "fixed accounting units per 100 original-population agent-ticks"
+          }
+        }
+      },
+      "usage_records": 594,
+      "lifecycle": [
+        {
+          "actor_id": null,
+          "data": {
+            "action_feedback_mode": "baseline",
+            "agent_io_log": true,
+            "agents": 10,
+            "benchmark_code_fingerprint": "1ea5838de2429eb2f84978c992d9e3e4c83ced09aba60b137f3027cc3042386e",
+            "benchmark_protocol": "participant-v8-revised",
+            "billing_mode": "claude_plan",
+            "brain": "claude",
+            "claude_thinking_budget_tokens": 2048,
+            "codex_action_max_items": 4,
+            "communication_action_cost": 0,
+            "connector_profile": "connector-v3",
+            "conversation_mode": "fresh-conversation",
+            "decision_mode": "raw",
+            "economy_mode": "organic",
+            "geography_mode": "dispersed",
+            "global_max_workers": 20,
+            "model": "claude-opus-5[1m]",
+            "objective_mode": "neutral",
+            "observation_history_policy": "full-v1",
+            "population": {
+              "assignment_seed": 0,
+              "assignment_strategy": "ordered",
+              "assignments": {
+                "agent-1": "cohort-1",
+                "agent-10": "cohort-1",
+                "agent-2": "cohort-1",
+                "agent-3": "cohort-1",
+                "agent-4": "cohort-1",
+                "agent-5": "cohort-1",
+                "agent-6": "cohort-1",
+                "agent-7": "cohort-1",
+                "agent-8": "cohort-1",
+                "agent-9": "cohort-1"
+              },
+              "groups": [
+                {
+                  "billing_mode": "claude_plan",
+                  "connector_profile": "connector-v3",
+                  "conversation_mode": "fresh-conversation",
+                  "count": 10,
+                  "id": "cohort-1",
+                  "max_workers": 20,
+                  "model": "claude-opus-5[1m]",
+                  "provider": "claude_cli",
+                  "reasoning_effort": "medium",
+                  "session_max_turns": 10,
+                  "type": "claude"
+                }
+              ],
+              "total_agents": 10,
+              "type": "claude"
+            },
+            "preset": "frontier-generalists",
+            "provider": "claude_cli",
+            "provider_max_workers": {
+              "antigravity_cli": 4,
+              "claude_cli": 20,
+              "codex_cli": 20,
+              "cursor_cli": 4,
+              "devin_cli": 4,
+              "grok_cli": 20,
+              "muse_cli": 4,
+              "openrouter": 4,
+              "zcode_cli": 20
+            },
+            "quota_wait_hours": 12.0,
+            "reasoning_effort": "medium",
+            "recipe": "participant-v8-revised",
+            "recipe_fingerprint_sha256": "8de610d3cd050f86bf4fb5e16a04708e069d099435b41d2729b4717d9a0da006",
+            "seed": 41,
+            "session_max_turns": 10,
+            "specialization_mode": "generalists",
+            "startup_health_check_tick": 5,
+            "startup_health_max_failure_rate": 0.2,
+            "target_ticks": 60,
+            "town_ledger_action_cost": 1,
+            "town_ledger_output_mode": "disabled",
+            "town_ledger_prompt_mode": "baseline",
+            "town_ledger_seed_mode": "none",
+            "turn_resolution": "simultaneous"
+          },
+          "message": "Started claude run with 10 agents.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 0,
+          "type": "run_started"
+        },
+        {
+          "actor_id": null,
+          "data": {
+            "check_tick": 5,
+            "cohorts": [
+              {
+                "attempts": 50,
+                "brain": "claude",
+                "cohort": "cohort-1",
+                "decision_failures": 0,
+                "failure_rate": 0.0,
+                "model": "claude-opus-5[1m]",
+                "reasoning_effort": "medium",
+                "unhealthy": false
+              }
+            ],
+            "max_failure_rate": 0.2,
+            "minimum_failures": 2,
+            "status": "passed"
+          },
+          "message": "Startup model-health check passed.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 5,
+          "type": "run_health_check"
+        },
+        {
+          "actor_id": null,
+          "data": {
+            "completed_tick": 33,
+            "provider_messages": [
+              "Claude quota unavailable: You've hit your session limit \u00b7 resets 5:30pm (America/Los_Angeles)"
+            ],
+            "provider_reset_at_utc": "2026-09-13T00:30:00+00:00",
+            "reason": "insufficient_quota",
+            "resume_at_unix": 1789259460.0001397,
+            "target_ticks": 60,
+            "wait_budget_seconds": 43200.0,
+            "wait_seconds": 16797.7,
+            "wait_source": "provider_reset_time",
+            "waited_seconds_episode": 16797.7,
+            "waited_seconds_total": 16797.7
+          },
+          "message": "Provider rate or usage limit; waiting 280 minute(s) for it to reset, then retrying the same tick. The world has not advanced.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 33,
+          "type": "run_quota_wait"
+        },
+        {
+          "actor_id": null,
+          "data": {
+            "completed_tick": 33,
+            "waited_seconds_episode": 16797.7,
+            "waited_seconds_total": 16797.7
+          },
+          "message": "Retrying the tick after the quota wait.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 33,
+          "type": "run_quota_retry"
+        },
+        {
+          "actor_id": null,
+          "data": {
+            "provider_event_counts": {
+              "quota_exhausted": 1,
+              "request_started": 595
+            },
+            "target_ticks": 60
+          },
+          "message": "Completed 60 target ticks.",
+          "position": null,
+          "recipients": [],
+          "scope": "public",
+          "tick": 60,
+          "type": "run_completed"
+        }
+      ]
+    }
+  ],
+  "artifacts_sha256": {
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-11/run.jsonl": "1b6b8a424808bfb321fe8035660216dc80c598824d7008c40428bee263777977",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-11/run-usage.jsonl": "42962370c4beded64d5bd080de08399bdb0f4d5a3dc6889b49eb2cf88ae6492d",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-11/run-manifest.json": "47e49fb609c000bc8e9a296c1b32f2ace1fe73b48b8eee004e546af12d33e010",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-11/run-checkpoint.pkl": "1123937abbdcd42c8fa2c3c578018c3291485685254f6a0523eb204367b6f83f",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-11/run-snapshot.json": "fd928e0805032c930edd53bbfde42d5474ead529a286ea889b2afa97c6b22256",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-11/run-report.json": "a7f31fe262891452352c1ffcbbb53cec0ba65cea94e8859697a3aafd1210fd71",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-41/run.jsonl": "f8f67ca041294b64deb0a75b45f9f5bbcf6aad0080bbd8a0a2ae7ac209e20703",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-41/run-usage.jsonl": "1de44976d8eab7ce040acfa09126af94448e93c7830e7bea8667dffe63508cb1",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-41/run-manifest.json": "eaf4d87be474af74c0be6d629bd3ff1cdfe198ddf296d9c19dee6daad4121a3a",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-41/run-checkpoint.pkl": "d70ad3246de7d8c3a8c16abcb97bff0474192aeae31824d31c576e9a37be6651",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-41/run-snapshot.json": "bf482c35ade8b031dbc462d6bfc96a9682ead7f1e3964a374a515c1fee5ac79f",
+    "runs/managed/web-claude-opus-5-1m-680839180c53/seed-41/run-report.json": "70af3ab0e75ae6bb8af5edc0cb8f07bc5d6add145ec65c19097e92df0482f20e"
+  },
+  "analysis_readiness": {
+    "schema_version": 1,
+    "status": "ready",
+    "checked_at_utc": "2026-09-13T00:57:50.729436+00:00",
+    "launch_commit": "3a0867cfaf6c598ce506485a93fbcaa660ddab0c",
+    "protocol": "participant-v8-revised",
+    "completed_seeds": [
+      11,
+      41
+    ],
+    "waiting_seeds": [],
+    "running_seeds": [],
+    "integrity": "clean",
+    "usage_coverage_pct": 100.0,
+    "model_provenance": "verified",
+    "cost_accounting": [
+      "api_list_derived"
+    ],
+    "transfer_accounting": {
+      "mode": "self_declared_v8-revised",
+      "complete": true,
+      "artifacts": []
+    },
+    "reports": [
+      "runs/managed/web-claude-opus-5-1m-680839180c53/seed-11/run-report.json",
+      "runs/managed/web-claude-opus-5-1m-680839180c53/seed-41/run-report.json"
+    ],
+    "blockers": []
+  },
+  "evidence_unchanged_on_finalization": true
+}

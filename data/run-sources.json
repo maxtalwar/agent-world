@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-09-12T22:07:18.959297+00:00",
+  "updated_at_utc": "2026-09-13T00:57:50.757188+00:00",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -1127,6 +1127,29 @@
           "kind": "benchmark_trial",
           "included_in_model_result": false,
           "run_exclusion_reason": "Clean seed 41; required seed-11 admission awaits evidence decision."
+        }
+      ]
+    },
+    {
+      "model_key": "claude-opus-5-1m-participant-v8-revised",
+      "model_id": "claude-opus-5[1m]",
+      "label": "Opus 5 (1M)",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": true,
+      "notes": "Replicated seeds 11 and 41; canonical-root finalization recovery, unchanged pinned source and decisions. See docs/reviews/opus5-1m-completion-20260912.md.",
+      "runs": [
+        {
+          "run_id": "web-claude-opus-5-1m-680839180c53:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/web-claude-opus-5-1m-680839180c53/seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "run_id": "web-claude-opus-5-1m-680839180c53:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/web-claude-opus-5-1m-680839180c53/seed-41/run-report.json",
+          "kind": "benchmark_trial"
         }
       ]
     }

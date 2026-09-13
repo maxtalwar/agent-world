@@ -10,6 +10,7 @@ Capability rescoring: Final original-population health minus 10% of health lost 
 | Fable 5 | 56.3 | 91.2 | 188.5 | $76.90 | 20.89s |
 | Grok 4.6 | 33.0 | 92.6 | 216.3 | $27.21 | 95.24s |
 | Sonnet 5 | 29.0 | 86.2 | 177.2 | $13.07 | 20.85s |
+| Opus 5 (1M) | 22.7 | 90.7 | 161.4 | $33.47 | 17.27s |
 | GPT-5.6 Terra | 10.1 | 90.1 | 165.0 | $8.50 | 11.61s |
 | Opus 4.5 | 9.7 | 88.4 | 123.8 | $36.27 | 25.32s |
 | GPT-5.4 Mini | 4.5 | 88.4 | 86.8 | $3.90 | 23.25s |
