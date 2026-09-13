@@ -89,6 +89,7 @@ class EventMonitorTests(unittest.TestCase):
             def execute(command, **kwargs):
                 self.assertIn("complete the provenance review and leaderboard admission", kwargs["input"])
                 self.assertNotIn("do not admit leaderboard scores", kwargs["input"])
+                self.assertEqual(command[0], "/resolved/codex")
                 self.assertIn("--ephemeral", command)
                 self.assertIn("--approve-for-me", command)
                 self.assertIn("gpt-6-astra", command)
@@ -96,6 +97,7 @@ class EventMonitorTests(unittest.TestCase):
                 (root/"response.txt").write_text("Accepted batch")
                 return Mock(returncode=0)
             with patch("agent_world.leaderboard_event_monitor.LaunchService", return_value=service), \
+                 patch("agent_world.leaderboard_event_monitor.resolve_supervisor_binary", return_value="/resolved/codex"), \
                  patch("agent_world.leaderboard_event_monitor.subprocess.run", side_effect=execute):
                 worker(root,root)
             self.assertEqual(json.loads((root/"event.json").read_text())["status"], "completed")

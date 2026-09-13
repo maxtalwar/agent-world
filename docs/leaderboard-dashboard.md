@@ -140,7 +140,12 @@ Launch controls require the configured Tailscale/loopback hostname, a matching
 Origin, JSON content type, and a same-origin request token. No cross-origin
 launch API is exposed. The installer enables this feature in the machine-local
 `.local/leaderboard-settings.json` and records the Windows Codex binary that
-advertises Astra at low effort. If Astra is unavailable, launching is blocked.
+advertises Astra at low effort. If a desktop update removes that versioned
+`Codex/bin/<version>/codex.exe`, the launcher and event monitor resolve the newest
+remaining executable within the same configured installation. Existing explicit
+paths remain preferred; unrelated installations and PATH binaries are never
+substituted. Model discovery still verifies Astra at low effort. If no runtime
+remains, launching is blocked.
 
 ### Source and execution ownership
 

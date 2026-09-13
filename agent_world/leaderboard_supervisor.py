@@ -29,6 +29,27 @@ class SupervisorTimeout(SupervisorConnectionError):
     pass
 
 
+def resolve_supervisor_binary(binary):
+    """Recover a retired desktop runtime within its configured Codex install.
+
+    Updates remove versioned bin/<hash>/codex.exe directories. Preserve existing
+    binaries; never substitute another installation or an executable from PATH.
+    """
+    if not binary:
+        return None
+    path = Path(binary)
+    if path.is_file():
+        return str(path)
+    if (path.name.lower() != "codex.exe" or
+            path.parent.parent.name.lower() != "bin" or
+            path.parent.parent.parent.name.lower() != "codex"):
+        return None
+    candidates = [p for p in path.parent.parent.glob("*/codex.exe") if p.is_file()]
+    if not candidates:
+        return None
+    return str(max(candidates, key=lambda p: (p.stat().st_mtime_ns, str(p))))
+
+
 def supervisor_environment(native_windows):
     environment = {**os.environ, "PATH": str(Path.home() / ".local/bin") + ":" + os.environ.get("PATH", "")}
     # tmux may retain a socket belonging to a long-exited interactive WSL login.
@@ -42,6 +63,9 @@ def supervisor_environment(native_windows):
 class AstraClient:
     def __init__(self, binary: str, root: Path):
         self.root = root
+        binary = resolve_supervisor_binary(binary)
+        if not binary:
+            raise SupervisorConnectionError("The Astra supervisor runtime is not configured.")
         self.native_windows = binary.lower().endswith(".exe")
         self.process = subprocess.Popen(
             [binary, "app-server"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,

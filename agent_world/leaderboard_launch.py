@@ -21,12 +21,12 @@ try:
     from .leaderboard_model_cache import saved_catalog
     from .benchmark_defaults import benchmark_seeds
     from .leaderboard_models import model_catalog, for_recipe, recipe_label, DISABLED_BENCHMARK_CONNECTORS
-    from .leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
+    from .leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT, resolve_supervisor_binary
 except ImportError:
     from leaderboard_model_cache import saved_catalog
     from benchmark_defaults import benchmark_seeds
     from leaderboard_models import model_catalog, for_recipe, recipe_label, DISABLED_BENCHMARK_CONNECTORS
-    from leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT
+    from leaderboard_supervisor import AstraClient, SupervisorError, SupervisorBusy, SupervisorConnectionError, MODEL, EFFORT, resolve_supervisor_binary
 
 ACTIVE = {"queued", "launching", "supervising"}
 MODEL_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/+\[\]\-]{0,127}\Z")
@@ -156,7 +156,7 @@ class LaunchService:
                 sources = self.sources()
                 blocker = None
                 models, warnings = [], []
-                binary = self.settings.get("supervisor_binary")
+                binary = resolve_supervisor_binary(self.settings.get("supervisor_binary"))
                 if not self.settings.get("launch_enabled"):
                     blocker = "Benchmark launches have not been enabled on this host."
                 elif not self.settings.get("monitor_thread_id"):
