@@ -379,13 +379,26 @@
       this.groundLine([[-31,1,4],[-2,16,4]],'#c2a47a',2);
       for(const [x,y] of [[-31,1],[-17,8],[-2,16]]){const [px,py]=this.groundPoint(x,y);this.rect(px-1,py-6,2,9,'#d4b98c');this.rect(px-1,py-6,2,2,'#eee0b1');}
     }
+    wellMasonry(complete=false){
+      // Both stages use the same stone ring; completion adds a second, staggered course.
+      this.ellipse(0,0,13,7,'#776a50');
+      this.ellipse(0,complete?-4:-1,9,4,complete?'#4d8485':'#474b3b');
+      const faces=[],point=(r,a,z)=>[r*Math.cos(a),r*Math.sin(a),z];
+      for(let course=0;course<(complete?2:1);course++)for(let i=0;i<(complete?12:10);i++){
+        const offset=course*Math.PI/12,a=i*Math.PI/6+offset+.025,b=(i+1)*Math.PI/6+offset-.025;
+        const low=course*4.6,high=complete?low+4.4:i<7?5:2;
+        faces.push({points:[point(.24,a,low),point(.24,b,low),point(.24,b,high),point(.24,a,high)],fill:i%3===0?'#b5bba8':'#a7af9e'},
+          {points:[point(.17,b,low),point(.17,a,low),point(.17,a,high),point(.17,b,high)],fill:'#788575'},
+          {points:[point(.24,a,high),point(.24,b,high),point(.17,b,high),point(.17,a,high)],fill:i%3===0?'#dce0cc':'#d0ceaf'});
+      }
+      this.mesh(faces);
+    }
     well(){
       this.groundPatch('#bbb48b',26);this.ellipse(4,5,19,7,'#52634b25');
       const posts=[[-.19,.19],[.19,-.19]].sort((a,b)=>this.project(...a)[1]-this.project(...b)[1]);
       const post=([x,y])=>{const [px,py]=this.project(x,y);this.rect(px-1.5,py-24,3,25,'#96784e');};
       post(posts[0]);
-      this.ellipse(0,0,13,7,'#a2aa95');this.rect(-13,-8,26,9,'#a7af9e');
-      this.ellipse(0,-9,13,7,'#d0ceaf');this.ellipse(0,-9,9,4,'#4d8485');
+      this.wellMasonry(true);
       post(posts[1]);
       this.mesh([
         {points:[[-.26,-.26,22],[-.26,.26,22],[0,.26,28],[0,-.26,28]],fill:'#c1bd87'},
@@ -400,15 +413,7 @@
       if(type==='well'){
         if(ground)this.groundPatch('#b4a783',26);
         // Excavated shaft and a partly laid stone ring; no house-sized scaffolding.
-        this.ellipse(0,0,13,7,'#776a50');this.ellipse(0,-1,9,4,'#474b3b');
-        const faces=[],point=(r,a,z)=>[r*Math.cos(a),r*Math.sin(a),z];
-        for(let i=0;i<10;i++){
-          const a=i*Math.PI/6+.025,b=(i+1)*Math.PI/6-.025,h=i<7?5:2;
-          faces.push({points:[point(.24,a,0),point(.24,b,0),point(.24,b,h),point(.24,a,h)],fill:'#a7af9e'},
-            {points:[point(.17,b,0),point(.17,a,0),point(.17,a,h),point(.17,b,h)],fill:'#788575'},
-            {points:[point(.24,a,h),point(.24,b,h),point(.17,b,h),point(.17,a,h)],fill:'#d0ceaf'});
-        }
-        this.mesh(faces);
+        this.wellMasonry();
         for(const [x,y] of [[.3,.08],[.29,.2]])board([[x-.045,y-.045,0],[x+.045,y-.045,0],[x+.045,y+.045,2],[x-.045,y+.045,2]],'#b9bea8');
         return;
       }
