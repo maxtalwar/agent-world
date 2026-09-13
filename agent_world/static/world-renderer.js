@@ -101,7 +101,7 @@
       const {width,height,seed=0}=this.snapshot.config,tiles=this.snapshot.tiles;
       const key=seed+':'+width+':'+height+':'+tiles.map(row=>row.map(t=>t.terrain==='mountain'?'1':'0').join('')).join('');
       if(key===this.mountainKey)return;
-      this.mountainKey=key;this.mountainFaces=[];this.mountainTiles=new Map();
+      this.mountainKey=key;this.mountainFaces=[];this.mountainTiles=new Map();this.rockDeposits=new Set();
       const isMountain=(x,y)=>tiles[y]?.[x]?.terrain==='mountain';
       const visited=new Set();
       for(let y=0;y<height;y++)for(let x=0;x<width;x++){
@@ -114,6 +114,8 @@
             if(isMountain(nx,ny)&&!visited.has(k)){visited.add(k);cluster.push([nx,ny]);}
           }
         }
+        // A lone resource tile is an outcrop, not a miniature mountain range.
+        if(cluster.length===1){this.rockDeposits.add(id);continue;}
         const minX=Math.min(...cluster.map(p=>p[0])),maxX=Math.max(...cluster.map(p=>p[0]))+1;
         const minY=Math.min(...cluster.map(p=>p[1])),maxY=Math.max(...cluster.map(p=>p[1]))+1;
         const w=maxX-minX,h=maxY-minY,size=Math.min(w,h);
@@ -134,7 +136,7 @@
         };
         for(const [cx,cy] of cluster){
           const corners=[[cx,cy],[cx+1,cy],[cx+1,cy+1],[cx,cy+1]].map(([vx,vy])=>[vx,vy,elevation(vx,vy)]);
-          const middle=[cx+.5,cy+.5,Math.max(cluster.length===1?20:10,corners.reduce((sum,p)=>sum+p[2],0)/4)];
+          const middle=[cx+.5,cy+.5,Math.max(10,corners.reduce((sum,p)=>sum+p[2],0)/4)];
           const faces=corners.map((p,i)=>({points:[p,corners[(i+1)%4],middle],tile:{x:cx,y:cy}}));
           for(const face of faces)face.fill=this.mountainColor(face.points);
           this.mountainTiles.set(cx+','+cy,faces);this.mountainFaces.push(...faces);
@@ -262,6 +264,18 @@
         this.poly([[11,-44],[23,-45],[19,-29],[7,-23],[1,-29]],'#60874e');
         this.rect(-12,-49,3,2,'#b2c47a');this.rect(7,-37,3,2,'#8fab63');
       }
+    }
+    rockDeposit(){
+      const faces=[];
+      for(const [cx,cy,r,h] of [[-.12,-.08,.19,16],[.17,.1,.12,10],[-.15,.2,.08,6]]){
+        const base=[[-1,-.4],[-.4,-1],[.7,-.8],[1,.3],[.3,1],[-.8,.7]]
+          .map(([x,y])=>[cx+x*r,cy+y*r,0]);
+        const top=base.map(([x,y],i)=>[cx+(x-cx)*.65,cy+(y-cy)*.65,h*(i%3===0?.8:1)]);
+        for(let i=0;i<6;i++)faces.push({points:[base[i],base[(i+1)%6],top[(i+1)%6],top[i]],
+          fill:['#a5ad99','#bec1a9','#a5ad99','#8a9686','#a5ad99','#bec1a9'][i]});
+        faces.push({points:top,fill:'#d0d3bc'});
+      }
+      this.mesh(faces);
     }
     rock(x,y,seed){
       const h=25+seed*30;this.ellipse(5,5,25,9,'#52604d24');
@@ -493,7 +507,7 @@
         const tile=this.snapshot.tiles[y][x],terrain=tile.terrain;
         // Buildings clear the tree, so their forest floor should read as open grass too.
         const clearedForest=terrain==='forest'&&tile.structures?.length;
-        const palette=C[terrain==='plains'||clearedForest?'grass':terrain]||C.grass;
+        const palette=C[terrain==='plains'||clearedForest||this.rockDeposits.has(x+','+y)?'grass':terrain]||C.grass;
         this.tile(x,y,palette[Math.floor(hash(x,y)*palette.length)]);
         if(terrain==='water'){
           // Shorelines remain attached to their native tile edges at every yaw.
@@ -525,6 +539,8 @@
         if(tile.terrain==='water'){
           this.at(x,y,()=>{const shift=Math.sin(time*.45+hash(x,y)*8)*3;this.line([[-12+shift,-2],[0+shift,-2]],'#c4e3d367',1.5);if(hash(x,y)>.6)this.line([[5-shift,5],[12-shift,5]],'#e5efd84d',1);});
         }
+        if(!tile.structures?.length&&this.rockDeposits.has(x+','+y))
+          objects.push({x,y,order:0,draw:()=>this.rockDeposit()});
         if(!tile.structures?.length && tile.terrain==='forest')
           objects.push({x,y,order:0,draw:()=>this.tree(x,y,Math.floor(hash(x,y)*7))});
       }
