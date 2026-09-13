@@ -25,10 +25,12 @@ shutil.copytree(root / "agent_world/static/labs", target / "static/labs", dirs_e
 '@
 & $wsl -d $Distribution --cd $Repository --exec python3 -c $install
 if ($LASTEXITCODE) { throw 'Could not install the leaderboard release.' }
-$supervisor = (Get-Command codex -ErrorAction Stop).Source
-$supervisorWsl = (& $wsl -d $Distribution --exec wslpath -u $supervisor).Trim()
 $tailnet = (& $tailscale status --json | ConvertFrom-Json)
 $existingSettings = (& $wsl -d $Distribution --cd $Repository --exec python3 -c "import json,pathlib; p=pathlib.Path('.local/leaderboard-settings.json'); print(p.read_text() if p.exists() else '{}')") | ConvertFrom-Json
+# Codex desktop updates drop the binary from PATH; the launcher recovers a recorded path itself.
+$supervisor = (Get-Command codex -ErrorAction SilentlyContinue).Source
+$supervisorWsl = if ($supervisor) { (& $wsl -d $Distribution --exec wslpath -u $supervisor).Trim() } else { $existingSettings.supervisor_binary }
+if (-not $supervisorWsl) { throw 'No Codex binary found on PATH or in existing settings.' }
 $settingsJson = @{
     launch_enabled = $true
     event_monitor_enabled = $true

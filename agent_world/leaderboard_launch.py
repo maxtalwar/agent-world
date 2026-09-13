@@ -161,7 +161,7 @@ class LaunchService:
                     blocker = "Benchmark launches have not been enabled on this host."
                 elif not self.settings.get("monitor_thread_id"):
                     blocker = "The shared Run Monitoring task is not configured."
-                elif not binary or not Path(binary).is_file():
+                elif not binary:
                     blocker = "The Astra supervisor runtime is not configured."
                 elif not shutil.which("tmux", path=env()["PATH"]):
                     blocker = "The detached run supervisor is unavailable."
@@ -169,7 +169,7 @@ class LaunchService:
                     client = None
                     connection_warning = ["Codex catalog unavailable; using saved entries when available."]
                     try:
-                        if binary and Path(binary).is_file():
+                        if binary:
                             try:
                                 client = AstraClient(binary, self.root)
                                 client.verify()
