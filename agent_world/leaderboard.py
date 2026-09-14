@@ -7,6 +7,10 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+import io
+import os
+import shutil
+import tarfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import logging
@@ -160,6 +164,33 @@ def within(root: Path, value: str) -> Path:
     return path
 
 
+SCORING_SOURCE_LOCK = threading.Lock()
+
+
+def scoring_source(root: Path, commit: str) -> Path:
+    """Materialize only the package at ``commit`` for scoring, once per commit.
+
+    Execution worktrees are disposable. A few megabytes of pinned package source
+    per launch commit replace whole retained checkouts.
+    """
+    if not re.fullmatch(r"[0-9a-f]{40}", commit or ""):
+        raise ValueError("Invalid launch commit")
+    target = root / ".local/leaderboard-scoring" / commit
+    with SCORING_SOURCE_LOCK:
+        if (target / "agent_world").is_dir():
+            return target
+        staging = target.with_name(commit + ".partial")
+        shutil.rmtree(staging, ignore_errors=True)
+        staging.mkdir(parents=True)
+        archive = subprocess.run(["git", "-C", str(root), "archive", commit, "agent_world"],
+                                 check=True, capture_output=True, timeout=60).stdout
+        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+            tar.extractall(staging, **({"filter": "data"} if hasattr(tarfile, "data_filter") else {}))
+        shutil.rmtree(target, ignore_errors=True)
+        os.replace(staging, target)
+    return target
+
+
 def model_label(model: str) -> str:
     display_model = re.sub(r"-20\d{6}$", "", model) if model.startswith("claude-") else model
     if display_model.lower().startswith("gemini-"):
@@ -280,8 +311,16 @@ class LeaderboardStore:
         candidates += [job.get("execution_root")]
         candidates += [str(self.root)]
         errors = []
+        # Execution worktrees are disposable. The recorded launch commit is the
+        # durable scoring source and its package is extracted on demand last.
+        if job.get("launch_commit"):
+            candidates.append(lambda: scoring_source(self.root, job["launch_commit"]))
         for candidate in dict.fromkeys(x for x in candidates if x):
-            source = within(self.root, candidate)
+            try:
+                source = within(self.root, candidate() if callable(candidate) else candidate)
+            except (subprocess.SubprocessError, OSError, ValueError, tarfile.TarError) as exc:
+                errors.append(type(exc).__name__)
+                continue
             if not (source / "agent_world/benchmarks.py").is_file():
                 continue
             try:

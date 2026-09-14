@@ -70,7 +70,11 @@ Incomplete, duplicate-seed, and rejected results remain outside replicated
 rankings. Different study jobs are never pooled together. A repeated model may
 therefore have multiple independently labeled study rows.
 
-The original run worktrees must remain available for uncataloged recipes.
+Scoring tries the job's recorded source root, cell worktrees and execution
+root, then the live checkout, and finally the `agent_world` package extracted
+from the job's `launch_commit` into `.local/leaderboard-scoring/COMMIT`, a few
+megabytes created once per commit. Execution worktrees are therefore
+disposable once a job has finished.
 Unavailable or incompatible scoring source is reported as an evidence warning.
 The application does not guess replacement formulas.
 

@@ -53,6 +53,19 @@ class LaunchCheckoutTests(unittest.TestCase):
         self.assertEqual(self.git(self.target, "status", "--porcelain", "--", "agent_world"), "")
         self.assertEqual(self.git(self.target, "diff", "--cached", "--name-only"), "")
 
+    def test_scoring_source_extracts_only_the_package_once(self):
+        from agent_world.leaderboard import scoring_source
+        target = scoring_source(self.root, self.commit)
+        self.assertEqual(target, self.root / ".local/leaderboard-scoring" / self.commit)
+        self.assertEqual((target / "agent_world/source.py").read_text(), "# pinned source\n")
+        self.assertEqual(sorted(p.name for p in target.iterdir()), ["agent_world"])
+        self.assertFalse((target / ".git").exists())
+        marker = target / "agent_world/marker"
+        marker.write_text("cached")
+        self.assertTrue((scoring_source(self.root, self.commit) / "agent_world/marker").exists())
+        with self.assertRaises(ValueError):
+            scoring_source(self.root, "HEAD")
+
     def test_new_clone_links_registries_with_tracked_evidence(self):
         self.assertEqual(self.service.launch_checkout({"commit": self.commit}), self.target)
         self.check_links_and_evidence()
