@@ -423,6 +423,24 @@ class LaunchService:
                                check=True, capture_output=True, timeout=60)
             if git(target, "rev-parse", "HEAD") != source["commit"]:
                 raise LaunchError("Pinned launch checkout changed")
+            # Archived evidence can be tracked under these runtime paths. A
+            # source clone must omit those copies before linking the live
+            # registries. Never remove local, ignored, or modified run data.
+            registries = [target / "runs" / name for name in ("jobs", "managed")]
+            conflicts = [path for path in registries
+                         if path.exists() and not path.is_symlink()]
+            if conflicts:
+                for path in conflicts:
+                    relative = str(path.relative_to(target))
+                    if (not path.is_dir() or
+                            not git(target, "ls-files", "--", relative) or
+                            git(target, "status", "--porcelain", "--untracked-files=all",
+                                "--ignored", "--", relative)):
+                        raise LaunchError("Pinned launch checkout has a conflicting run registry")
+                subprocess.run(["git", "-C", str(target), "sparse-checkout", "set",
+                                "--no-cone", "--stdin"],
+                               input="/*\n!/runs/jobs/\n!/runs/managed/\n", text=True,
+                               check=True, capture_output=True, timeout=60)
             for name in ("jobs", "managed"):
                 shared = self.root / "runs" / name
                 shared.mkdir(parents=True, exist_ok=True)

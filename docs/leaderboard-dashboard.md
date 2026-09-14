@@ -151,7 +151,12 @@ effort. If no runtime remains, launching is blocked.
 
 The source chooser finds clean retained recipe checkouts. Review prepares an
 independent local source clone at `.local/leaderboard-sources/COMMIT`. Its
-`runs/jobs` and `runs/managed` paths point to the shared run registry; its local
+`runs/jobs` and `runs/managed` paths point to the shared run registry. When those
+paths contain committed archival evidence, a sparse checkout omits the clone's
+copies before creating the links; the evidence remains in Git and in the shared
+registry. Existing clones are converted only when those directories have no
+modified, untracked, or ignored files. Conflicting local data or links still
+block launch rather than being overwritten. Its local
 `.env` link uses the host's existing credentials without copying or publishing
 them. Historical managers derive their controller commit from their repository
 HEAD, so this clone pins both the launcher and controller to the reviewed
