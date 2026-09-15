@@ -103,14 +103,23 @@ The installer:
    switches. Evidence remains live in the canonical repository.
 2. Registers the **Agent World Leaderboard** Windows scheduled task. It starts
    at Windows sign-in, restarts on failure, runs hidden, and keeps the WSL server
-   attached to a durable task instead of a Codex command session.
+   attached to a durable task instead of a Codex command session. A repeating
+   five-minute trigger also starts it if it has stopped; `IgnoreNew` prevents
+   duplicate servers and leaves a running task alone.
 3. Configures Tailscale Serve on HTTP port **8091**, accessible only in the
    tailnet. Existing routes on other ports are preserved.
 
 Re-run the installer to deploy code updates. Live data needs no redeployment.
 Logs are in `.local/leaderboard.log`; the launcher rotates logs over 10 MB on
 restart. Stop/start the app with `Stop-ScheduledTask` /
-`Start-ScheduledTask -TaskName 'Agent World Leaderboard'`.
+`Start-ScheduledTask -TaskName 'Agent World Leaderboard'`. To keep it stopped for
+maintenance, first use `Disable-ScheduledTask -TaskName 'Agent World Leaderboard'`;
+otherwise the recovery trigger starts it again within five minutes. Re-enable
+it with `Enable-ScheduledTask` when maintenance is complete.
+
+An HTTP 502 with Tailscale connected can mean the dashboard backend is down.
+Check the scheduled task and `http://127.0.0.1:8091/healthz` on Windows, then
+verify the same health path through the Tailscale hostname and port 8091.
 Disable its Tailscale route with `tailscale serve --http=8091 off`.
 
 ## Validation

@@ -47,9 +47,12 @@ $run = "& '$wsl' -d '$Distribution' --cd '$Repository' --exec /bin/bash '$Reposi
 $action = New-ScheduledTaskAction -Execute "$env:WINDIR\System32\WindowsPowerShell\v1.0\powershell.exe" -Argument ("-NoProfile -NonInteractive -WindowStyle Hidden -Command " + '"' + $run + '"')
 $user = [System.Security.Principal.WindowsIdentity]::GetCurrent().Name
 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $user
+# Restart-on-failure does not cover every stopped/terminated task. Reassert
+# availability periodically; IgnoreNew leaves an already-running server alone.
+$recoveryTrigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 5)
 $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
 $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1) -MultipleInstances IgnoreNew
-Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Description 'Private Agent World leaderboard. Restarts on failure and starts at Windows sign-in.' -Force | Out-Null
+Register-ScheduledTask -TaskName $taskName -Action $action -Trigger @($trigger, $recoveryTrigger) -Principal $principal -Settings $settings -Description 'Private Agent World leaderboard. Starts at sign-in, restarts on failure, and recovers stopped tasks every five minutes.' -Force | Out-Null
 Start-ScheduledTask -TaskName $taskName
 & $tailscale serve --bg --http=8091 http://127.0.0.1:8091
 if ($LASTEXITCODE) { throw 'The app is installed, but the Tailscale route could not be configured.' }
