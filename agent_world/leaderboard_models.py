@@ -84,20 +84,24 @@ def cursor_catalog(entries):
         ids = list((entry.get("variants") or {}).values()) or [entry["model"]]
         for identifier in ids:
             base = identifier
-            fast = base.endswith("-fast")
-            if fast:
-                base = base[:-5]
-            match = re.search(r"-(extra-high|xhigh|none|minimal|low|medium|high|max)$", base)
+            fast = thinking = False
             effort = None
-            if match:
-                effort = {"extra-high": "xhigh", "minimal": "none"}.get(match[1], match[1])
+            # Older Cursor IDs put thinking after effort; newer IDs reverse it.
+            while True:
+                match = re.search(r"-(extra-high|xhigh|none|minimal|low|medium|high|max|thinking|fast|1m)$|\[1m\]$", base, re.I)
+                if not match:
+                    break
+                suffix = (match[1] or "1m").lower()
                 base = base[:match.start()]
-            thinking = base.endswith("-thinking")
-            if thinking:
-                base = base[:-9]
-            base = re.sub(r"(?:-1m|\[1m\])$", "", base, flags=re.I)
+                if suffix == "fast":
+                    fast = True
+                elif suffix == "thinking":
+                    thinking = True
+                elif suffix != "1m":
+                    effort = {"extra-high": "xhigh", "minimal": "none"}.get(suffix, suffix)
+            title_id = re.sub(r"^claude-([0-9.]+)-(opus|sonnet|haiku)$", r"claude-\2-\1", base)
             group = groups.setdefault(base, {**entry, "key": "cursor:" + base,
-                "model": base, "name": friendly(base.removeprefix("cursor-")),
+                "model": base, "name": friendly(title_id.removeprefix("cursor-")),
                 "variants": None, "configurations": []})
             if any(c["id"] == identifier for c in group["configurations"]):
                 continue

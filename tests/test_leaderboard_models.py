@@ -204,6 +204,21 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(friendly("claude-fable-5"), "Claude Fable 5")
         self.assertEqual(friendly("gpt-6-astra"), "GPT-6 Astra")
 
+    def test_cursor_legacy_suffix_order_keeps_effort_out_of_titles(self):
+        entries = [{"key": "cursor:"+model, "model": model, "brain": "cursor", "lab": "anthropic",
+                    "name": "Old noisy title", "efforts": None, "variants": None}
+                   for model in ("claude-4.6-sonnet-medium", "claude-4.6-sonnet-medium-thinking",
+                                 "claude-4.6-opus-high-thinking", "claude-4.6-opus-max-thinking")]
+        source = {"brains": ["cursor"], "defaults": {"reasoning_effort": "medium"}}
+        models = for_recipe(entries, source)
+        self.assertEqual([m["name"] for m in models], ["Claude Sonnet 4.6"])
+        self.assertEqual(len(models[0]["configurations"]), 2)
+        self.assertEqual(models[0]["configurations"][1]["id"], "claude-4.6-sonnet-medium-thinking")
+        source["defaults"]["reasoning_effort"] = "high"
+        models = for_recipe(entries, source)
+        self.assertEqual([m["name"] for m in models], ["Claude Opus 4.6"])
+        self.assertEqual(models[0]["model"], "claude-4.6-opus-high-thinking")
+
 
 class CatalogLaunchTests(unittest.TestCase):
     setUp = test_leaderboard_launch.LaunchTests.setUp
