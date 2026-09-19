@@ -81,3 +81,25 @@ console.log('Shared startup blocker and completed monitor review render correctl
 context.run.cells[0].id="custom-cell";
 html=vm.runInContext("studyMarkup(run)",context);
 assert.match(html,/cell=custom-cell/);
+
+// A reviewed startup failure is an explicit decision, never a pending follow-up.
+context.data.launches=[{run_id:'test',monitor_reviewed:true,monitor_resolution:'evidence_decision',
+ monitor_event_state:'completed',monitor_resolution_reason:'The request omitted the required response format.'}];
+context.run.cells=[{seed:11,tick:5,target:60,state:'stopped',operational_state:'needs_attention',attention:'startup_health_check_failed'},
+ {seed:41,tick:null,target:60,state:'blocked_startup_gate',operational_state:'blocked_startup_gate',attention:'startup_health_check_failed'}];
+html=vm.runInContext('studyMarkup(run)',context);
+assert.match(html,/Continuation needs a decision/);
+assert.match(html,/Monitoring review is complete/);
+assert.doesNotMatch(html,/follow-up is pending|working on a fix/);
+assert.ok(html.indexOf('The request omitted')<html.indexOf('<details'));
+assert.equal((html.match(/The request omitted/g)||[]).length,1);
+context.data.launches[0].monitor_event_state='working';
+html=vm.runInContext('studyMarkup(run)',context);
+assert.match(html,/Repair in progress/);
+context.run.cells=context.run.cells.map(c=>({...c,tick:60,state:'completed',operational_state:'completed',attention:null}));
+context.run.readiness_status='needs_provenance_review';
+context.data.launches[0].monitor_event_state='completed';
+html=vm.runInContext('studyMarkup(run)',context);
+assert.match(html,/Review needs a decision/);
+assert.doesNotMatch(html,/Continuation needs a decision/);
+console.log('Reviewed startup failures show the decision and reason before technical details');

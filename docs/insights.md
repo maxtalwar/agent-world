@@ -27,6 +27,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-19 — Opus startup exposed a contract the connector never sent
+
+**Opus 4.8's 41/50 startup validation failures cannot establish failure to follow instructions that the OpenRouter request omitted.** The pinned JSON-object request named the four top-level keys but did not transmit the nested decision schema: 27 responses used object-valued memory entries and 14 lacked message mode. Reconstructing the system prompt from the checkpoint matched all 50 recorded prompt hashes. The failures are real, but their attribution is confounded by a connector contract-communication gap; a schema-supplied diagnostic has not yet been run. The startup gate preserved seed 11 at tick 5 and prevented seed 41 from starting. See [the evidence and monitoring review](reviews/opus48-startup-20260919.md).
+
 ## 2026-09-12 - A clean final ledger concealed regenerated decisions
 
 **One Grok harness cancellation discarded nine other responses while the final report still reported clean integrity.** Grok 4.5 seed 11 paused at completed tick 15 with one affected agent, although the event text said every agent failed. The retained partial ledger contains nine nonzero-output responses and one zero-output attempt; the pinned session discarded the entire pending tick. Final accounting includes 543 attempts versus 533 committed decisions, so cost coverage is complete but decision continuity is not. This is a harness effect, not model unreliability. See [the completion review](reviews/grok45-completion-20260912.md).
