@@ -47,6 +47,50 @@ class CatalogTests(unittest.TestCase):
         recipe["brains"] = ["codex"]
         self.assertEqual([m["name"] for m in for_recipe(entries, recipe)], ["GPT-6 Astra"])
 
+    def test_claude_exact_model_uses_native_custom_option_without_inference(self):
+        rows = [{"resolvedModel": "claude-opus-5[1m]", "supportedEffortLevels": ["medium"]},
+                {"resolvedModel": "claude-opus-4-8", "supportedEffortLevels": ["low", "medium", "high"]},
+                {"resolvedModel": "claude-blocked", "disabled": True}]
+        response = json.dumps({"type": "control_response", "response": {"response": {"models": rows}}})
+        from agent_world.leaderboard_models import command_models
+        with patch("agent_world.leaderboard_models.shutil.which", return_value="claude"), \
+             patch("agent_world.leaderboard_models.subprocess.run", return_value=Mock(stdout=response)) as run:
+            result = command_models("claude", {"PATH": "/bin", "ANTHROPIC_API_KEY": "must-not-use"})
+        self.assertEqual([r[0] for r in result], ["claude-opus-5[1m]", "claude-opus-4-8"])
+        self.assertEqual(run.call_args.kwargs["env"]["ANTHROPIC_CUSTOM_MODEL_OPTION"], "claude-opus-4-8")
+        self.assertNotIn("ANTHROPIC_API_KEY", run.call_args.kwargs["env"])
+        self.assertEqual(json.loads(run.call_args.kwargs["input"])["request"]["subtype"], "initialize")
+
+    def test_cursor_configs_share_model_title_and_keep_exact_effort(self):
+        rows = [("claude-opus-4-8"+suffix, "Claude Opus 4.8 1M "+suffix, None)
+                for suffix in ("-low", "-medium", "-medium-fast", "-thinking-medium", "-thinking-medium-fast", "-high")]
+        rows += [("gpt-5.5-extra-high", "GPT-5.5 1M Extra High", None)]
+        with patch("agent_world.leaderboard_models.command_models", return_value=rows):
+            entries, warnings = model_catalog({"x": {"brains": ["cursor"]}})
+        self.assertEqual(warnings, [])
+        recipe = {"brains": ["cursor"], "defaults": {"reasoning_effort": "medium"}}
+        models = for_recipe(entries, recipe)
+        self.assertEqual(len(models), 1)
+        self.assertEqual(models[0]["name"], "Claude Opus 4.8")
+        self.assertEqual(models[0]["model"], "claude-opus-4-8-medium")
+        self.assertEqual(len(models[0]["configurations"]), 4)
+        self.assertTrue(all(c["effort"] == "medium" for c in models[0]["configurations"]))
+        recipe["defaults"]["reasoning_effort"] = "xhigh"
+        self.assertEqual(for_recipe(entries, recipe)[0]["model"], "gpt-5.5-extra-high")
+
+    def test_cursor_normalizes_old_daily_cache_without_losing_variants(self):
+        entries = [{"brain": "cursor", "model": base, "name": "Claude Opus 4.8 1M Low Thinking",
+                    "key": "cursor:"+base, "lab": "anthropic", "efforts": ["medium"],
+                    "variants": {"medium": slug}}
+                   for base, slug in [("claude-opus-4-8", "claude-opus-4-8-medium"),
+                                      ("claude-opus-4-8-thinking-fast", "claude-opus-4-8-thinking-medium-fast")]]
+        recipe = {"brains": ["cursor"], "defaults": {"reasoning_effort": "medium"}}
+        models = for_recipe(entries, recipe)
+        self.assertEqual([m["name"] for m in models], ["Claude Opus 4.8"])
+        self.assertEqual({c["id"] for c in models[0]["configurations"]},
+                         {"claude-opus-4-8-medium", "claude-opus-4-8-thinking-medium-fast"})
+        self.assertEqual(entries[0]["name"], "Claude Opus 4.8 1M Low Thinking")
+
     def test_disabled_devin_is_not_discovered(self):
         with patch("agent_world.leaderboard_models.command_models") as discovery:
             entries, _ = model_catalog({"x": {"brains": ["devin"]}})
@@ -191,6 +235,30 @@ class CatalogLaunchTests(unittest.TestCase):
         self.service.update(self.identifier, state="queued", dispatch_ready=True)
         with self.assertRaisesRegex(LaunchError, "OpenRouter is disabled"):
             self.service.monitoring_accept([self.identifier], "shared-monitor")
+
+    def test_cursor_configuration_is_validated_and_saved_separately(self):
+        source = {"id": "recipe@hash", "recipe_id": "participant-v8-revised", "digest": "hash",
+                  "source": str(self.root), "commit": "a"*40, "brains": ["cursor"], "seeds": [11, 41],
+                  "defaults": {"ticks": 60, "agents": 10, "reasoning_effort": "medium"}}
+        entries = [{"key": "cursor:"+model, "model": model, "brain": "cursor", "lab": "anthropic",
+                    "name": "Claude Opus 4.8", "efforts": None, "variants": None}
+                   for model in ("claude-opus-4-8-medium", "claude-opus-4-8-thinking-medium-fast", "claude-opus-4-8-high")]
+        catalog = {"sources": {source["id"]: source}, "models": entries, "blocker": None}
+        plan = {"launch_commit": source["commit"], "orchestrator_commit": source["commit"]}
+        values = {"recipe": source["id"], "model_key": "cursor:claude-opus-4-8"}
+        with patch.object(self.service, "catalog", return_value=catalog), \
+             patch.object(self.service, "launch_checkout", return_value=self.root), \
+             patch("agent_world.leaderboard_launch.subprocess.run", return_value=Mock(stdout=json.dumps(plan))):
+            result = self.service.preview({**values, "model_config": "claude-opus-4-8-thinking-medium-fast"})
+            self.assertEqual(result["model_name"], "Claude Opus 4.8")
+            self.assertEqual(result["model"], "claude-opus-4-8-thinking-medium-fast")
+            self.assertIn("Thinking", result["configuration_label"])
+            config = json.loads(Path(self.service.get(result["id"])["config_path"]).read_text())
+            self.assertEqual(config["model"]["id"], result["model"])
+            self.assertEqual(config["model"]["reasoning_effort"], "medium")
+            for invalid in ("claude-opus-4-8-high", "claude-opus-5-medium"):
+                with self.assertRaisesRegex(LaunchError, "configuration is unavailable"):
+                    self.service.preview({**values, "model_config": invalid})
 
     def test_catalog_selection_resolves_exact_id_on_server(self):
         source = {"id": "recipe@hash", "recipe_id": "participant-v8-revised",

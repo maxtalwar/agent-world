@@ -47,9 +47,10 @@ User decision, 2026-09-19: never use OpenRouter for expensive models such as
 Claude Opus. Claude benchmarks must use Claude Code, not a paid API fallback.
 OpenRouter must not appear in the leaderboard launch picker or be accepted
 through its review/start endpoints, including previously cached selections.
-Keep native model identity exact: if Claude Code does not advertise the requested
-version, report that limitation instead of substituting OpenRouter or a different
-model. Preserve historical OpenRouter evidence without relabeling its connector.
+Keep native model identity exact. Claude Code's default picker is not its full
+supported catalog: verify a requested exact version with its native model-selection
+path before declaring it unavailable. Never substitute OpenRouter or a different
+model when the requested version cannot be verified. Preserve historical OpenRouter evidence without relabeling its connector.
 
 Reserve OpenRouter for very inexpensive models (for example inexpensive Chinese
 models) or experiments explicitly arranged with the user. Do not infer that a

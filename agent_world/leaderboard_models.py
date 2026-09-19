@@ -69,6 +69,52 @@ def openrouter_decision_model(model):
             and decision_model_identity(identifier, model.get("name", "")))
 
 
+def cursor_catalog(entries):
+    """Separate model identity from advertised Cursor configuration IDs.
+
+    Normalize saved catalogs too: old entries may have already grouped effort
+    variants, but split thinking/fast into separate apparent models.
+    """
+    groups = {}
+    others = []
+    for entry in entries:
+        if entry["brain"] != "cursor":
+            others.append(entry)
+            continue
+        ids = list((entry.get("variants") or {}).values()) or [entry["model"]]
+        for identifier in ids:
+            base = identifier
+            fast = base.endswith("-fast")
+            if fast:
+                base = base[:-5]
+            match = re.search(r"-(extra-high|xhigh|none|minimal|low|medium|high|max)$", base)
+            effort = None
+            if match:
+                effort = {"extra-high": "xhigh", "minimal": "none"}.get(match[1], match[1])
+                base = base[:match.start()]
+            thinking = base.endswith("-thinking")
+            if thinking:
+                base = base[:-9]
+            base = re.sub(r"(?:-1m|\[1m\])$", "", base, flags=re.I)
+            group = groups.setdefault(base, {**entry, "key": "cursor:" + base,
+                "model": base, "name": friendly(base.removeprefix("cursor-")),
+                "variants": None, "configurations": []})
+            if any(c["id"] == identifier for c in group["configurations"]):
+                continue
+            label = "Thinking" if thinking else "Standard"
+            if fast:
+                label += " · Fast"
+            if effort:
+                label += " · " + effort + " reasoning"
+            group["configurations"].append({"id": identifier, "label": label,
+                "effort": effort, "thinking": thinking, "fast": fast})
+    for group in groups.values():
+        choices = group["configurations"]
+        choices.sort(key=lambda c: (c["fast"], c["thinking"], c["effort"] is None, c["id"]))
+        group["efforts"] = None if any(c["effort"] is None for c in choices) else sorted({c["effort"] for c in choices})
+    return others + list(groups.values())
+
+
 def command_models(brain, environment):
     import json
     import tempfile
@@ -85,6 +131,10 @@ def command_models(brain, environment):
         for key in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL",
                     "CLAUDE_CODE_USE_BEDROCK", "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY", "CLAUDECODE"):
             child.pop(key, None)
+        # The default picker omits supported exact versions. Surface the
+        # user-requested, locally verified Opus 4.8 through Claude Code's own
+        # custom-model option so its allowlist and capability checks still apply.
+        child.setdefault("ANTHROPIC_CUSTOM_MODEL_OPTION", "claude-opus-4-8")
         environment = child
         with tempfile.TemporaryDirectory(prefix="aw-model-catalog-") as workspace:
             output = run(["claude", "--print", "--input-format", "stream-json", "--output-format",
@@ -97,7 +147,7 @@ def command_models(brain, environment):
             if row.get("type") == "control_response":
                 models = row.get("response", {}).get("response", {}).get("models", [])
                 return [(m["resolvedModel"], friendly(m["resolvedModel"]), m.get("supportedEffortLevels"))
-                        for m in models if m.get("resolvedModel")]
+                        for m in models if m.get("resolvedModel") and not m.get("disabled")]
         raise ValueError("No Claude model catalog returned")
     if brain == "zcode":
         # Use the same configured Coding Plan catalog as ZCodeBrain's preflight.
@@ -240,7 +290,7 @@ def model_catalog(sources, client=None, environment=None):
                     # Effort-bearing slugs are alternatives for one model; resolve
                     # the exact advertised slug only after selecting the recipe.
                     match = re.fullmatch(r"(.+)-(low|medium|high|xhigh|max)(-fast)?", model)
-                    if match and brain in {"antigravity", "devin", "cursor"}:
+                    if match and brain in {"antigravity", "devin"}:
                         base, effort, fast = match.groups()
                         base += fast or ""
                         group = grouped.setdefault(base, {"name": re.sub(
@@ -262,7 +312,7 @@ def model_catalog(sources, client=None, environment=None):
 def for_recipe(entries, source):
     effort = source["defaults"]["reasoning_effort"]
     result = []
-    for m in entries:
+    for m in cursor_catalog(entries):
         # Expose one Muse option per version, using Standard. Do not silently
         # substitute the Contributor data-use tier when Standard is unavailable.
         if re.search(r"muse[- ]spark", m["model"], re.I) and m["model"].endswith("-contributor"):
@@ -270,6 +320,13 @@ def for_recipe(entries, source):
         if m["brain"] in DISABLED_BENCHMARK_CONNECTORS:
             continue
         if m["brain"] not in source["brains"] or (m["efforts"] is not None and effort not in m["efforts"]):
+            continue
+        if m.get("configurations"):
+            choices = [c for c in m["configurations"] if c["effort"] in (None, effort)]
+            if not choices:
+                continue
+            result.append({**m, "model": choices[0]["id"], "configurations": choices,
+                           "default_configuration": choices[0]["id"]})
             continue
         result.append({**m, "model": m["variants"].get(effort) if m["variants"] else m["model"],
                        "price_note": ("No published API-equivalent price" if m["model"] == "gpt-5.3-codex-spark" else m.get("price_note"))})

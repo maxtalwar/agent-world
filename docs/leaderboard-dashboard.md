@@ -278,3 +278,21 @@ Regression coverage in `tests/test_leaderboard.py` checks partial versus complet
 coverage and separate fingerprint groups. The recurring v6 failure was caused by
 an old `any(managed rows)` shortcut: completing Astra hid all 20 canonical rows.
 No source data was lost or changed during the display repair.
+
+### Exact Claude versions and Cursor configurations
+
+Claude Code's initialization menu primarily lists current aliases. It is not an
+exhaustive list of supported exact versions. The catalog also exposes the
+user-requested `claude-opus-4-8` through the native `ANTHROPIC_CUSTOM_MODEL_OPTION`
+mechanism; Claude Code supplies its exact resolved ID and supported effort levels,
+while native restrictions still apply. A local `/model claude-opus-4-8` check on
+2026-09-19 confirmed selection with zero inference turns and zero model cost.
+Catalog discovery only initializes the client; it does not run model prompts.
+
+Cursor entries are grouped by model identity, excluding context-window, thinking,
+speed and effort labels from the title. After selecting a model, its separate
+configuration selector contains only advertised variants compatible with the
+recipe's reasoning effort. Standard, non-fast variants are preferred when
+available. Review shows the configuration separately and stores its exact native
+ID; forged or incompatible configuration IDs are rejected. Existing daily caches
+are normalized too, without rewriting historical run identities.

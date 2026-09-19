@@ -56,3 +56,12 @@ or direct submissions; explicitly arranged laboratory experiments remain possibl
 A fresh read-only Claude Code catalog lists Opus 5 (`claude-opus-5[1m]`), Fable 5.1,
 Sonnet 5 and Haiku 4.5, but does not advertise Opus 4.8. Do not substitute a version
 or rewrite the old study's connector. The original OpenRouter study stays stopped.
+
+## Native availability correction
+
+The default Claude Code initialization menu was mistakenly treated as exhaustive.
+A subsequent local `/model claude-opus-4-8` selection succeeded with zero API
+inference time, zero turns and zero cost. Supplying the native custom-model option
+also returned `resolvedModel=claude-opus-4-8` and native supported effort levels.
+The claim above that a replacement version would be necessary is withdrawn.
+The original OpenRouter study remains dropped; this catalog repair launches no run.

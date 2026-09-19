@@ -1,5 +1,5 @@
 'use strict';
-const launchState = {options:null, preview:null, busy:false, selected:new Set(), outcomes:new Map()};
+const launchState = {options:null, preview:null, busy:false, selected:new Set(), configurations:new Map(), outcomes:new Map()};
 const launchEl = id => document.getElementById(id);
 const recipeName = id => 'Participant '+(id==='participant-v8-revised'?'v8.1':id.replace('participant-','').replaceAll('-',' '));
 const modelLogo = (lab,name) => '<span class="model-avatar"><img src="/labs/'+esc(lab||'unknown')+'.svg" alt="'+esc(name||'')+'"></span>';
@@ -52,7 +52,8 @@ function updateSelected() {
   const count=models.length;
   launchEl('model-picker-count').textContent=count?count+' model'+(count===1?'':'s')+' selected':'Choose models';
   launchEl('selected-models').innerHTML=models.map(m=>'<span class="selected-model">'+modelLogo(m.lab,'')+
-    '<span>'+esc(m.name)+'<small>'+esc(m.connector)+'</small></span><button type="button" data-key="'+esc(m.key)+'" aria-label="Remove '+esc(m.name)+'">×</button></span>').join('');
+    '<span>'+esc(m.name)+'<small>'+esc(m.connector)+'</small>'+(m.configurations?.length?'<select class="model-configuration" data-key="'+esc(m.key)+'" aria-label="Configuration for '+esc(m.name)+'">'+m.configurations.map(c=>'<option value="'+esc(c.id)+'" '+((launchState.configurations.get(m.key)||m.default_configuration)===c.id?'selected':'')+'>'+esc(c.label)+'</option>').join('')+'</select>':'')+'</span><button type="button" data-key="'+esc(m.key)+'" aria-label="Remove '+esc(m.name)+'">×</button></span>').join('');
+  launchEl('selected-models').querySelectorAll('select').forEach(select=>select.onchange=()=>{launchState.configurations.set(select.dataset.key,select.value);});
   launchEl('selected-models').querySelectorAll('button').forEach(button=>button.onclick=()=>{
     launchState.selected.delete(button.dataset.key);launchModels();
   });
@@ -66,12 +67,13 @@ function chooseRecipe() {
   filter.value=harnesses.has(selected)?selected:'';
   const allowed=new Set((launchRecipe()?.models||[]).map(m=>m.key));
   launchState.selected=new Set([...launchState.selected].filter(k=>allowed.has(k)));
+  for(const m of launchRecipe()?.models||[]){if(!m.configurations?.some(c=>c.id===launchState.configurations.get(m.key)))launchState.configurations.delete(m.key);}
   launchModels();launchConditions();
 }
 async function openLaunch() {
   if(launchState.busy)return;
   launchEl('launch-dialog').showModal();
-  launchState.preview=null;launchState.options=null;launchState.selected.clear();launchState.outcomes.clear();
+  launchState.preview=null;launchState.options=null;launchState.selected.clear();launchState.configurations.clear();launchState.outcomes.clear();
   launchEl('launch-form').hidden=false;launchEl('launch-review').hidden=true;
   launchEl('launch-loading').hidden=false;launchEl('review-launch').disabled=true;
   launchEl('launch-recipe').innerHTML='';launchEl('model-options').innerHTML='';
@@ -112,7 +114,7 @@ function renderReview() {
     '<div class="review-models">'+previews.map(p=>{
       const outcome=launchState.outcomes.get(p.id);
       return '<div class="review-model">'+modelLogo(p.lab,'')+'<div><strong>'+esc(p.model_name||p.model)+'</strong>'+
-        '<p class="small muted">'+esc(p.brain)+' · Seeds '+esc(p.seeds.join(', '))+(p.seeds.length===1?' · Provisional':'')+' · '+esc(outcome?.error||outcome?.label||'Ready to start')+'</p></div></div>';
+        '<p class="small muted">'+esc(p.brain)+(p.configuration_label?' · '+esc(p.configuration_label):'')+' · Seeds '+esc(p.seeds.join(', '))+(p.seeds.length===1?' · Provisional':'')+' · '+esc(outcome?.error||outcome?.label||'Ready to start')+'</p></div></div>';
     }).join('')+'</div><dl><div><dt>Population</dt><dd>'+first.defaults.agents+' agents per run</dd></div><div><dt>Duration</dt><dd>'+first.defaults.ticks+' ticks per seed</dd></div><div><dt>Model reasoning</dt><dd>'+esc(first.defaults.reasoning_effort)+'</dd></div><div><dt>Each supervisor</dt><dd>GPT-6 Astra · Low</dd></div></dl>';
   const pending=previews.filter(p=>!launchState.outcomes.get(p.id)?.ok).length;
   launchEl('confirm-launch').textContent=launchState.outcomes.size?'Retry remaining ('+pending+')':'Start '+previews.length+' benchmark'+(previews.length===1?'':'s');
@@ -127,7 +129,7 @@ async function reviewLaunch(event) {
     const previews=[];
     for(const key of keys){
       launchEl('review-launch').textContent='Reviewing '+(previews.length+1)+' of '+keys.length+'…';
-      previews.push(await launchPost('/api/launch/preview',{recipe,model_key:key}));
+      previews.push(await launchPost('/api/launch/preview',{recipe,model_key:key,...(launchState.configurations.has(key)?{model_config:launchState.configurations.get(key)}:{})}));
     }
     launchState.preview=previews;launchState.outcomes.clear();renderReview();
     launchEl('launch-form').hidden=true;launchEl('launch-review').hidden=false;

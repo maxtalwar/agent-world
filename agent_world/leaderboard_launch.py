@@ -282,7 +282,7 @@ class LaunchService:
                 request["monitor_event_state"] = "interrupted"
         return {k: v for k, v in request.items() if k in {
             "id", "run_id", "state", "recipe_id", "recipe_title", "model", "model_name", "lab", "brain", "seeds", "defaults",
-            "commit", "created_at", "updated_at", "error", "supervisor_thread_id",
+            "commit", "created_at", "updated_at", "error", "supervisor_thread_id", "configuration_label",
             "supervisor_state", "supervisor_message", "supervisor_model", "supervisor_effort", "can_reconnect",
             "monitor_reviewed", "monitor_resolution", "monitor_resolution_reason", "monitor_event_state", "run_kind", "startup_pending",
         }}
@@ -457,7 +457,7 @@ class LaunchService:
 
     def preview(self, values):
         selected = None
-        if set(values) == {"recipe", "model_key"}:
+        if set(values) in ({"recipe", "model_key"}, {"recipe", "model_key", "model_config"}):
             catalog = self.catalog()
             source = catalog["sources"].get(values["recipe"])
             if not source:
@@ -466,6 +466,14 @@ class LaunchService:
                              if m["key"] == values["model_key"]), None)
             if not selected:
                 raise LaunchError("This model is unavailable for the selected recipe. Refresh the catalog.")
+            config_id = values.get("model_config", selected.get("default_configuration"))
+            if config_id is not None:
+                configuration = next((c for c in selected.get("configurations", [])
+                                      if c["id"] == config_id), None)
+                if not configuration:
+                    raise LaunchError("This configuration is unavailable for the selected model and recipe.")
+                selected = {**selected, "model": configuration["id"],
+                            "configuration_label": configuration["label"]}
             values = {"recipe": values["recipe"], "brain": selected["brain"], "model": selected["model"]}
         if set(values) != {"recipe", "brain", "model"}:
             raise LaunchError("Choose a recipe, connector, and exact model ID")
@@ -514,6 +522,7 @@ class LaunchService:
             "run_id": run_id, "recipe_id": source["recipe_id"], "recipe_key": source["id"],
             "digest": source["digest"], "source": source["source"], "origin_source": origin_source, "commit": source["commit"],
             "brain": brain, "model": model, "model_name": selected["name"] if selected else model,
+            "configuration_label": selected.get("configuration_label") if selected else None,
             "lab": selected["lab"] if selected else "unknown", "recipe_title": recipe_label(source["recipe_id"]),
             "seeds": seeds, "defaults": source["defaults"],
             "config_path": str(config_path), "config_hash": hashlib.sha256(config_path.read_bytes()).hexdigest(),

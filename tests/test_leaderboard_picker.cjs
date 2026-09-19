@@ -32,6 +32,16 @@ for(const options of [{},{mode:'all'},{query:'muse'}])
 assert.equal(browse(muse,'v6',museHistory).length,3);
 museHistory[0].runs[0].model='Muse Spark 1.2 Contributor';
 assert.equal(browse(muse,'v8',museHistory).length,1);
+// Configuration lives on the selected model, not in duplicate picker titles.
+vm.runInContext(`launchState.options={enabled:true,recipes:[{id:'config-test',models:[{
+ key:'cursor:opus',name:'Claude Opus 4.8',connector:'Cursor',default_configuration:'standard',
+ configurations:[{id:'standard',label:'Standard · medium reasoning'},{id:'fast',label:'Thinking · Fast · medium reasoning'}]}]}]};
+ launchEl('launch-recipe').value='config-test';launchState.selected=new Set(['cursor:opus']);
+ launchState.configurations.set('cursor:opus','fast');updateSelected();`,context);
+assert.match(element('selected-models').innerHTML,/Configuration for Claude Opus 4.8/);
+assert.match(element('selected-models').innerHTML,/value="fast" selected/);
+assert.match(element('selected-models').innerHTML,/Claude Opus 4.8<small>Cursor/);
+
 (async()=>{
   await vm.runInContext(`(async()=>{
     launchState.preview=[{id:'first'},{id:'second'}];
