@@ -41,6 +41,23 @@ Explicit user scope overrides these defaults. The already-launched
 September 5 Grok/Luna ledger factorial experiment is authorized to finish
 both seeds; this policy does not cancel those runs.
 
+## Provider routing and spending policy
+
+User decision, 2026-09-19: never use OpenRouter for expensive models such as
+Claude Opus. Claude benchmarks must use Claude Code, not a paid API fallback.
+OpenRouter must not appear in the leaderboard launch picker or be accepted
+through its review/start endpoints, including previously cached selections.
+Keep native model identity exact: if Claude Code does not advertise the requested
+version, report that limitation instead of substituting OpenRouter or a different
+model. Preserve historical OpenRouter evidence without relabeling its connector.
+
+Reserve OpenRouter for very inexpensive models (for example inexpensive Chinese
+models) or experiments explicitly arranged with the user. Do not infer that a
+model is cheap from its country or lab; confirm the exact model's cost and scope.
+This dashboard policy does not disable the laboratory's OpenRouter connector for
+explicitly authorized experiments. Do not launch the proposed Opus/OpenRouter
+diagnostic from the September 19 recovery discussion.
+
 ## Run Monitoring handoff authorization
 
 The user grants standing permission to send run handoffs and operational updates

@@ -145,6 +145,12 @@ Choose **Start benchmark**, select the recipe and models from the catalog. **Rev
 seeds, reasoning effort, and **GPT-6 Astra · Low** supervisor. Only the final
 **Start benchmark** action authorizes model-backed execution.
 
+OpenRouter is excluded from this page, including cached models and previously
+reviewed submissions. Claude benchmarks use Claude Code; unavailable native
+versions do not fall back to OpenRouter. The laboratory connector remains
+available for explicitly arranged inexpensive-model experiments. Historical
+OpenRouter studies retain their original connector and evidence.
+
 The initial review itself makes no model calls. Connector authentication and
 target model callability are checked by the existing managed startup gate;
 unknown IDs are never silently mapped to similarly named models.

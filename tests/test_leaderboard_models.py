@@ -53,6 +53,19 @@ class CatalogTests(unittest.TestCase):
         discovery.assert_not_called()
         self.assertEqual(entries, [])
 
+    def test_openrouter_is_not_discovered_or_shown_from_saved_catalog(self):
+        with patch("agent_world.leaderboard_models.command_models") as discovery:
+            entries, warnings = model_catalog({"x": {"brains": ["openrouter"]}})
+        discovery.assert_not_called()
+        self.assertEqual(entries, [])
+        self.assertEqual(warnings, [])
+        cached = [{"key": "openrouter:anthropic/claude-opus-4.8",
+                   "model": "anthropic/claude-opus-4.8", "brain": "openrouter",
+                   "name": "Claude Opus 4.8", "lab": "anthropic", "efforts": None,
+                   "variants": None}]
+        recipe = {"brains": ["openrouter"], "defaults": {"reasoning_effort": "medium"}}
+        self.assertEqual(for_recipe(cached, recipe), [])
+
     def test_same_model_remains_available_per_harness(self):
         entries = [{"key": brain+":claude-opus-5", "model": "claude-opus-5",
                     "name": "Claude Opus 5", "brain": brain, "lab": "anthropic",
@@ -159,6 +172,25 @@ class CatalogLaunchTests(unittest.TestCase):
             with patch.object(other, "sources", return_value={}):
                 other.catalog()
         discover.assert_called_once()
+
+    def test_openrouter_direct_review_and_stale_start_are_rejected(self):
+        source = {"id": "recipe@hash", "recipe_id": "participant-v8-revised",
+                  "brains": ["openrouter"]}
+        catalog = {"sources": {source["id"]: source}, "blocker": None, "models": []}
+        with patch.object(self.service, "catalog", return_value=catalog), \
+             patch("agent_world.leaderboard_launch.subprocess.run") as launch:
+            with self.assertRaisesRegex(LaunchError, "OpenRouter is disabled"):
+                self.service.preview({"recipe": source["id"], "brain": "openrouter",
+                                      "model": "anthropic/claude-opus-4.8"})
+            launch.assert_not_called()
+        self.service.update(self.identifier, brain="openrouter", model="anthropic/claude-opus-4.8")
+        with patch.object(self.service, "ensure_worker") as worker:
+            with self.assertRaisesRegex(LaunchError, "OpenRouter is disabled"):
+                self.service.start({"request_id": self.identifier})
+            worker.assert_not_called()
+        self.service.update(self.identifier, state="queued", dispatch_ready=True)
+        with self.assertRaisesRegex(LaunchError, "OpenRouter is disabled"):
+            self.service.monitoring_accept([self.identifier], "shared-monitor")
 
     def test_catalog_selection_resolves_exact_id_on_server(self):
         source = {"id": "recipe@hash", "recipe_id": "participant-v8-revised",

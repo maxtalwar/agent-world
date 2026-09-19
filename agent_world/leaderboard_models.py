@@ -15,7 +15,10 @@ CONNECTORS = {"codex": "Codex", "claude": "Claude Code", "antigravity": "Antigra
               "cursor": "Cursor", "devin": "Devin"}
 
 
-DISABLED_BENCHMARK_CONNECTORS = {"devin": "Devin is disconnected: its CLI does not support the required benchmark instructions and tool isolation."}
+DISABLED_BENCHMARK_CONNECTORS = {
+    "devin": "Devin is disconnected: its CLI does not support the required benchmark instructions and tool isolation.",
+    "openrouter": "OpenRouter is disabled in the benchmark launcher. Use the model's native connector; Claude models must use Claude Code. OpenRouter experiments require explicit operator selection.",
+}
 
 
 def recipe_label(recipe):

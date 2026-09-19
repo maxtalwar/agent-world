@@ -46,3 +46,13 @@ in the prompt and unchanged output validation. Start with the five-tick health
 check before authorizing a longer study. This changes the request conditions;
 it must not be admitted as an unchanged Participant v8.1 benchmark. No diagnostic
 or new model call was launched in this repair.
+
+## Owner routing correction — 2026-09-19
+
+The owner rejected OpenRouter for this study and for expensive models such as
+Opus. The schema diagnostic proposed above is withdrawn. No new OpenRouter calls
+were made. The leaderboard now excludes all OpenRouter choices and rejects stale
+or direct submissions; explicitly arranged laboratory experiments remain possible.
+A fresh read-only Claude Code catalog lists Opus 5 (`claude-opus-5[1m]`), Fable 5.1,
+Sonnet 5 and Haiku 4.5, but does not advertise Opus 4.8. Do not substitute a version
+or rewrite the old study's connector. The original OpenRouter study stays stopped.
