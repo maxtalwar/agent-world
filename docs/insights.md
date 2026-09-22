@@ -27,6 +27,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-09-22 - Native forks can cache the rulebook, but cumulative counters can hide the saving
+
+**Codex's cache boundary was partly a session-routing issue, and naive fork accounting counted the shared prompt twice.** In a bounded low-effort Luna diagnostic, CLI 0.154 fresh calls used 11,033 input tokens with zero cache reads. Official CLI 0.156 adds shared cache affinity to ephemeral forks: two of three forks read 11,008 cached tokens out of 11,760 new input tokens; one missed. The CLI reported 23,079 input tokens because it included the template's already-billed 11,319. The new opt-in `shared-prefix-fork-v1` mode shares a static-only rulebook template, never a sibling observation or decision, and records template cost once plus per-fork deltas. This supersedes the earlier claim below that no native connector path could cache our content. It does not establish a full-run saving or quota conversion, and the fixed initialization exchange is a new conversation treatment. [Evidence, accounting, and compatibility review](codex-prompt-cache-20260922.md).
+
 ## 2026-09-19 — Opus startup exposed a contract the connector never sent
 
 **Opus 4.8's 41/50 startup validation failures cannot establish failure to follow instructions that the OpenRouter request omitted.** The pinned JSON-object request named the four top-level keys but did not transmit the nested decision schema: 27 responses used object-valued memory entries and 14 lacked message mode. Reconstructing the system prompt from the checkpoint matched all 50 recorded prompt hashes. The failures are real, but their attribution is confounded by a connector contract-communication gap; a schema-supplied diagnostic has not yet been run. The startup gate preserved seed 11 at tick 5 and prevented seed 41 from starting. See [the evidence and monitoring review](reviews/opus48-startup-20260919.md).

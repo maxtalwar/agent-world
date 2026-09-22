@@ -76,9 +76,14 @@ there is to decide, not the run length.
    harnesses add 6,000–10,000 tokens of their own, cached. On Claude the
    rulebook already cache-hits; the cost was the observation being written to
    a one-hour cache at 2x on every call, fixed by `CLAUDE_CODE_PROMPT_CACHE_TTL=5m`
-   (about 17% of a Fable run). On Codex, prompt caching is best-effort and
-   never covered our content in testing, whichever position it was placed in,
-   so every prompt token is billed at full price there. Budget for v9: static
+   (about 17% of a Fable run). Follow-up testing found a native Codex path:
+   CLI 0.156 ephemeral forks of a static-only template read 11,008 of 11,760
+   new input tokens on two of three Luna calls; one missed. The opt-in
+   `shared-prefix-fork-v1` mode accounts for initialization once and subtracts
+   inherited cumulative usage. It is a new conversation treatment for explicit
+   recipe selection, with best-effort cache reuse rather than guaranteed savings.
+   See [the diagnostic and compatibility review](codex-prompt-cache-20260922.md).
+   Budget for v9: static
    rulebook at most 2,500 tokens; the observation is not capped, since capping
    it would distort agent memory.
 7. **Map size.** Larger makes roads and transport matter and raises

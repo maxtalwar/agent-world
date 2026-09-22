@@ -222,9 +222,9 @@ def build_parser() -> argparse.ArgumentParser:
     run_parser.add_argument(
         "--conversation-mode",
         type=normalize_conversation_mode,
-        choices=["fresh-conversation", "persistent-conversation-v1"],
+        choices=["fresh-conversation", "persistent-conversation-v1", "shared-prefix-fork-v1"],
         default=None,
-        help="Agent conversation memory. persistent-conversation-v1 keeps one private, rotating provider session per agent.",
+        help="Conversation boundary. shared-prefix-fork-v1 uses stateless Codex forks of a static-only template (Codex 0.156+ and connector-v3).",
     )
     run_parser.add_argument(
         "--session-max-turns",
@@ -467,7 +467,7 @@ def build_parser() -> argparse.ArgumentParser:
     experiment_parser.add_argument(
         "--conversation-mode",
         type=normalize_conversation_mode,
-        choices=["fresh-conversation", "persistent-conversation-v1"],
+        choices=["fresh-conversation", "persistent-conversation-v1", "shared-prefix-fork-v1"],
         default="fresh-conversation",
     )
     experiment_parser.add_argument("--session-max-turns", type=int, default=10)

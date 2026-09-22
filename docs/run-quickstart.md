@@ -227,6 +227,11 @@ entirely because its protocol rejects incompatible overrides.
 - `conversation_mode` selects fresh or persistent per-agent conversations.
 - `session_max_turns` bounds retained successful decisions for persistent
   sessions.
+- `conversation_mode: "shared-prefix-fork-v1"` is an opt-in Codex experiment
+  boundary requiring `connector-v3` and CLI 0.156+. It forks a static-only
+  rulebook template for every decision, shares no agent observations, and
+  accounts for template creation once. See
+  [cache diagnostics and compatibility](codex-prompt-cache-20260922.md).
 - `decision_mode` is `raw` or `validated`.
 - `assignment_strategy` and `assignment_seed` control mixed-population
   placement.

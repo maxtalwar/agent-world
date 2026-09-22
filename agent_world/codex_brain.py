@@ -19,12 +19,15 @@ import shutil
 import subprocess
 import tempfile
 import time
+import threading
+import weakref
 from typing import Any
 
 from agent_world.provider_limits import is_quota_detail
 from agent_world.provider_telemetry import record_provider_attempt
 from agent_world.brain_boundary import (
     DEFAULT_SESSION_MAX_TURNS,
+    CODEX_SHARED_PREFIX_MODE,
     ConversationBoundary,
     ConversationInvocation,
 )
@@ -53,6 +56,15 @@ CODEX_HARNESS_INSTRUCTIONS = (
     "`arguments_json` (use `{}` when there are no arguments). "
     "Return only the JSON object required by the output schema."
 )
+
+CODEX_OBSERVATION_MARKER = "The current private observation follows as JSON:\n"
+CODEX_TEMPLATE_INITIALIZATION = (
+    '\nThis initializes the shared rulebook only. No agent observation has been supplied. '
+    'Return exactly {"intent":"ready","actions":[],"messages":[],"memory_updates":[]}. '
+    'The next user message will supply the private observation.'
+)
+_CODEX_TEMPLATE_LOCK = threading.RLock()
+_CODEX_TEMPLATES: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 
 _BASE_DISABLED_CODEX_FEATURES = (
     "multi_agent",
@@ -162,6 +174,10 @@ class CodexBrain:
             if connector_profile in {"connector-v2", "connector-v3"}
             else "unrecorded"
         )
+        if conversation_mode == CODEX_SHARED_PREFIX_MODE:
+            if connector_profile != "connector-v3" or _codex_version(self.executable) < (0, 156, 0):
+                raise ValueError("shared-prefix-fork-v1 requires connector-v3 and Codex CLI 0.156.0 or newer")
+        self._cache_metadata: dict[str, Any] = {}
         self._stable_work_dir: str | None = None
         self._stable_schema_path: Path | None = None
         if connector_profile in {"connector-v2", "connector-v3"} or conversation_mode != "fresh-conversation":
@@ -199,6 +215,7 @@ class CodexBrain:
             return {"captured_at_utc": captured_at, "error": f"{type(exc).__name__}: {exc}"}
 
     def decide(self, observation: dict[str, Any]) -> AgentDecision:
+        self._cache_metadata = {}
         blocking_failure = self.runtime.blocking_failure()
         if blocking_failure is not None:
             return _failure_decision(blocking_failure[1])
@@ -372,6 +389,7 @@ class CodexBrain:
                 "cli_version": self.cli_version,
                 "duration_seconds": round(elapsed, 3),
                 **self.boundary.usage_metadata(invocation),
+                **self._cache_metadata,
             }
             try:
                 response_text, usage = parse_codex_jsonl(completed.stdout)
@@ -478,6 +496,8 @@ class CodexBrain:
         prompt: str,
         invocation: ConversationInvocation,
     ) -> subprocess.CompletedProcess[str]:
+        if self.conversation_mode == CODEX_SHARED_PREFIX_MODE:
+            return self._execute_shared_prefix(prompt, invocation)
         if self.connector_profile == "connector-v1" and self.conversation_mode == "fresh-conversation":
             with tempfile.TemporaryDirectory(prefix="agent-world-codex-") as temp_dir:
                 schema_path = _write_codex_schema(Path(temp_dir), self.decision_schema)
@@ -488,15 +508,73 @@ class CodexBrain:
         schema_path = self._stable_schema_path or _write_codex_schema(Path(work_dir), self.decision_schema)
         return self._run_command(prompt, invocation, work_dir, schema_path)
 
+    def _execute_shared_prefix(
+        self, prompt: str, invocation: ConversationInvocation,
+    ) -> subprocess.CompletedProcess[str]:
+        prefix, marker, dynamic = prompt.partition(CODEX_OBSERVATION_MARKER)
+        if not marker:
+            raise ValueError("Shared-prefix decision is missing its observation boundary")
+        key = (self.executable, self.cli_version, self.model, self.reasoning_effort,
+               str(self._stable_schema_path), prefix)
+        with _CODEX_TEMPLATE_LOCK:
+            templates = _CODEX_TEMPLATES.setdefault(self.runtime, {})
+            template = templates.get(key)
+            if template is None:
+                started = time.monotonic()
+                seed_prompt = prefix + CODEX_TEMPLATE_INITIALIZATION
+                seed = self._run_command(seed_prompt, invocation, self._stable_work_dir,
+                                         self._stable_schema_path, persist_template=True)
+                usage = _best_effort_codex_usage(seed.stdout)
+                self._record_usage(usage, {
+                    "agent_id": None, "tick": None, "usage_kind": "cache_template",
+                    "conversation_mode": CODEX_SHARED_PREFIX_MODE,
+                    "connector_profile": self.connector_profile, "cli_version": self.cli_version,
+                    "request_sha256": hashlib.sha256(seed_prompt.encode()).hexdigest(),
+                    "duration_seconds": round(time.monotonic() - started, 3),
+                    "codex_session_id": parse_codex_session_id(seed.stdout),
+                })
+                if seed.returncode:
+                    return seed
+                response, usage = parse_codex_jsonl(seed.stdout)
+                for line in seed.stdout.splitlines():
+                    event = json.loads(line)
+                    item = event.get("item", {})
+                    if event.get("type") == "item.completed" and item.get("type") not in {"agent_message", "reasoning"}:
+                        raise ValueError("Codex cache template attempted a tool instead of static initialization")
+                if json.loads(response) != {"intent": "ready", "actions": [], "messages": [], "memory_updates": []}:
+                    raise ValueError("Codex cache template did not return the fixed initialization response")
+                session_id = parse_codex_session_id(seed.stdout)
+                if not session_id:
+                    raise ValueError("Codex cache template returned no session id")
+                path = _codex_template_path(session_id)
+                template = (session_id, usage, path, hashlib.sha256(path.read_bytes()).hexdigest())
+                templates[key] = template
+        session_id, seed_usage, path, digest = template
+        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            raise ValueError("Codex static cache template changed; refusing to inherit modified history")
+        self._cache_metadata = {
+            "cache_template_session_id": session_id, "cache_template_sha256": digest,
+            "codex_usage_scope": "fork_delta", "cache_template_prior_usage": dict(seed_usage),
+        }
+        result = self._run_command(marker + dynamic, invocation, self._stable_work_dir,
+                                   self._stable_schema_path, fork_session_id=session_id)
+        if hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+            raise ValueError("Codex static cache template changed during the decision")
+        return _codex_subtract_inherited_usage(result, seed_usage)
+
     def _run_command(
         self,
         prompt: str,
         invocation: ConversationInvocation,
         work_dir: str,
         schema_path: Path,
+        *,
+        persist_template: bool = False,
+        fork_session_id: str | None = None,
     ) -> subprocess.CompletedProcess[str]:
         return run_process(
-            self._command(schema_path, invocation),
+            self._command(schema_path, invocation, persist_template=persist_template,
+                          fork_session_id=fork_session_id),
             cwd=work_dir,
             input=prompt,
             text=True,
@@ -510,22 +588,27 @@ class CodexBrain:
         self,
         schema_path: Path,
         invocation: ConversationInvocation | None = None,
+        *,
+        persist_template: bool = False,
+        fork_session_id: str | None = None,
     ) -> list[str]:
         invocation = invocation or ConversationInvocation(None, True, 0, 1)
         command = [
             self.executable,
             "exec",
         ]
-        if invocation.resumed:
+        if fork_session_id:
+            command.extend(["fork", "--ephemeral", "--config", 'sandbox_mode="read-only"'])
+        elif invocation.resumed:
             command.append("resume")
-        elif self.conversation_mode == "fresh-conversation":
+        elif self.conversation_mode == "fresh-conversation" and not persist_template:
             command.append("--ephemeral")
         command.extend(
             [
                 "--sandbox",
                 "read-only",
             ]
-            if not invocation.resumed
+            if not invocation.resumed and not fork_session_id
             else []
         )
         command.extend([
@@ -551,7 +634,9 @@ class CodexBrain:
             str(schema_path),
             "--json",
         ])
-        if invocation.resume_session_id:
+        if fork_session_id:
+            command.append(fork_session_id)
+        elif invocation.resume_session_id:
             command.append(invocation.resume_session_id)
         command.append("-")
         return command
@@ -584,6 +669,7 @@ class CodexBrain:
             "reasoning_effort": self.reasoning_effort,
             "prompt_tokens": usage.get("input_tokens", 0),
             "cached_tokens": usage.get("cached_input_tokens", 0),
+            "cache_write_tokens": usage.get("cache_write_input_tokens", 0),
             "completion_tokens": usage.get("output_tokens", 0),
             "reasoning_tokens": usage.get("reasoning_output_tokens", 0),
             "cost": 0,
@@ -604,8 +690,40 @@ def build_codex_prompt(static_context: str, dynamic_json: str) -> str:
         f"{CODEX_HARNESS_INSTRUCTIONS}\n\n"
         f"{SYSTEM_INSTRUCTIONS}\n\n"
         f"{static_context}\n\n"
-        f"The current private observation follows as JSON:\n{dynamic_json}"
+        f"{CODEX_OBSERVATION_MARKER}{dynamic_json}"
     )
+
+
+def _codex_template_path(session_id: str) -> Path:
+    codex_home = Path(os.environ.get("CODEX_HOME") or (Path.home() / ".codex"))
+    matches = list((codex_home / "sessions").glob(f"*/*/*/*{session_id}.jsonl"))
+    if len(matches) != 1:
+        raise ValueError("Cannot locate the native Codex cache template for integrity verification")
+    return matches[0]
+
+
+def _codex_subtract_inherited_usage(
+    completed: subprocess.CompletedProcess[str], prior: dict[str, Any],
+) -> subprocess.CompletedProcess[str]:
+    """Exec's turn.completed totals include the template's already-billed turn."""
+    lines = []
+    for line in completed.stdout.splitlines():
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            lines.append(line)
+            continue
+        if event.get("type") == "turn.completed" and isinstance(event.get("usage"), dict):
+            usage = event["usage"]
+            for name in ("input_tokens", "cached_input_tokens", "cache_write_input_tokens",
+                         "output_tokens", "reasoning_output_tokens"):
+                current, previous = usage.get(name, 0), prior.get(name, 0)
+                if type(current) is not int or type(previous) is not int or current < previous:
+                    raise ValueError("Codex cumulative usage is incompatible with its cache template")
+                usage[name] = current - previous
+        lines.append(json.dumps(event))
+    return subprocess.CompletedProcess(completed.args, completed.returncode,
+                                       "\n".join(lines), completed.stderr)
 
 
 def build_codex_continuation_prompt(dynamic_json: str) -> str:

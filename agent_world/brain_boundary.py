@@ -7,7 +7,8 @@ from typing import Any
 
 
 CONNECTOR_PROFILES = frozenset({"connector-v1", "connector-v2", "connector-v3"})
-CONVERSATION_MODES = frozenset({"fresh-conversation", "persistent-conversation-v1"})
+CODEX_SHARED_PREFIX_MODE = "shared-prefix-fork-v1"
+CONVERSATION_MODES = frozenset({"fresh-conversation", "persistent-conversation-v1", CODEX_SHARED_PREFIX_MODE})
 LEGACY_CONNECTOR_PROFILE_ALIASES = {
     "stateless-v1": "connector-v1",
     "stateless-v2": "connector-v2",
@@ -84,7 +85,7 @@ class ConversationBoundary:
         self.restored_checkpoint_session_id: str | None = None
 
     def prepare(self) -> ConversationInvocation:
-        if self.conversation_mode == "fresh-conversation":
+        if self.conversation_mode in {"fresh-conversation", CODEX_SHARED_PREFIX_MODE}:
             return ConversationInvocation(
                 resume_session_id=None,
                 full_context=True,
@@ -109,7 +110,7 @@ class ConversationBoundary:
         )
 
     def commit(self, invocation: ConversationInvocation, session_id: str | None) -> None:
-        if self.conversation_mode == "fresh-conversation":
+        if self.conversation_mode in {"fresh-conversation", CODEX_SHARED_PREFIX_MODE}:
             return
         if not session_id:
             raise ValueError("bounded provider conversation returned no session id")

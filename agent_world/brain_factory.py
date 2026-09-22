@@ -17,6 +17,7 @@ from agent_world.agents import AgentBrain, SurvivalBrain
 from agent_world.brain_boundary import (
     CONNECTOR_PROFILES,
     CONVERSATION_MODES,
+    CODEX_SHARED_PREFIX_MODE,
     DEFAULT_SESSION_MAX_TURNS,
     normalize_connector_profile,
     normalize_conversation_mode,
@@ -92,8 +93,12 @@ class BrainSpec:
             )
         if conversation_mode not in CONVERSATION_MODES:
             raise ValueError(
-                "conversation mode must be fresh-conversation or persistent-conversation-v1"
+                "unsupported conversation mode"
             )
+        if conversation_mode == CODEX_SHARED_PREFIX_MODE and (
+            brain_type != "codex" or connector_profile != "connector-v3"
+        ):
+            raise ValueError("shared-prefix-fork-v1 requires codex with connector-v3")
         if type(session_max_turns) is not int or session_max_turns < 1:
             raise ValueError("session_max_turns must be at least 1")
         if conversation_mode != "fresh-conversation" and brain_type not in {

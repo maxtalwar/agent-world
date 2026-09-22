@@ -149,7 +149,7 @@ def recipe_from_dict(value: Any) -> ParticipantRecipe:
         "reasoning_effort": {"minimal", "low", "medium", "high", "xhigh", "max"},
         "preset": {"baseline", "organic-generalists", "experimental-organic-specialists", "frontier-generalists"},
         "connector_profile": {"connector-v1", "connector-v2", "connector-v3"},
-        "conversation_mode": {"fresh-conversation", "persistent-conversation-v1"},
+        "conversation_mode": {"fresh-conversation", "persistent-conversation-v1", "shared-prefix-fork-v1"},
         "decision_mode": {"raw", "validated"},
         "assignment_strategy": {"ordered", "stratified"},
     }
