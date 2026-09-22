@@ -168,7 +168,9 @@ effort. If no runtime remains, launching is blocked.
 
 ### Source and execution ownership
 
-The source chooser finds clean retained recipe checkouts. Review prepares an
+The source chooser finds clean retained recipe checkouts. Recipe discovery reads the committed
+`agent_world` package extracted once per commit into
+`.local/leaderboard-scoring/COMMIT`. Review prepares an
 independent local source clone at `.local/leaderboard-sources/COMMIT`. Its
 `runs/jobs` and `runs/managed` paths point to the shared run registry. When those
 paths contain committed archival evidence, a sparse checkout omits the clone's

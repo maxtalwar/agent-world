@@ -9,8 +9,10 @@ import os
 from pathlib import Path
 import re
 import secrets
+import io
 import shlex
 import shutil
+import tarfile
 import sqlite3
 import subprocess
 import sys
@@ -73,6 +75,33 @@ def env():
     return {**os.environ, "PATH": str(Path.home() / ".local/bin") + ":" + os.environ.get("PATH", "")}
 
 
+PACKAGE_LOCK = threading.Lock()
+
+
+def pinned_package(root, commit):
+    """Extract only the agent_world package at ``commit``, once per commit.
+
+    A few megabytes serve recipe discovery and study scoring; full clones are
+    made only when a launch actually starts.
+    """
+    if not re.fullmatch(r"[0-9a-f]{40}", commit or ""):
+        raise ValueError("Invalid launch commit")
+    target = Path(root) / ".local/leaderboard-scoring" / commit
+    with PACKAGE_LOCK:
+        if (target / "agent_world").is_dir():
+            return target
+        staging = target.with_name(commit + ".partial")
+        shutil.rmtree(staging, ignore_errors=True)
+        staging.mkdir(parents=True)
+        archive = subprocess.run(["git", "-C", str(root), "archive", commit, "agent_world"],
+                                 check=True, capture_output=True, timeout=60).stdout
+        with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+            tar.extractall(staging, **({"filter": "data"} if hasattr(tarfile, "data_filter") else {}))
+        shutil.rmtree(target, ignore_errors=True)
+        os.replace(staging, target)
+    return target
+
+
 def contained(root, value):
     path = Path(value).resolve()
     if not path.is_relative_to(root.resolve()):
@@ -109,7 +138,7 @@ class LaunchService:
         # Read the current committed release even while the working checkout is
         # being edited. Never fall back to an older, different recipe snapshot.
         commit = git(self.root, "rev-parse", "HEAD")
-        released = self.launch_checkout({"commit": commit})
+        released = pinned_package(self.root, commit)
         candidates = [(path.stem, None, str(released))
                       for path in (released / "agent_world/recipes").glob("*.json")]
         result = {}
@@ -118,13 +147,9 @@ class LaunchService:
             if (recipe, expected_digest) in checked:
                 continue
             try:
+                # An archive of a commit is clean by construction; live edits in
+                # the working checkout never reach recipe discovery.
                 source = contained(self.root, location)
-                commit = git(source, "rev-parse", "HEAD")
-                # Pinned source must be clean. Do not launch from live edits or
-                # relabel a retained recipe using the current branch's settings.
-                if git(source, "status", "--porcelain", "--untracked-files=all", "--",
-                       "agent_world", "scripts", ".agents", "docs"):
-                    continue
                 info = json.loads(subprocess.check_output(
                     [sys.executable, "-c", INFO, recipe], cwd=source, text=True,
                     stderr=subprocess.DEVNULL, timeout=20, env=env()))

@@ -262,7 +262,7 @@ class CatalogLaunchTests(unittest.TestCase):
         plan = {"launch_commit": source["commit"], "orchestrator_commit": source["commit"]}
         values = {"recipe": source["id"], "model_key": "cursor:claude-opus-4-8"}
         with patch.object(self.service, "catalog", return_value=catalog), \
-             patch.object(self.service, "launch_checkout", return_value=self.root), \
+             patch("agent_world.leaderboard_launch.pinned_package", return_value=self.root), patch.object(self.service, "launch_checkout", return_value=self.root), \
              patch("agent_world.leaderboard_launch.subprocess.run", return_value=Mock(stdout=json.dumps(plan))):
             result = self.service.preview({**values, "model_config": "claude-opus-4-8-thinking-medium-fast"})
             self.assertEqual(result["model_name"], "Claude Opus 4.8")
@@ -287,7 +287,7 @@ class CatalogLaunchTests(unittest.TestCase):
         catalog = {"sources": {source["id"]: source}, "blocker": None, "models": [model]}
         plan = {"launch_commit": source["commit"], "orchestrator_commit": source["commit"]}
         with patch.object(self.service, "catalog", return_value=catalog), \
-             patch.object(self.service, "launch_checkout", return_value=self.root), \
+             patch("agent_world.leaderboard_launch.pinned_package", return_value=self.root), patch.object(self.service, "launch_checkout", return_value=self.root), \
              patch("agent_world.leaderboard_launch.subprocess.run", return_value=Mock(stdout=json.dumps(plan))):
             result = self.service.preview({"recipe": source["id"], "model_key": model["key"]})
             self.assertEqual(result["model"], "gemini-3.7-flash-medium")

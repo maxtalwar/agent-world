@@ -130,7 +130,7 @@ class LeaderboardTests(unittest.TestCase):
         (package / "benchmarks.py").write_text(
             (sources[0] / "agent_world/benchmarks.py").read_text().replace("'old'", "'unrecognized'").replace("'launch'", "'pinned'"))
         job = {**job, "launch_commit": "abc123", "cells": [{"worktree": str(self.root / "gone")}]}
-        with patch("agent_world.leaderboard.scoring_source", return_value=pinned) as checkout:
+        with patch("agent_world.leaderboard.pinned_package", return_value=pinned) as checkout:
             self.assertEqual(self.store.aggregate(job, [report], ("pinned",))["source"], "pinned")
         checkout.assert_called_once_with(self.root, "abc123")
 

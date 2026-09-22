@@ -1,47 +1,29 @@
 # Agent World
 
-Agent World is an LLM civilization simulator that explores agent capabilities
-through their ability to form societies. In a shared world with the gathering,
-building, and exploration of a game like Minecraft, agents can trade, run
-businesses, create political institutions, and build a life together.
+Agent world is a LLM-civilization simulator that benchmarks agent capabilities through their ability to form societies. Agents can trade, run businesses, create political institutions, build, and explore in a model world similar to Minecraft. By measuring agent's ability to carry out their goals, survive, and cooperate, agent world serves as a novel benchmark on model traits like alignment, intelligence, and personality. Most importantly, it gives us a window into the types of societies they would build.
 
-Surviving takes planning. Building takes resources. Cooperation takes more than
-saying the right thing. By tracking how agents pursue goals, sustain themselves,
-and work with others over time, Agent World turns life in a small society into
-a test of model capabilities—and a way to investigate questions about alignment,
-intelligence, and personality.
+Because this is not an environment the leading models were trained on, it gives us a novel way to measure the general intelligence of different LLMs. 
 
-Most importantly, it gives us a window into the kinds of societies these agents
-would build.
+## The setup
 
-## A world worth studying
+Each agent is spawned into the world and is only given the explicit instruction to survive. Agents can just see their surroundings, inventory, the rules of the game, and their memories. With that limited information they make decisions about how to respond to survival pressures like hunger, thirst, and cold exposure. 
 
-Each agent experiences the world from its own point of view: what it can see,
-what it owns, what it remembers, and what others have told it. Food and water
-run out. Travel takes time. Materials have to be gathered and carried.
-A plan that sounds convincing still has to work.
-
-From those everyday pressures come larger choices. An agent can spend its day
+From those pressures come larger choices. An agent can spend its day
 foraging, invest in a farm, or try to buy food from a neighbor. A workshop can
-serve its owner or become shared infrastructure. A group can record agreements
-and own buildings together, but its members still have to make those agreements
-useful.
+serve its owner or become a public good. A group of agents can come to agreements, create contracts, and own buildings together. 
 
 The world provides the ingredients for society: resources, property, exchange,
 communication, and shared institutions. What agents do with them is the
-experiment. Markets, businesses, and governments are possibilities to discover,
-not a required storyline.
+experiment. Markets, businesses, governments and capital formation are all possible emergent behavior but are not hardcoded. 
 
 ## What can we learn?
 
 Agent World asks questions that unfold across many decisions and many agents:
 
-- **Can they turn plans into a lasting way of life?** Staying alive today is
-  different from building something that will keep working tomorrow.
-- **Can they cooperate in practice?** Promising to help and delivering the
-  materials are different events.
+- **Can they plan effectively?** As the seasons progress surival pressure changes. Addressing short-term needs, while necessary, is a different skillset from preparing for winter. How successfully they do both helps us measure different model's planning ability. 
+- **Can they cooperate in practice?** We can measure how often agents communicate, and how effectively they turn that communication into actual results.
 - **What do they do with opportunity?** Surplus resources might become a
-  business, shared infrastructure, a gift, or an unused stockpile.
+  business, a public good, a gift, or an unused stockpile.
 - **What kinds of institutions emerge?** Who owns what, who gets access, and
   which agreements survive beyond the conversation that created them?
 - **How does the world shape their behavior?** Scarcity, geography, memory,
@@ -59,14 +41,13 @@ configurations, then observing what follows. Populations can use one model or
 bring different models into the same world.
 
 Within that laboratory, versioned benchmark recipes define comparable tests.
-They measure things such as successful action, sustained competence, and
-entrepreneurial activity, while preserving the conditions and evidence behind
+They measure things like general competence, execution ability, cost, speed, and
+entrepreneurship while preserving the conditions and evidence behind
 each result. See the [model leaderboard](docs/model-leaderboard.md) for results
 and the [recipe guide](docs/experiment-recipes.md) for how comparisons are defined.
 
 The broader ambition is to study alignment, intelligence, and personality
-through behavior. Those are research questions, not traits a single score or
-simulation can settle. What happens here depends on the world, the instructions,
+through behavior. What happens here depends on the world, the instructions,
 and the model's connection to it.
 
 ## Watch a society unfold
@@ -79,6 +60,8 @@ For observations grounded in actual runs, explore the
 [insights journal](docs/insights.md).
 
 ## Try it
+
+If you get confused, Codex or Claude can handle the setup :).
 
 You need Python 3.10 or newer. From the repository directory, run a small,
 scripted simulation and open it in the observatory:

@@ -66,13 +66,13 @@ class LaunchTests(unittest.TestCase):
         def git_result(path, *args):
             if args[0]=="rev-parse": return "a"*40
             return " M agent_world/engine.py" if Path(path)==self.root else ""
-        with patch.object(self.service,"launch_checkout",return_value=released) as checkout, \
+        with patch("agent_world.leaderboard_launch.pinned_package",return_value=released) as checkout, \
              patch("agent_world.leaderboard_launch.git",side_effect=git_result), \
              patch("agent_world.leaderboard_launch.subprocess.check_output",return_value=json.dumps(info)):
             options=self.service.sources()
         self.assertIn("participant-test@hash",options)
         self.assertEqual(options["participant-test@hash"]["source"],str(released))
-        checkout.assert_called_once_with({"commit":"a"*40})
+        checkout.assert_called_once_with(self.root,"a"*40)
 
     def test_blocked_recipe_remains_visible_but_cannot_preview(self):
         recipes = self.root / "agent_world/recipes"
@@ -81,7 +81,7 @@ class LaunchTests(unittest.TestCase):
         info = {"digest": "hash", "brains": ["claude"],
                 "recipe": {"defaults": {}, "replications": {"required_seeds": [11, 41]}},
                 "execution_blocker": "implementation changed: agent_world/usage.py"}
-        with patch.object(self.service, "launch_checkout", return_value=self.root), \
+        with patch("agent_world.leaderboard_launch.pinned_package", return_value=self.root), \
              patch("agent_world.leaderboard_launch.git", side_effect=lambda root, *args: "a"*40 if args[0] == "rev-parse" else ""), \
              patch("agent_world.leaderboard_launch.subprocess.check_output", return_value=json.dumps(info)):
             sources = self.service.sources()
@@ -149,7 +149,7 @@ class LaunchTests(unittest.TestCase):
         old.mkdir(parents=True)
         (old / "job.json").write_text(json.dumps({"kind":"benchmark", "protocol":"participant-test", "recipe_fingerprint_sha256":"retired", "execution_root":str(self.root/"old-source"), "cells":[]}))
         info = {"digest":"current", "brains":["codex"], "recipe":{"defaults":{}, "replications":{"required_seeds":[11,41]}}}
-        with patch.object(self.service, "launch_checkout", return_value=self.root), patch("agent_world.leaderboard_launch.git", side_effect=lambda root,*args: "a"*40 if args[0]=="rev-parse" else ""), patch("agent_world.leaderboard_launch.subprocess.check_output", return_value=json.dumps(info)) as query:
+        with patch("agent_world.leaderboard_launch.pinned_package", return_value=self.root), patch("agent_world.leaderboard_launch.git", side_effect=lambda root,*args: "a"*40 if args[0]=="rev-parse" else ""), patch("agent_world.leaderboard_launch.subprocess.check_output", return_value=json.dumps(info)) as query:
             sources = self.service.sources()
         self.assertEqual(list(sources), ["participant-test@current"])
         self.assertEqual(query.call_count, 1)
@@ -265,7 +265,7 @@ class LaunchTests(unittest.TestCase):
                   "seeds": [11, 41], "defaults": {"reasoning_effort": "medium"}}
         checked = Mock(stdout=json.dumps({"launch_commit": "abc", "orchestrator_commit": "abc"}))
         with patch.object(self.service, "catalog", return_value={"blocker": None, "sources": {"test": source}}), \
-             patch.object(self.service, "launch_checkout", return_value=self.root), \
+             patch("agent_world.leaderboard_launch.pinned_package", return_value=self.root), patch.object(self.service, "launch_checkout", return_value=self.root), \
              patch("agent_world.leaderboard_launch.subprocess.run", return_value=checked):
             result = self.service.preview({"recipe": "test", "brain": "claude", "model": "claude-fable-5-1"})
         self.assertEqual(result["seeds"], [41])
