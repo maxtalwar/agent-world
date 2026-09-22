@@ -1,0 +1,66 @@
+{
+  "date": "2026-09-22",
+  "classification": "harness_diagnostic",
+  "model": "gpt-5.6-luna",
+  "reasoning_effort": "low",
+  "seed": 11,
+  "sources": [
+    {
+      "path": ".local/codex-cache-layout-20260922/results.jsonl",
+      "sha256": "b53023952386b3dffca878cc267d71eb7b3eb68d1ba1b40e46e1ff08900e1f8d"
+    },
+    {
+      "path": ".local/codex-cache-native-fork-0156-20260922/results.jsonl",
+      "sha256": "98d65e772031baf45207c77c6e71c9a711053ec1b376d343570ca7912b0a43aa"
+    },
+    {
+      "path": "runs/managed/codex-shared-prefix-smoke-20260922/seed-11/run-usage.jsonl",
+      "sha256": "280919a3cb2766b0085b09a58543e94e99a76592ca0245f21b83bb7263be97b3"
+    },
+    {
+      "path": "runs/managed/codex-shared-prefix-smoke-20260922/seed-11/run-manifest.json",
+      "sha256": "fac7a8c5d6242dc8b2dc4e9fb632be3148570b09f47caad8a2abe99a6b4a3728"
+    }
+  ],
+  "fresh_0154": {
+    "input_tokens": [11033, 11033, 11033],
+    "cached_tokens": [0, 0, 0]
+  },
+  "static_instructions_0154": {
+    "input_tokens": [7480, 7480, 7480],
+    "cached_tokens": [0, 0, 0]
+  },
+  "native_fork_0156": {
+    "template_input_tokens": 11319,
+    "template_output_tokens": 41,
+    "raw_cli_input_tokens": [23079, 23079, 23079],
+    "decision_input_tokens": [11760, 11760, 11760],
+    "decision_cached_tokens": [11008, 11008, 0]
+  },
+  "managed_smoke": {
+    "run_id": "codex-shared-prefix-smoke-20260922",
+    "launch_commit": "239e1f153231b183d3caccb1c78c29083419cbc2",
+    "cli_version": "0.156.0",
+    "conversation_mode": "shared-prefix-fork-v1",
+    "workers": 1,
+    "agents": 3,
+    "final_tick": 1,
+    "status": "completed",
+    "invalid_proposals": 0,
+    "template_rows": 1,
+    "template_input_tokens": 11896,
+    "template_output_tokens": 25,
+    "decision_rows": 3,
+    "decision_input_tokens": [12329, 12369, 12374],
+    "decision_cached_tokens": [11008, 11008, 11008],
+    "decision_output_tokens": [475, 473, 381],
+    "distinct_decision_sessions": 3,
+    "distinct_template_sessions": 1
+  },
+  "limitations": [
+    "Small diagnostic; no full benchmark or subscription-quota saving is established.",
+    "Warmup initialization is additional model-visible context and requires an explicit recipe choice.",
+    "Cache misses remain possible; parallel-worker cache reliability is unmeasured.",
+    "Older persistent-conversation usage ledgers require a separate cumulative-counter audit."
+  ]
+}

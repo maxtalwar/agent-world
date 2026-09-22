@@ -534,7 +534,7 @@ class CodexBrain:
                     "codex_session_id": parse_codex_session_id(seed.stdout),
                 })
                 if seed.returncode:
-                    return seed
+                    return _codex_subtract_inherited_usage(seed, usage)
                 response, usage = parse_codex_jsonl(seed.stdout)
                 for line in seed.stdout.splitlines():
                     event = json.loads(line)

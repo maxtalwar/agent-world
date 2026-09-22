@@ -21,6 +21,16 @@ of 11,760 new input tokens (93.6%); the third missed. The static template cost
 guarantee. These are small harness diagnostics, not benchmark replications or
 measurements of subscription quota. No full-run saving has been established.
 
+The managed integration run `codex-shared-prefix-smoke-20260922` then completed
+one frontier tick with three agents on seed 11, launch source `239e1f1`, low
+effort and one worker. All three decisions read 11,008 cached tokens out of
+12,329 / 12,369 / 12,374 new input tokens (about 89%). They have distinct native
+session IDs and the same static template ID. The ledger has exactly four rows:
+one 11,896-input / 25-output template creation and three fork deltas. The
+startup health gate passed, with zero invalid action proposals. This establishes
+end-to-end operation, not long-run or parallel-worker cache reliability.
+See [the retained measurement summary](codex-cache-measurements-20260922.json).
+
 Raw diagnostic evidence is retained locally in
 `.local/codex-cache-layout-20260922/`,
 `.local/codex-cache-native-fork-20260922/`,

@@ -102,6 +102,16 @@ class CodexCacheTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "cumulative usage"):
             _codex_subtract_inherited_usage(completed("fork"), {"input_tokens": 301})
 
+    def test_failed_template_usage_is_not_billed_twice(self):
+        brain = self.brain()
+        failed = completed("template", seed=True)
+        failed.returncode = 1
+        failed.stderr = "initialization failed"
+        with patch.object(brain, "_run_command", return_value=failed) as run:
+            brain.decide({"tick": 0, "self": {"id": "one"}})
+        self.assertEqual(run.call_count, 1)
+        self.assertEqual(sum(row["prompt_tokens"] for row in brain.runtime.usage_records()), 100)
+
     def test_native_command_uses_ephemeral_fork_and_read_only_sandbox(self):
         brain = self.brain()
         command = brain._command(brain._stable_schema_path, fork_session_id="template")
