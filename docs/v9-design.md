@@ -71,8 +71,16 @@ there is to decide, not the run length.
    extra ticks are the easiest season. Two winters need 96 ticks at 12-tick
    seasons, or 80 ticks at 10-tick seasons. Cost scales linearly with
    decisions, so +20% ticks is +20% cost before any population growth.
-6. **Prompt budget.** Rulebook plus valid-action list capped at roughly twice
-   today's size; checked before any paid run. Prompt tokens are the cost.
+6. **Prompt budget.** Measured on v8.1 ledgers: the rulebook is ~2,100 tokens
+   and the observation grows from ~350 to ~1,600 tokens over a run; the CLI
+   harnesses add 6,000–10,000 tokens of their own, cached. On Claude the
+   rulebook already cache-hits; the cost was the observation being written to
+   a one-hour cache at 2x on every call, fixed by `CLAUDE_CODE_PROMPT_CACHE_TTL=5m`
+   (about 17% of a Fable run). On Codex, prompt caching is best-effort and
+   never covered our content in testing, whichever position it was placed in,
+   so every prompt token is billed at full price there. Budget for v9: static
+   rulebook at most 2,500 tokens; the observation is not capped, since capping
+   it would distort agent memory.
 7. **Map size.** Larger makes roads and transport matter and raises
    observation size. Undecided.
 8. **Tuning gate.** Before any paid run: play the world with the scripted
