@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "run_id": "cache-interleaved-ab-20260922",
+  "kind": "experiment",
+  "question": "Do Astra and Sol differ in full-prefix reuse with identical static content, sequential interleaved timing, and counterbalanced model-to-observation assignment?",
+  "recipe": "participant-v8-revised",
+  "model": {
+    "population": [
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-5.6-sol:medium",
+      "1@codex:gpt-6-astra:medium",
+      "1@codex:gpt-6-astra:medium"
+    ]
+  },
+  "seeds": [
+    11
+  ],
+  "runtime": {
+    "ticks": 1,
+    "agents": 20,
+    "max_workers": 1,
+    "quota_wait_hours": 0,
+    "max_run_calls": 22
+  },
+  "harness": {
+    "connector_profile": "connector-v3",
+    "conversation_mode": "shared-prefix-fork-v1",
+    "assignment_strategy": "ordered",
+    "startup_health_check_tick": 1
+  }
+}
