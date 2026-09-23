@@ -1,5 +1,10 @@
 # Astra and Sol native cache-cost diagnostic
 
+Follow-up: the [counterbalanced interleaved study](cache-followup-20260922.md)
+found matching hit-class frequencies for Astra and Sol and updates the
+historical-cost sensitivity to about 30%/22% savings. The original measurements
+and projections below are preserved, not retrospectively replaced.
+
 ## Preregistered scope
 
 Question: how much could the shared-prefix native Codex mode reduce run cost
