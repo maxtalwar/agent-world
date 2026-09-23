@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "run_id": "cache-astra-fork-20260922",
+  "kind": "experiment",
+  "question": "Measure shared-prefix-fork input cost and template overhead on the same ten seed-11 startup observations as the fresh Astra condition.",
+  "recipe": "participant-v8-revised",
+  "model": {"brain": "codex", "id": "gpt-6-astra", "reasoning_effort": "medium"},
+  "seeds": [11],
+  "runtime": {"ticks": 1, "agents": 10, "max_workers": 1, "quota_wait_hours": 0},
+  "harness": {"connector_profile": "connector-v3", "conversation_mode": "shared-prefix-fork-v1", "startup_health_check_tick": 1}
+}
