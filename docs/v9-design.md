@@ -1,18 +1,17 @@
 # Participant v9 design — working spec
 
-Status: design, not a recipe. Started 2026-09-22. Nothing here is registered,
-locked, or launchable until `agent_world/recipes/participant-v9.json` exists
-and passes the tuning gate below. v8.1 results are unaffected.
+Status: design, not a recipe. Started 2026-09-22; revised 2026-10-18. Nothing
+here is registered, locked, or launchable until
+`agent_world/recipes/participant-v9.json` exists and passes the tuning gate
+below. v8.1 results are unaffected.
 
 ## Why
 
 Fable 5.1 (85.0) and GPT-6 Astra (80.1) have saturated the v8.1 capability
 score, which is final population health out of 100. Execution is 94–97 for
-the top three. The one open-ended column, Production, already disagrees with
-capability about who is best. Survival with a fixed population has an optimum
-that a capable model reaches, and per-tick feedback lets any model hill-climb
-to it. Harder puzzles only move the date. v9 changes what is measured and what
-there is to decide, not the run length.
+the top three. v9 is a difficulty ramp: the same health-based score in a
+harder world. It does not remove the ceiling, so it buys headroom rather than
+ending saturation; an unbounded design is shelved below for a later version.
 
 ## Locked
 
@@ -21,57 +20,54 @@ there is to decide, not the run length.
    of tokens per decision (Astra 92, Fable 5.1 254 reasoning tokens against
    9,000–15,000 prompt tokens), so this buys speed and a harder ceiling more
    than it buys cost. Cost is governed by prompt size and caching.
-2. **Score is healthy, well-provisioned life.** Each person, each tick,
-   counts the value of what they consumed scaled by their health; summed over
-   the run and divided by the founding population. Consumption, not
-   production: a good counts once, when used, so churn and barter loops add
-   nothing. Production, tech tier reached, and trade volume are diagnostic
-   columns and are never ranked on.
-3. **Hidden per-seed world parameters.** Rules stay public. Facts such as crop
+2. **Score stays health-based capability**, as in v8.1. No consumption score
+   (see Shelved).
+3. **Generalists.** Keep `specialization_mode: "generalists"`.
+4. **Two winters: 80 ticks with 10-tick seasons.** The run ends at the close
+   of the second winter. About 33% more decisions, and so cost, than v8.1
+   before any other change.
+5. **No harsher exposure damage.** Winter and storm damage stay at v8.1
+   values; low effort already raises difficulty, and stacking both would
+   confound which change moved the scores.
+6. **Hidden per-seed world parameters.** Rules stay public. Facts such as crop
    suitability by tile, winter severity, regrowth rates, and flood risk are
    absent from the rulebook and vary by seed. Agents infer them from
-   observation and must commit before they are certain. This is where
-   in-context learning lives.
-4. **Population grows, and new people decide.** Reproduction is an investment:
-   it costs food and an agent's time now and yields a working agent after a
-   maturation delay. There are no non-deciding dependents; a rational agent
-   would never create them.
-5. **A compounding economy, as means only.** Tools multiply labor, irrigation
-   multiplies land, roads multiply transport, storage multiplies time, and a
-   second material tier unlocks durable tools and larger structures. Each
-   mechanic must raise the return on another; anything an agent can ignore
-   without loss is removed. None of it is scored directly.
-6. **Same envelope.** Ten founding agents, two seeds (11 and 41), matched
-   across models. Tick count is an open item below.
-7. **Ranking is by the absolute score**, with per-seed values shown. No Elo:
-   between pure single-model runs it adds no information, discards margins,
-   and shifts historical ratings when new models enter. A draw margin is a
-   display rule only, for models within seed noise of each other.
-8. **Shelved for v10:** escalating pressure over an open horizon, because it
-   lengthens runs and cost is the binding constraint.
+   observation and must commit before they are certain.
+7. **Random shocks.** Events such as drought, crop blight, or a severe winter,
+   drawn per seed, so plans need buffers rather than only peak efficiency.
+8. **Feedback unchanged.** Learning from action feedback is part of the
+   intelligence being measured, and honest feedback is how agents discover
+   the hidden parameters. `action_feedback_mode` stays at the v8.1 setting.
+9. **Same envelope.** Ten founding agents, two seeds (11 and 41), matched
+   across models.
+10. **Ranking is by the absolute score**, with per-seed values shown. No Elo:
+    between pure single-model runs it adds no information, discards margins,
+    and shifts historical ratings when new models enter. A draw margin is a
+    display rule only, for models within seed noise of each other.
 
 ## Open
 
-1. **Growth limits.** Maturation delay (candidate: 15 ticks), food cost of a
-   birth, and a hard cap (candidate: twice the founding population, so a run
-   costs at most double today).
-2. **The goods ladder.** Consumption tiers above subsistence — dry shelter,
-   heated house, preserved food through winter, cloth, second-tier goods —
-   with fixed weights and steeply rising cost. Calibration target: the
-   scripted survival brain reaches tier one, a cheap model tier two, and no
-   model in the first cohort tops out.
-3. **Commitment decisions.** A handful of irreversible choices with delayed
+1. **Which parameters to hide**, and how much evidence the world yields about
+   them, so learning is possible but not instant.
+2. **Shock design.** Which types, how often, how severe, and whether agents
+   get any warning.
+3. **Scoring horizon at 80 ticks.** v8.1 checkpoints (12, 24, …, 60) and the
+   12-tick capability tail assume 12-tick seasons; set the v9 equivalents.
+4. **Population growth.** Previously locked; not yet re-decided for the
+   difficulty-ramp version. If kept: maturation delay (candidate: 15 ticks),
+   food cost of a birth, and a hard cap (candidate: twice the founding
+   population, so a run costs at most double today). New people decide;
+   there are no non-deciding dependents.
+5. **Compounding economy.** Previously locked; not yet re-decided. Tools
+   multiply labor, irrigation multiplies land, roads multiply transport,
+   storage multiplies time, and a second material tier unlocks durable tools
+   and larger structures. Each mechanic must raise the return on another;
+   anything an agent can ignore without loss is removed.
+6. **Commitment decisions.** A handful of irreversible choices with delayed
    payoff and no clear best: settlement site, orchard versus farm,
    specialization, trade on credit. Enough to force judgement; few enough to
    keep the rulebook readable.
-4. **Which parameters to hide**, and how much evidence the world yields about
-   them, so learning is possible but not instant.
-5. **Tick count.** 60 ticks with 12-tick seasons ends in the second spring and
-   contains one winter. 72 ends in the second summer and adds no winter; the
-   extra ticks are the easiest season. Two winters need 96 ticks at 12-tick
-   seasons, or 80 ticks at 10-tick seasons. Cost scales linearly with
-   decisions, so +20% ticks is +20% cost before any population growth.
-6. **Prompt budget.** Measured on v8.1 ledgers: the rulebook is ~2,100 tokens
+7. **Prompt budget.** Measured on v8.1 ledgers: the rulebook is ~2,100 tokens
    and the observation grows from ~350 to ~1,600 tokens over a run; the CLI
    harnesses add 6,000–10,000 tokens of their own, cached. On Claude the
    rulebook already cache-hits; the cost was the observation being written to
@@ -86,22 +82,41 @@ there is to decide, not the run length.
    Budget for v9: static
    rulebook at most 2,500 tokens; the observation is not capped, since capping
    it would distort agent memory.
-7. **Map size.** Larger makes roads and transport matter and raises
+8. **Map size.** Larger makes roads and transport matter and raises
    observation size. Undecided.
-8. **Tuning gate.** Before any paid run: play the world with the scripted
+9. **Tuning gate.** Before any paid run: play the world with the scripted
    brain and one cheap model, and require that two different reasonable plans
    diverge in score. If they converge, the judgement is not real and the
    parameters go back for revision.
-9. **Optional side track.** Strategy-file experiment: each model writes a plan
-   from the rules, identical cheap executors play it, compared against the
-   same model playing live. Measures the value of in-context adaptation. Not
-   on the main board.
+10. **Optional side track.** Strategy-file experiment: each model writes a plan
+    from the rules, identical cheap executors play it, compared against the
+    same model playing live. Measures the value of in-context adaptation. Not
+    on the main board.
+
+## Shelved
+
+1. **Health-weighted consumption score** (previously locked). Each person,
+   each tick, would count the value of goods used up a weighted ladder
+   (shelter, warmth, preserved food, cloth, second-tier goods), scaled by
+   health. Rejected for now: it rewards consuming more, not living well
+   efficiently. A model that keeps everyone at full health on less would rank
+   lower, and any fixed weights build the designers' preferences into the
+   ranking.
+2. **An unbounded benchmark.** The long-term direction is a world complex
+   enough that no model can solve it, as no one has solved entrepreneurship.
+   Caveat: chess sustains a continuous rating because difficulty comes from
+   the opponent; a fixed single-player world still has an optimum however
+   complex it is. Unbounded headroom probably needs difficulty from other
+   agents (mixed-model populations, competing settlements), which would
+   reopen the no-Elo decision above.
+3. **Escalating pressure over an open horizon**, because it lengthens runs
+   and cost is the binding constraint.
 
 ## Engine work implied
 
-New resources and a second material tier; kiln and smithy; yield multipliers
-for tools, irrigation, and roads; storage and spoilage; reproduction and
-maturation; hidden parameter generation per seed; consumption accounting and
-the health-weighted score; recipe, execution lock, and leaderboard columns.
-Touches world, rules, interface, scoring, and the dashboard. Weeks, not a
-patch. Balance is the hard part and is gated above.
+Hidden parameter generation per seed; a shock schedule drawn per seed; 10-tick
+seasons over 80 ticks; recipe, execution lock, and leaderboard columns. If
+population growth or the compounding economy stay in: new resources and a
+second material tier, kiln and smithy, yield multipliers for tools,
+irrigation, and roads, reproduction and maturation. Balance is the hard part
+and is gated above.
