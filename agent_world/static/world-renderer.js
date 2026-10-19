@@ -15,7 +15,7 @@
   const LEAVES=[{dark:'#3f6a45',mid:'#64914f',light:'#9fc36d',trunk:'#7b6047'},{dark:'#4f763f',mid:'#7a9f4f',light:'#b6cf72',trunk:'#806246'},
     {dark:'#38604a',mid:'#58855a',light:'#8db477',trunk:'#735a45'},{dark:'#8d5a35',mid:'#c88a45',light:'#ecc173',trunk:'#7a5a42'}];
   const ROOFS=['#c46f4e','#b8643f','#7c8ea0','#c98157','#8f6a4c'];
-  const SKIN=['#f2cfae','#e6b58e','#c98e64','#a2693f','#7a4a2c','#f6dcc2'];
+  const SKIN='#f3d4b5'; // One shared tone for every resident.
   const HAIR=['#3a2a20','#5b3a24','#8a5a2e','#c99a50','#2b2b2e','#b5aea3','#7a3b22'];
   const colors=['#c9734f','#5f87a3','#b77ba0','#d4a64a','#6f9a68','#b35f5a','#7a7fb0','#4f9a92','#d98f5c','#8aa0c4'];
   class WorldRenderer {
@@ -706,7 +706,7 @@
         this.poly([[.5,0],[.5,-13],[3.5,-12],[5,-9],[5,0]],'#9da291');
         this.line([[-2,-8],[2,-8]],'#8d927f',1);return;
       }
-      const cloth=colors[index%colors.length],skin=SKIN[Math.floor(look('skin')*SKIN.length)];
+      const cloth=colors[index%colors.length],skin=SKIN;
       const hair=HAIR[Math.floor(look('hair')*HAIR.length)],style=Math.floor(look('style')*5),hat=look('hat');
       const carry=a.visible_carry||{},goods=carry.resource_types||[];
       const laden=['some','heavy','full'].includes(carry.load),logs=laden&&goods.includes('wood');
