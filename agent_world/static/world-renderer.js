@@ -723,7 +723,8 @@
       this.poly([[-4.9,-13.4],[-7.3,-12],[-7.6,-6.8],[-5.5,-6.8]],shade(cloth,.93));this.circle(-6.5,-6,1.45,skin);
       this.poly([[4.9,-13.4],[7.3,-12],[7.6,-6.8],[5.5,-6.8]],shade(cloth,.74));this.circle(6.5,-6,1.45,shade(skin,.88));
       this.rect(-1.2,-16.6,2.4,2.2,shade(skin,.84));
-      if(style===1){this.c.beginPath();this.c.moveTo(-5.4,-21);this.c.lineTo(-5.6,-13.5);this.c.quadraticCurveTo(0,-11.5,5.6,-13.5);this.c.lineTo(5.4,-21);this.c.fillStyle=hair;this.c.fill();}
+      // A short ponytail behind one side of the head; nothing frames the face.
+      if(style===1){this.poly([[3,-24],[7.4,-22.4],[8.2,-18],[7.2,-15.6],[5.6,-17.8],[4.6,-21]],hair);this.rect(5.4,-22.6,2.4,1.3,shade(hair,.7));}
       this.circle(0,-20.6,5.1,skin);
       this.c.beginPath();this.c.arc(0,-20.6,5.1,-Math.PI/2,Math.PI/2);this.c.closePath();this.c.fillStyle=shade(skin,.9);this.c.fill();
       if(style!==4||hat>.3){
