@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-10-19T00:55:00Z",
+  "updated_at_utc": "2026-10-19T23:00:00Z",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -1175,6 +1175,75 @@
           "kind": "benchmark_trial"
         }
       ]
+    },
+    {
+      "model_key": "claude-haiku-5-5-participant-v8-revised",
+      "model_id": "claude-haiku-5-5",
+      "label": "Haiku 5.5",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": true,
+      "notes": "Replicated seeds 11 and 41, medium, 60 ticks; job analysis_readiness ready, clean integrity, complete usage and declared transfer accounting. Clean managed run, no recovery. Claude Code 2.1.303; every call returned claude-haiku-5-5. Priced at the published <=100K-prompt tier.",
+      "runs": [
+        {
+          "run_id": "claude-haiku-5-5-v81-20261019:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/claude-haiku-5-5-v81-20261019/seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "run_id": "claude-haiku-5-5-v81-20261019:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/claude-haiku-5-5-v81-20261019/seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "claude-sonnet-5-5-participant-v8-revised",
+      "model_id": "claude-sonnet-5-5",
+      "label": "Sonnet 5.5",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": true,
+      "notes": "Replicated seeds 11 and 41, medium, 60 ticks; job analysis_readiness ready, clean integrity, complete usage and declared transfer accounting. Clean managed run, no recovery. Claude Code 2.1.303; every call returned claude-sonnet-5-5. Cache reads priced at Sonnet 5.5's own $0.10/MTok.",
+      "runs": [
+        {
+          "run_id": "claude-sonnet-5-5-v81-20261019:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/claude-sonnet-5-5-v81-20261019/seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "run_id": "claude-sonnet-5-5-v81-20261019:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/claude-sonnet-5-5-v81-20261019/seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
+    },
+    {
+      "model_key": "gpt-6-1-sol-participant-v8-revised",
+      "model_id": "gpt-6.1-sol",
+      "label": "GPT-6.1 Sol",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": true,
+      "notes": "Replicated seeds 11 and 41, medium, 60 ticks; job analysis_readiness ready, clean integrity, complete usage and declared transfer accounting. Clean managed run, no recovery. Codex CLI 0.163.0 (0.154.0 did not list this model). Requested-only native CLI identity, as for GPT-6 Astra. Priced at the verified standard short-context rate.",
+      "runs": [
+        {
+          "run_id": "gpt-6-1-sol-v81-20261019:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/gpt-6-1-sol-v81-20261019/seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "run_id": "gpt-6-1-sol-v81-20261019:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/gpt-6-1-sol-v81-20261019/seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
     }
   ],
   "benchmark_acceptances": [
@@ -1387,6 +1456,44 @@
         "cached_input": 0.2,
         "cache_write": 5.0,
         "output_including_thinking": 20.0
+      },
+      "valid_through": "2026-12-31"
+    },
+    {
+      "verified_at": "2026-10-19",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "models": [
+        "claude-haiku-5-5",
+        "claude-sonnet-5-5"
+      ],
+      "basis": "Standard API-equivalent token cost including recorded attempts; Haiku 5.5 uses the prompts-up-to-100K tier. Original reports preserved. Not subscription charges.",
+      "rates_usd_per_million": {
+        "claude-haiku-5-5": {
+          "input": 0.1,
+          "cached_input": 0.01,
+          "cache_write": 0.125,
+          "output_including_thinking": 0.5
+        },
+        "claude-sonnet-5-5": {
+          "input": 2.0,
+          "cached_input": 0.1,
+          "cache_write": 2.5,
+          "output_including_thinking": 10.0
+        }
+      },
+      "valid_through": "2026-12-31"
+    },
+    {
+      "verified_at": "2026-10-19",
+      "source": "https://developers.openai.com/api/docs/pricing",
+      "models": [
+        "gpt-6.1-sol"
+      ],
+      "basis": "Standard short-context (<=272K input) API-equivalent token cost including recorded attempts; original reports preserved. Not subscription charges.",
+      "rates_usd_per_million": {
+        "input": 2.0,
+        "cached_input": 0.1,
+        "output_including_thinking": 10.0
       },
       "valid_through": "2026-12-31"
     }
