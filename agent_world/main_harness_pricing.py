@@ -23,6 +23,8 @@ RATES = {
     **{m: rates(10, 1, 12.5, 50) for m in ["claude-fable-5", "claude-mythos-5"]},
     **{m: rates(10, .25, 12.5, 50) for m in ["claude-fable-5-1", "claude-mythos-5-1"]},
     "gpt-5.6-sol": rates(4, .4, 5, 20),
+    # Standard short-context (<=272K input) tier, verified 2026-10-19.
+    "gpt-6.1-sol": rates(2, .1, 2, 10),
     "gpt-5.3-codex": rates(1.75, .175, 1.75, 14),
 }
 # No published API-equivalent price: never substitute the non-Spark Codex rate.
