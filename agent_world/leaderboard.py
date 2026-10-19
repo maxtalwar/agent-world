@@ -110,7 +110,7 @@ def model_lab(model: str) -> dict:
     return {"id": "unknown", "name": "Lab unspecified"}
 
 # Reader-facing names for recipe score keys. Recipes keep their own labels for evidence.
-DISPLAY_LABELS = {"execution": "Accuracy", "effective_execution": "Accuracy", "production": "Productivity"}
+DISPLAY_LABELS = {"execution": "Accuracy", "effective_execution": "Accuracy", "production": "Agency"}
 
 
 def display_columns(columns):
@@ -267,7 +267,7 @@ class LeaderboardStore:
                     revised = conn.execute("SELECT result_json FROM model_score_reanalyses WHERE model_key=?", (r["model_key"],)).fetchone()
                     if revised:
                         reanalysis = json.loads(revised[0])
-                board["columns"] = ([["capability", "Capability"], ["execution", "Accuracy"], ["production", "Productivity"]]
+                board["columns"] = ([["capability", "Capability"], ["execution", "Accuracy"], ["production", "Agency"]]
                                     if "capability" in scores else CLASSIC_COLUMNS)
                 seeds = [x[0] for x in conn.execute("""
                     SELECT DISTINCT runs.seed FROM runs
