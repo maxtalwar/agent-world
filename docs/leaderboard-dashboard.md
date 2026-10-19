@@ -26,6 +26,14 @@ resumes, or alters runs. Water, crop, and idle animation are decorative; agent
 coordinates change only when a new snapshot arrives. Reduced-motion preferences
 disable animation.
 
+Some details come from the snapshot: a forest tile shows up to three trees, then
+stumps as its `wood` is harvested; residents carry a sack or logs according to
+`visible_carry`; item piles show wood, stone or a bundle; crops grow with farm
+food. Others are presentation only: footpaths joining nearby buildings (a
+minimum spanning tree routed around water, mountains and forest, not a native
+road), chimney smoke, wildflowers, reeds, lily pads, scarecrows and the per-face
+shading of a sun fixed to the camera.
+
 Drag horizontally with a mouse or one finger to orbit the world through 360°
 around its vertical axis. Camera elevation is fixed; vertical dragging never
 tilts the scene. Focus the canvas and use Left/Right to rotate in 15° steps,
