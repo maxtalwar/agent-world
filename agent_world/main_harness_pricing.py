@@ -18,6 +18,9 @@ RATES = {
     **{m: rates(3, .3, 3.75, 15) for m in ["claude-sonnet-4-6", "claude-sonnet-4-5", "claude-sonnet-4"]},
     "claude-opus-5-5": rates(4, .2, 5, 20),
     "claude-sonnet-5": rates(2, .2, 2.5, 10),
+    # Sonnet 5.5 cache hits are 0.05x input; Haiku 5.5 is the <=100K-token prompt tier.
+    "claude-sonnet-5-5": rates(2, .1, 2.5, 10),
+    "claude-haiku-5-5": rates(.1, .01, .125, .5),
     "claude-haiku-4-5": rates(1, .1, 1.25, 5),
     "claude-haiku-3-5": rates(.8, .08, 1, 4),
     **{m: rates(10, 1, 12.5, 50) for m in ["claude-fable-5", "claude-mythos-5"]},
