@@ -122,17 +122,26 @@ class LeaderboardTests(unittest.TestCase):
             self.store.aggregate(job, [report], ("unknown",))
         # Removed execution worktrees must not lose a study: the recorded launch
         # commit is checked out on demand and used as the scoring source.
-        pinned = self.root / ".local/leaderboard-scoring/abc123"
+        pinned = self.root / ".local/leaderboard-scoring" / ("d" * 40)
         package = pinned / "agent_world"
         package.mkdir(parents=True)
         (package / "__init__.py").write_text("")
         (package / "protocols.py").write_text((sources[0] / "agent_world/protocols.py").read_text())
         (package / "benchmarks.py").write_text(
             (sources[0] / "agent_world/benchmarks.py").read_text().replace("'old'", "'unrecognized'").replace("'launch'", "'pinned'"))
-        job = {**job, "launch_commit": "abc123", "cells": [{"worktree": str(self.root / "gone")}]}
+        job = {**job, "launch_commit": "d" * 40, "cells": [{"worktree": str(self.root / "gone")}]}
         with patch("agent_world.leaderboard.pinned_package", return_value=pinned) as checkout:
             self.assertEqual(self.store.aggregate(job, [report], ("pinned",))["source"], "pinned")
-        checkout.assert_called_once_with(self.root, "abc123")
+        checkout.assert_called_once_with(self.root, "d" * 40)
+
+    def test_recorded_commits_cover_recovery_sources(self):
+        from agent_world.leaderboard import recorded_commits
+        a, b, c = "a" * 40, "b" * 40, "c" * 40
+        job = {"launch_commit": a, "orchestrator_commit": b,
+               "execution_root": "/x/run-cohorts/job-recovery-controller-" + b[:12],
+               "cells": [{"execution_commit": c, "worktree": "/x/job-seed-11-" + c[:12],
+                          "historical_worktree": "/x/job-seed-11-" + a[:12]}]}
+        self.assertEqual(recorded_commits(job), [a, b, c])
 
     def test_recovery_disclosure_does_not_become_variant_subtitle_on_catalog_fallback(self):
         root = Path(__file__).resolve().parents[1]

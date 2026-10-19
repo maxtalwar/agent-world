@@ -160,6 +160,30 @@ def within(root: Path, value: str) -> Path:
     return path
 
 
+def recorded_commits(job: dict) -> list[str]:
+    """Commits a job's cells ran on or were finalized from, launch commit first."""
+    commits = [job.get("launch_commit"), job.get("orchestrator_commit")]
+    commits += [cell.get("execution_commit") for cell in job.get("cells", [])]
+    # Worktree paths end in the 12-character commit they were pinned to.
+    paths = [job.get("execution_root")] + [
+        cell.get(key) for cell in job.get("cells", [])
+        for key in ("worktree", "historical_worktree", "previous_execution_worktree")]
+    for path in paths:
+        match = re.search(r"-([0-9a-f]{12})$", path or "")
+        if match:
+            commits.append(match.group(1))
+    full = [c for c in commits if c and re.fullmatch(r"[0-9a-f]{40}", c)]
+    for short in {c for c in commits if c and re.fullmatch(r"[0-9a-f]{12}", c)}:
+        if not any(c.startswith(short) for c in full):
+            try:
+                full.append(subprocess.check_output(
+                    ["git", "rev-parse", "--verify", "--quiet", short + "^{commit}"],
+                    text=True, stderr=subprocess.DEVNULL, timeout=15).strip())
+            except (subprocess.SubprocessError, OSError):
+                continue
+    return list(dict.fromkeys(c for c in full if re.fullmatch(r"[0-9a-f]{40}", c)))
+
+
 def model_label(model: str) -> str:
     display_model = re.sub(r"-20\d{6}$", "", model) if model.startswith("claude-") else model
     if display_model.lower().startswith("gemini-"):
@@ -280,10 +304,11 @@ class LeaderboardStore:
         candidates += [job.get("execution_root")]
         candidates += [str(self.root)]
         errors = []
-        # Execution worktrees are disposable. The recorded launch commit is the
-        # durable scoring source and its package is extracted on demand last.
-        if job.get("launch_commit"):
-            candidates.append(lambda: pinned_package(self.root, job["launch_commit"]))
+        # Execution worktrees are disposable. Every commit the job records is a
+        # durable scoring source, extracted on demand last: recovery can move
+        # cells or finalization onto another commit than the launch commit.
+        for commit in recorded_commits(job):
+            candidates.append(lambda commit=commit: pinned_package(self.root, commit))
         for candidate in dict.fromkeys(x for x in candidates if x):
             try:
                 source = within(self.root, candidate() if callable(candidate) else candidate)
