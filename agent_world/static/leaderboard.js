@@ -36,7 +36,8 @@ function activityRuns(b) {
 function modelSubtitle(row) {
   if(typeof row.subtitle==='string')return row.subtitle;
   const status=String(row.status||'').trim();
-  return /^(certified|replicated|reviewed recovery)$/i.test(status)?'':status;
+  // Seed coverage stays in the model drawer; the table shows only labels that change how to read a row.
+  return /^(certified|replicated|reviewed recovery|provisional\b.*)$/i.test(status)?'':status;
 }
 const columnStorageKey='agent-world-hidden-columns-v1';
 let hiddenColumns=new Set();

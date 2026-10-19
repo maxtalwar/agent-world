@@ -33,7 +33,7 @@ context.fetch=async()=>({ok:true,json:async()=>context.payload});
   }
   row.status='Provisional · 1 seed';
   await vm.runInContext('refresh()',context);
-  assert.match(element('table-body').innerHTML,/Provisional · 1 seed/);
+  assert.doesNotMatch(element('table-body').innerHTML,/Provisional|model-meta/);
   row.status='Controlled variant';
   await vm.runInContext('refresh()',context);
   assert.match(element('table-body').innerHTML,/Controlled variant/);

@@ -109,9 +109,17 @@ def model_lab(model: str) -> dict:
             return {"id": key, "name": name}
     return {"id": "unknown", "name": "Lab unspecified"}
 
+# Reader-facing names for recipe score keys. Recipes keep their own labels for evidence.
+DISPLAY_LABELS = {"execution": "Accuracy", "effective_execution": "Accuracy", "production": "Productivity"}
+
+
+def display_columns(columns):
+    return [[key, DISPLAY_LABELS.get(key, title)] for key, title in columns]
+
+
 CLASSIC_COLUMNS = [
     ["sustained_competence", "Competence"],
-    ["effective_execution", "Execution"],
+    ["effective_execution", "Accuracy"],
     ["entrepreneurial_agency", "Entrepreneurship"],
 ]
 
@@ -259,7 +267,7 @@ class LeaderboardStore:
                     revised = conn.execute("SELECT result_json FROM model_score_reanalyses WHERE model_key=?", (r["model_key"],)).fetchone()
                     if revised:
                         reanalysis = json.loads(revised[0])
-                board["columns"] = ([["capability", "Capability"], ["execution", "Execution"], ["production", "Production"]]
+                board["columns"] = ([["capability", "Capability"], ["execution", "Accuracy"], ["production", "Productivity"]]
                                     if "capability" in scores else CLASSIC_COLUMNS)
                 seeds = [x[0] for x in conn.execute("""
                     SELECT DISTINCT runs.seed FROM runs
@@ -538,7 +546,7 @@ class LeaderboardStore:
                 board["rows"].extend(rows)
                 if aggregate:
                     protocol = aggregate["protocol"]
-                    board["columns"] = protocol.get("score_columns") or CLASSIC_COLUMNS
+                    board["columns"] = display_columns(protocol.get("score_columns") or CLASSIC_COLUMNS)
                     board["method"] = protocol.get("aggregation", "Scores pool raw counts across required seeds.")
                     board["trial"] = {
                         "ticks": protocol.get("trial", {}).get("ticks"),
