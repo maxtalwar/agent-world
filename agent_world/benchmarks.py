@@ -258,6 +258,33 @@ BENCHMARK_ACCEPTED_ATTRIBUTION_OVERRIDES: tuple[dict[str, Any], ...] = (
             "full 50-tick trial to resolve it."
         ),
     },
+    {
+        "model": "claude-haiku-5-5",
+        "seed": 41,
+        "source_fingerprint": (
+            "0dd6349b8cdcdce9619a630739e0c0ffc26193827e7aa655c50ceac7cb79ba8c"
+        ),
+        "unverified_model_output_failures": 1,
+        "deviation": (
+            "unverified_model_output_attribution: one decision failure "
+            "(tick 48, agent-3) records only Claude Code's "
+            "error_max_structured_output_retries. No response payload was "
+            "retained, so malformed model output cannot be distinguished "
+            "from adapter rejection of valid output."
+        ),
+        "sensitivity": (
+            "Scoring the failure against the model as one more invalid "
+            "action gives execution 87.34; excluding it gives 87.38. The "
+            "disputed span is 0.04 points over 2,013 submitted actions. The "
+            "failure replaced one of 586 decisions with a wait; capability "
+            "(73.19 for this seed) has no counterfactual rescore."
+        ),
+        "accepted_because": (
+            "Owner decision, 2026-10-19: one unattributable decision out of "
+            "586 in a clean managed run does not justify discarding the "
+            "replicated seed."
+        ),
+    },
 )
 
 # These are mechanics-anchored "excellent" targets, not population percentiles.
