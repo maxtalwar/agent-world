@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "updated_at_utc": "2026-09-13T00:57:50.757188+00:00",
+  "updated_at_utc": "2026-10-19T00:55:00Z",
   "suite": "participant-v6",
   "scoring_revision": 2,
   "experiments": [
@@ -1152,6 +1152,29 @@
           "kind": "benchmark_trial"
         }
       ]
+    },
+    {
+      "model_key": "claude-opus-5-5-participant-v8-revised",
+      "model_id": "claude-opus-5-5",
+      "label": "Opus 5.5",
+      "suite": "participant-v8-revised",
+      "kind": "benchmark_trial",
+      "leaderboard_eligible": true,
+      "notes": "Replicated seeds 11 and 41; clean managed run, no recovery. Claude Code 2.1.303 (2.1.263 rejected this model); all 1,200 calls returned claude-opus-5-5.",
+      "runs": [
+        {
+          "run_id": "claude-opus-5-5-v81-20261018:seed-11",
+          "seed": 11,
+          "report_path": "runs/managed/claude-opus-5-5-v81-20261018/seed-11/run-report.json",
+          "kind": "benchmark_trial"
+        },
+        {
+          "run_id": "claude-opus-5-5-v81-20261018:seed-41",
+          "seed": 41,
+          "report_path": "runs/managed/claude-opus-5-5-v81-20261018/seed-41/run-report.json",
+          "kind": "benchmark_trial"
+        }
+      ]
     }
   ],
   "benchmark_acceptances": [
@@ -1349,6 +1372,21 @@
         "input": 0.75,
         "cached_input": 0.075,
         "output_including_thinking": 3.75
+      },
+      "valid_through": "2026-12-31"
+    },
+    {
+      "verified_at": "2026-10-18",
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "models": [
+        "claude-opus-5-5"
+      ],
+      "basis": "Standard API-equivalent token cost including recorded attempts; original reports (priced at the claude-opus-5 prefix fallback) preserved. Not subscription charges.",
+      "rates_usd_per_million": {
+        "input": 4.0,
+        "cached_input": 0.2,
+        "cache_write": 5.0,
+        "output_including_thinking": 20.0
       },
       "valid_through": "2026-12-31"
     }

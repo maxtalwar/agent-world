@@ -1,4 +1,4 @@
-"""Published main-harness API-equivalent rates, verified 2026-09-12.
+"""Published main-harness API-equivalent rates, verified 2026-09-12 (Opus 5.5 added 2026-10-18).
 
 Sources: https://platform.claude.com/docs/en/about-claude/pricing
 https://developers.openai.com/api/docs/pricing
@@ -16,6 +16,7 @@ RATES = {
         "claude-opus-4-7", "claude-opus-4-6", "claude-opus-4-5"]},
     **{m: rates(15, 1.5, 18.75, 75) for m in ["claude-opus-4-1", "claude-opus-4"]},
     **{m: rates(3, .3, 3.75, 15) for m in ["claude-sonnet-4-6", "claude-sonnet-4-5", "claude-sonnet-4"]},
+    "claude-opus-5-5": rates(4, .2, 5, 20),
     "claude-sonnet-5": rates(2, .2, 2.5, 10),
     "claude-haiku-4-5": rates(1, .1, 1.25, 5),
     "claude-haiku-3-5": rates(.8, .08, 1, 4),

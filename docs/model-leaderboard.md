@@ -4,6 +4,7 @@ Capability rescoring: Final original-population health minus 10% of health lost 
 
 | Model | Capability | Execution | Production | Cost/run | Mean time/decision |
 |---|---:|---:|---:|---:|---:|
+| Opus 5.5 | 89.9 | 95.8 | 185.2 | $17.89 | 7.42s |
 | Fable 5.1 | 85.0 | 94.1 | 200.0 | $53.99 | 12.61s |
 | GPT-6 Astra | 80.1 | 96.7 | 244.7 | $43.27 | 10.98s |
 | Gemini 3.8 Flash | 57.6 | 96.9 | 151.8 | $15.52 | 21.49s |
