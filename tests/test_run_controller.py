@@ -294,6 +294,35 @@ class RunControllerTests(unittest.TestCase):
 
     @patch("agent_world.run_controller._kill_session", return_value=True)
     @patch("agent_world.managed_runs._tmux_active", return_value=True)
+    def test_operator_pause_does_not_consume_stall_window(self, _active, kill):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            cell = self._cell(root, 11, tick=8, session="aw-seed-11")
+            cell["controller_last_tick"] = 8
+            cell["controller_last_progress_at_utc"] = _iso(NOW)
+            control = Path(cell["events"]).parent / "operator-control.json"
+            path = self._job(root, [cell])
+            policy = ControllerPolicy(stall_seconds=3600)
+
+            control.write_text(json.dumps({"action": "pause"}), encoding="utf-8")
+            reconcile_once(path, policy=policy, now=NOW + timedelta(seconds=30))
+            paused_until = NOW + timedelta(hours=26)
+            reconcile_once(path, policy=policy, now=paused_until)
+            job = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(job["cells"][0]["controller_state"], "paused_by_operator")
+
+            control.write_text(json.dumps({"action": "run"}), encoding="utf-8")
+            reconcile_once(path, policy=policy, now=paused_until + timedelta(seconds=30))
+            kill.assert_not_called()
+            job = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(job["cells"][0]["controller_state"], "running")
+
+            # The stall guard still applies to post-resume time.
+            reconcile_once(path, policy=policy, now=paused_until + timedelta(seconds=3601))
+            kill.assert_called_once_with("aw-seed-11")
+
+    @patch("agent_world.run_controller._kill_session", return_value=True)
+    @patch("agent_world.managed_runs._tmux_active", return_value=True)
     def test_stalled_non_quota_process_is_reaped(self, _active, kill) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

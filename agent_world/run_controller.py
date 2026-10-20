@@ -407,6 +407,9 @@ def reconcile_once(
             if status["supervisor_active"]:
                 if read_control(Path(cell["events"]).parent / "operator-control.json") == "pause":
                     cell["controller_state"] = "paused_by_operator"
+                    # An operator pause is not stalled decision work. Keep the
+                    # stall window from absorbing paused time so resume is safe.
+                    cell["controller_last_progress_at_utc"] = _iso(now)
                     continue
                 quota_deadline = _quota_resume_at(cell)
                 if _quota_waiting(cell) and (
