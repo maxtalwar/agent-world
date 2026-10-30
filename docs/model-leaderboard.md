@@ -10,6 +10,7 @@ Capability rescoring: Final original-population health minus 10% of health lost 
 | GPT-6 Astra | 80.1 | 96.7 | 244.7 | $43.27 | 10.98s |
 | Gemini 3.8 Flash | 57.6 | 96.9 | 151.8 | $15.52 | 21.49s |
 | Fable 5 | 56.3 | 91.2 | 188.5 | $76.90 | 20.89s |
+| GPT-6.1 Terra | 50.1 | 94.8 | 164.2 | $3.64 | 7.28s |
 | Grok 4.6 | 33.0 | 92.6 | 216.3 | $27.21 | 95.24s |
 | Sonnet 5.5 | 31.4 | 82.2 | 137.2 | $6.01 | 4.69s |
 | Haiku 5.5 | 30.4 | 87.6 | 155.8 | $0.56 | 6.41s |
