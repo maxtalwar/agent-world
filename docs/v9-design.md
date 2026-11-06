@@ -121,7 +121,12 @@ gate, not final balance.
    parameters go back for revision.
    First check, 2026-11-06: not passed. `SurvivalBrain` loses all ten agents on
    both seeds even under v8.1 settings, so it cannot show divergence. The gate
-   needs scripted plans that survive, or a cheap-model run.
+   needs scripted plans that survive, or a stronger model.
+   GPT-6 Luna pilot, seed 11, 2026-11-06 (`gpt-6-luna-v9-pilot-20261106`): the
+   world ran cleanly to tick 80 with no harness failures, but all ten agents
+   died between ticks 30 and 74 with no structures built. 36% of actions were
+   invalid, from tick 0. Without a GPT-6 Luna run on v8.1 this cannot separate
+   the v9 world from the model and low effort.
 10. **Leakage.** Hidden values are hashes of public seeds in public code, so once
     the repo is open source anyone can compute them. Fix before publishing
     results: a private salt or rotating seeds.
