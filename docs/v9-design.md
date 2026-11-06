@@ -35,12 +35,19 @@ ending saturation; an unbounded design is shelved below for a later version.
    observation and must commit before they are certain.
 7. **Random shocks.** Events such as drought, crop blight, or a severe winter,
    drawn per seed, so plans need buffers rather than only peak efficiency.
-8. **Feedback unchanged.** Learning from action feedback is part of the
+8. **Seed-determined worlds.** Shocks and hidden parameters are computed from
+   the seed alone, before the run starts and independent of agent actions, as
+   `is_storm_tick` is. They must not draw from the shared `self.rng`, whose
+   sequence depends on which tiles agents have used, so models on one seed
+   would drift apart. The event is matched across models; its damage is not,
+   since that is what is measured. A test must prove that different agent
+   actions leave the schedule and parameters unchanged.
+9. **Feedback unchanged.** Learning from action feedback is part of the
    intelligence being measured, and honest feedback is how agents discover
    the hidden parameters. `action_feedback_mode` stays at the v8.1 setting.
-9. **Same envelope.** Ten founding agents, two seeds (11 and 41), matched
-   across models.
-10. **Ranking is by the absolute score**, with per-seed values shown. No Elo:
+10. **Same envelope.** Ten founding agents, two seeds (11 and 41), matched
+    across models.
+11. **Ranking is by the absolute score**, with per-seed values shown. No Elo:
     between pure single-model runs it adds no information, discards margins,
     and shifts historical ratings when new models enter. A draw margin is a
     display rule only, for models within seed noise of each other.
