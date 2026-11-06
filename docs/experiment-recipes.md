@@ -12,6 +12,7 @@ does not require checking out older code.
 | participant-v8 | medium | Agent-declared gift, payment, or barter; diagnostic commerce | 1 |
 | participant-v8-action-review | medium | Same as v8; review recipe with per-action Execution | 1 |
 | participant-v8-revised | medium | Same as v8; per-action Execution and equal-weight Capability | 1 |
+| participant-v9 | low | Same as v8-revised; 80 ticks, 10-tick seasons, seed-derived hidden facts and shocks | 1 |
 
 These recipes use the frontier world, ten generalists, fresh conversations,
 and connector-v3. V6/v6.1/v7 retain fifty ticks and their shared historical formulas. V6 preserves the original pre-ledger engine; v6.1 names the later message-board setup.

@@ -1,13 +1,14 @@
 # Participant v9 design — working spec
 
-Status: design, not a recipe. Started 2026-09-22; revised 2026-10-18. Nothing
-here is registered, locked, or launchable until
-`agent_world/recipes/participant-v9.json` exists and passes the tuning gate
-below. v8.1 results are unaffected.
+Status: first build on branch `claude/participant-v9`; recipe registered there,
+not on main. Started 2026-09-22; revised 2026-11-06. Not launchable for
+certification until the tuning gate below passes. v8.1 results are unaffected:
+with `hidden_world_mode: "off"`, scripted v7 and v8.1 runs on seeds 11 and 41
+match main byte for byte.
 
 ## Why
 
-Fable 5.1 (85.0) and GPT-6 Astra (80.1) have saturated the v8.1 capability
+Opus 5.5 (89.9), Fable 5.1 (85.0), and GPT-6 Astra (80.1) have saturated the v8.1 capability
 score, which is final population health out of 100. Execution is 94–97 for
 the top three. v9 is a difficulty ramp: the same health-based score in a
 harder world. It does not remove the ceiling, so it buys headroom rather than
@@ -52,14 +53,37 @@ ending saturation; an unbounded design is shelved below for a later version.
     and shifts historical ratings when new models enter. A draw margin is a
     display rule only, for models within seed noise of each other.
 
+## First-build values
+
+Implemented in `agent_world/hidden_world.py`, enabled by
+`hidden_world_mode: "seeded-v1"`. These are first-pass values for the tuning
+gate, not final balance.
+
+- **Crop suitability:** x0.5, x1.0, or x1.5 per 4x4-tile region, applied to farm
+  work and passive growth after the irrigation floor.
+- **Regrowth:** x0.7 to x1.2 per seed.
+- **Winter severity:** winter regrowth x0.3 to x1.0 per seed. It does not change
+  exposure damage (locked item 5). Flood risk is not built.
+- **Shocks:** one of each per year, with no advance warning; an active shock
+  appears as `season.shock`. Each lasts 30-50% of its window.
+
+| Shock | Window | Regrowth | Farm output |
+|---|---|---:|---:|
+| Drought | Spring-summer | x0.4 | x0.5 |
+| Blight | Autumn | x1.0 | x0.25 |
+| Cold snap | Winter | x0 | x0.25 |
+
+- **Scoring:** outcome-production, revision 1, checkpoints 20/40/60/80, and a
+  10-tick capability tail.
+- **Build scope:** population growth, the compounding economy, tech trees, and
+  commitment decisions are not in this build.
+
 ## Open
 
-1. **Which parameters to hide**, and how much evidence the world yields about
-   them, so learning is possible but not instant.
-2. **Shock design.** Which types, how often, how severe, and whether agents
-   get any warning.
-3. **Scoring horizon at 80 ticks.** v8.1 checkpoints (12, 24, …, 60) and the
-   12-tick capability tail assume 12-tick seasons; set the v9 equivalents.
+1. **Evidence rate.** Whether the first-build hidden values are learnable but
+   not instant. Seeds 11 and 41 have similar regrowth (x0.98 and x1.03).
+2. **Shock severity and warning.** First values are above; tune them at the gate.
+3. **Seed noise.** How far a shock swings a two-seed score.
 4. **Population growth.** Previously locked; not yet re-decided for the
    difficulty-ramp version. If kept: maturation delay (candidate: 15 ticks),
    food cost of a birth, and a hard cap (candidate: twice the founding
@@ -95,7 +119,15 @@ ending saturation; an unbounded design is shelved below for a later version.
    brain and one cheap model, and require that two different reasonable plans
    diverge in score. If they converge, the judgement is not real and the
    parameters go back for revision.
-10. **Optional side track.** Strategy-file experiment: each model writes a plan
+   First check, 2026-11-06: not passed. `SurvivalBrain` loses all ten agents on
+   both seeds even under v8.1 settings, so it cannot show divergence. The gate
+   needs scripted plans that survive, or a cheap-model run.
+10. **Leakage.** Hidden values are hashes of public seeds in public code, so once
+    the repo is open source anyone can compute them. Fix before publishing
+    results: a private salt or rotating seeds.
+11. **Reasoning parity.** Opus 5.5 cannot turn thinking off, so low effort is not
+    the same setting on every connector.
+12. **Optional side track.** Strategy-file experiment: each model writes a plan
     from the rules, identical cheap executors play it, compared against the
     same model playing live. Measures the value of in-context adaptation. Not
     on the main board.
@@ -121,8 +153,9 @@ ending saturation; an unbounded design is shelved below for a later version.
 
 ## Engine work implied
 
-Hidden parameter generation per seed; a shock schedule drawn per seed; 10-tick
-seasons over 80 ticks; recipe, execution lock, and leaderboard columns. If
+Done on the branch: hidden parameters, the shock schedule, 10-tick seasons over
+80 ticks, the recipe, and its execution lock. Merging refreshes the shared file
+hashes that every published recipe checks. Leaderboard columns are not done. If
 population growth or the compounding economy stay in: new resources and a
 second material tier, kiln and smithy, yield multipliers for tools,
 irrigation, and roads, reproduction and maturation. Balance is the hard part

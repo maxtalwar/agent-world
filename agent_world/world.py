@@ -27,6 +27,13 @@ from agent_world.models import (
     WorldConfig,
     WorldState,
 )
+from agent_world.hidden_world import (
+    SHOCK_EFFECTS,
+    active_shock,
+    crop_suitability,
+    regrowth_factor,
+    winter_regrowth_factor,
+)
 from agent_world.maps import build_standard_tiles, find_specialist_spawn, specialist_profile
 from agent_world.rules import (
     BASE_WAIT_ENERGY_RECOVERY,
@@ -761,6 +768,7 @@ class WorldEngine:
         irrigated = self._frontier() and self._tile_has_complete_structure(tile, "irrigation")
         if irrigated:
             farm_factor = max(farm_factor, IRRIGATION_SEASON_FLOOR)
+        farm_factor *= self._hidden_farm_factor(agent.position.x, agent.position.y)
         if farm_factor <= 0:
             self._invalid(agent, action, "Fields are dormant in winter; irrigation keeps a farm workable.")
             return action_points - cost
@@ -2408,10 +2416,10 @@ class WorldEngine:
             )
 
     def _regenerate_resources(self) -> None:
-        for row in self.state.tiles:
-            for tile in row:
+        for y, row in enumerate(self.state.tiles):
+            for x, tile in enumerate(row):
                 rule = TERRAIN_RULES[tile.terrain]
-                regen_factor = self._season_factor("regen")
+                regen_factor = self._season_factor("regen") * self._hidden_regen_factor()
                 for resource in rule.regen:
                     maximum = self._resource_regen_capacity(rule.base_resources.get(resource, 0))
                     if maximum <= 0 or tile.resources[resource] >= maximum:
@@ -2432,6 +2440,7 @@ class WorldEngine:
                     if self._frontier() and self._tile_has_complete_structure(tile, "irrigation"):
                         passive_factor = max(passive_factor, IRRIGATION_SEASON_FLOOR)
                         passive_growth += IRRIGATION_PASSIVE_BONUS
+                    passive_factor *= self._hidden_farm_factor(x, y)
                     tile.resources["food"] = min(
                         self.state.config.farm_food_capacity,
                         tile.resources["food"] + int(round(passive_growth * passive_factor)),
@@ -2934,6 +2943,26 @@ class WorldEngine:
             return 1.0
         return float(SEASONS[season][key])
 
+    def _hidden_world(self) -> bool:
+        return self.state.config.hidden_world_mode != "off"
+
+    def _active_shock_effects(self) -> dict[str, float]:
+        config = self.state.config
+        shock = active_shock(config.seed, config.season_length_ticks, self.state.tick)
+        return SHOCK_EFFECTS[shock] if shock else {}
+
+    def _hidden_regen_factor(self) -> float:
+        if not self._hidden_world():
+            return 1.0
+        seed = self.state.config.seed
+        factor = regrowth_factor(seed) * self._active_shock_effects().get("regen", 1.0)
+        return factor * winter_regrowth_factor(seed) if self._season_name() == "winter" else factor
+
+    def _hidden_farm_factor(self, x: int, y: int) -> float:
+        if not self._hidden_world():
+            return 1.0
+        return crop_suitability(self.state.config.seed, x, y) * self._active_shock_effects().get("farm", 1.0)
+
     def _is_storm(self, tick: int | None = None) -> bool:
         if not self._frontier():
             return False
@@ -3072,7 +3101,7 @@ class WorldEngine:
     def snapshot(self) -> dict[str, Any]:
         return {
             "tick": self.state.tick,
-            "config": asdict(self.state.config),
+            "config": self._config_snapshot(),
             "tiles": self._tile_snapshots(),
             "agents": {agent_id: self._agent_snapshot(agent) for agent_id, agent in self.state.agents.items()},
             "item_piles": {pid: pile.public_summary() | {"position": asdict(pile.position)} for pid, pile in self.state.item_piles.items()},
@@ -3086,6 +3115,12 @@ class WorldEngine:
                 "build_ready_ever": sorted(self.state.build_ready_ever),
             },
         }
+
+    def _config_snapshot(self) -> dict[str, Any]:
+        config = asdict(self.state.config)
+        if not self._hidden_world():
+            del config["hidden_world_mode"]
+        return config
 
     def _tile_snapshots(self) -> list[list[dict[str, Any]]]:
         rows: list[list[dict[str, Any]]] = []
