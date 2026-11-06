@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "run_id": "gpt-6-luna-v81-low-control-20261106",
+  "kind": "experiment",
+  "recipe": "participant-v8-revised",
+  "question": "Control for the GPT-6 Luna v9 pilot: with low effort held fixed, does the v8.1 world change survival, construction, or invalid actions?",
+  "model": {
+    "brain": "codex",
+    "id": "gpt-6-luna",
+    "reasoning_effort": "low"
+  },
+  "seeds": [
+    11
+  ],
+  "runtime": {
+    "max_workers": 4,
+    "provider_max_workers": {
+      "codex": 4
+    }
+  },
+  "source": {
+    "commit": "d92340fd78e69b8a751c17c1c6ef206f5b0f81bf"
+  }
+}
