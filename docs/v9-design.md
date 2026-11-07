@@ -132,6 +132,22 @@ gate, not final balance.
    ten agents survived both winters at final mean health 76.0, with raw
    Capability 88.1, Execution 96.4, and Production 217.0. The world is playable
    and separates these two models. One model on one seed does not pass the gate.
+   Terra one-change ablation, 2026-11-07 (`terra-ablate-*-20261106`), final mean
+   health against Terra's v8.1 runs, seeds 11 / 41, one run each:
+
+   | Change from v8.1 | Seed 11 | Seed 41 |
+   |---|---:|---:|
+   | None (v8.1, medium effort) | 61.3 | 45.5 |
+   | Low effort | 41.7 | 31.8 |
+   | Two winters | 41.7 | 20.8 |
+   | Hidden facts | 61.2 | 54.3 |
+   | Shocks | 65.2 | 40.4 |
+   | Full v9 | 16.7 | 0.9 |
+
+   Effort and length carry the difficulty; hidden facts and shocks as built do
+   not, and Sol was barely affected by all four. v9 spreads the middle of the
+   board but does not yet raise the ceiling. Hidden facts and shocks need to be
+   much stronger before the next paid run.
 10. **Leakage.** Hidden values are hashes of public seeds in public code, so once
     the repo is open source anyone can compute them. Fix before publishing
     results: a private salt or rotating seeds.
