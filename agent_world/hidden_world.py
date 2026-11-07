@@ -7,7 +7,10 @@ draws therefore cannot shift it, so models on one seed face the same world.
 import hashlib
 from dataclasses import dataclass
 
-HIDDEN_WORLD_MODES = {"off", "seeded-v1"}
+# seeded-v1 is the full v9 world; the others isolate one half for ablations.
+HIDDEN_WORLD_MODES = {"off", "seeded-v1", "facts-v1", "shocks-v1"}
+HIDDEN_FACT_MODES = {"seeded-v1", "facts-v1"}
+SHOCK_MODES = {"seeded-v1", "shocks-v1"}
 # Suitability varies by region, so one farm is evidence about its neighbors.
 CROP_REGION_TILES = 4
 CROP_SUITABILITY_LEVELS = (0.5, 1.0, 1.5)

@@ -2,7 +2,7 @@ import unittest
 from dataclasses import fields
 
 from agent_world.agents import NullBrain, SurvivalBrain
-from agent_world.hidden_world import active_shock, crop_suitability, regrowth_factor, year_shocks
+from agent_world.hidden_world import SHOCK_EFFECTS, active_shock, crop_suitability, regrowth_factor, year_shocks
 from agent_world.interface import build_observation, build_static_context
 from agent_world.models import WorldConfig
 from agent_world.protocols import get_recipe
@@ -67,6 +67,21 @@ class HiddenWorldTests(unittest.TestCase):
         self.assertNotIn("crop suitability", build_static_context(observation["world"]))
         world.state.tick = year_shocks(11, 10, 0)[0].start_tick
         self.assertNotIn("shock", build_observation(world.state, "agent-1")["season"])
+
+    def test_ablation_modes_isolate_facts_and_shocks(self):
+        shock = year_shocks(11, 10, 0)[0]
+        facts, shocks = engine(hidden_world_mode="facts-v1"), engine(hidden_world_mode="shocks-v1")
+        facts.state.tick = shocks.state.tick = shock.start_tick
+        self.assertEqual(facts._hidden_regen_factor(), regrowth_factor(11))
+        self.assertNotIn("shock", build_observation(facts.state, "agent-1")["season"])
+        self.assertEqual(shocks._hidden_regen_factor(), SHOCK_EFFECTS[shock.name]["regen"])
+        self.assertEqual(build_observation(shocks.state, "agent-1")["season"]["shock"], shock.name)
+        facts_rules = build_static_context(build_observation(facts.state, "agent-1")["world"])
+        shocks_rules = build_static_context(build_observation(shocks.state, "agent-1")["world"])
+        self.assertIn("crop suitability", facts_rules)
+        self.assertNotIn("droughts", facts_rules)
+        self.assertIn("droughts", shocks_rules)
+        self.assertNotIn("crop suitability", shocks_rules)
 
     def test_exposure_damage_and_public_season_factors_are_unchanged(self):
         config = engine().state.config

@@ -28,7 +28,9 @@ from agent_world.models import (
     WorldState,
 )
 from agent_world.hidden_world import (
+    HIDDEN_FACT_MODES,
     SHOCK_EFFECTS,
+    SHOCK_MODES,
     active_shock,
     crop_suitability,
     regrowth_factor,
@@ -2948,20 +2950,25 @@ class WorldEngine:
 
     def _active_shock_effects(self) -> dict[str, float]:
         config = self.state.config
+        if config.hidden_world_mode not in SHOCK_MODES:
+            return {}
         shock = active_shock(config.seed, config.season_length_ticks, self.state.tick)
         return SHOCK_EFFECTS[shock] if shock else {}
 
     def _hidden_regen_factor(self) -> float:
-        if not self._hidden_world():
-            return 1.0
-        seed = self.state.config.seed
-        factor = regrowth_factor(seed) * self._active_shock_effects().get("regen", 1.0)
-        return factor * winter_regrowth_factor(seed) if self._season_name() == "winter" else factor
+        config = self.state.config
+        factor = self._active_shock_effects().get("regen", 1.0)
+        if config.hidden_world_mode not in HIDDEN_FACT_MODES:
+            return factor
+        factor *= regrowth_factor(config.seed)
+        return factor * winter_regrowth_factor(config.seed) if self._season_name() == "winter" else factor
 
     def _hidden_farm_factor(self, x: int, y: int) -> float:
-        if not self._hidden_world():
-            return 1.0
-        return crop_suitability(self.state.config.seed, x, y) * self._active_shock_effects().get("farm", 1.0)
+        config = self.state.config
+        factor = self._active_shock_effects().get("farm", 1.0)
+        if config.hidden_world_mode not in HIDDEN_FACT_MODES:
+            return factor
+        return factor * crop_suitability(config.seed, x, y)
 
     def _is_storm(self, tick: int | None = None) -> bool:
         if not self._frontier():

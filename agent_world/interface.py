@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from agent_world.event_index import event_index
-from agent_world.hidden_world import active_shock
+from agent_world.hidden_world import HIDDEN_FACT_MODES, SHOCK_MODES, active_shock
 from agent_world.observation_policy import apply_history_policy
 
 from functools import lru_cache
@@ -164,7 +164,7 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             season_payload["storm"] = True
         if is_storm_tick(state.config.seed, length, state.tick + 1):
             season_payload["storm_warning"] = True
-        if getattr(state.config, "hidden_world_mode", "off") != "off":
+        if getattr(state.config, "hidden_world_mode", "off") in SHOCK_MODES:
             shock = active_shock(state.config.seed, length, state.tick)
             if shock:
                 season_payload["shock"] = shock
@@ -535,11 +535,13 @@ def _render_static_context(world: dict[str, Any]) -> str:
         lines.append(
             "- storms strike only in autumn/winter; a storm_warning in your observation means a storm hits next tick."
         )
-        if world.get("hidden_world_mode", "off") != "off":
+        hidden_mode = world.get("hidden_world_mode", "off")
+        if hidden_mode in HIDDEN_FACT_MODES:
             lines.append(
                 "- this world's land is not fully described here: crop suitability varies by area, and regrowth "
                 "and winter severity vary by world. Learn them from what you observe."
             )
+        if hidden_mode in SHOCK_MODES:
             lines.append(
                 "- droughts, blights, and cold snaps can strike without warning and cut regrowth or farm output; "
                 "an active one appears as shock in your season observation."
