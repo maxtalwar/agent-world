@@ -123,8 +123,8 @@ class WorldConfig:
         for name in ("width", "height", "action_points_per_tick", "season_length_ticks"):
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} must be positive")
-        if self.hidden_world_mode not in {"off", "seeded-v1", "facts-v1", "shocks-v1"}:
-            raise ValueError("hidden_world_mode must be off, seeded-v1, facts-v1, or shocks-v1")
+        if self.hidden_world_mode not in {"off", "seeded-v1", "facts-v1", "shocks-v1", "seeded-v2"}:
+            raise ValueError("hidden_world_mode must be off, seeded-v1, facts-v1, shocks-v1, or seeded-v2")
         if self.geography_mode not in {"shared_oasis", "dispersed"}:
             raise ValueError("geography_mode must be shared_oasis or dispersed")
         if self.specialization_mode not in {"generalists", "specialists"}:

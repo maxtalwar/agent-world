@@ -29,11 +29,11 @@ from agent_world.models import (
 )
 from agent_world.hidden_world import (
     HIDDEN_FACT_MODES,
-    SHOCK_EFFECTS,
     SHOCK_MODES,
     active_shock,
     crop_suitability,
     regrowth_factor,
+    tuning as hidden_tuning,
     winter_regrowth_factor,
 )
 from agent_world.maps import build_standard_tiles, find_specialist_spawn, specialist_profile
@@ -2952,8 +2952,8 @@ class WorldEngine:
         config = self.state.config
         if config.hidden_world_mode not in SHOCK_MODES:
             return {}
-        shock = active_shock(config.seed, config.season_length_ticks, self.state.tick)
-        return SHOCK_EFFECTS[shock] if shock else {}
+        shock = active_shock(config.seed, config.season_length_ticks, self.state.tick, config.hidden_world_mode)
+        return hidden_tuning(config.hidden_world_mode).shock_effects[shock] if shock else {}
 
     def _hidden_regen_factor(self) -> float:
         config = self.state.config
@@ -2968,7 +2968,7 @@ class WorldEngine:
         factor = self._active_shock_effects().get("farm", 1.0)
         if config.hidden_world_mode not in HIDDEN_FACT_MODES:
             return factor
-        return factor * crop_suitability(config.seed, x, y)
+        return factor * crop_suitability(config.seed, x, y, config.hidden_world_mode)
 
     def _is_storm(self, tick: int | None = None) -> bool:
         if not self._frontier():

@@ -7,25 +7,58 @@ draws therefore cannot shift it, so models on one seed face the same world.
 import hashlib
 from dataclasses import dataclass
 
-# seeded-v1 is the full v9 world; the others isolate one half for ablations.
-HIDDEN_WORLD_MODES = {"off", "seeded-v1", "facts-v1", "shocks-v1"}
-HIDDEN_FACT_MODES = {"seeded-v1", "facts-v1"}
-SHOCK_MODES = {"seeded-v1", "shocks-v1"}
+# seeded-v1 is the first v9 world; the facts/shocks modes isolate its halves for
+# ablations. seeded-v2 widens crop suitability modestly, strengthens shocks, and
+# drops the rulebook hint about hidden facts. Older modes stay reproducible.
+HIDDEN_WORLD_MODES = {"off", "seeded-v1", "facts-v1", "shocks-v1", "seeded-v2"}
+HIDDEN_FACT_MODES = {"seeded-v1", "facts-v1", "seeded-v2"}
+SHOCK_MODES = {"seeded-v1", "shocks-v1", "seeded-v2"}
+# Only these modes tell agents in the rulebook that hidden facts exist.
+HIDDEN_FACT_HINT_MODES = {"seeded-v1", "facts-v1"}
 # Suitability varies by region, so one farm is evidence about its neighbors.
 CROP_REGION_TILES = 4
-CROP_SUITABILITY_LEVELS = (0.5, 1.0, 1.5)
 REGROWTH_FACTOR_RANGE = (0.7, 1.2)
 # Winter severity scales winter regrowth only; exposure damage stays public.
 WINTER_REGROWTH_FACTOR_RANGE = (0.3, 1.0)
 SEASONS_PER_YEAR = 4
-SHOCK_EFFECTS: dict[str, dict[str, float]] = {
-    "drought": {"regen": 0.4, "farm": 0.5},
-    "blight": {"regen": 1.0, "farm": 0.25},
-    "cold_snap": {"regen": 0.0, "farm": 0.25},
-}
 # Each shock strikes once a year: a start season and a duration in seasons.
 SHOCK_WINDOWS = (("drought", 0, 2), ("blight", 2, 1), ("cold_snap", 3, 1))
-SHOCK_DURATION_FRACTION = (0.3, 0.5)
+
+
+@dataclass(frozen=True)
+class Tuning:
+    crop_levels: tuple[float, ...]
+    shock_effects: dict[str, dict[str, float]]
+    shock_duration_fraction: dict[str, tuple[float, float]]
+
+
+V1 = Tuning(
+    crop_levels=(0.5, 1.0, 1.5),
+    shock_effects={
+        "drought": {"regen": 0.4, "farm": 0.5},
+        "blight": {"regen": 1.0, "farm": 0.25},
+        "cold_snap": {"regen": 0.0, "farm": 0.25},
+    },
+    shock_duration_fraction={name: (0.3, 0.5) for name, _, _ in SHOCK_WINDOWS},
+)
+V2 = Tuning(
+    crop_levels=(0.4, 1.0, 1.7),
+    shock_effects={
+        "drought": {"regen": 0.25, "farm": 0.35},
+        "blight": {"regen": 1.0, "farm": 0.1},
+        "cold_snap": {"regen": 0.0, "farm": 0.25},
+    },
+    shock_duration_fraction={"drought": (0.5, 0.7), "blight": (0.3, 0.5), "cold_snap": (0.3, 0.5)},
+)
+
+
+def tuning(mode: str) -> Tuning:
+    return V2 if mode == "seeded-v2" else V1
+
+
+# Kept for callers that predate seeded-v2; these are the v1 values.
+CROP_SUITABILITY_LEVELS = V1.crop_levels
+SHOCK_EFFECTS = V1.shock_effects
 
 
 @dataclass(frozen=True)
@@ -45,10 +78,11 @@ def _between(bounds: tuple[float, float], fraction: float) -> float:
     return bounds[0] + (bounds[1] - bounds[0]) * fraction
 
 
-def crop_suitability(seed: int, x: int, y: int) -> float:
+def crop_suitability(seed: int, x: int, y: int, mode: str = "seeded-v1") -> float:
+    levels = tuning(mode).crop_levels
     region = (x // CROP_REGION_TILES, y // CROP_REGION_TILES)
-    index = int(_unit(seed, "crop", *region) * len(CROP_SUITABILITY_LEVELS))
-    return CROP_SUITABILITY_LEVELS[index]
+    index = int(_unit(seed, "crop", *region) * len(levels))
+    return levels[index]
 
 
 def regrowth_factor(seed: int) -> float:
@@ -59,21 +93,21 @@ def winter_regrowth_factor(seed: int) -> float:
     return _between(WINTER_REGROWTH_FACTOR_RANGE, _unit(seed, "winter"))
 
 
-def year_shocks(seed: int, season_length_ticks: int, year: int) -> tuple[Shock, ...]:
+def year_shocks(seed: int, season_length_ticks: int, year: int, mode: str = "seeded-v1") -> tuple[Shock, ...]:
     shocks = []
     year_start = year * SEASONS_PER_YEAR * season_length_ticks
     for name, first_season, seasons in SHOCK_WINDOWS:
         window = seasons * season_length_ticks
-        duration = max(1, round(window * _between(SHOCK_DURATION_FRACTION, _unit(seed, name, year, "length"))))
+        duration = max(1, round(window * _between(tuning(mode).shock_duration_fraction[name], _unit(seed, name, year, "length"))))
         offset = int(_unit(seed, name, year, "start") * (window - duration + 1))
         start = year_start + first_season * season_length_ticks + offset
         shocks.append(Shock(name, start, start + duration))
     return tuple(shocks)
 
 
-def active_shock(seed: int, season_length_ticks: int, tick: int) -> str | None:
+def active_shock(seed: int, season_length_ticks: int, tick: int, mode: str = "seeded-v1") -> str | None:
     year = tick // (SEASONS_PER_YEAR * season_length_ticks)
-    for shock in year_shocks(seed, season_length_ticks, year):
+    for shock in year_shocks(seed, season_length_ticks, year, mode):
         if shock.start_tick <= tick < shock.end_tick:
             return shock.name
     return None

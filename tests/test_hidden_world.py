@@ -83,6 +83,25 @@ class HiddenWorldTests(unittest.TestCase):
         self.assertIn("droughts", shocks_rules)
         self.assertNotIn("crop suitability", shocks_rules)
 
+    def test_seeded_v2_strengthens_shocks_widens_crops_and_drops_the_facts_hint(self):
+        from agent_world.hidden_world import V1, V2
+        world = engine(hidden_world_mode="seeded-v2")
+        rules = build_static_context(build_observation(world.state, "agent-1")["world"])
+        self.assertNotIn("crop suitability", rules)
+        self.assertNotIn("Learn them", rules)
+        self.assertIn("droughts", rules)
+        self.assertEqual(V2.crop_levels, (0.4, 1.0, 1.7))
+        self.assertLess(V2.shock_effects["drought"]["farm"], V1.shock_effects["drought"]["farm"])
+        drought = year_shocks(11, 10, 0, "seeded-v2")[0]
+        self.assertGreater(drought.end_tick - drought.start_tick, year_shocks(11, 10, 0)[0].end_tick - year_shocks(11, 10, 0)[0].start_tick)
+        world.state.tick = drought.start_tick
+        self.assertEqual(world._active_shock_effects(), V2.shock_effects["drought"])
+        self.assertEqual(build_observation(world.state, "agent-1")["season"]["shock"], "drought")
+
+    def test_seeded_v2_schedule_ignores_agent_actions(self):
+        self.assertEqual(play(engine(hidden_world_mode="seeded-v2"), NullBrain(), 80),
+                         play(engine(hidden_world_mode="seeded-v2"), SurvivalBrain(), 80))
+
     def test_exposure_damage_and_public_season_factors_are_unchanged(self):
         config = engine().state.config
         self.assertEqual((config.winter_exposure_damage, config.storm_exposure_damage), (3, 4))
