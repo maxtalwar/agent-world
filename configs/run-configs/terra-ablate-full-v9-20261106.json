@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "run_id": "terra-ablate-full-v9-20261106",
+  "kind": "experiment",
+  "recipe": "participant-v9",
+  "question": "Ablation reference: Terra on the full v9 world.",
+  "model": {
+    "brain": "codex",
+    "id": "gpt-6.1-terra"
+  },
+  "seeds": [
+    11,
+    41
+  ],
+  "runtime": {
+    "max_workers": 4,
+    "provider_max_workers": {
+      "codex": 4
+    }
+  },
+  "source": {
+    "commit": "9413a8683d81e1e5fd7ca7c53d0a040c61cae790"
+  }
+}

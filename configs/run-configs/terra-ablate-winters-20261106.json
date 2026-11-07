@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "run_id": "terra-ablate-winters-20261106",
+  "kind": "experiment",
+  "recipe": "participant-v8-revised",
+  "question": "Ablation vs Terra v8.1: what do two winters (80 ticks, 10-tick seasons) alone change?",
+  "model": {
+    "brain": "codex",
+    "id": "gpt-6.1-terra"
+  },
+  "seeds": [
+    11,
+    41
+  ],
+  "runtime": {
+    "max_workers": 4,
+    "provider_max_workers": {
+      "codex": 4
+    },
+    "ticks": 80
+  },
+  "source": {
+    "commit": "9413a8683d81e1e5fd7ca7c53d0a040c61cae790"
+  },
+  "world": {
+    "overrides": {
+      "season_length_ticks": 10
+    }
+  }
+}
