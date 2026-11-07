@@ -125,8 +125,13 @@ gate, not final balance.
    GPT-6 Luna pilot, seed 11, 2026-11-06 (`gpt-6-luna-v9-pilot-20261106`): the
    world ran cleanly to tick 80 with no harness failures, but all ten agents
    died between ticks 30 and 74 with no structures built. 36% of actions were
-   invalid, from tick 0. Without a GPT-6 Luna run on v8.1 this cannot separate
-   the v9 world from the model and low effort.
+   invalid, from tick 0. The low-effort v8.1 control
+   (`gpt-6-luna-v81-low-control-20261106`) also built nothing and lost seven of
+   ten agents, so the collapse is mostly the model.
+   GPT-6.1 Sol pilot, seed 11, 2026-11-06 (`gpt-6-1-sol-v9-pilot-20261106`): all
+   ten agents survived both winters at final mean health 76.0, with raw
+   Capability 88.1, Execution 96.4, and Production 217.0. The world is playable
+   and separates these two models. One model on one seed does not pass the gate.
 10. **Leakage.** Hidden values are hashes of public seeds in public code, so once
     the repo is open source anyone can compute them. Fix before publishing
     results: a private salt or rotating seeds.
