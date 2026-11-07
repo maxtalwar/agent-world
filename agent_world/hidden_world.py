@@ -18,6 +18,11 @@ HIDDEN_FACT_MODES = {"seeded-v1", "facts-v1", "seeded-v2"}
 SHOCK_MODES = {"seeded-v1", "shocks-v1", "seeded-v2", "seeded-v3"}
 # These modes describe seasons in words rather than giving exact multipliers.
 PLAIN_SEASON_MODES = {"seeded-v3"}
+# These modes give each tile a soil quality that follows the land.
+SOIL_MODES = {"seeded-v3"}
+SOIL_LEVELS = {-1: 0.4, 0: 1.0, 1: 1.7}
+SOIL_WATER_RANGE = 2
+SOIL_MOUNTAIN_RANGE = 1
 # Only these modes tell agents in the rulebook that hidden facts exist.
 HIDDEN_FACT_HINT_MODES = {"seeded-v1", "facts-v1"}
 # Suitability varies by region, so one farm is evidence about its neighbors.
@@ -116,3 +121,27 @@ def active_shock(seed: int, season_length_ticks: int, tick: int, mode: str = "se
         if shock.start_tick <= tick < shock.end_tick:
             return shock.name
     return None
+
+
+def soil_quality(seed: int, terrains: list[list[str]]) -> list[list[float]]:
+    """Farm output multiplier per tile: richer near water, poorer beside mountains.
+
+    A seeded nudge per 4x4 area adds local variation, so the land is a strong
+    hint but not a complete answer.
+    """
+    height, width = len(terrains), len(terrains[0])
+    cells = [(x, y) for y in range(height) for x in range(width)]
+
+    def near(x: int, y: int, terrain: str, reach: int) -> bool:
+        return any(terrains[ty][tx] == terrain and abs(tx - x) + abs(ty - y) <= reach for tx, ty in cells)
+
+    grid = []
+    for y in range(height):
+        row = []
+        for x in range(width):
+            score = int(near(x, y, "water", SOIL_WATER_RANGE)) - int(near(x, y, "mountain", SOIL_MOUNTAIN_RANGE))
+            nudge = _unit(seed, "soil", x // CROP_REGION_TILES, y // CROP_REGION_TILES)
+            score += -1 if nudge < 0.25 else 1 if nudge >= 0.75 else 0
+            row.append(SOIL_LEVELS[max(-1, min(1, score))])
+        grid.append(row)
+    return grid

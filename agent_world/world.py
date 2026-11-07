@@ -30,9 +30,11 @@ from agent_world.models import (
 from agent_world.hidden_world import (
     HIDDEN_FACT_MODES,
     SHOCK_MODES,
+    SOIL_MODES,
     active_shock,
     crop_suitability,
     regrowth_factor,
+    soil_quality,
     tuning as hidden_tuning,
     winter_regrowth_factor,
 )
@@ -2963,9 +2965,18 @@ class WorldEngine:
         factor *= regrowth_factor(config.seed)
         return factor * winter_regrowth_factor(config.seed) if self._season_name() == "winter" else factor
 
+    def _soil_factor(self, x: int, y: int) -> float:
+        grid = getattr(self, "_soil_grid", None)
+        if grid is None:
+            terrains = [[tile.terrain for tile in row] for row in self.state.tiles]
+            grid = self._soil_grid = soil_quality(self.state.config.seed, terrains)
+        return grid[y][x]
+
     def _hidden_farm_factor(self, x: int, y: int) -> float:
         config = self.state.config
         factor = self._active_shock_effects().get("farm", 1.0)
+        if config.hidden_world_mode in SOIL_MODES:
+            factor *= self._soil_factor(x, y)
         if config.hidden_world_mode not in HIDDEN_FACT_MODES:
             return factor
         return factor * crop_suitability(config.seed, x, y, config.hidden_world_mode)

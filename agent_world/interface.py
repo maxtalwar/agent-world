@@ -412,6 +412,7 @@ PLAIN_SEASON_LINES = (
     "- summer: steady regrowth and farming.",
     "- autumn: regrowth and farming slow down; storms possible.",
     "- winter: wild regrowth is much lower and farms produce nothing unless irrigated; storms possible.",
+    "- farmland: some land is better for farming than other land.",
 )
 
 

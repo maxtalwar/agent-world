@@ -30,11 +30,13 @@ ending saturation; an unbounded design is shelved below for a later version.
 5. **No harsher exposure damage.** Winter and storm damage stay at v8.1
    values; low effort already raises difficulty, and stacking both would
    confound which change moved the scores.
-6. **Hidden facts are plain-word season rules.** The rulebook says how each
-   season changes production in words (for example, winter regrowth is much
-   lower) but not by exactly how much. Production rules are the same on every
-   seed and across the map; there are no secret per-seed or per-area
-   multipliers. Agents learn the size of each effect from what they observe.
+6. **Hidden facts are stated plainly, never contradicted.** The rulebook says
+   how each season changes production in words (for example, winter regrowth
+   is much lower) but not by exactly how much, and says that some land farms
+   better than other land without saying where. Season rates are the same on
+   every seed. Soil quality follows the land (near water, beside mountains)
+   with seeded local variation. Agents learn the details from what they
+   observe.
    (Decided 2026-11-07, replacing the earlier per-seed regrowth, winter
    severity, and crop suitability settings, which contradicted the stated
    rules.)
@@ -65,6 +67,10 @@ remain reproducible.
 
 - **Seasons:** described in words only; the underlying rates are unchanged
   from v8.1.
+- **Soil:** each tile is poor (x0.4), normal (x1.0), or rich (x1.7) for farming.
+  Land within two tiles of water scores up, land beside mountains scores down,
+  and a seeded nudge per 4x4 area adds local variation. The rulebook says only
+  that some land is better for farming than other land.
 - **Shocks:** one of each per year from a seed-derived schedule, with no
   advance warning; an active shock appears as `season.shock`.
 
@@ -84,7 +90,7 @@ remain reproducible.
 | `seeded-v1` | Luna, Sol, and Terra v9 pilots | Per-seed regrowth and winter factors, crop suitability x0.5-1.5, weaker shocks, rulebook hint |
 | `facts-v1`, `shocks-v1` | Terra ablation | One half of `seeded-v1` each |
 | `seeded-v2` | Opus 5.5 test | Crop x0.4-1.7, stronger shocks, no hint; exact season numbers that its hidden factors contradicted |
-| `seeded-v3` | Current recipe | Stronger shocks and plain-word seasons only |
+| `seeded-v3` | Current recipe | Stronger shocks, plain-word seasons, and soil that follows the land |
 
 ## Open
 

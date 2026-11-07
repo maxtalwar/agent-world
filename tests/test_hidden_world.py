@@ -113,12 +113,37 @@ class HiddenWorldTests(unittest.TestCase):
         self.assertNotIn("wild regrowth x", rules)
         self.assertNotIn("crop suitability", rules)
         self.assertIn("droughts", rules)
-        self.assertEqual({world._hidden_farm_factor(x, y) for x in range(16) for y in range(16)}, {1.0})
+        self.assertIn("some land is better for farming than other land", rules)
+        self.assertNotIn("x1.7", rules)
         self.assertEqual(world._hidden_regen_factor(), 1.0)
         drought = year_shocks(11, 10, 0, "seeded-v3")[0]
         world.state.tick = drought.start_tick
         self.assertEqual(world._active_shock_effects(), V2.shock_effects["drought"])
         self.assertEqual(build_observation(world.state, "agent-1")["season"]["shock"], "drought")
+
+    def test_soil_follows_the_land_with_seeded_local_variation(self):
+        from agent_world.hidden_world import soil_quality
+        world = engine(hidden_world_mode="seeded-v3")
+        terrains = [[tile.terrain for tile in row] for row in world.state.tiles]
+        near = lambda x, y, kind, reach: any(
+            terrains[ty][tx] == kind and abs(tx - x) + abs(ty - y) <= reach
+            for ty in range(16) for tx in range(16))
+        for seed in (11, 41):
+            grid = soil_quality(seed, terrains)
+            farmland = [(x, y) for y in range(16) for x in range(16) if terrains[y][x] in {"plains", "forest"}]
+            wet = [grid[y][x] for x, y in farmland if near(x, y, "water", 2) and not near(x, y, "mountain", 1)]
+            rocky = [grid[y][x] for x, y in farmland if near(x, y, "mountain", 1) and not near(x, y, "water", 2)]
+            self.assertGreater(sum(wet) / len(wet), sum(rocky) / len(rocky))
+            self.assertEqual({grid[y][x] for x, y in farmland}, {0.4, 1.0, 1.7})
+        self.assertNotEqual(soil_quality(11, terrains), soil_quality(41, terrains))
+        self.assertEqual(soil_quality(11, terrains), soil_quality(11, terrains))
+
+    def test_soil_scales_farm_output_only_in_soil_modes(self):
+        rich = engine(hidden_world_mode="seeded-v3")
+        grid = [[rich._soil_factor(x, y) for x in range(16)] for y in range(16)]
+        x, y = next((x, y) for y in range(16) for x in range(16) if grid[y][x] == 1.7)
+        self.assertEqual(rich._hidden_farm_factor(x, y), 1.7)
+        self.assertEqual(engine(hidden_world_mode="shocks-v1")._hidden_farm_factor(x, y), 1.0)
 
     def test_participant_v9_uses_the_simplified_world(self):
         self.assertEqual(get_recipe("participant-v9").defaults()["hidden_world_mode"], "seeded-v3")
