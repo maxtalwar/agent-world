@@ -13,7 +13,8 @@ from agent_world.world import WorldEngine
 def engine(seed=11, **overrides):
     defaults = get_recipe("participant-v9").defaults()
     names = {field.name for field in fields(WorldConfig)}
-    settings = {key: value for key, value in defaults.items() if key in names} | overrides
+    # Older tests describe the first v9 world; newer ones pass their mode.
+    settings = {key: value for key, value in defaults.items() if key in names} | {"hidden_world_mode": "seeded-v1"} | overrides
     return WorldEngine.create(WorldConfig(seed=seed, **settings), agent_names=["A", "B", "C"])
 
 
@@ -98,9 +99,29 @@ class HiddenWorldTests(unittest.TestCase):
         self.assertEqual(world._active_shock_effects(), V2.shock_effects["drought"])
         self.assertEqual(build_observation(world.state, "agent-1")["season"]["shock"], "drought")
 
-    def test_seeded_v2_schedule_ignores_agent_actions(self):
-        self.assertEqual(play(engine(hidden_world_mode="seeded-v2"), NullBrain(), 80),
-                         play(engine(hidden_world_mode="seeded-v2"), SurvivalBrain(), 80))
+    def test_later_schedules_ignore_agent_actions(self):
+        for mode in ("seeded-v2", "seeded-v3"):
+            with self.subTest(mode=mode):
+                self.assertEqual(play(engine(hidden_world_mode=mode), NullBrain(), 80),
+                                 play(engine(hidden_world_mode=mode), SurvivalBrain(), 80))
+
+    def test_seeded_v3_has_shocks_and_plain_seasons_but_no_production_differences(self):
+        from agent_world.hidden_world import V2
+        world = engine(hidden_world_mode="seeded-v3")
+        rules = build_static_context(build_observation(world.state, "agent-1")["world"])
+        self.assertIn("winter: wild regrowth is much lower", rules)
+        self.assertNotIn("wild regrowth x", rules)
+        self.assertNotIn("crop suitability", rules)
+        self.assertIn("droughts", rules)
+        self.assertEqual({world._hidden_farm_factor(x, y) for x in range(16) for y in range(16)}, {1.0})
+        self.assertEqual(world._hidden_regen_factor(), 1.0)
+        drought = year_shocks(11, 10, 0, "seeded-v3")[0]
+        world.state.tick = drought.start_tick
+        self.assertEqual(world._active_shock_effects(), V2.shock_effects["drought"])
+        self.assertEqual(build_observation(world.state, "agent-1")["season"]["shock"], "drought")
+
+    def test_participant_v9_uses_the_simplified_world(self):
+        self.assertEqual(get_recipe("participant-v9").defaults()["hidden_world_mode"], "seeded-v3")
 
     def test_exposure_damage_and_public_season_factors_are_unchanged(self):
         config = engine().state.config

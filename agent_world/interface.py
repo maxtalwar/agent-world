@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from agent_world.event_index import event_index
-from agent_world.hidden_world import HIDDEN_FACT_HINT_MODES, SHOCK_MODES, active_shock
+from agent_world.hidden_world import HIDDEN_FACT_HINT_MODES, PLAIN_SEASON_MODES, SHOCK_MODES, active_shock
 from agent_world.observation_policy import apply_history_policy
 
 from functools import lru_cache
@@ -405,6 +405,16 @@ def objective_instruction(world: dict[str, Any]) -> str:
     return OBJECTIVE_INSTRUCTIONS.get(mode, OBJECTIVE_INSTRUCTIONS["neutral"])
 
 
+# Season rules in plain words: agents learn how much each season changes
+# production from what they observe.
+PLAIN_SEASON_LINES = (
+    "- spring: wild plants regrow faster than in summer, and farms produce more.",
+    "- summer: steady regrowth and farming.",
+    "- autumn: regrowth and farming slow down; storms possible.",
+    "- winter: wild regrowth is much lower and farms produce nothing unless irrigated; storms possible.",
+)
+
+
 def build_static_context(world: dict[str, Any] | None = None) -> str:
     if world and world.get("world_revision") == "frontier-v6":
         from agent_world.world_revisions.frontier_v6.interface import build_static_context as historical
@@ -523,12 +533,15 @@ def _render_static_context(world: dict[str, Any]) -> str:
         storm_damage = world.get("storm_exposure_damage", 4)
         lines.append("")
         lines.append(f"SEASONS (cycle {'->'.join(SEASON_ORDER)}, {length} ticks each; current season is in your observation):")
-        for name in SEASON_ORDER:
-            factors = SEASONS[name]
-            storm_text = f", storms possible" if factors["storms"] > 0 else ""
-            lines.append(
-                f"- {name}: wild regrowth x{factors['regen']}, farm work/growth x{factors['farm']}{storm_text}"
-            )
+        if world.get("hidden_world_mode", "off") in PLAIN_SEASON_MODES:
+            lines.extend(PLAIN_SEASON_LINES)
+        else:
+            for name in SEASON_ORDER:
+                factors = SEASONS[name]
+                storm_text = f", storms possible" if factors["storms"] > 0 else ""
+                lines.append(
+                    f"- {name}: wild regrowth x{factors['regen']}, farm work/growth x{factors['farm']}{storm_text}"
+                )
         lines.append(
             f"- exposure: each winter tick costs {winter_damage} health, and each storm tick {storm_damage} more, unless you end the tick on a completed shelter or house tile."
         )

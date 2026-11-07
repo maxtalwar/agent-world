@@ -30,10 +30,14 @@ ending saturation; an unbounded design is shelved below for a later version.
 5. **No harsher exposure damage.** Winter and storm damage stay at v8.1
    values; low effort already raises difficulty, and stacking both would
    confound which change moved the scores.
-6. **Hidden per-seed world parameters.** Rules stay public. Facts such as crop
-   suitability by tile, winter severity, regrowth rates, and flood risk are
-   absent from the rulebook and vary by seed. Agents infer them from
-   observation and must commit before they are certain.
+6. **Hidden facts are plain-word season rules.** The rulebook says how each
+   season changes production in words (for example, winter regrowth is much
+   lower) but not by exactly how much. Production rules are the same on every
+   seed and across the map; there are no secret per-seed or per-area
+   multipliers. Agents learn the size of each effect from what they observe.
+   (Decided 2026-11-07, replacing the earlier per-seed regrowth, winter
+   severity, and crop suitability settings, which contradicted the stated
+   rules.)
 7. **Random shocks.** Events such as drought, crop blight, or a severe winter,
    drawn per seed, so plans need buffers rather than only peak efficiency.
 8. **Seed-determined worlds.** Shocks and hidden parameters are computed from
@@ -53,30 +57,34 @@ ending saturation; an unbounded design is shelved below for a later version.
     and shifts historical ratings when new models enter. A draw margin is a
     display rule only, for models within seed noise of each other.
 
-## First-build values
+## Current build values
 
-Implemented in `agent_world/hidden_world.py`, enabled by
-`hidden_world_mode: "seeded-v1"`. These are first-pass values for the tuning
-gate, not final balance.
+`participant-v9` uses `hidden_world_mode: "seeded-v3"` (in
+`agent_world/hidden_world.py`). Earlier modes stay in the code so recorded runs
+remain reproducible.
 
-- **Crop suitability:** x0.5, x1.0, or x1.5 per 4x4-tile region, applied to farm
-  work and passive growth after the irrigation floor.
-- **Regrowth:** x0.7 to x1.2 per seed.
-- **Winter severity:** winter regrowth x0.3 to x1.0 per seed. It does not change
-  exposure damage (locked item 5). Flood risk is not built.
-- **Shocks:** one of each per year, with no advance warning; an active shock
-  appears as `season.shock`. Each lasts 30-50% of its window.
+- **Seasons:** described in words only; the underlying rates are unchanged
+  from v8.1.
+- **Shocks:** one of each per year from a seed-derived schedule, with no
+  advance warning; an active shock appears as `season.shock`.
 
-| Shock | Window | Regrowth | Farm output |
-|---|---|---:|---:|
-| Drought | Spring-summer | x0.4 | x0.5 |
-| Blight | Autumn | x1.0 | x0.25 |
-| Cold snap | Winter | x0 | x0.25 |
+| Shock | Window | Length | Regrowth | Farm output |
+|---|---|---|---:|---:|
+| Drought | Spring-summer | 50-70% of window | x0.25 | x0.35 |
+| Blight | Autumn | 30-50% | x1.0 | x0.1 |
+| Cold snap | Winter | 30-50% | x0 | x0.25 |
 
 - **Scoring:** outcome-production, revision 1, checkpoints 20/40/60/80, and a
   10-tick capability tail.
 - **Build scope:** population growth, the compounding economy, tech trees, and
   commitment decisions are not in this build.
+
+| Mode | Used by | Contents |
+|---|---|---|
+| `seeded-v1` | Luna, Sol, and Terra v9 pilots | Per-seed regrowth and winter factors, crop suitability x0.5-1.5, weaker shocks, rulebook hint |
+| `facts-v1`, `shocks-v1` | Terra ablation | One half of `seeded-v1` each |
+| `seeded-v2` | Opus 5.5 test | Crop x0.4-1.7, stronger shocks, no hint; exact season numbers that its hidden factors contradicted |
+| `seeded-v3` | Current recipe | Stronger shocks and plain-word seasons only |
 
 ## Open
 
