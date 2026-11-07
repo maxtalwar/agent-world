@@ -158,6 +158,14 @@ remain reproducible.
    | Shocks | 65.2 | 40.4 |
    | Full v9 | 16.7 | 0.9 |
 
+   Opus 5.5, seed 11, final mean health (v8.1 run at medium effort: 88.2, all
+   alive): `seeded-v2` (`claude-opus-5-5-v9-seeded-v2-20261107`) 50.7, all
+   alive, but its rulebook stated season numbers the world contradicted;
+   `seeded-v3` (`claude-opus-5-5-v9-seeded-v3-20261107`) 43.3, two deaths at
+   tick 76, Execution 95.0. Most damage came in the two winters. Opus built
+   three farm plots (normal, poor, normal soil) and farmed only six times, so
+   soil barely came into play. One seed; not yet a gate result.
+
    Effort and length carry the difficulty; hidden facts and shocks as built do
    not, and Sol was barely affected by all four. v9 spreads the middle of the
    board but does not yet raise the ceiling. Hidden facts and shocks need to be
