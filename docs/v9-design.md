@@ -165,6 +165,10 @@ remain reproducible.
    tick 76, Execution 95.0. Most damage came in the two winters. Opus built
    three farm plots (normal, poor, normal soil) and farmed only six times, so
    soil barely came into play. One seed; not yet a gate result.
+   Opus 5.5 on v8.1 at low effort, seed 11
+   (`claude-opus-5-5-v81-low-20261108`): final health 81.7, leaderboard-formula
+   score about 80.9, against 87.3 at medium. Low effort costs Opus about 6
+   points; the v9 world accounts for roughly 39 more (v9 about 41.5).
 
    Effort and length carry the difficulty; hidden facts and shocks as built do
    not, and Sol was barely affected by all four. v9 spreads the middle of the
