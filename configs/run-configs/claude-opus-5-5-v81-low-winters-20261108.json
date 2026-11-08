@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "run_id": "claude-opus-5-5-v81-low-winters-20261108",
+  "kind": "experiment",
+  "recipe": "participant-v8-revised",
+  "question": "How much does a second winter (80 ticks, 10-tick seasons) cost Opus 5.5 at low effort, compared with low effort alone on v8.1?",
+  "model": {
+    "brain": "claude",
+    "id": "claude-opus-5-5",
+    "reasoning_effort": "low"
+  },
+  "seeds": [
+    11
+  ],
+  "world": {
+    "overrides": {
+      "season_length_ticks": 10
+    }
+  },
+  "runtime": {
+    "ticks": 80
+  },
+  "source": {
+    "commit": "f4c59d4c296453cd9a97681941fd960c091249e8"
+  }
+}
