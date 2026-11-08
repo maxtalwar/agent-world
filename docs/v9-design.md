@@ -173,6 +173,14 @@ remain reproducible.
    (`claude-opus-5-5-v81-low-winters-w10-20261108`): 79.6, all ten alive. So
    two winters cost Opus about 1 point; the remaining ~38 points come from the
    seeded-v3 shocks, soil, and plain-word seasons together.
+   Stacking one change at a time on seed 11 (leaderboard formula; all runs
+   `claude-opus-5-5-v81-low-*-20261108` except the endpoints): v8.1 medium 87.4;
+   + low effort 80.9; + second winter 79.6; + shocks (`shocks-v3`) 43.4;
+   + soil (`shocks-soil-v3`) 38.6; + plain-word seasons (full v9) 41.5. Shocks
+   account for about 36 of the 46 points. Soil (-5) and plain-word seasons (+3)
+   are within single-run noise. Opus farmed only 6-11 times per run, living
+   mostly on wild food, so soil had little to act on and droughts and cold
+   snaps, which cut wild regrowth, hit it directly.
 
    Effort and length carry the difficulty; hidden facts and shocks as built do
    not, and Sol was barely affected by all four. v9 spreads the middle of the
