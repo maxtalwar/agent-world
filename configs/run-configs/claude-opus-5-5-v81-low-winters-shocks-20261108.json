@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "run_id": "claude-opus-5-5-v81-low-winters-shocks-20261108",
+  "kind": "experiment",
+  "recipe": "participant-v8-revised",
+  "question": "How much do the seeded-v3 shocks cost Opus 5.5 on top of low effort and a second winter?",
+  "model": {
+    "brain": "claude",
+    "id": "claude-opus-5-5",
+    "reasoning_effort": "low"
+  },
+  "seeds": [
+    11
+  ],
+  "world": {
+    "overrides": {
+      "season_length_ticks": 10,
+      "hidden_world_mode": "shocks-v3"
+    }
+  },
+  "runtime": {
+    "ticks": 80,
+    "max_workers": 10
+  },
+  "source": {
+    "commit": "861a39cd6787a86b3011d85d91a48c2cec1d6257"
+  }
+}
