@@ -169,6 +169,10 @@ remain reproducible.
    (`claude-opus-5-5-v81-low-20261108`): final health 81.7, leaderboard-formula
    score about 80.9, against 87.3 at medium. Low effort costs Opus about 6
    points; the v9 world accounts for roughly 39 more (v9 about 41.5).
+   Adding a second winter at low effort
+   (`claude-opus-5-5-v81-low-winters-w10-20261108`): 79.6, all ten alive. So
+   two winters cost Opus about 1 point; the remaining ~38 points come from the
+   seeded-v3 shocks, soil, and plain-word seasons together.
 
    Effort and length carry the difficulty; hidden facts and shocks as built do
    not, and Sol was barely affected by all four. v9 spreads the middle of the
