@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from agent_world.event_index import event_index
-from agent_world.hidden_world import HIDDEN_FACT_HINT_MODES, PLAIN_SEASON_MODES, SHOCK_MODES, active_shock
+from agent_world.hidden_world import HIDDEN_FACT_HINT_MODES, PLAIN_SEASON_MODES, SHOCK_MODES, SOIL_MODES, active_shock
 from agent_world.observation_policy import apply_history_policy
 
 from functools import lru_cache
@@ -412,8 +412,8 @@ PLAIN_SEASON_LINES = (
     "- summer: steady regrowth and farming.",
     "- autumn: regrowth and farming slow down; storms possible.",
     "- winter: wild regrowth is much lower and farms produce nothing unless irrigated; storms possible.",
-    "- farmland: some land is better for farming than other land.",
 )
+FARMLAND_LINE = "- farmland: some land is better for farming than other land."
 
 
 def build_static_context(world: dict[str, Any] | None = None) -> str:
@@ -543,6 +543,8 @@ def _render_static_context(world: dict[str, Any]) -> str:
                 lines.append(
                     f"- {name}: wild regrowth x{factors['regen']}, farm work/growth x{factors['farm']}{storm_text}"
                 )
+        if world.get("hidden_world_mode", "off") in SOIL_MODES:
+            lines.append(FARMLAND_LINE)
         lines.append(
             f"- exposure: each winter tick costs {winter_damage} health, and each storm tick {storm_damage} more, unless you end the tick on a completed shelter or house tile."
         )

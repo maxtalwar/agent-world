@@ -158,6 +158,18 @@ class HiddenWorldTests(unittest.TestCase):
         self.assertIn("wild regrowth x", rules)
         self.assertNotIn("some land is better for farming", rules)
 
+    def test_shocks_soil_v3_adds_soil_but_keeps_exact_season_numbers(self):
+        world, full = engine(hidden_world_mode="shocks-soil-v3"), engine(hidden_world_mode="seeded-v3")
+        grid = lambda w: [[w._soil_factor(x, y) for x in range(16)] for y in range(16)]
+        self.assertEqual(grid(world), grid(full))
+        self.assertEqual(year_shocks(11, 10, 0, "shocks-soil-v3"), year_shocks(11, 10, 0, "seeded-v3"))
+        rules = build_static_context(build_observation(world.state, "agent-1")["world"])
+        self.assertIn("wild regrowth x", rules)
+        self.assertIn("some land is better for farming than other land", rules)
+        self.assertIn("droughts", rules)
+        x, y = next((x, y) for y in range(16) for x in range(16) if grid(world)[y][x] == 1.7)
+        self.assertEqual(world._hidden_farm_factor(x, y), 1.7)
+
     def test_participant_v9_uses_the_simplified_world(self):
         self.assertEqual(get_recipe("participant-v9").defaults()["hidden_world_mode"], "seeded-v3")
 
