@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "run_id": "claude-opus-5-5-v81-low-winters-shocks-soil-20261108",
+  "kind": "experiment",
+  "recipe": "participant-v8-revised",
+  "question": "How much does soil that follows the land cost Opus 5.5 on top of low effort, a second winter, and shocks?",
+  "model": {
+    "brain": "claude",
+    "id": "claude-opus-5-5",
+    "reasoning_effort": "low"
+  },
+  "seeds": [
+    11
+  ],
+  "world": {
+    "overrides": {
+      "season_length_ticks": 10,
+      "hidden_world_mode": "shocks-soil-v3"
+    }
+  },
+  "runtime": {
+    "ticks": 80,
+    "max_workers": 10
+  },
+  "source": {
+    "commit": "8ead08200d2ef0500fe180c09ead19f3497622f9"
+  }
+}
