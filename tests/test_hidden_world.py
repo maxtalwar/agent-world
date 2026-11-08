@@ -145,6 +145,19 @@ class HiddenWorldTests(unittest.TestCase):
         self.assertEqual(rich._hidden_farm_factor(x, y), 1.7)
         self.assertEqual(engine(hidden_world_mode="shocks-v1")._hidden_farm_factor(x, y), 1.0)
 
+    def test_shocks_v3_matches_seeded_v3_shocks_without_soil_or_plain_seasons(self):
+        shocks, full = engine(hidden_world_mode="shocks-v3"), engine(hidden_world_mode="seeded-v3")
+        self.assertEqual(year_shocks(11, 10, 0, "shocks-v3"), year_shocks(11, 10, 0, "seeded-v3"))
+        drought = year_shocks(11, 10, 0, "shocks-v3")[0]
+        shocks.state.tick = full.state.tick = drought.start_tick
+        self.assertEqual(shocks._active_shock_effects(), full._active_shock_effects())
+        self.assertEqual({shocks._hidden_farm_factor(x, y) for x in range(16) for y in range(16)},
+                         {full._active_shock_effects()["farm"]})
+        rules = build_static_context(build_observation(shocks.state, "agent-1")["world"])
+        self.assertIn("droughts", rules)
+        self.assertIn("wild regrowth x", rules)
+        self.assertNotIn("some land is better for farming", rules)
+
     def test_participant_v9_uses_the_simplified_world(self):
         self.assertEqual(get_recipe("participant-v9").defaults()["hidden_world_mode"], "seeded-v3")
 

@@ -13,9 +13,11 @@ from dataclasses import dataclass
 # seeded-v3 is the simplified v9 world: seed-scheduled shocks at v2 strength, and
 # season rules described in plain words instead of exact multipliers. It has no
 # per-seed or per-area production differences.
-HIDDEN_WORLD_MODES = {"off", "seeded-v1", "facts-v1", "shocks-v1", "seeded-v2", "seeded-v3"}
+# shocks-v3 isolates the seeded-v3 shocks: same strength, without soil or
+# plain-word seasons.
+HIDDEN_WORLD_MODES = {"off", "seeded-v1", "facts-v1", "shocks-v1", "seeded-v2", "seeded-v3", "shocks-v3"}
 HIDDEN_FACT_MODES = {"seeded-v1", "facts-v1", "seeded-v2"}
-SHOCK_MODES = {"seeded-v1", "shocks-v1", "seeded-v2", "seeded-v3"}
+SHOCK_MODES = {"seeded-v1", "shocks-v1", "seeded-v2", "seeded-v3", "shocks-v3"}
 # These modes describe seasons in words rather than giving exact multipliers.
 PLAIN_SEASON_MODES = {"seeded-v3"}
 # These modes give each tile a soil quality that follows the land.
@@ -63,7 +65,7 @@ V2 = Tuning(
 
 
 def tuning(mode: str) -> Tuning:
-    return V2 if mode in {"seeded-v2", "seeded-v3"} else V1
+    return V2 if mode in {"seeded-v2", "seeded-v3", "shocks-v3"} else V1
 
 
 # Kept for callers that predate seeded-v2; these are the v1 values.
