@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "claude-opus-5-5-v9-invest-v2-20261112",
+  "kind": "experiment",
+  "recipe": "participant-v9",
+  "question": "With farm sparing removed, dormant winters, and investment rules folded into the normal rulebook (invest-v2), does Opus 5.5 still invest, and how does it score?",
+  "model": {
+    "brain": "claude",
+    "id": "claude-opus-5-5"
+  },
+  "seeds": [
+    11
+  ],
+  "world": {
+    "overrides": {
+      "investment_mode": "invest-v2"
+    }
+  },
+  "runtime": {
+    "max_workers": 10
+  },
+  "source": {
+    "commit": "49080660ac5fed4e5199282b492445777cdc71ee"
+  }
+}
