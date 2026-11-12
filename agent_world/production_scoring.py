@@ -13,7 +13,8 @@ EXTRACTION_EVENTS = frozenset({"gather", "chop", "mine", "harvest", "fish"})
 
 def derive_production_counts(events: list[dict[str, Any]], *, member_ids: list[str],
                              target_ticks: int, economy_mode: str,
-                             accounting_values: dict[str, float]) -> dict[str, Any]:
+                             accounting_values: dict[str, float],
+                             investment_mode: str = "off") -> dict[str, Any]:
     """Credit goods entering inventory once, with craft inputs netted out.
 
     Farm tending and passive regrowth change the tile's resource pool. They are
@@ -23,7 +24,7 @@ def derive_production_counts(events: list[dict[str, Any]], *, member_ids: list[s
     if target_ticks <= 0 or not member_ids or len(set(member_ids)) != len(member_ids):
         raise ScoringEvidenceError("Production requires a positive horizon and unique original population")
     members = set(member_ids)
-    recipes = recipes_for_mode(economy_mode)
+    recipes = recipes_for_mode(economy_mode, "classic", investment_mode)
     output = inputs = improved = 0.0
     by_source = defaultdict(float)
 

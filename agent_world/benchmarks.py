@@ -433,7 +433,7 @@ BENCHMARK_FINGERPRINT_FILES = tuple(
 )
 
 
-def _recipe_consistent_accounting_values(economy_mode: str) -> dict[str, float]:
+def _recipe_consistent_accounting_values(economy_mode: str, investment_mode: str = "off") -> dict[str, float]:
     """Raise book values until every single-output recipe preserves input value.
 
     The output unit value is the exact input total divided by the output
@@ -445,7 +445,7 @@ def _recipe_consistent_accounting_values(economy_mode: str) -> dict[str, float]:
     """
 
     values = {str(item): float(value) for item, value in ACCOUNTING_VALUES.items()}
-    recipes = recipes_for_mode(economy_mode)
+    recipes = recipes_for_mode(economy_mode, "classic", investment_mode)
     for _ in range(max(1, len(recipes) + 1)):
         changed = False
         for recipe in recipes.values():
@@ -471,6 +471,8 @@ def _recipe_consistent_accounting_values(economy_mode: str) -> dict[str, float]:
 
 
 BENCHMARK_ACCOUNTING_VALUES = _recipe_consistent_accounting_values("organic")
+# Experimental investment worlds add goods; published benchmarks never use these.
+INVESTMENT_ACCOUNTING_VALUES = _recipe_consistent_accounting_values("organic", "invest-v1")
 
 
 def accepted_prior_trial(
@@ -823,10 +825,14 @@ def build_benchmark_results(
                     require_completed=bool(run.get("completed")),
                     execution_unit=recipe.scoring_parameters().get("execution_unit", "decision"),
                 ))
+                investment_mode = config.get("investment_mode", "off")
                 raw.update(derive_production_counts(
                     events, member_ids=member_ids, target_ticks=horizon,
                     economy_mode=config.get("economy_mode", "organic"),
-                    accounting_values=BENCHMARK_ACCOUNTING_VALUES,
+                    accounting_values=(
+                        BENCHMARK_ACCOUNTING_VALUES if investment_mode == "off" else INVESTMENT_ACCOUNTING_VALUES
+                    ),
+                    investment_mode=investment_mode,
                 ))
             except (ScoringEvidenceError, ValueError) as exc:
                 cohort_flags.append("scoring_evidence_unavailable")

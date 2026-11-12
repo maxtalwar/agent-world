@@ -112,6 +112,17 @@ about 3.3 food per tick of regrowth across the map. Not yet in the recipe.
 The rulebook states these plainly without exact numbers. New recipes and items
 stay out of the published recipe and accounting tables.
 
+First test, Opus 5.5, full v9 (`seeded-v3`) plus `invest-v1`, seed 11
+(`claude-opus-5-5-v9-invest-v1-20261111`; the launch commit's scorer rejected
+the new recipes, so it was rescored after the fix into
+`run-report-rescored.json`): all ten alive, final health 56.0, leaderboard
+formula about 55.0, against 41.5 for the same world without investment.
+Execution 94.3. Opus doubled farming (13 tends), built a workshop, wove 6
+cloth from tick 16 and planned clothing but never made any, preserved food
+only twice (tick 56), and made no tools. It still got most food by foraging.
+Investment uptake is partial; the score gain may be partly the farm-sparing
+shocks. One seed.
+
 ## Open
 
 1. **Evidence rate.** Whether the first-build hidden values are learnable but
