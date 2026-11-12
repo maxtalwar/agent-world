@@ -136,6 +136,17 @@ Same capital mechanics as `invest-v1`, with three changes (2026-11-12):
   irrigation line mentions droughts, and the inaccurate line that shocks hurt
   wild food more than farms is gone.
 
+Opus 5.5, seed 11 (`claude-opus-5-5-v9-invest-v2-20261112`): nine alive (one
+death at tick 79), final health 58.8, leaderboard formula about 57.4,
+Execution 93.8. It barely invested: one farm plot, 7 tends, one batch of
+preserved food at tick 57, no cloth, clothing, or tools, and more foraging
+(170 gathered) than either earlier run. Its score was nonetheless the highest
+of the three investment comparisons (no investment 41.5, invest-v1 55.0), so
+the 41.5-to-57 spread on one seed is largely run-to-run variation, not
+investment. With the INVESTMENT heading removed, Opus also used the new
+options less, which may be a salience effect. Single runs cannot separate
+these; the next step is repeat runs of one world to measure noise.
+
 ## Open
 
 1. **Evidence rate.** Whether the first-build hidden values are learnable but
