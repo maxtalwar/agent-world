@@ -97,6 +97,8 @@ class WorldConfig:
     storm_exposure_damage: int = 4
     # "off" leaves every prior recipe byte-identical. See hidden_world.py.
     hidden_world_mode: str = "off"
+    # "off" leaves every prior recipe byte-identical. See INVESTMENT_RECIPES.
+    investment_mode: str = "off"
     skill_yield_interval: int = 3
     skill_energy_interval: int = 4
     skill_bonus_cap: int = 2
@@ -128,6 +130,8 @@ class WorldConfig:
                 "hidden_world_mode must be off, seeded-v1, facts-v1, shocks-v1, seeded-v2, seeded-v3, "
                 "shocks-v3, or shocks-soil-v3"
             )
+        if self.investment_mode not in {"off", "invest-v1"}:
+            raise ValueError("investment_mode must be off or invest-v1")
         if self.geography_mode not in {"shared_oasis", "dispersed"}:
             raise ValueError("geography_mode must be shared_oasis or dispersed")
         if self.specialization_mode not in {"generalists", "specialists"}:

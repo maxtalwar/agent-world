@@ -58,6 +58,13 @@ from agent_world.rules import (
     FREE_ACTION_TYPES,
     GROUP_ADMIN_ACTION_TYPES,
     TOOL_ENERGY_DISCOUNT,
+    CLOTHING_DURABILITY,
+    CLOTHING_EXPOSURE_REDUCTION,
+    FARM_FERTILITY_MAX_LEVEL,
+    FARM_FERTILITY_USES_PER_LEVEL,
+    INVEST_SHOCK_FARM_FLOOR,
+    INVEST_TOOL_DURABILITY,
+    INVEST_TOOL_YIELD_FRACTION,
     TOOL_MAX_DURABILITY,
     TOOL_PRODUCTIVITY_BONUS,
     WORK_ACTIONS,
@@ -663,6 +670,8 @@ class WorldEngine:
             return action_points - cost
         max_quantity = int(rule.get("max_quantity", 2))
         requested = self._bounded_quantity(action.get("quantity"), default=1, maximum=max_quantity)
+        if self._investing():
+            tool_yield_bonus = self._invest_tool_bonus(tool_name, requested + skill_yield_bonus)
         quantity = requested + skill_yield_bonus + tool_yield_bonus
         if source_kind != "well":
             quantity = min(quantity, source_tile.resources[resource])
@@ -778,6 +787,9 @@ class WorldEngine:
             return action_points - cost
         if not self._use_productive_structure(agent, farm_plot, action):
             return action_points - cost
+        if self._investing():
+            tool_yield_bonus = self._invest_tool_bonus(tool_name, self.state.config.farm_food_added + skill_yield_bonus)
+            skill_yield_bonus += self._farm_fertility(farm_plot)
         base_yield = self.state.config.farm_food_added + skill_yield_bonus + tool_yield_bonus
         if irrigated:
             base_yield += IRRIGATION_FARM_BONUS
@@ -987,7 +999,8 @@ class WorldEngine:
 
     def _action_consume(self, agent: Agent, action: dict[str, Any], action_points: int) -> int:
         item = str(action.get("item", "food"))
-        if item not in CONSUMABLE_EFFECTS:
+        effects = self._consumable_effects(item)
+        if effects is None:
             self._invalid(agent, action, f"{item} is not consumable.")
             return action_points - 1
         quantity = self._bounded_quantity(action.get("quantity"), default=1, maximum=agent.inventory.get(item, 0))
@@ -995,7 +1008,7 @@ class WorldEngine:
             self._invalid(agent, action, f"No {item} available to consume.")
             return action_points - 1
         agent.inventory[item] -= quantity
-        for need, amount in CONSUMABLE_EFFECTS[item].items():
+        for need, amount in effects.items():
             maximum = self.state.config.reserve_max_for(need)
             setattr(agent.needs, need, min(maximum, getattr(agent.needs, need) + amount * quantity))
         self._clamp_needs(agent)
@@ -1016,8 +1029,8 @@ class WorldEngine:
             self._invalid(agent, action, f"No {item} available to equip.")
             return action_points - 1
         agent.equipped.add(item)
-        if item in TOOL_MAX_DURABILITY:
-            agent.equipment_durability.setdefault(item, TOOL_MAX_DURABILITY[item])
+        if self._max_durability(item):
+            agent.equipment_durability.setdefault(item, self._max_durability(item))
         self.log_event(
             "equip",
             actor_id=agent.id,
@@ -2357,12 +2370,20 @@ class WorldEngine:
                 # Exposure: winter and storms hurt anyone not on a completed
                 # shelter or house tile. Shelter is survival infrastructure in
                 # the frontier variant, not just an energy perk.
+                exposure = 0
                 if self._season_name() == "winter":
-                    damage += self.state.config.winter_exposure_damage
+                    exposure += self.state.config.winter_exposure_damage
                     causes.append("winter_exposure")
                 if self._is_storm():
-                    damage += self.state.config.storm_exposure_damage
+                    exposure += self.state.config.storm_exposure_damage
                     causes.append("storm_exposure")
+                if exposure and self._wears_clothing(agent):
+                    reduction = CLOTHING_EXPOSURE_REDUCTION * (
+                        ("winter_exposure" in causes) + ("storm_exposure" in causes)
+                    )
+                    exposure = max(0, exposure - reduction)
+                    self._wear_clothing(agent)
+                damage += exposure
             self._clamp_needs(agent)
             if damage:
                 agent.health = max(0, agent.health - damage)
@@ -2445,6 +2466,12 @@ class WorldEngine:
                         passive_factor = max(passive_factor, IRRIGATION_SEASON_FLOOR)
                         passive_growth += IRRIGATION_PASSIVE_BONUS
                     passive_factor *= self._hidden_farm_factor(x, y)
+                    if self._investing():
+                        passive_growth += max(
+                            (self._farm_fertility(self.state.structures[sid]) for sid in tile.structure_ids
+                             if self.state.structures[sid].type == "farm_plot"),
+                            default=0,
+                        ) // 2
                     tile.resources["food"] = min(
                         self.state.config.farm_food_capacity,
                         tile.resources["food"] + int(round(passive_growth * passive_factor)),
@@ -2928,7 +2955,9 @@ class WorldEngine:
         return max(0, (agent.carry_capacity - agent.inventory_weight()) // weight)
 
     def _recipes(self):
-        return recipes_for_mode(self.state.config.economy_mode, self.state.config.world_variant)
+        return recipes_for_mode(
+            self.state.config.economy_mode, self.state.config.world_variant, self.state.config.investment_mode
+        )
 
     def _structure_types(self) -> set[str]:
         return structure_types_for_variant(self.state.config.world_variant)
@@ -2947,6 +2976,54 @@ class WorldEngine:
             return 1.0
         return float(SEASONS[season][key])
 
+    def _investing(self) -> bool:
+        return self.state.config.investment_mode != "off"
+
+    def _max_durability(self, item: str) -> int:
+        if self._investing():
+            if item == "clothing":
+                return CLOTHING_DURABILITY
+            return INVEST_TOOL_DURABILITY.get(item, 0)
+        return TOOL_MAX_DURABILITY.get(item, 0)
+
+    def _invest_tool_bonus(self, tool_name: str | None, base: int) -> int:
+        fraction = INVEST_TOOL_YIELD_FRACTION.get(tool_name or "", 0)
+        return max(1, math.ceil(base * fraction)) if fraction else 0
+
+    def _farm_fertility(self, farm_plot) -> int:
+        return min(FARM_FERTILITY_MAX_LEVEL, farm_plot.total_uses // FARM_FERTILITY_USES_PER_LEVEL)
+
+    def _consumable_effects(self, item: str) -> dict[str, int] | None:
+        if item in CONSUMABLE_EFFECTS:
+            return CONSUMABLE_EFFECTS[item]
+        if item == "preserved_food" and self._investing():
+            return CONSUMABLE_EFFECTS["food"]
+        return None
+
+    def _wears_clothing(self, agent: Agent) -> bool:
+        return self._investing() and "clothing" in agent.equipped and agent.inventory.get("clothing", 0) > 0
+
+    def _wear_clothing(self, agent: Agent) -> None:
+        remaining = agent.equipment_durability.get("clothing", CLOTHING_DURABILITY) - 1
+        if remaining > 0:
+            agent.equipment_durability["clothing"] = remaining
+            return
+        agent.inventory["clothing"] -= 1
+        if agent.inventory["clothing"] > 0:
+            agent.equipment_durability["clothing"] = CLOTHING_DURABILITY
+        else:
+            agent.equipped.discard("clothing")
+            agent.equipment_durability.pop("clothing", None)
+        self.log_event(
+            "clothing_worn_out",
+            actor_id=agent.id,
+            position=agent.position,
+            message=f"{agent.name}'s clothing wore out.",
+            data={"item": "clothing", "remaining_items": agent.inventory.get("clothing", 0)},
+            scope="private",
+            recipients={agent.id},
+        )
+
     def _hidden_world(self) -> bool:
         return self.state.config.hidden_world_mode != "off"
 
@@ -2955,7 +3032,12 @@ class WorldEngine:
         if config.hidden_world_mode not in SHOCK_MODES:
             return {}
         shock = active_shock(config.seed, config.season_length_ticks, self.state.tick, config.hidden_world_mode)
-        return hidden_tuning(config.hidden_world_mode).shock_effects[shock] if shock else {}
+        if not shock:
+            return {}
+        effects = hidden_tuning(config.hidden_world_mode).shock_effects[shock]
+        if self._investing():
+            effects = {**effects, "farm": max(effects["farm"], INVEST_SHOCK_FARM_FLOOR[shock])}
+        return effects
 
     def _hidden_regen_factor(self) -> float:
         config = self.state.config
@@ -3018,21 +3100,21 @@ class WorldEngine:
     def _equipped_work_tool(self, agent: Agent) -> str | None:
         for item in ("advanced_tool", "tool"):
             if item in agent.equipped and agent.inventory.get(item, 0) > 0:
-                agent.equipment_durability.setdefault(item, TOOL_MAX_DURABILITY[item])
+                agent.equipment_durability.setdefault(item, self._max_durability(item))
                 return item
         return None
 
     def _wear_equipped_tool(self, agent: Agent, item: str | None) -> int | None:
         if item is None:
             return None
-        remaining = agent.equipment_durability.get(item, TOOL_MAX_DURABILITY[item]) - 1
+        remaining = agent.equipment_durability.get(item, self._max_durability(item)) - 1
         if remaining > 0:
             agent.equipment_durability[item] = remaining
             return remaining
         agent.inventory[item] -= 1
         if agent.inventory[item] > 0:
-            agent.equipment_durability[item] = TOOL_MAX_DURABILITY[item]
-            remaining = TOOL_MAX_DURABILITY[item]
+            agent.equipment_durability[item] = self._max_durability(item)
+            remaining = self._max_durability(item)
         else:
             agent.equipped.discard(item)
             agent.equipment_durability.pop(item, None)
@@ -3138,6 +3220,8 @@ class WorldEngine:
         config = asdict(self.state.config)
         if not self._hidden_world():
             del config["hidden_world_mode"]
+        if not self._investing():
+            del config["investment_mode"]
         return config
 
     def _tile_snapshots(self) -> list[list[dict[str, Any]]]:

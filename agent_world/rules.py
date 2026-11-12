@@ -346,7 +346,46 @@ def structure_types_for_variant(world_variant: str) -> set[str]:
     return set(STRUCTURE_TYPES)
 
 
-def recipes_for_mode(economy_mode: str, world_variant: str = "classic") -> dict[str, Recipe]:
+# Investment world (investment_mode "invest-v1"): capital that pays back over a
+# run. Kept out of RECIPES and ACCOUNTING_VALUES so published worlds and their
+# accounting stay unchanged.
+INVESTMENT_MODES = {"off", "invest-v1"}
+INVEST_TOOL_YIELD_FRACTION = {"tool": 0.5, "advanced_tool": 1.0}
+INVEST_TOOL_DURABILITY = {"tool": 30, "advanced_tool": 60}
+# A farm plot gains one fertility level per this many uses, up to the maximum.
+# Each level adds one food per tend; every two levels add one passive food.
+FARM_FERTILITY_USES_PER_LEVEL = 4
+FARM_FERTILITY_MAX_LEVEL = 4
+# Shocks still cut wild regrowth fully but spare tended farms this much.
+INVEST_SHOCK_FARM_FLOOR = {"drought": 0.8, "blight": 0.5, "cold_snap": 1.0}
+CLOTHING_DURABILITY = 20
+CLOTHING_EXPOSURE_REDUCTION = 2
+INVESTMENT_RECIPES: dict[str, Recipe] = {
+    "preserved_food": Recipe(
+        inputs={"food": 2, "wood": 1},
+        outputs={"preserved_food": 2},
+        action_points=2,
+        energy=3,
+    ),
+    "cloth": Recipe(
+        inputs={"fiber": 3},
+        outputs={"cloth": 1},
+        action_points=2,
+        energy=4,
+    ),
+    "clothing": Recipe(
+        inputs={"cloth": 2, "fiber": 1},
+        outputs={"clothing": 1},
+        action_points=2,
+        energy=4,
+        required_structure="workshop",
+    ),
+}
+
+
+def recipes_for_mode(
+    economy_mode: str, world_variant: str = "classic", investment_mode: str = "off"
+) -> dict[str, Recipe]:
     if economy_mode != "organic":
         effective = dict(RECIPES)
     else:
@@ -356,6 +395,8 @@ def recipes_for_mode(economy_mode: str, world_variant: str = "classic") -> dict[
             effective[name] = recipe if override is None else replace(recipe, **override)
     if world_variant == "frontier":
         effective.update(FRONTIER_RECIPES)
+    if investment_mode != "off":
+        effective.update(INVESTMENT_RECIPES)
     return effective
 
 

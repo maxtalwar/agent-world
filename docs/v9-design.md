@@ -92,6 +92,26 @@ remain reproducible.
 | `seeded-v2` | Opus 5.5 test | Crop x0.4-1.7, stronger shocks, no hint; exact season numbers that its hidden factors contradicted |
 | `seeded-v3` | Current recipe | Stronger shocks, plain-word seasons, and soil that follows the land |
 
+## Investment world (experimental)
+
+`investment_mode: "invest-v1"` (default `"off"`) makes capital pay back over a
+run without making foraging worse; wild food already has a natural ceiling of
+about 3.3 food per tick of regrowth across the map. Not yet in the recipe.
+
+- **Tools:** +50% work output (advanced: +100%), lasting 30 uses (advanced: 60),
+  up from +1 output for 6 uses.
+- **Farm fertility:** a farm plot gains a level every 4 uses, up to 4; each level
+  adds one food per tend, and every two add one passive food.
+- **Shocks spare farms:** farm output stays at least x0.8 in a drought, x0.5 in a
+  blight, and unchanged in a cold snap; wild regrowth is still cut fully.
+- **Preserved food:** 2 food + 1 wood make 2 preserved food that never spoils.
+- **Clothing:** 3 fiber make cloth; 2 cloth + 1 fiber at a workshop make
+  clothing, which cuts winter and storm exposure by 2 each and lasts 20
+  exposed ticks.
+
+The rulebook states these plainly without exact numbers. New recipes and items
+stay out of the published recipe and accounting tables.
+
 ## Open
 
 1. **Evidence rate.** Whether the first-build hidden values are learnable but

@@ -114,7 +114,9 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             if agent.id in {contract.lender_id, contract.borrower_id}
         ]
     effective_recipes = recipes_for_mode(
-        state.config.economy_mode, getattr(state.config, "world_variant", "classic")
+        state.config.economy_mode,
+        getattr(state.config, "world_variant", "classic"),
+        getattr(state.config, "investment_mode", "off"),
     )
     mechanics = MECHANICS_SUMMARY
     if state.config.economy_mode != "organic":
@@ -193,6 +195,8 @@ def _full_observation(state: WorldState, agent_id: str) -> dict[str, Any]:
             "storm_exposure_damage": getattr(state.config, "storm_exposure_damage", 4),
             **({"hidden_world_mode": state.config.hidden_world_mode}
                if getattr(state.config, "hidden_world_mode", "off") != "off" else {}),
+            **({"investment_mode": state.config.investment_mode}
+               if getattr(state.config, "investment_mode", "off") != "off" else {}),
             "geography_mode": getattr(state.config, "geography_mode", "shared_oasis"),
             "specialization_mode": getattr(state.config, "specialization_mode", "generalists"),
             # Used only to construct the treatment-specific prompt. The compact
@@ -416,6 +420,17 @@ PLAIN_SEASON_LINES = (
 FARMLAND_LINE = "- farmland: some land is better for farming than other land."
 
 
+# Investment world rules, stated plainly and without exact numbers.
+INVESTMENT_RULE_LINES = (
+    "",
+    "INVESTMENT:",
+    "- tools: an equipped tool raises work output by about half (advanced_tool doubles it) and lasts many uses.",
+    "- farm plots grow more productive the more they are worked, up to a limit.",
+    "- shocks hurt wild plants and fishing more than tended farms.",
+    "- preserved_food: made from food and wood; never spoils; consume it like food.",
+    "- cloth is woven from fiber; clothing (made at a workshop) can be equipped to cut winter and storm exposure, and wears out.",
+)
+
 def build_static_context(world: dict[str, Any] | None = None) -> str:
     if world and world.get("world_revision") == "frontier-v6":
         from agent_world.world_revisions.frontier_v6.interface import build_static_context as historical
@@ -568,6 +583,8 @@ def _render_static_context(world: dict[str, Any]) -> str:
         lines.append(
             "- irrigation (structure): built on a tile with a completed farm plot; increases farm yield and keeps the farm working at half rate through winter."
         )
+        if world.get("investment_mode", "off") != "off":
+            lines.extend(INVESTMENT_RULE_LINES)
     lines.append("")
     lines.append("ACTIONS (cost ap/en; omitted en=0):")
     disabled_actions = set(world.get("disabled_actions", []))
@@ -587,6 +604,11 @@ def _render_static_context(world: dict[str, Any]) -> str:
         params = action.get("parameters", {})
         if recipe_names and action.get("type") == "craft" and "recipe" in params:
             params = {**params, "recipe": recipe_names}
+        if world.get("investment_mode", "off") != "off":
+            if action.get("type") == "consume":
+                params = {**params, "item": "food|water|preserved_food"}
+            elif action.get("type") == "equip":
+                params = {**params, "item": "tool|advanced_tool|clothing"}
         if structure_names and action.get("type") == "build" and "structure" in params:
             params = {**params, "structure": structure_names}
         param_text = (
