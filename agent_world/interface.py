@@ -420,6 +420,26 @@ PLAIN_SEASON_LINES = (
 FARMLAND_LINE = "- farmland: some land is better for farming than other land."
 
 
+# invest-v1 states its rules in a separate section; invest-v2 folds them into
+# the existing item and structure lines so no heading points at them.
+INVESTMENT_SECTION_MODES = {"invest-v1"}
+FOLDED_INVESTMENT_MODES = {"invest-v2"}
+DORMANT_WINTER_SEASON_LINES = PLAIN_SEASON_LINES[:3] + (
+    "- winter: wild regrowth is much lower and farms produce nothing; storms possible.",
+)
+INVESTMENT_NOTE_OVERRIDES = {
+    "tool: craft from wood+stone+fiber; equip": "tool: craft from wood+stone+fiber; equip; raises work output by about half and lasts many uses",
+    "advanced_tool: workshop equipment; more output, less work energy": "advanced_tool: workshop equipment; doubles work output, less work energy; outlasts a tool",
+    "farm_plot: improved plains/forest for reliable food": "farm_plot: improved plains/forest for reliable food; grows more productive the more it is worked, up to a limit",
+}
+INVESTMENT_EXTRA_NOTES = {
+    "ITEMS": (
+        "preserved_food: made from food+wood; never spoils; consume like food",
+        "cloth: woven from fiber; clothing input",
+        "clothing: made at a workshop from cloth+fiber; equip to cut winter and storm exposure; wears out",
+    ),
+}
+
 # Investment world rules, stated plainly and without exact numbers.
 INVESTMENT_RULE_LINES = (
     "",
@@ -550,7 +570,10 @@ def _render_static_context(world: dict[str, Any]) -> str:
         lines.append("")
         lines.append(f"SEASONS (cycle {'->'.join(SEASON_ORDER)}, {length} ticks each; current season is in your observation):")
         if world.get("hidden_world_mode", "off") in PLAIN_SEASON_MODES:
-            lines.extend(PLAIN_SEASON_LINES)
+            if world.get("investment_mode", "off") in FOLDED_INVESTMENT_MODES:
+                lines.extend(DORMANT_WINTER_SEASON_LINES)
+            else:
+                lines.extend(PLAIN_SEASON_LINES)
         else:
             for name in SEASON_ORDER:
                 factors = SEASONS[name]
@@ -580,10 +603,15 @@ def _render_static_context(world: dict[str, Any]) -> str:
         lines.append(
             "- road (structure): moving onto a tile with a completed road costs 1 ap/en regardless of terrain; roads are usable by everyone."
         )
-        lines.append(
-            "- irrigation (structure): built on a tile with a completed farm plot; increases farm yield and keeps the farm working at half rate through winter."
-        )
-        if world.get("investment_mode", "off") != "off":
+        if world.get("investment_mode", "off") in FOLDED_INVESTMENT_MODES:
+            lines.append(
+                "- irrigation (structure): built on a tile with a completed farm plot; increases farm yield, and irrigated farms hold up better in droughts."
+            )
+        else:
+            lines.append(
+                "- irrigation (structure): built on a tile with a completed farm plot; increases farm yield and keeps the farm working at half rate through winter."
+            )
+        if world.get("investment_mode", "off") in INVESTMENT_SECTION_MODES:
             lines.extend(INVESTMENT_RULE_LINES)
     lines.append("")
     lines.append("ACTIONS (cost ap/en; omitted en=0):")
@@ -673,8 +701,12 @@ def _render_static_context(world: dict[str, Any]) -> str:
                 ]
             )
     lines.append("")
+    folded = world.get("investment_mode", "off") in FOLDED_INVESTMENT_MODES
     for section_name, notes in COMPACT_MECHANICS.items():
         lines.append(f"{section_name}:")
+        if folded:
+            notes = tuple(INVESTMENT_NOTE_OVERRIDES.get(text, text) for text in notes)
+            notes += INVESTMENT_EXTRA_NOTES.get(section_name, ())
         for text in notes:
             if world.get("trade_settlement") == "physical_meeting_at_escrow_position" and text.startswith(
                 "offer_contract:"

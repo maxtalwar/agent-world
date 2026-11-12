@@ -130,8 +130,8 @@ class WorldConfig:
                 "hidden_world_mode must be off, seeded-v1, facts-v1, shocks-v1, seeded-v2, seeded-v3, "
                 "shocks-v3, or shocks-soil-v3"
             )
-        if self.investment_mode not in {"off", "invest-v1"}:
-            raise ValueError("investment_mode must be off or invest-v1")
+        if self.investment_mode not in {"off", "invest-v1", "invest-v2"}:
+            raise ValueError("investment_mode must be off, invest-v1, or invest-v2")
         if self.geography_mode not in {"shared_oasis", "dispersed"}:
             raise ValueError("geography_mode must be shared_oasis or dispersed")
         if self.specialization_mode not in {"generalists", "specialists"}:

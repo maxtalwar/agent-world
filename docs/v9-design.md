@@ -123,6 +123,19 @@ only twice (tick 56), and made no tools. It still got most food by foraging.
 Investment uptake is partial; the score gain may be partly the farm-sparing
 shocks. One seed.
 
+### invest-v2
+
+Same capital mechanics as `invest-v1`, with three changes (2026-11-12):
+
+- **No farm sparing:** shocks hit farms as in `seeded-v3`, except that irrigated
+  farms keep at least x0.7 output in a drought.
+- **Dormant winters:** all farms produce nothing in winter; irrigation no longer
+  keeps them working. Irrigation still raises yield the rest of the year.
+- **Folded rules:** no INVESTMENT heading. The facts sit in the existing item
+  and structure lines, the winter season line says farms produce nothing, the
+  irrigation line mentions droughts, and the inaccurate line that shocks hurt
+  wild food more than farms is gone.
+
 ## Open
 
 1. **Evidence rate.** Whether the first-build hidden values are learnable but

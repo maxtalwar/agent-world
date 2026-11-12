@@ -63,6 +63,7 @@ from agent_world.rules import (
     FARM_FERTILITY_MAX_LEVEL,
     FARM_FERTILITY_USES_PER_LEVEL,
     INVEST_SHOCK_FARM_FLOOR,
+    IRRIGATED_DROUGHT_FARM_FLOOR,
     INVEST_TOOL_DURABILITY,
     INVEST_TOOL_YIELD_FRACTION,
     TOOL_MAX_DURABILITY,
@@ -779,7 +780,7 @@ class WorldEngine:
             return action_points - cost
         farm_factor = self._season_factor("farm")
         irrigated = self._frontier() and self._tile_has_complete_structure(tile, "irrigation")
-        if irrigated:
+        if irrigated and self._irrigation_keeps_winter_farms():
             farm_factor = max(farm_factor, IRRIGATION_SEASON_FLOOR)
         farm_factor *= self._hidden_farm_factor(agent.position.x, agent.position.y)
         if farm_factor <= 0:
@@ -2463,7 +2464,8 @@ class WorldEngine:
                     passive_factor = self._season_factor("farm")
                     passive_growth = self.state.config.farm_passive_food_growth
                     if self._frontier() and self._tile_has_complete_structure(tile, "irrigation"):
-                        passive_factor = max(passive_factor, IRRIGATION_SEASON_FLOOR)
+                        if self._irrigation_keeps_winter_farms():
+                            passive_factor = max(passive_factor, IRRIGATION_SEASON_FLOOR)
                         passive_growth += IRRIGATION_PASSIVE_BONUS
                     passive_factor *= self._hidden_farm_factor(x, y)
                     if self._investing():
@@ -2976,6 +2978,9 @@ class WorldEngine:
             return 1.0
         return float(SEASONS[season][key])
 
+    def _irrigation_keeps_winter_farms(self) -> bool:
+        return self.state.config.investment_mode != "invest-v2"
+
     def _investing(self) -> bool:
         return self.state.config.investment_mode != "off"
 
@@ -3035,7 +3040,7 @@ class WorldEngine:
         if not shock:
             return {}
         effects = hidden_tuning(config.hidden_world_mode).shock_effects[shock]
-        if self._investing():
+        if config.investment_mode == "invest-v1":
             effects = {**effects, "farm": max(effects["farm"], INVEST_SHOCK_FARM_FLOOR[shock])}
         return effects
 
@@ -3057,6 +3062,13 @@ class WorldEngine:
     def _hidden_farm_factor(self, x: int, y: int) -> float:
         config = self.state.config
         factor = self._active_shock_effects().get("farm", 1.0)
+        if (
+            config.investment_mode == "invest-v2"
+            and config.hidden_world_mode in SHOCK_MODES
+            and active_shock(config.seed, config.season_length_ticks, self.state.tick, config.hidden_world_mode) == "drought"
+            and self._tile_has_complete_structure(self.state.tiles[y][x], "irrigation")
+        ):
+            factor = max(factor, IRRIGATED_DROUGHT_FARM_FLOOR)
         if config.hidden_world_mode in SOIL_MODES:
             factor *= self._soil_factor(x, y)
         if config.hidden_world_mode not in HIDDEN_FACT_MODES:

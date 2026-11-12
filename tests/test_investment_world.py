@@ -103,3 +103,49 @@ class InvestmentWorldTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InvestV2Tests(unittest.TestCase):
+    def irrigate(self, world, x, y):
+        from agent_world.models import Structure
+        sid = f"structure-test-{x}-{y}"
+        world.state.structures[sid] = Structure(sid, "irrigation", Position(x, y), "agent-1")
+        world.state.tiles[y][x].structure_ids.append(sid)
+
+    def test_no_farm_sparing_except_irrigated_drought(self):
+        from agent_world.hidden_world import V2
+        from agent_world.rules import IRRIGATED_DROUGHT_FARM_FLOOR
+        world = engine("invest-v2")
+        drought = year_shocks(11, 10, 0, "seeded-v3")[0]
+        world.state.tick = drought.start_tick
+        self.assertEqual(world._active_shock_effects()["farm"], V2.shock_effects["drought"]["farm"])
+        dry = world._hidden_farm_factor(8, 10) / world._soil_factor(8, 10)
+        self.irrigate(world, 8, 10)
+        wet = world._hidden_farm_factor(8, 10) / world._soil_factor(8, 10)
+        self.assertAlmostEqual(dry, V2.shock_effects["drought"]["farm"])
+        self.assertAlmostEqual(wet, IRRIGATED_DROUGHT_FARM_FLOOR)
+        blight = year_shocks(11, 10, 0, "seeded-v3")[1]
+        world.state.tick = blight.start_tick
+        self.assertAlmostEqual(world._hidden_farm_factor(8, 10) / world._soil_factor(8, 10),
+                               V2.shock_effects["blight"]["farm"])
+
+    def test_irrigation_no_longer_keeps_winter_farms(self):
+        self.assertFalse(engine("invest-v2")._irrigation_keeps_winter_farms())
+        self.assertTrue(engine("invest-v1")._irrigation_keeps_winter_farms())
+        self.assertTrue(engine("off")._irrigation_keeps_winter_farms())
+
+    def test_rules_are_folded_into_existing_lines(self):
+        rules = build_static_context(build_observation(engine("invest-v2").state, "agent-1")["world"])
+        self.assertNotIn("INVESTMENT:", rules)
+        self.assertNotIn("hurt wild plants", rules)
+        self.assertNotIn("unless irrigated", rules)
+        self.assertNotIn("half rate through winter", rules)
+        for text in (
+            "winter: wild regrowth is much lower and farms produce nothing",
+            "irrigated farms hold up better in droughts",
+            "tool: craft from wood+stone+fiber; equip; raises work output by about half",
+            "farm_plot: improved plains/forest for reliable food; grows more productive the more it is worked",
+            "preserved_food: made from food+wood; never spoils",
+            "clothing: made at a workshop from cloth+fiber; equip to cut winter and storm exposure",
+        ):
+            self.assertIn(text, rules)

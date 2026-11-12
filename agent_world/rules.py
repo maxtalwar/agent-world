@@ -349,7 +349,10 @@ def structure_types_for_variant(world_variant: str) -> set[str]:
 # Investment world (investment_mode "invest-v1"): capital that pays back over a
 # run. Kept out of RECIPES and ACCOUNTING_VALUES so published worlds and their
 # accounting stay unchanged.
-INVESTMENT_MODES = {"off", "invest-v1"}
+# invest-v2 drops invest-v1's farm sparing: farms take shocks like wild food,
+# except irrigated farms in droughts, and every farm is dormant in winter.
+INVESTMENT_MODES = {"off", "invest-v1", "invest-v2"}
+IRRIGATED_DROUGHT_FARM_FLOOR = 0.7
 INVEST_TOOL_YIELD_FRACTION = {"tool": 0.5, "advanced_tool": 1.0}
 INVEST_TOOL_DURABILITY = {"tool": 30, "advanced_tool": 60}
 # A farm plot gains one fertility level per this many uses, up to the maximum.
