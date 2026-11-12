@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "run_id": "claude-opus-5-5-v9-invest-v1-20261111",
+  "kind": "experiment",
+  "recipe": "participant-v9",
+  "question": "Does Opus 5.5 start investing (farms, tools, preserved food, clothing) when capital pays back over the run, and how does that change its v9 score?",
+  "model": {
+    "brain": "claude",
+    "id": "claude-opus-5-5"
+  },
+  "seeds": [
+    11
+  ],
+  "world": {
+    "overrides": {
+      "investment_mode": "invest-v1"
+    }
+  },
+  "runtime": {
+    "max_workers": 10
+  },
+  "source": {
+    "commit": "81fbcf53612a112079e5fd54e0e8b4a8b85bf1e8"
+  }
+}
