@@ -75,7 +75,19 @@ all ten alive, final health 62.6, endpoint score about 61.2, Execution 93.7,
 about $21 at list prices. It built one farm plot (on rich soil, tended once),
 preserved food twice, and made no tools or clothing. With the seed 11 run of
 the same world (about 57.4), Opus averages about 59 on v9 against 89.9 on
-v8.1. Seed 73 remains for a full three-seed reading.
+v8.1.
+
+Seed 73 (`claude-opus-5-5-v9-seed73-20261121`): all ten alive but final health
+29.1, endpoint score about 26.2, Execution 93.2. Seed 73 has the earliest and
+longest first drought (ticks 2-15), and Opus took heavy damage in both winters
+(178 and 287 health points across the population). It built two farm plots and
+two storage, tended three times, and crafted nothing.
+
+Three-seed reading for Opus 5.5 on the settled world, one run each: 57.4, 61.2,
+26.2; mean about 48.3, against 89.9 on v8.1. The spread across seeds is as
+large as the run-to-run noise on one seed, so a single model's mean is
+uncertain by roughly +/-10 points. These are experiments, not certified
+benchmark runs.
 
 ## Current build values
 
