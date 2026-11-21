@@ -147,6 +147,16 @@ investment. With the INVESTMENT heading removed, Opus also used the new
 options less, which may be a salience effect. Single runs cannot separate
 these; the next step is repeat runs of one world to measure noise.
 
+Noise check, 2026-11-20: an exact repeat of the plain v9 run (same commit,
+model, and seed; `claude-opus-5-5-v9-seeded-v3-repeat2-20261112`, paused at
+tick 49 for quota and sign-in and resumed from its checkpoint) scored about
+25.4 (final health 27.3, all ten alive, no farming) against the original 41.5.
+Two runs of the same world on one seed differ by about 16 points. The two
+investment runs (55.0, 57.4) are above both plain runs, which suggests a real
+gain, but two runs each cannot establish its size. Single-run differences under
+roughly 15 points, including the soil (-5) and plain-word season (+3) steps of
+the Opus breakdown, should be treated as noise; the shocks step (-36) is not.
+
 ## Open
 
 1. **Evidence rate.** Whether the first-build hidden values are learnable but
