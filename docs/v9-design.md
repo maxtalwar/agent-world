@@ -59,10 +59,21 @@ ending saturation; an unbounded design is shelved below for a later version.
     and shifts historical ratings when new models enter. A draw margin is a
     display rule only, for models within seed noise of each other.
 
+## Decisions, 2026-11-21
+
+- **Scoring:** v9 is ranked like v8.1, on final original-population health
+  minus 10% of health lost in the last winter, floored at zero
+  (`endpoint-winter-damage-v9` in `data/run-sources.json`, ticks 71-80).
+- **Certification:** three required seeds (11, 41, 73), given run-to-run noise
+  of about 16 points on one seed.
+- **Investment is in:** `participant-v9` uses `invest-v2`. Unused options are
+  acceptable; they leave room for stronger models.
+- **Leakage:** not a concern; seeds stay public.
+
 ## Current build values
 
 `participant-v9` uses `hidden_world_mode: "seeded-v3"` (in
-`agent_world/hidden_world.py`). Earlier modes stay in the code so recorded runs
+`agent_world/hidden_world.py`) and `investment_mode: "invest-v2"`. Earlier modes stay in the code so recorded runs
 remain reproducible.
 
 - **Seasons:** described in words only; the underlying rates are unchanged

@@ -14,7 +14,7 @@ def engine(seed=11, **overrides):
     defaults = get_recipe("participant-v9").defaults()
     names = {field.name for field in fields(WorldConfig)}
     # Older tests describe the first v9 world; newer ones pass their mode.
-    settings = {key: value for key, value in defaults.items() if key in names} | {"hidden_world_mode": "seeded-v1"} | overrides
+    settings = {key: value for key, value in defaults.items() if key in names} | {"hidden_world_mode": "seeded-v1", "investment_mode": "off"} | overrides
     return WorldEngine.create(WorldConfig(seed=seed, **settings), agent_names=["A", "B", "C"])
 
 
@@ -172,6 +172,19 @@ class HiddenWorldTests(unittest.TestCase):
 
     def test_participant_v9_uses_the_simplified_world(self):
         self.assertEqual(get_recipe("participant-v9").defaults()["hidden_world_mode"], "seeded-v3")
+
+    def test_participant_v9_includes_investment_and_three_seeds(self):
+        recipe = get_recipe("participant-v9")
+        self.assertEqual(recipe.defaults()["investment_mode"], "invest-v2")
+        self.assertEqual(recipe.required_seeds, (11, 41, 73))
+
+    def test_participant_v9_is_ranked_on_end_of_run_health_with_a_winter_adjustment(self):
+        from pathlib import Path
+        from agent_world.capability_reanalysis import policies, season_ticks
+        spec = policies(Path(__file__).resolve().parents[1])["participant-v9"]
+        self.assertEqual(spec["source_recipe_digest"], get_recipe("participant-v9").digest)
+        self.assertEqual((spec["season_damage_multiplier"], spec["required_seeds"]), (1.1, [11, 41, 73]))
+        self.assertEqual(season_ticks(spec), list(range(71, 81)))
 
     def test_exposure_damage_and_public_season_factors_are_unchanged(self):
         config = engine().state.config
