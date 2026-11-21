@@ -70,6 +70,13 @@ ending saturation; an unbounded design is shelved below for a later version.
   acceptable; they leave room for stronger models.
 - **Leakage:** not a concern; seeds stay public.
 
+Opus 5.5 on the settled world, seed 41 (`claude-opus-5-5-v9-seed41-20261121`):
+all ten alive, final health 62.6, endpoint score about 61.2, Execution 93.7,
+about $21 at list prices. It built one farm plot (on rich soil, tended once),
+preserved food twice, and made no tools or clothing. With the seed 11 run of
+the same world (about 57.4), Opus averages about 59 on v9 against 89.9 on
+v8.1. Seed 73 remains for a full three-seed reading.
+
 ## Current build values
 
 `participant-v9` uses `hidden_world_mode: "seeded-v3"` (in
