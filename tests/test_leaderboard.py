@@ -134,6 +134,19 @@ class LeaderboardTests(unittest.TestCase):
             self.assertEqual(self.store.aggregate(job, [report], ("pinned",))["source"], "pinned")
         checkout.assert_called_once_with(self.root, "d" * 40)
 
+    def test_unscorable_job_is_retried_later_not_every_refresh(self):
+        (self.root / "agent_world").mkdir()
+        (self.root / "agent_world/benchmarks.py").write_text("raise ValueError('incompatible')\n")
+        job = {"run_id": "broken", "recipe": "participant-test", "cells": []}
+        with patch("agent_world.leaderboard.subprocess.run", wraps=__import__("subprocess").run) as run:
+            for _ in range(2):
+                with self.assertRaisesRegex(ValueError, "unavailable or incompatible"):
+                    self.store.aggregate(job, [{}], ("same",))
+            self.assertEqual(run.call_count, 1)
+            with patch("agent_world.leaderboard.time.monotonic", return_value=1e12), self.assertRaises(ValueError):
+                self.store.aggregate(job, [{}], ("same",))
+            self.assertEqual(run.call_count, 2)
+
     def test_recorded_commits_cover_recovery_sources(self):
         from agent_world.leaderboard import recorded_commits
         a, b, c = "a" * 40, "b" * 40, "c" * 40

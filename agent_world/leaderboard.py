@@ -6,10 +6,12 @@ Benchmark launches require a reviewed configuration and same-origin page action.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import logging
+import os
 from pathlib import Path
 import re
 import secrets
@@ -41,6 +43,10 @@ except ImportError:
     from capability_reanalysis import policies as scoring_policies, rescore, formula as reanalysis_formula
 
 LOG = logging.getLogger(__name__)
+# Scoring and pricing run in subprocesses, so threads load jobs in parallel.
+BUILD_WORKERS = min(8, os.cpu_count() or 1)
+# A job whose scoring sources all fail is retried after this long, not every refresh.
+FAILED_AGGREGATE_RETRY_SECONDS = 600
 STATIC = Path(__file__).with_name("static")
 # Model identity determines the lab, never the harness/provider transport.
 LABS = {
@@ -234,6 +240,7 @@ class LeaderboardStore:
         self.payload = None
         self.next_refresh = 0.0
         self.aggregates = {}
+        self.aggregates_lock = threading.Lock()
 
     def canonical_boards(self) -> list[dict]:
         database = self.root / "data/model-benchmarks.sqlite"
@@ -303,8 +310,12 @@ class LeaderboardStore:
     def aggregate(self, job: dict, reports: list[dict], signatures: tuple) -> dict:
         key = (job["run_id"], job.get("recipe_fingerprint_sha256"), signatures,
                json.dumps([r.get("provenance_acceptance") for r in reports], sort_keys=True))
-        if key in self.aggregates:
-            return self.aggregates[key]
+        cached = self.aggregates.get(key)
+        if isinstance(cached, tuple):
+            if time.monotonic() < cached[1]:
+                raise ValueError(cached[0])
+        elif cached is not None:
+            return cached
         # Match the recorded report fingerprint; neither launch nor recovery
         # source is unconditionally authoritative for every historical report.
         candidates = [job.get("source_root")]
@@ -337,12 +348,18 @@ class LeaderboardStore:
                 aggregate = json.loads(result.stdout)
                 # A valid aggregate can explicitly reject evidence. Keep those
                 # decisions; do not retry another source to obtain a better rank.
-                self.aggregates = {k: v for k, v in self.aggregates.items() if k[0] != job["run_id"]}
-                self.aggregates[key] = aggregate
+                self.remember_aggregate(job, key, aggregate)
                 return aggregate
             except (subprocess.SubprocessError, ValueError) as exc:
                 errors.append(type(exc).__name__)
-        raise ValueError("Original scoring source is unavailable or incompatible (" + ", ".join(errors) + ")")
+        message = "Original scoring source is unavailable or incompatible (" + ", ".join(errors) + ")"
+        self.remember_aggregate(job, key, (message, time.monotonic() + FAILED_AGGREGATE_RETRY_SECONDS))
+        raise ValueError(message)
+
+    def remember_aggregate(self, job: dict, key: tuple, value) -> None:
+        with self.aggregates_lock:
+            self.aggregates = {k: v for k, v in self.aggregates.items() if k[0] != job["run_id"]}
+            self.aggregates[key] = value
 
     def managed_run(self, job: dict, job_path: Path) -> tuple[dict, list[dict], dict | None]:
         heartbeat_path = job_path.with_name("controller-heartbeat.json")
@@ -513,6 +530,8 @@ class LeaderboardStore:
         archive_path = STATIC / "leaderboard-activity-archive.json"
         archived = read_json(archive_path) if archive_path.exists() else {}
         boards = {}
+        aliases = None
+        jobs = []
         for path in sorted((self.root / "runs/jobs").glob("*/job.json")):
             try:
                 job = read_json(path)
@@ -520,27 +539,45 @@ class LeaderboardStore:
                 if isinstance(disposition, dict) and disposition.get("hidden"):
                     continue
                 recipe = job.get("recipe") or job.get("protocol")
+                experiment = job.get("kind") == "experiment"
+                if experiment and job.get("deferral", {}).get("status") == "deferred":
+                    continue
+                if experiment or (job.get("kind") == "benchmark" and recipe):
+                    jobs.append((path, job, recipe))
+            except (OSError, ValueError, KeyError, TypeError):
+                LOG.exception("Cannot read managed job %s", path.parent.name)
+                warnings.append(f"Could not read study {path.parent.name}; it has been omitted.")
+
+        def load(item):
+            try:
+                return self.managed_run(item[1], item[0])
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                return exc
+
+        with ThreadPoolExecutor(max_workers=BUILD_WORKERS) as pool:
+            loaded = list(pool.map(load, jobs))
+        for (path, job, recipe), result in zip(jobs, loaded):
+            try:
+                if isinstance(result, Exception):
+                    raise result
                 if job.get("kind") == "experiment":
-                    if job.get("deferral", {}).get("status") == "deferred":
-                        continue
-                    run, _, _ = self.managed_run(job, path)
+                    run, _, _ = result
                     run.update(is_experiment=True, question=job.get("question") or job.get("config", {}).get("question", ""),
                                recipe=recipe, lab=model_lab(job["config"]["model"].get("id", "")),
                                agents=job.get("config", {}).get("runtime", {}).get("agents"),
                                world_overrides=job.get("config", {}).get("world", {}).get("overrides", {}))
                     experiments.append(run)
                     continue
-                if job.get("kind") != "benchmark" or not recipe:
-                    continue
                 digest = job.get("recipe_fingerprint_sha256") or ""
                 # Explicit display mapping preserves the original report/job identity.
-                aliases_path = self.root / "data/benchmark-release-aliases.json"
-                aliases = read_json(aliases_path) if aliases_path.exists() else {}
+                if aliases is None:
+                    aliases_path = self.root / "data/benchmark-release-aliases.json"
+                    aliases = read_json(aliases_path) if aliases_path.exists() else {}
                 alias = aliases.get(recipe + "@" + digest, {})
                 display_recipe, display_digest = alias.get("recipe", recipe), alias.get("digest", digest)
                 board = boards.setdefault(
                     display_recipe + ("@" + display_digest if display_digest else ""), new_board(display_recipe, display_digest))
-                run, rows, aggregate = self.managed_run(job, path)
+                run, rows, aggregate = result
                 run["archived"] = run["id"] in archived
                 board["runs"].append(run)
                 board["rows"].extend(rows)
