@@ -224,63 +224,9 @@ the Opus breakdown, should be treated as noise; the shocks step (-36) is not.
    it would distort agent memory.
 8. **Map size.** Larger makes roads and transport matter and raises
    observation size. Undecided.
-9. **Tuning gate.** Before any paid run: play the world with the scripted
-   brain and one cheap model, and require that two different reasonable plans
-   diverge in score. If they converge, the judgement is not real and the
-   parameters go back for revision.
-   First check, 2026-11-06: not passed. `SurvivalBrain` loses all ten agents on
-   both seeds even under v8.1 settings, so it cannot show divergence. The gate
-   needs scripted plans that survive, or a stronger model.
-   GPT-6 Luna pilot, seed 11, 2026-11-06 (`gpt-6-luna-v9-pilot-20261106`): the
-   world ran cleanly to tick 80 with no harness failures, but all ten agents
-   died between ticks 30 and 74 with no structures built. 36% of actions were
-   invalid, from tick 0. The low-effort v8.1 control
-   (`gpt-6-luna-v81-low-control-20261106`) also built nothing and lost seven of
-   ten agents, so the collapse is mostly the model.
-   GPT-6.1 Sol pilot, seed 11, 2026-11-06 (`gpt-6-1-sol-v9-pilot-20261106`): all
-   ten agents survived both winters at final mean health 76.0, with raw
-   Capability 88.1, Execution 96.4, and Production 217.0. The world is playable
-   and separates these two models. One model on one seed does not pass the gate.
-   Terra one-change ablation, 2026-11-07 (`terra-ablate-*-20261106`), final mean
-   health against Terra's v8.1 runs, seeds 11 / 41, one run each:
-
-   | Change from v8.1 | Seed 11 | Seed 41 |
-   |---|---:|---:|
-   | None (v8.1, medium effort) | 61.3 | 45.5 |
-   | Low effort | 41.7 | 31.8 |
-   | Two winters | 41.7 | 20.8 |
-   | Hidden facts | 61.2 | 54.3 |
-   | Shocks | 65.2 | 40.4 |
-   | Full v9 | 16.7 | 0.9 |
-
-   Opus 5.5, seed 11, final mean health (v8.1 run at medium effort: 88.2, all
-   alive): `seeded-v2` (`claude-opus-5-5-v9-seeded-v2-20261107`) 50.7, all
-   alive, but its rulebook stated season numbers the world contradicted;
-   `seeded-v3` (`claude-opus-5-5-v9-seeded-v3-20261107`) 43.3, two deaths at
-   tick 76, Execution 95.0. Most damage came in the two winters. Opus built
-   three farm plots (normal, poor, normal soil) and farmed only six times, so
-   soil barely came into play. One seed; not yet a gate result.
-   Opus 5.5 on v8.1 at low effort, seed 11
-   (`claude-opus-5-5-v81-low-20261108`): final health 81.7, leaderboard-formula
-   score about 80.9, against 87.3 at medium. Low effort costs Opus about 6
-   points; the v9 world accounts for roughly 39 more (v9 about 41.5).
-   Adding a second winter at low effort
-   (`claude-opus-5-5-v81-low-winters-w10-20261108`): 79.6, all ten alive. So
-   two winters cost Opus about 1 point; the remaining ~38 points come from the
-   seeded-v3 shocks, soil, and plain-word seasons together.
-   Stacking one change at a time on seed 11 (leaderboard formula; all runs
-   `claude-opus-5-5-v81-low-*-20261108` except the endpoints): v8.1 medium 87.4;
-   + low effort 80.9; + second winter 79.6; + shocks (`shocks-v3`) 43.4;
-   + soil (`shocks-soil-v3`) 38.6; + plain-word seasons (full v9) 41.5. Shocks
-   account for about 36 of the 46 points. Soil (-5) and plain-word seasons (+3)
-   are within single-run noise. Opus farmed only 6-11 times per run, living
-   mostly on wild food, so soil had little to act on and droughts and cold
-   snaps, which cut wild regrowth, hit it directly.
-
-   Effort and length carry the difficulty; hidden facts and shocks as built do
-   not, and Sol was barely affected by all four. v9 spreads the middle of the
-   board but does not yet raise the ceiling. Hidden facts and shocks need to be
-   much stronger before the next paid run.
+9. **Tuning gate: dropped (2026-11-27).** Two different strategies scoring
+   alike does not show the world is broken; they may be equally good, or one
+   may be worse but better executed. v9 does not require it.
 10. **Leakage.** Hidden values are hashes of public seeds in public code, so once
     the repo is open source anyone can compute them. Fix before publishing
     results: a private salt or rotating seeds.
