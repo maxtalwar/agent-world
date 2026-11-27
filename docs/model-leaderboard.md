@@ -1,3 +1,11 @@
+## participant-v9
+
+Capability rescoring: Final original-population health minus 10% of health lost during the last winter per original agent; minimum zero. Original trial identity retained (endpoint-winter-damage-v9). Three required seeds (11, 41, 73) at low effort.
+
+| Model | Capability | Execution | Production | Cost/run | Mean time/decision |
+|---|---:|---:|---:|---:|---:|
+| Opus 5.5 | 56.1 | 94.2 | 137.2 | $20.24 | 4.96s |
+
 ## participant-v8-revised
 
 Capability rescoring: Final original-population health minus 10% of health lost during the last winter per original agent; minimum zero. Original trial identity retained (endpoint-winter-damage-v1).
