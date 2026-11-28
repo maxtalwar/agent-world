@@ -95,7 +95,7 @@ class AntigravityBrain(HeadlessBrain):
         definition.parent.mkdir(parents=True)
         definition.write_text(
             f"---\nname: {AGENT_NAME}\ndescription: One isolated simulation decision.\n"
-            "tools: []\nmcpServers: []\nskills: []\nplugins: []\n"
+            f"tools: {schema_finish_tools(self.cli_version)}\nmcpServers: []\nskills: []\nplugins: []\n"
             "mainAgent: true\nsubagent: false\ncommandExecutionPolicy: 'off'\n---\n"
             + HARNESS_INSTRUCTIONS + "\n", encoding="utf-8")
 
@@ -114,6 +114,20 @@ class AntigravityBrain(HeadlessBrain):
 
     def _parse(self, stdout: str, artifacts: dict[str, Any]) -> dict[str, Any]:
         return parse_antigravity_result(stdout, trace_root=Path.home() / ".gemini/antigravity-cli/conversations")
+
+
+def schema_finish_tools(cli_version: str | None) -> str:
+    """Tools for the isolated decision agent.
+
+    From CLI 1.5, --json-schema output is returned through the built-in finish
+    step, which the agent must be allowed to call; with no tools the CLI
+    re-prompts and concatenates every answer. finish returns the structured
+    decision and grants no other capability. Older CLIs keep an empty list.
+    """
+    match = re.search(r"(\d+)\.(\d+)", cli_version or "")
+    if match and (int(match.group(1)), int(match.group(2))) >= (1, 5):
+        return "[finish]"
+    return "[]"
 
 
 def parse_antigravity_result(stdout: str, *, trace_root: Path | None = None) -> dict[str, Any]:

@@ -149,3 +149,13 @@ class InvestV2Tests(unittest.TestCase):
             "clothing: made at a workshop from cloth+fiber; equip to cut winter and storm exposure",
         ):
             self.assertIn(text, rules)
+
+
+class AntigravityFinishToolTests(unittest.TestCase):
+    def test_finish_tool_only_from_cli_1_5(self):
+        from agent_world.antigravity_brain import schema_finish_tools
+        self.assertEqual(schema_finish_tools("1.5.5"), "[finish]")
+        self.assertEqual(schema_finish_tools("agy 2.0.1"), "[finish]")
+        self.assertEqual(schema_finish_tools("1.4.12"), "[]")
+        self.assertEqual(schema_finish_tools("1.1.27"), "[]")
+        self.assertEqual(schema_finish_tools(None), "[]")
