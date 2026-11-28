@@ -27,6 +27,10 @@ masqueraded as model behavior — append an entry.** Rules:
 
 
 
+## 2026-11-28 - v9 opened the top of the board but pushed mid-tier Claude models to the floor
+
+**On certified participant-v9, Opus 5.5 scored 56.1 while Sonnet 5.5 (5.9) and Haiku 5.5 (0.4) nearly collapsed, though all three were within 60 points of each other on v8.1 (89.9, 31.4, 30.4).** Runs `claude-{opus,sonnet,haiku}-5-5-v9-20261127`, seeds 11, 41, 73 at low effort, all clean. Sonnet ended with 6, 2, and 4 of 10 agents alive and Haiku with 3, 0, and 2; Sonnet's Execution fell to 80.2. v9 now separates the top well but compresses everything below a strong model toward zero, so it may not rank weaker models against each other. Model behavior, not harness: same connector, seeds, and source commit for all three.
+
 ## 2026-11-20 - Two identical Opus 5.5 runs of the v9 world differed by 16 points
 
 **Rerunning Opus 5.5 on the same v9 world, seed, and source commit moved its leaderboard-formula score from about 41.5 to about 25.4, so single runs on one seed cannot resolve differences smaller than roughly 15 points.** Runs `claude-opus-5-5-v9-seeded-v3-20261107` (41.5, eight alive, three farm plots) and `claude-opus-5-5-v9-seeded-v3-repeat2-20261112` (25.4, all ten alive, no farming, shelters only). The world, rulebook, shock schedule, and soil are seed-determined and identical; only the model's sampled choices differ, since each decision is a fresh conversation. The repeat was paused at tick 49 for quota and an expired sign-in and resumed from its checkpoint, which does not change what agents see. The same Opus 5.5 scored 87.3 and 92.5 on the two v8.1 seeds, where survival is near saturated; the harder world spreads outcomes. This applies to every single-run comparison in the v9 work: the -36 shock effect stands, but soil (-5), plain-word seasons (+3), and the gap between the two investment versions are within noise.

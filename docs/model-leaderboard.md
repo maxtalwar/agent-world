@@ -5,6 +5,8 @@ Capability rescoring: Final original-population health minus 10% of health lost 
 | Model | Capability | Execution | Production | Cost/run | Mean time/decision |
 |---|---:|---:|---:|---:|---:|
 | Opus 5.5 | 56.1 | 94.2 | 137.2 | $20.24 | 4.96s |
+| Sonnet 5.5 | 5.9 | 80.2 | 105.0 | $6.32 | 2.67s |
+| Haiku 5.5 | 0.4 | 87.6 | 120.4 | $0.58 | 5.31s |
 
 ## participant-v8-revised
 
